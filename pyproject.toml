@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flygym"
+authors = [
+    {name = "Neuroengineering Laboratory, EPFL", email = "sibo.wang@epfl.ch"},
+]
+description = "Gym environments for NeuroMechFly in various physics simulators"
+requires-python = ">=3.7, <3.9"
+dependencies = [
+    "gymnasium",
+    "numpy",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+pybullet = ["pybullet"]
+mujoco = ["mujoco", "dm_control"]
