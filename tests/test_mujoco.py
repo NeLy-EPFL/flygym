@@ -22,6 +22,20 @@ class MuJoCoTest(unittest.TestCase):
             nmf.render()
         nmf.close()
 
+    def test_tethered_sinewave(self):
+        nmf = NeuroMechFlyMuJoCo(terrain="ball")
+        run_time = 0.01
+        freq = 500
+        phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
+        amp = 0.9
+
+        while nmf.curr_time <= run_time:
+            joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
+            action = {'joints': joint_pos}
+            obs, info = nmf.step(action)
+            nmf.render()
+        nmf.close()
+
 
 if __name__ == '__main__':
     unittest.main()
