@@ -78,7 +78,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.terrain_config.update(terrain_config)
         self.control = control
         self.init_pose = init_pose
-        self.show_collisions = show_collision
+        self.show_collisions = show_collisions
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -201,7 +201,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             return
         if self.render_mode == 'saved':
             width, height = self.render_config['window_size']
-            img = self.physics.render(width=width, height=height)
+            camera_id = self.render_config['camera_id']
+            img = self.physics.render(width=width, height=height, camera_id=camera_id)
             self.frames.append(img.copy())
         else:
             raise NotImplementedError
