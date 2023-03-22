@@ -11,6 +11,7 @@ if not data_path.is_dir():
 
 # MuJoCo
 mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor.xml'
+mujoco_clean_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor_clean_camera_light.xml'
 
 # Isaac Gym
 ...
