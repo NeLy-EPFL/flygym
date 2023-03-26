@@ -7,11 +7,13 @@ from pathlib import Path
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ObsType
+from scipy.spatial.transform import Rotation as R
 
 try:
     import mujoco
     import dm_control
     from dm_control import mjcf
+    from dm_control.utils import transformations
 except ImportError:
     raise ImportError(
         'MuJoCo prerequisites not installed. Please install the prerequisites '
@@ -84,7 +86,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                  shape=(3, num_dofs)),
             # fly position and orientation: shape (6,):
             # (x, y, z, roll, pitch, yaw) of thorax
-            'fly': spaces.Box(low=-np.inf, high=np.inf, shape=(6,)),
+            'fly': spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
         }
         
         # Load NMF model
@@ -103,6 +105,43 @@ class NeuroMechFlyMuJoCo(gym.Env):
         #         joint.type = 'fixed'
         self.actuators = [model.find('actuator', f'actuator_{control}_{joint}')
                           for joint in actuated_joints]
+        
+        # Add sensors
+        self.joint_sensors = []
+        for joint in actuated_joints:
+            self.joint_sensors.extend([
+                model.sensor.add('jointpos',
+                                 name=f'jointpos_{joint}', joint=joint),
+                model.sensor.add('jointvel',
+                                 name=f'jointvel_{joint}', joint=joint),
+                model.sensor.add('actuatorfrc',
+                                 name=f'actuatorfrc_position_{joint}',
+                                 actuator=f'actuator_position_{joint}'),
+                model.sensor.add('actuatorfrc',
+                                 name=f'actuatorfrc_velocity_{joint}',
+                                 actuator=f'actuator_velocity_{joint}'),
+                model.sensor.add('actuatorfrc',
+                                 name=f'actuatorfrc_motor_{joint}',
+                                 actuator=f'actuator_torque_{joint}'),
+            ])
+            # self.joint_sensors += [
+            #     model.sensor.find('sensor', f'jointpos_{joint}'),
+            #     model.sensor.find('sensor', f'jointvel_{joint}'),
+            #     model.sensor.find('sensor', f'actuatorfrc_position_{joint}'),
+            #     model.sensor.find('sensor', f'actuatorfrc_velocity_{joint}'),
+            #     model.sensor.find('sensor', f'actuatorfrc_motor_{joint}'),
+            # ]
+        self.body_sensors = [
+            model.sensor.add('framepos', name='thorax_pos',
+                             objtype='body', objname='Thorax'),
+            model.sensor.add('framelinvel', name='thorax_linvel',
+                             objtype='body', objname='Thorax'),
+            model.sensor.add('framequat', name='thorax_quat',
+                             objtype='body', objname='Thorax'),
+            model.sensor.add('frameangvel', name='thorax_angvel',
+                             objtype='body', objname='Thorax')
+        ]
+        
         
         # Set all bodies to default position (joint angle) even if the
         # joint is unactuated
@@ -173,9 +212,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
     
     
     def _get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
+        # joint sensors
+        joint_obs = np.zeros((3, len(self.actuated_joints)))
+        joint_sensordata = self.physics.bind(self.joint_sensors).sensordata
+        for i, joint in enumerate(self.actuated_joints):
+            base_idx = i * 5
+            # pos and vel
+            joint_obs[:2, i] = joint_sensordata[base_idx:base_idx + 2]
+            # torque from pos/vel/motor actuators
+            joint_obs[2, i] = joint_sensordata[base_idx + 2:base_idx + 5].sum()
+        joint_obs[2, :] *= 1e-9  # convert to N
+        
+        # fly position and orientation
+        cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
+        cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
+        quat = self.physics.bind(self.body_sensors[2]).sensordata
+        # ang_pos = transformations.quat_to_euler(quat)
+        ang_pos = R.from_quat(quat).as_euler('xyz')  # explicitly use intrinsic
+        ang_pos[0] *= -1  # flip roll??
+        ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
+        fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
+         
         return {
-            'joints': np.zeros((3, len(self.actuated_joints))),
-            'fly': np.zeros(6),
+            'joints': joint_obs,
+            'fly': fly_pos,
         }
     
     

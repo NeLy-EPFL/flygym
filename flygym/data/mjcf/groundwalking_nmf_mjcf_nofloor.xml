@@ -969,7 +969,7 @@
   <sensor>
     <!-- <framelinvel name="framelinvel_neuromechfly_antennae_separated_20221104" objtype="body" objname="neuromechfly_antennae_separated_20221104"/> -->
     <!-- <frameangvel name="frameangvel_neuromechfly_antennae_separated_20221104" objtype="body" objname="neuromechfly_antennae_separated_20221104"/> -->
-    <framelinvel name="framelinvel_Thorax" objtype="body" objname="Thorax"/>
+    <!-- <framelinvel name="framelinvel_Thorax" objtype="body" objname="Thorax"/>
     <frameangvel name="frameangvel_Thorax" objtype="body" objname="Thorax"/>
     <framelinvel name="framelinvel_A1A2" objtype="body" objname="A1A2"/>
     <frameangvel name="frameangvel_A1A2" objtype="body" objname="A1A2"/>
@@ -1447,6 +1447,6 @@
     <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus4" actuator="actuator_torque_joint_LHTarsus4"/>
     <actuatorfrc name="actuatorfrc_position_joint_LHTarsus5" actuator="actuator_position_joint_LHTarsus5"/>
     <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus5" actuator="actuator_velocity_joint_LHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus5" actuator="actuator_torque_joint_LHTarsus5"/>
+    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus5" actuator="actuator_torque_joint_LHTarsus5"/> -->
   </sensor>
 </mujoco>
