@@ -12,8 +12,8 @@ jobs:
           python-version: '3.8'
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx_rtd_theme furo numpydoc
-          #pip install -e ."[docs]"
+          #pip install sphinx sphinx_rtd_theme furo numpydoc
+          pip install -e ."[docs]"
       - name: Sphinx build
         run: |
           sphinx-build docs/source _build
