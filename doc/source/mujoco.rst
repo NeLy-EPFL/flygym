@@ -108,14 +108,5 @@ API Reference
 
 We provide a comprehensive API reference to the MuJoCo environment below.
 
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo
-
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo.__init__
-
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo.reset
-
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo.step
-
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo.render
-
-.. autofunction:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo.close
+.. autoclass:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo
+   :members: __init__, reset, step, render, close

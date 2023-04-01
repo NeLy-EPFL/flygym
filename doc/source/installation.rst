@@ -50,7 +50,7 @@ Developers of the package should also install documentation utilities:
 
 .. code-block:: bash
 
-   pip install -e ."[docs]"
+   pip install -e ."[doc]"
 
 Note that ``-e`` causes the package in editable mode. This is not necessary if you're not developing this package.
 
