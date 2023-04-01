@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'gymnasium',
         "numpy",
+        "scipy",
         "pyyaml",
         "mediapy",
         "imageio",
