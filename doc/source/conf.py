@@ -1,5 +1,3 @@
-from dm_control import mjcf    # somehow prevents sphinx-build import error???
-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -56,6 +54,6 @@ html_theme = 'furo'
 html_static_path = ['_static']
 
 autodoc_preserve_defaults = True
-autodoc_mock_imports = ['dm_contro', 'mujoco', 'pybullet']
+autodoc_mock_imports = ['dm_control', 'mujoco', 'pybullet']
 
 numpydoc_show_class_members = False
