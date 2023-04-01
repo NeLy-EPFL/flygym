@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 import imageio
+import logging
 from typing import List, Tuple, Dict, Any
 from pathlib import Path
 
@@ -15,7 +16,7 @@ try:
     from dm_control import mjcf
     from dm_control.utils import transformations
 except ImportError:
-    raise ImportError(
+    logging.warning(
         'MuJoCo prerequisites not installed. Please install the prerequisites '
         'by running `pip install flygym[mujoco]` or '
         '`pip install -e ."[mujoco]"` if installing locally.'
