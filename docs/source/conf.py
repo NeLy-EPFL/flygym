@@ -54,5 +54,4 @@ html_theme = 'furo'
 html_static_path = ['_static']
 
 autodoc_preserve_defaults = True
-autodoc_mock_imports = ['gymnasium', 'numpy', 'scipy', 'pyyaml', 'mujoco',
-                        'dm_control', 'pybullet']
+autodoc_mock_imports = ['dm_contro', 'mujoco', 'pybullet']
