@@ -28,6 +28,6 @@ setup(
     extras_require={
         'mujoco': ['mujoco', 'dm_control'],
         'pybullet': ['pybullet'],
-        'docs': ['sphinx', 'furo', 'numpydoc']
+        'doc': ['sphinx', 'furo', 'numpydoc']
     },
 )
