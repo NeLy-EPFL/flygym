@@ -16,7 +16,7 @@ try:
     from dm_control import mjcf
     from dm_control.utils import transformations
 except ImportError:
-    logging.warning(
+    raise ImportError(
         'MuJoCo prerequisites not installed. Please install the prerequisites '
         'by running `pip install flygym[mujoco]` or '
         '`pip install -e ."[mujoco]"` if installing locally.'
