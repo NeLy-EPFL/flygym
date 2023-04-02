@@ -4,11 +4,11 @@ import imageio
 import logging
 from typing import List, Tuple, Dict, Any
 from pathlib import Path
+from scipy.spatial.transform import Rotation as R
 
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ObsType
-from scipy.spatial.transform import Rotation as R
 
 try:
     import mujoco
@@ -22,6 +22,8 @@ except ImportError:
         '`pip install -e ."[mujoco]"` if installing locally.'
     )
 
+from flygym.util.mujoco_terrain import \
+    FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.data import default_pose_path
 from flygym.util.config import all_leg_dofs
@@ -31,13 +33,38 @@ _init_pose_lookup = {
     'default': default_pose_path,
 }
 _default_terrain_config = {
-    'flat': {'size': (50_000, 50_000),
-             'fly_placement': ((0, 0, 600), (0, 1, 0, 0.1))},
-    'ball': {'radius': ...,
-             'fly_placement': ((0, 0, ...), (0, 1, 0, ...))},
+    'flat': {
+        'size': (50_000, 50_000),
+        'fly_pos': (0, 0, 600),
+        'fly_orient': (0, 1, 0, 0.1)
+    },
+    'gapped': {
+        'x_range': (-10_000, 10_000),
+        'y_range': (-10_000, 10_000),
+        'gap_width': 200,
+        'block_width': 1000,
+        'gap_depth': 2000,
+        'fly_pos': (0, 0, 600),
+        'fly_orient': (0, 1, 0, 0.1)
+    },
+    'blocks': {
+        'x_range': (-10_000, 10_000),
+        'y_range': (-10_000, 10_000),
+        'block_size': 1000,
+        'height_range': (300, 300),
+        'rand_seed': 0,
+        'fly_pos': (0, 0, 600),
+        'fly_orient': (0, 1, 0, 0.1)
+    },
+    'ball': {
+        'radius': ...,
+        'fly_pos': (0, 0, ...),
+        'fly_orient': (0, 1, 0, ...)
+    },
 }
 _default_render_config = {
     'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60},
+    'headless': {}
 }
     
 
@@ -93,7 +120,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     """
     _metadata = {
         'render_modes': ['headless', 'viewer', 'saved'],
-        'terrain': ['flat', 'ball'],
+        'terrain': ['flat', 'gapped', 'blocks', 'ball'],
         'control': ['position', 'velocity', 'torque'],
         'init_pose': ['default']
     }
@@ -267,29 +294,46 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 body.axisangle = [*rot_axis, init_pose[key]]
         
         # Add arena and put fly in it
-        arena = mjcf.RootElement()
         if terrain == 'flat':
-            ground_size = [*self.terrain_config['size'], 1]
-            fly_pos, fly_angle = self.terrain_config['fly_placement']
-            chequered = arena.asset.add('texture', type='2d', builtin='checker',
-                                        width=300, height=300,
-                                        rgb1=(.2, .3, .4), rgb2=(.3, .4, .5))
-            grid = arena.asset.add('material', name='grid', texture=chequered,
-                                    texrepeat=(10, 10), reflectance=0.1)
-            arena.worldbody.add('geom', type='plane', name='ground',
-                                material=grid, size=ground_size)
-            spawn_site = arena.worldbody.add('site', pos=fly_pos,
-                                             axisangle=fly_angle)
-            spawn_site.attach(self.model).add('freejoint')
-        else:
+            my_terrain = FlatTerrain(size=self.terrain_config['size'])
+            my_terrain.spawn_entity(self.model,
+                                    rel_pos=self.terrain_config['fly_pos'],
+                                    rel_angle=self.terrain_config['fly_orient'])
+            arena = my_terrain.arena
+        elif terrain == 'gapped':
+            my_terrain = GappedTerrain(
+                x_range=self.terrain_config['x_range'],
+                y_range=self.terrain_config['y_range'],
+                gap_width=self.terrain_config['gap_width'],
+                block_width=self.terrain_config['block_width'],
+                gap_depth=self.terrain_config['gap_depth']
+            )
+            my_terrain.spawn_entity(self.model,
+                                    rel_pos=self.terrain_config['fly_pos'],
+                                    rel_angle=self.terrain_config['fly_orient'])
+            arena = my_terrain.arena
+        elif terrain == 'blocks':
+            my_terrain = ExtrudingBlocksTerrain(
+                x_range=self.terrain_config['x_range'],
+                y_range=self.terrain_config['y_range'],
+                block_size=self.terrain_config['block_size'],
+                height_range=self.terrain_config['height_range'],
+                rand_seed=self.terrain_config['rand_seed']
+            )
+            my_terrain.spawn_entity(self.model,
+                                    rel_pos=self.terrain_config['fly_pos'],
+                                    rel_angle=self.terrain_config['fly_orient'])
+            arena = my_terrain.arena
+        elif terrain == 'ball':
             raise NotImplementedError
         
         arena.option.timestep = timestep
         self.physics = mjcf.Physics.from_mjcf_model(arena)
         self.curr_time = 0
         self._last_render_time = -np.inf
-        self._eff_render_interval = (self.render_config['playspeed'] /
-                                     self.render_config['fps'])
+        if render_mode != 'headless':        
+            self._eff_render_interval = (self.render_config['playspeed'] /
+                                         self.render_config['fps'])
         self._frames = []
     
     
@@ -342,6 +386,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Call the ``render`` method to update the renderer. It should
         be called every iteration; the method will decide by itself
         whether action is required."""
+        if self.render_mode  == 'headless':
+            return
         if self.curr_time < self._last_render_time + self._eff_render_interval:
             return
         if self.render_mode == 'saved':

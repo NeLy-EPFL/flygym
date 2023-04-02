@@ -1,5 +1,6 @@
 import unittest
 import tempfile
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -70,6 +71,18 @@ class MuJoCoTest(unittest.TestCase):
         axs[1, 1].set_title('Angular velocity (Euler)')
         plt.savefig(out_dir / 'fly_pos_ts.png')
         plt.close(fig)
+
+    def test_gapped_terrain(self):
+        out_dir = _temp_base_dir / 'mujoco_gapped_terrain'
+        nmf = NeuroMechFlyMuJoCo(render_mode='headless', output_dir=out_dir,
+                                 terrain='gapped')
+        nmf.close()
+    
+    def test_blocks_terrain(self):
+        out_dir = _temp_base_dir / 'mujoco_blocks_terrain'
+        nmf = NeuroMechFlyMuJoCo(render_mode='headless', output_dir=out_dir,
+                                 terrain='blocks')
+        nmf.close()
 
 
 if __name__ == '__main__':
