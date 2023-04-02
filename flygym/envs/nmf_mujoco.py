@@ -22,7 +22,7 @@ except ImportError:
         '`pip install -e ."[mujoco]"` if installing locally.'
     )
 
-from flygym.util.mujoco_terrain import \
+from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GapedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.data import default_pose_path
