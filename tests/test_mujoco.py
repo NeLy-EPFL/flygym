@@ -72,10 +72,10 @@ class MuJoCoTest(unittest.TestCase):
         plt.savefig(out_dir / 'fly_pos_ts.png')
         plt.close(fig)
 
-    def test_gapped_terrain(self):
-        out_dir = _temp_base_dir / 'mujoco_gapped_terrain'
+    def test_gaped_terrain(self):
+        out_dir = _temp_base_dir / 'mujoco_gaped_terrain'
         nmf = NeuroMechFlyMuJoCo(render_mode='headless', output_dir=out_dir,
-                                 terrain='gapped')
+                                 terrain='gaped')
         nmf.close()
     
     def test_blocks_terrain(self):
