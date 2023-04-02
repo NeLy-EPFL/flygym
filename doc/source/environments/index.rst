@@ -8,7 +8,7 @@ Gymnasium (a continuation of the now deprecated OpenAI Gym) is a toolkit for dev
 
 The overall steps for interacting with a Gym environment are:
 
-#. Defining an environment (the "Specifics" section on each physics simulator will cover more details)
+#. Defining an environment (the :ref:`specifics` section on each physics simulator will cover more details)
 #. Reset the environment and get the initial observation
 #. Interact with the environment with a loop:
 
@@ -65,6 +65,8 @@ The **action** is a dictionary of the following format::
 
 The meaning of action array depends on the controller type: if position control is used (which is the default case), the array will be interpreted as the target joint angles. If velocity or force control is used, the array will be interpreted as the target velocity or the applied force.
 
+
+.. _specifics:
 
 Physics-Engine-Specific Details
 -------------------------------
