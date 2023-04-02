@@ -167,7 +167,7 @@ class GappedTerrain(Terrain):
         return adj_pos, rel_angle
 
 
-class ExtrudingBoxTerrain(Terrain):
+class ExtrudingBlocksTerrain(Terrain):
     """Terrain formed by blocks at random heights.
 
     Parameters
@@ -231,3 +231,40 @@ class ExtrudingBoxTerrain(Terrain):
                            ) -> Tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, 100])
         return adj_pos, rel_angle
+
+
+class Ball(Terrain):
+    """Fly tethered on a spherical threadmill.
+    
+    Parameters
+    ----------
+    radius : float, optional
+        Radius of the ball, by default 5390.852782067457
+    ball_pos : Tuple[float, float, float], optional
+        (x, y, z) mounting position of the ball, by default
+        (-98.67235483, -54.35809692, -5203.09506806)
+    mass : float, optional
+        Mass of the ball, by default 0.05456
+    sliding_friction : float, optional
+        Sliding friction coefficient of the ball, by default 1.3
+    torsional_friction : float, optional
+        Torsional friction coefficient of the ball, by default 0.005
+    rolling_friction : float, optional
+        Rolling friction coefficient of the ball, by default 0.0001
+    """
+    
+    def __init__(self,
+                 radius: float = 5390.852782067457,
+                 ball_pos: Tuple[float, float, float] = (-98.67235483,
+                                                         -54.35809692,
+                                                         -5203.09506806),
+                 mass: float = 0.05456,
+                 sliding_friction: float = 1.3,
+                 torsional_friction: float = 0.005,
+                 rolling_friction: float = 0.0001
+                 ):
+        raise NotImplementedError
+    
+    def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
+                           ) -> Tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
