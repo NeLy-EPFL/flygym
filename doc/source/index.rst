@@ -14,6 +14,7 @@ FlyGym: Gymnasium environments for NeuroMechFly
    neuromechfly
    installation
    environments/index
+   terrain
 
 
 .. warning::
