@@ -23,7 +23,7 @@ except ImportError:
     )
 
 from flygym.util.mujoco_terrain import \
-    FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
+    FlatTerrain, Ball, GapedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.data import default_pose_path
 from flygym.util.config import all_leg_dofs
@@ -38,7 +38,7 @@ _default_terrain_config = {
         'fly_pos': (0, 0, 600),
         'fly_orient': (0, 1, 0, 0.1)
     },
-    'gapped': {
+    'gaped': {
         'x_range': (-10_000, 10_000),
         'y_range': (-10_000, 10_000),
         'gap_width': 200,
@@ -120,7 +120,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     """
     _metadata = {
         'render_modes': ['headless', 'viewer', 'saved'],
-        'terrain': ['flat', 'gapped', 'blocks', 'ball'],
+        'terrain': ['flat', 'gaped', 'blocks', 'ball'],
         'control': ['position', 'velocity', 'torque'],
         'init_pose': ['default']
     }
@@ -300,8 +300,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                     rel_pos=self.terrain_config['fly_pos'],
                                     rel_angle=self.terrain_config['fly_orient'])
             arena = my_terrain.arena
-        elif terrain == 'gapped':
-            my_terrain = GappedTerrain(
+        elif terrain == 'gaped':
+            my_terrain = GapedTerrain(
                 x_range=self.terrain_config['x_range'],
                 y_range=self.terrain_config['y_range'],
                 gap_width=self.terrain_config['gap_width'],
