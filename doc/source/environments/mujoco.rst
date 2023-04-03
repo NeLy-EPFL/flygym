@@ -1,35 +1,16 @@
 MuJoCo Specifics
 ================
 
-Example
--------
+Tutorial
+--------
 
-The following code snippet executes an environment where all leg joints of the fly repeat a sinusoidal motion. The output will be saved as a video and the observation will be appended to a list. ::
+Please refer to this tutorial for a demo of the MuJoCo environment:
 
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from pathlib import Path
-    from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
+.. raw:: html
 
-    # First, we initialize simulation
-    run_time = 0.1
-    out_dir = Path('mujoco_basic_untethered_sinewave')
-    nmf = NeuroMechFlyMuJoCo(render_mode='saved', output_dir=out_dir)
-
-    # Define the frequency, phase, and amplitude of the sinusoidal waves
-    freq = 500
-    phase = 2 * np.pi * np.random.rand(len(nmf.actuators))
-    amp = 0.9
-
-    obs_list = []    # keep track of the observed states
-    while nmf.curr_time <= run_time:    # main loop
-        joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
-        action = {'joints': joint_pos}
-        obs, info = nmf.step(action)
-        nmf.render()
-        obs_list.append(obs)
-    nmf.close()
-
+    <a target="_blank" href="https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/main/notebooks/flygym_mujoco_tutorial.ipynb">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+    </a>
 
 API Reference
 -------------
