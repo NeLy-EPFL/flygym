@@ -124,7 +124,7 @@ For the modeling of locomotion, the leg DoFs are the most critical. In *Drosophi
 
 
 References
-~~~~~~~~~~
+----------
 - Lobato-Rios, V., Ramalingasetty, S. T., Özdil, P. G., Arreguit, J., Ijspeert, A. J., & Ramdya, P. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*, 19(5), 620-627. https://doi.org/10.1038/s41592-022-01466-7
 
 

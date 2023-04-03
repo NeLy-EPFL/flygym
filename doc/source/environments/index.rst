@@ -45,7 +45,7 @@ The **observation** is a dictionary of the following format::
 
     {
         'joints': np.ndarray,  # NumPy array of shape (3, num_dofs)
-                               # the 3 rows are the velocity, position,
+                               # the 3 rows are the position, velocity,
                                # and force at each DoF. The order of the
                                # DoFs is the same as ``env.actuated_joints``
         'fly': np.ndarray,  # NumPy array of shape (4, 3)
