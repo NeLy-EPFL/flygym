@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from pathlib import Path
 
 
 setup(
@@ -8,7 +9,8 @@ setup(
     author_email='sibo.wang@epfl.ch',
     description='Gym environments for NeuroMechFly in various physics simulators',
     packages=find_packages(),
-    package_data={'flygym': ['data/']},
+    package_data={'flygym': [str(x).replace('flygym/', '')
+                             for x in Path('flygym/data').rglob('*')]},
     include_package_data=True,
     python_requires='>=3.7',
     classifiers=[
