@@ -1,11 +1,6 @@
 Terrain
 =======
 
-.. contents:: On this page:
-    :local:
-    :class: this-will-duplicate-information-and-it-is-still-useful-here
-    :depth: 3
-
 General Information
 -------------------
 
@@ -16,7 +11,7 @@ The FlyGym package comes with various terrain types for the simulated fly to wal
 - 'blocks': terrain formed by blocks at random heights
 - 'ball': a spherical treadmill on which the fly is tethered (still under development)
 
-.. figure :: _static/terrain.jpg
+.. figure :: ../_static/terrain.jpg
    :width: 800
    :alt: Implemented terrain types
 
@@ -28,19 +23,12 @@ These terrain types are implemented in ``flygym.terrain``. Different terrain typ
    :members: __init__, get_spawn_position, spawn_entity
 
 
-MuJoCo Terrain API
-------------------
+.. _specifics:
 
-The following is the API reference for the terrain types for the MuJoCo version:
+Physics-Engine-Specific Details
+-------------------------------
 
-.. autoclass:: flygym.terrain.mujoco_terrain.FlatTerrain
-   :members: __init__, get_spawn_position, spawn_entity
+.. toctree::
+   :maxdepth: 2
 
-.. autoclass:: flygym.terrain.mujoco_terrain.GapedTerrain
-   :members: __init__, get_spawn_position, spawn_entity
-
-.. autoclass:: flygym.terrain.mujoco_terrain.ExtrudingBlocksTerrain
-   :members: __init__, get_spawn_position, spawn_entity
-
-.. autoclass:: flygym.terrain.mujoco_terrain.Ball
-   :members: __init__, get_spawn_position, spawn_entity
+   mujoco
