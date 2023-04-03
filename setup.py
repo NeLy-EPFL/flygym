@@ -8,6 +8,7 @@ setup(
     author_email='sibo.wang@epfl.ch',
     description='Gym environments for NeuroMechFly in various physics simulators',
     packages=find_packages(),
+    package_data={'flygym': ['data/*']},
     include_package_data=True,
     python_requires='>=3.7',
     classifiers=[
