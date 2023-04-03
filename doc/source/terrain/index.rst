@@ -7,7 +7,7 @@ General Information
 The FlyGym package comes with various terrain types for the simulated fly to walk on:
 
 - 'flat': a simple flat floor
-- 'gaped': a floor with gaps perpendicular to the fly's walking direction
+- 'gapped': a floor with gaps perpendicular to the fly's walking direction
 - 'blocks': terrain formed by blocks at random heights
 - 'ball': a spherical treadmill on which the fly is tethered (still under development)
 

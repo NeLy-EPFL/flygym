@@ -29,7 +29,7 @@ Gymnasium is "a standard API [(Application Programming Interface)] for reinforce
 
 The environments in this package serve as wrappers to provide a unified interface to interact with fly model in different physics simulators (MuJoCo, Isaac Gym, PyBullet). The goal is to provide a consolidated API like the following to interact with the fly simulation::
 
-   env = MyEnvironement(...)
+   env = MyEnvironment(...)
    obs = env.reset()
 
    for step in range(1000):

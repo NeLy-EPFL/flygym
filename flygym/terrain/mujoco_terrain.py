@@ -38,7 +38,7 @@ class FlatTerrain(BaseTerrain):
         return rel_pos, rel_angle
 
 
-class GapedTerrain(BaseTerrain):
+class GappedTerrain(BaseTerrain):
     """Terrain with horizontal gaps.
     
     Attributes
