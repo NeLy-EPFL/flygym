@@ -29,7 +29,15 @@ The model uses the following coordinate system: the ground plane is the x-y plan
 Body Parts
 ----------
 
-A "joint" links two body parts. Note that in physics simulation, "joint" refers to a single degree of freedom (DoF). Therefore, if a (biological) joint has multiple DoFs (such as the thorax-coxa joint), the (biological) joint is implemented as multiple joint links. As a result, the same (biological) body segment is simulated with multiple body segments to allow for the "virtual" links between different DoFs on the same joint. Any unlabelled link is a *pitch* DoF. Any link with a suffix of ``_roll`` is a *roll* DoF. Any link with a suffix of ``_yaw`` is a *yaw* DoF (see :ref:`coords`). 
+The biomechanical model consists of a set of rigid body parts. The body parts relevant to locomotion is shown below:
+
+.. figure :: _static/fly_anatomy.jpg
+   :width: 600
+   :alt: Fly anatomy
+
+   Source: Chyb, S., & Gompel, N. (2013). *Atlas of Drosophila Morphology*. doi:10.1016/c2009-0-61936-x
+
+A "joint" links two body parts (see :ref:`joints`). Note that in physics simulation, "joint" refers to a single degree of freedom (DoF). Therefore, if a (biological) joint has multiple DoFs (such as the thorax-coxa joint), the (biological) joint is implemented as multiple joint links. As a result, the same (biological) body segment is simulated with multiple body segments to allow for the "virtual" links between different DoFs on the same joint. Any unlabelled link is a *pitch* DoF. Any link with a suffix of ``_roll`` is a *roll* DoF. Any link with a suffix of ``_yaw`` is a *yaw* DoF (see :ref:`coords`). 
 
 The following is the complete list of body parts defined in the model. In general, ``L`` and ``R`` indicate the left and right side. ``F``, ``M``, ``H`` indicate the fore-, mid-, and hindlegs. ``An`` indicate the ``n``-th segement of the abdomen. For example, ``RHFemur`` means the femur of the right hindleg; ``LFTarsus1`` means the first tarsus link of the left foreleg, and ``A1A2`` means the fused first and second segments of the abdomen. ::
 
