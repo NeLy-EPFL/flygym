@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 import imageio
+import copy
 import logging
 from typing import List, Tuple, Dict, Any
 from pathlib import Path
@@ -25,22 +26,25 @@ except ImportError:
 from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.data import default_pose_path
+from flygym.util.data import default_pose_path, stretch_pose_path
 from flygym.util.config import all_leg_dofs
 
 
 _init_pose_lookup = {
     'default': default_pose_path,
+    'stretch': stretch_pose_path,
 }
 _default_terrain_config = {
     'flat': {
         'size': (50_000, 50_000),
-        'fly_pos': (0, 0, 600),
+        'friction': (1, 0.005, 0.0001),
+        'fly_pos': (0, 0, 300),
         'fly_orient': (0, 1, 0, 0.1)
     },
     'gapped': {
         'x_range': (-10_000, 10_000),
         'y_range': (-10_000, 10_000),
+        'friction': (1, 0.005, 0.0001),
         'gap_width': 200,
         'block_width': 1000,
         'gap_depth': 2000,
@@ -50,6 +54,7 @@ _default_terrain_config = {
     'blocks': {
         'x_range': (-10_000, 10_000),
         'y_range': (-10_000, 10_000),
+        'friction': (1, 0.005, 0.0001),
         'block_size': 1000,
         'height_range': (300, 300),
         'rand_seed': 0,
@@ -59,8 +64,13 @@ _default_terrain_config = {
     'ball': {
         'radius': ...,
         'fly_pos': (0, 0, ...),
-        'fly_orient': (0, 1, 0, ...)
+        'fly_orient': (0, 1, 0, ...),
     },
+}
+_default_physics_config = {
+    'joint_stiffness': 2500,
+    'friction': (1, 0.005, 0.0001),
+    'gravity': (0, 0, -9.81e5),
 }
 _default_render_config = {
     'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60},
@@ -92,6 +102,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
     terrain_config : Dict[str, Any]
         Terrain configuration. Allowed parameters depend on the terrain
         type (``terrain``).
+    physics_config : Dict[str, Any]
+        Physics configuration (gravity, joint stiffness, etc).
     control : str
         The joint controller type. Can be 'position', 'velocity', or
         'torque'.
@@ -122,7 +134,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         'render_modes': ['headless', 'viewer', 'saved'],
         'terrain': ['flat', 'gapped', 'blocks', 'ball'],
         'control': ['position', 'velocity', 'torque'],
-        'init_pose': ['default']
+        'init_pose': ['default', 'stretch']
     }
     
     def __init__(self,
@@ -133,6 +145,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                  output_dir: Path = None,
                  terrain: str = 'flat',
                  terrain_config: Dict[str, Any] = {},
+                 physics_config: Dict[str, Any] = {},
                  control: str = 'position',
                  init_pose: str = 'default',
                  ) -> None:
@@ -162,35 +175,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         terrain_config : Dict[str, Any], optional
             Terrain configuration. Allowed parameters depend on the
             terrain type.
+        physics_config : Dict[str, Any], optional
+            Physics configuration (gravity, joint stiffness, etc).
         control : str, optional
             The joint controller type. Can be 'position', 'velocity', or
             'torque'., by default 'position'
         init_pose : str, optional
             Which initial pose to start the simulation from. Currently only
             'default' is implemented.
-
-        Notes
-        -----
-        The allowed parameters for ``render_config`` (depending on the
-        rendering mode) and their default values are::
-        
-            _default_render_config = {
-                'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60},
-            }
-        
-        The allowed parameters for ``terrain_config`` (depending on the
-        terrain type) and their default values are::
-        
-            _default_terrain_config = {
-                'flat': {'size': (50_000, 50_000),
-                        'fly_placement': ((0, 0, 600), (0, 1, 0, 0.1))},
-                'ball': {'radius': ...,
-                        'fly_placement': ((0, 0, ...), (0, 1, 0, ...))},
-            }
-        
         """
         self.render_mode = render_mode
-        self.render_config = _default_render_config[render_mode]
+        self.render_config = copy.deepcopy(_default_render_config[render_mode])
         self.render_config.update(render_config)
         self.actuated_joints = actuated_joints
         self.timestep = timestep
@@ -199,10 +194,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir = output_dir
         self.terrain = terrain
-        self.terrain_config = _default_terrain_config[terrain]
+        self.terrain_config = copy.deepcopy(_default_terrain_config[terrain])
         self.terrain_config.update(terrain_config)
+        self.physics_config = copy.deepcopy(_default_physics_config)
+        self.physics_config.update(physics_config)
         self.control = control
-        self.init_pose = init_pose
         
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -230,7 +226,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         with open(_init_pose_lookup[init_pose]) as f:
             init_pose = {k: np.deg2rad(v)
                          for k, v in yaml.safe_load(f)['joints'].items()}
-        init_pose = {k: v for k, v in init_pose.items() if k in actuated_joints}
+        self.init_pose = {k: v for k, v in init_pose.items()
+                          if k in actuated_joints}
         
         # Fix unactuated joints and define list of actuated joints
         # for joint in model.find_all('joint'):
@@ -277,25 +274,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                              objtype='body', objname='Thorax')
         ]
         
-        
-        # Set all bodies to default position (joint angle) even if the
-        # joint is unactuated
-        for body in self.model.find_all('body'):
-            if (key := f'joint_{body.name}') in init_pose:
-                if body.name.endswith('_yaw'):
-                    rot_axis = [1, 0, 0]
-                elif body.name.endswith('_roll'):
-                    rot_axis = [0, 0, 1]
-                else:    # pitch
-                    rot_axis = [0, 1, 0]
-                # replace hardcoded quaternion with axis-angle
-                # (x, y, z, angle). See https://mujoco.readthedocs.io/en/stable/XMLreference.html#corientation
-                del body.quat
-                body.axisangle = [*rot_axis, init_pose[key]]
-        
         # Add arena and put fly in it
         if terrain == 'flat':
-            my_terrain = FlatTerrain(size=self.terrain_config['size'])
+            my_terrain = FlatTerrain(
+                size=self.terrain_config['size'],
+                friction=self.terrain_config['friction']
+            )
             my_terrain.spawn_entity(self.model,
                                     rel_pos=self.terrain_config['fly_pos'],
                                     rel_angle=self.terrain_config['fly_orient'])
@@ -306,7 +290,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 y_range=self.terrain_config['y_range'],
                 gap_width=self.terrain_config['gap_width'],
                 block_width=self.terrain_config['block_width'],
-                gap_depth=self.terrain_config['gap_depth']
+                gap_depth=self.terrain_config['gap_depth'],
+                friction=self.terrain_config['friction']
             )
             my_terrain.spawn_entity(self.model,
                                     rel_pos=self.terrain_config['fly_pos'],
@@ -318,7 +303,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 y_range=self.terrain_config['y_range'],
                 block_size=self.terrain_config['block_size'],
                 height_range=self.terrain_config['height_range'],
-                rand_seed=self.terrain_config['rand_seed']
+                rand_seed=self.terrain_config['rand_seed'],
+                friction=self.terrain_config['friction']
             )
             my_terrain.spawn_entity(self.model,
                                     rel_pos=self.terrain_config['fly_pos'],
@@ -335,8 +321,64 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._eff_render_interval = (self.render_config['playspeed'] /
                                          self.render_config['fps'])
         self._frames = []
+        
+        # Ad hoc changes to gravity, stiffness, and friction
+        for geom in [geom.name for geom in arena.find_all('geom')]:
+            if 'collision' in geom:
+                self.physics.model.geom(f'Animat/{geom}').friction = \
+                    self.physics_config['friction']
+        # self.physics.model.geom("ground").friction = self.physics_config['friction']
+        
+        for joint in self.actuated_joints:
+            if joint is not None:
+                self.physics.model.joint(f'Animat/{joint}').stiffness = \
+                    self.physics_config['joint_stiffness']
+        
+        self.physics.model.opt.gravity = self.physics_config['gravity']
+        
+        # set complaint tarsus
+        all_joints = [joint.name for joint in arena.find_all('joint')]
+        self._set_compliant_Tarsus(all_joints, kp=5.0, stiff=0.0)
+        # set init pose
+        self._set_init_pose(self.init_pose)
+            
+    
+    def _set_init_pose(self, init_pose: Dict[str, float]):
+        with self.physics.reset_context():
+            for i in range(len(self.actuated_joints)):
+                if ((self.actuators[i].joint.name in self.actuated_joints) and
+                        (self.actuators[i].joint.name in init_pose)):
+                    angle_0 = init_pose[self.actuators[i].joint.name]
+                    self.physics.named.data.qpos[
+                        f'Animat/{self.actuators[i].joint.name}'
+                    ] = angle_0
     
     
+    def _set_compliant_Tarsus(self,
+                              all_joints: List,
+                              kp: float = 5,
+                              stiff: float = 0.0,
+                              damping: float = 100):
+        """Set the Tarsus2/3/4/5 to be compliant by setting the kp
+        stifness and damping to a low value"""
+        for actuator in self.actuators:
+            if (('position' in actuator.name) and
+                    ('Tarsus' in actuator.name) and
+                    (not 'Tarsus1' in actuator.name)):
+                self.physics.model.actuator(
+                    f'Animat/{actuator.name}'
+                ).gainprm[0] = kp
+
+        for joint in all_joints:
+            if joint is None:
+                continue
+            if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
+                self.physics.model.joint(f'Animat/{joint}').stiffness = stiff
+                self.physics.model.joint(f'Animat/{joint}').damping = damping
+        
+        self.physics.reset()
+                    
+                    
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
@@ -394,6 +436,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             width, height = self.render_config['window_size']
             img = self.physics.render(width=width, height=height)
             self._frames.append(img.copy())
+            self._last_render_time = self.curr_time
         else:
             raise NotImplementedError
     

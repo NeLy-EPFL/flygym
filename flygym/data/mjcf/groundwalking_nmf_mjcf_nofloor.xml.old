@@ -697,11 +697,19 @@
         </body>
       </body>
     </body>
-    <light name="light_animat" class="nmf" mode="trackcom" directional="false" castshadow="true" active="true" pos="-1 1 1" dir="1 -1 -3" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
-    <camera name="camera_0" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="3.5355339059327369 -6.1237243569579451 7.0710678118654755" quat="-0.89239910083252283 -0.36964381061438611 -0.099045760541287622 -0.23911761839433449"/>
+    <!-- <light name="light_animat" class="nmf" mode="trackcom" directional="false" castshadow="true" active="true" pos="-1 1 1" dir="1 -1 -3" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/> -->
+    <light name="light_animat_top" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 80000" dir="0 0 -1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
+    <light name="light_animat_bottom" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 -80000" dir="0 0 1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
+    <!-- <camera name="camera_0" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="3.5355339059327369 -6.1237243569579451 7.0710678118654755" quat="-0.89239910083252283 -0.36964381061438611 -0.099045760541287622 -0.23911761839433449"/>
     <camera name="camera_1" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="0 0 10" quat="-1 0 0 0"/>
     <camera name="camera_2" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="0 -10 2" quat="-0.80901699437494745 -0.58778525229247314 0 0"/>
-    <camera name="camera_3" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="-10 0 2" quat="-0.57206140281768436 -0.41562693777745346 0.41562693777745341 0.57206140281768425"/>
+    <camera name="camera_3" class="nmf" mode="trackcom" fovy="70.0" ipd="0.068" pos="-10 0 2" quat="-0.57206140281768436 -0.41562693777745346 0.41562693777745341 0.57206140281768425"/> -->
+    <camera name="camera_back" class="nmf" mode="track" ipd="0.068" pos="-8000 0 0" euler="1.57 -1.57 0"/>
+    <camera name="camera_front" class="nmf" mode="track" ipd="0.068" pos="8000 0 0" euler="1.57 1.57 0"/>
+    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8000 0" euler="-1.57 0 3.14"/>
+    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8000 0" euler="1.57 0 0"/>
+    <camera name="camera_top" class="nmf" mode="track"  ipd="0.068" pos="0 0 8000" euler="0 0 0"/>
+    <camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8000" euler="0 3.14 0"/>
   </worldbody>
   <actuator>
     <position name="actuator_position_joint_Head_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_Head_yaw" kp="900000.0"/>
