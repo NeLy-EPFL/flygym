@@ -18,10 +18,14 @@ class FlatTerrain(BaseTerrain):
     ----------
     size : Tuple[int, int]
         The size of the terrain in (x, y) dimensions.
+    friction : Tuple[float, float, float]
+        Sliding, torsional, and rolling friction coefficients, by
+        default (1, 0.005, 0.0001)
     """
     
     def __init__(self,
-                 size=(50_000, 50_000)):
+                 size: Tuple[float, float] = (50_000, 50_000),
+                 friction: Tuple[float, float, float] = (100, 0.005, 0.0001)):
         self.arena = mjcf.RootElement()
         ground_size = [*size, 1]
         chequered = self.arena.asset.add('texture', type='2d',
@@ -31,7 +35,8 @@ class FlatTerrain(BaseTerrain):
         grid = self.arena.asset.add('material', name='grid', texture=chequered,
                                     texrepeat=(10, 10), reflectance=0.1)
         self.arena.worldbody.add('geom', type='plane', name='ground',
-                                 material=grid, size=ground_size)
+                                 material=grid, size=ground_size,
+                                 friction=friction)
     
     def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
                            ) -> Tuple[np.ndarray, np.ndarray]:
@@ -54,6 +59,9 @@ class GappedTerrain(BaseTerrain):
         default (-10_000, 10_000)
     y_range : Tuple[int, int]
         Same as above in y, by default (-10_000, 10_000)
+    friction : Tuple[float, float, float]
+        Sliding, torsional, and rolling friction coefficients, by
+        default (1, 0.005, 0.0001)
     gap_width : int
         Width of each gap, by default 200
     block_width : int
@@ -65,6 +73,7 @@ class GappedTerrain(BaseTerrain):
     def __init__(self,
                  x_range: Tuple[int, int] = (-10_000, 10_000),
                  y_range: Tuple[int, int] = (-10_000, 10_000),
+                 friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
                  gap_width: int = 200,
                  block_width: int = 1000,
                  gap_depth: int = 2000
@@ -87,7 +96,7 @@ class GappedTerrain(BaseTerrain):
                                         reflectance=0.1)
         for x_pos in block_centers:
             self.arena.worldbody.add('geom', type='box', size=box_size,
-                                     pos=(x_pos, 0, 0),
+                                     pos=(x_pos, 0, 0), friction=friction,
                                      rgba=(0.3, 0.3, 0.3, 1), material=obstacle)
     
         # add floor underneath
@@ -125,6 +134,9 @@ class ExtrudingBlocksTerrain(BaseTerrain):
         default (-10_000, 10_000)
     y_range : Tuple[int, int], optional
         Same as above in y, by default (-10_000, 10_000)
+    friction : Tuple[float, float, float]
+        Sliding, torsional, and rolling friction coefficients, by
+        default (1, 0.005, 0.0001)
     block_size : int, optional
         The side length of the rectangular blocks forming the terrain,
         by default 1000
@@ -139,6 +151,7 @@ class ExtrudingBlocksTerrain(BaseTerrain):
     def __init__(self,
                  x_range: Tuple[int, int] = (-10_000, 10_000),
                  y_range: Tuple[int, int] = (-10_000, 10_000),
+                 friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
                  block_size: int = 1000,
                  height_range: Tuple[int, int] = (300, 300),
                  rand_seed: int = 0):
@@ -172,7 +185,8 @@ class ExtrudingBlocksTerrain(BaseTerrain):
                                                height / 2),
                                          pos=(x_pos, y_pos, height / 2),
                                          rgba=(0.3, 0.3, 0.3, 1),
-                                         material=obstacle)
+                                         material=obstacle,
+                                         friction=friction)
     
     def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
                            ) -> Tuple[np.ndarray, np.ndarray]:

@@ -8,12 +8,14 @@ from pathlib import Path
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
 
 # First, we initialize simulation
-run_time = 0.1
+run_time = 1
 out_dir = Path('mujoco_basic_untethered_sinewave')
-nmf = NeuroMechFlyMuJoCo(render_mode='saved', output_dir=out_dir)
+nmf = NeuroMechFlyMuJoCo(render_mode='saved', output_dir=out_dir,
+                         init_pose='stretch',
+                         render_config={'playspeed': 0.2})
 
 # Define the frequency, phase, and amplitude of the sinusoidal waves
-freq = 500
+freq = 20
 phase = 2 * np.pi * np.random.rand(len(nmf.actuators))
 amp = 0.9
 
