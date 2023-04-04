@@ -23,8 +23,6 @@ These terrain types are implemented in ``flygym.terrain``. Different terrain typ
    :members: __init__, get_spawn_position, spawn_entity
 
 
-.. _specifics:
-
 Physics-Engine-Specific Details
 -------------------------------
 

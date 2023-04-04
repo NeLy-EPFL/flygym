@@ -4,13 +4,29 @@ MuJoCo Specifics
 Tutorial
 --------
 
-Please refer to this tutorial for a demo of the MuJoCo environment:
+You might want to start with the following demo tutorials:
 
-.. raw:: html
+.. list-table::
+   :widths: 60 30
+   :header-rows: 1
 
-    <a target="_blank" href="https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/main/notebooks/flygym_mujoco_tutorial.ipynb">
-        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-    </a>
+   * - Tutorial
+     - Colab Link
+   * - Basic control
+     - .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :alt: Open In Colab
+        :target: https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/main/notebooks/mujoco_sinewave.ipynb
+
+   * - Replaying recorded behavior
+     - .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :alt: Open In Colab
+        :target: https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/main/notebooks/mujoco_replay.ipynb
+   
+   * - Complex terrain
+     - .. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :alt: Open In Colab
+        :target: https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/main/notebooks/mujoco_terrain.ipynb
+
 
 API Reference
 -------------
