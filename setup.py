@@ -24,7 +24,8 @@ setup(
         'mediapy',
         'imageio',
         'imageio[pyav]',
-        'imageio[ffmpeg]'
+        'imageio[ffmpeg]',
+        'tqdm'
     ],
     extras_require={
         'mujoco': ['mujoco', 'dm_control'],
