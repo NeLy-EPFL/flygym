@@ -25,9 +25,9 @@ class BaseTerrain(ABC):
                            ) -> Tuple[np.ndarray, np.ndarray]:
         """Given a relative entity spawn position and orientation (as
         if it was a simple flat terrain), return the abjusted position
-        and orientation. This is useful for terrains that have complex
-        terrain (eg. with obstacles) where the entity's spawn position
-        to be shifted accordingly.
+        and orientation. This is useful for environments that have
+        complex terrain (eg. with obstacles) where the entity's spawn
+        position needs to be shifted accordingly.
 
         Parameters
         ----------
