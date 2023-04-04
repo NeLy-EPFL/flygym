@@ -10,7 +10,7 @@ if not data_path.is_dir():
     )
 
 # MuJoCo
-mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor.xml'
+mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
 
 # Isaac Gym
 ...
@@ -20,3 +20,4 @@ mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_noflo
 
 # Pose
 default_pose_path = data_path / 'pose/pose_default.yaml'
+stretch_pose_path = data_path / 'pose/pose_stretch.yaml'
