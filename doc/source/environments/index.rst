@@ -4,7 +4,7 @@ Interacting with an Environment
 Overview
 --------
 
-Gymnasium (a continuation of the now deprecated OpenAI Gym) is a toolkit for developing and comparing control algorithms. It provides a diverse collection of environments, ranging from classic control problems, Atari games, board games, and robotics simulations. Here, we have implemented NeuroMechFly as a Gym environment for you to interact with. Gym environments are designed to offer a standardized interface for controllers, in particular RL agents, to interact with. This standardization makes it easier to develop, benchmark, and compare algorithms.
+Gymnasium (a continuation of the now deprecated OpenAI Gym) is a toolkit for developing and comparing control algorithms. It provides a diverse collection of environments, ranging from classic control problems, Atari games, board games, and robotics simulations. Here, we have implemented NeuroMechFly as a Gym environment for you to interact with. Gym environments are designed to offer a standardized interface for controllers, in particular reinforcement learning agents, to interact with. This standardization makes it easier to develop, benchmark, and compare algorithms.
 
 The overall steps for interacting with a Gym environment are:
 
