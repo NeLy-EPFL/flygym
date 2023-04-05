@@ -161,7 +161,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             'saved'.
         render_config : Dict[str, Any], optional
             Rendering configuration. Allowed parameters depend on the
-            rendering mode (``render_mode``).
+            rendering mode (``render_mode``). See :ref:`mujoco_config`
+            for detailed options.
         actuated_joints : List, optional
             List of actuated joint DoFs, by default all leg DoFs
         timestep : float, optional
@@ -174,9 +175,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
             The terrain type. Can be 'flat' or 'ball'. By default 'flat'
         terrain_config : Dict[str, Any], optional
             Terrain configuration. Allowed parameters depend on the
-            terrain type.
+            terrain type. See :ref:`mujoco_config` for detailed options.
         physics_config : Dict[str, Any], optional
-            Physics configuration (gravity, joint stiffness, etc).
+            Physics configuration (gravity, joint stiffness, etc). See
+            :ref:`mujoco_config` for detailed options.
         control : str, optional
             The joint controller type. Can be 'position', 'velocity', or
             'torque'., by default 'position'
@@ -256,13 +258,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                  name=f'actuatorfrc_motor_{joint}',
                                  actuator=f'actuator_torque_{joint}'),
             ])
-            # self.joint_sensors += [
-            #     model.sensor.find('sensor', f'jointpos_{joint}'),
-            #     model.sensor.find('sensor', f'jointvel_{joint}'),
-            #     model.sensor.find('sensor', f'actuatorfrc_position_{joint}'),
-            #     model.sensor.find('sensor', f'actuatorfrc_velocity_{joint}'),
-            #     model.sensor.find('sensor', f'actuatorfrc_motor_{joint}'),
-            # ]
         self.body_sensors = [
             self.model.sensor.add('framepos', name='thorax_pos',
                              objtype='body', objname='Thorax'),
@@ -327,7 +322,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if 'collision' in geom:
                 self.physics.model.geom(f'Animat/{geom}').friction = \
                     self.physics_config['friction']
-        # self.physics.model.geom("ground").friction = self.physics_config['friction']
         
         for joint in self.actuated_joints:
             if joint is not None:
