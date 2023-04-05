@@ -434,7 +434,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             return
         if self.render_mode == 'saved':
             width, height = self.render_config['window_size']
-            img = self.physics.render(width=width, height=height)
+            camera = self.render_config['camera']
+            img = self.physics.render(width=width, height=height, camera_id=camera)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
         else:
@@ -462,10 +463,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
+
+        # tarsi contact forces
          
         return {
             'joints': joint_obs,
             'fly': fly_pos,
+            'contact_forces': np.zeros(3)
         }
     
     
