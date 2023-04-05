@@ -3,7 +3,7 @@ import yaml
 import imageio
 import copy
 import logging
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
@@ -142,7 +142,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                  render_config: Dict[str, Any] = {},
                  actuated_joints: List = all_leg_dofs,
                  timestep: float = 0.0001,
-                 output_dir: Path = None,
+                 output_dir: Optional[Path] = None,
                  terrain: str = 'flat',
                  terrain_config: Dict[str, Any] = {},
                  physics_config: Dict[str, Any] = {},
@@ -168,9 +168,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         timestep : float, optional
             Simulation timestep in seconds, by default 0.0001
         output_dir : Path, optional
-            Directory to save simulation data. If ``None``, an
-            ``output`` directory will be created under the current
-            directory. By default None
+            Directory to save simulation data (by default just the video,
+            but you can extend this class to save additional data).
+            If ``None``, no data will be saved. By default None
         terrain : str, optional
             The terrain type. Can be 'flat' or 'ball'. By default 'flat'
         terrain_config : Dict[str, Any], optional
@@ -191,9 +191,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.render_config.update(render_config)
         self.actuated_joints = actuated_joints
         self.timestep = timestep
-        if output_dir is None:
-            output_dir = Path.cwd() / 'output'
-        output_dir.mkdir(parents=True, exist_ok=True)
+        if output_dir is not None:
+            output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir = output_dir
         self.terrain = terrain
         self.terrain_config = copy.deepcopy(_default_terrain_config[terrain])
@@ -386,9 +385,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
             the user can override this method to return additional
             information.
         """
-        # return super().reset(seed=seed, options)
         self.physics.reset()
         self.curr_time = 0
+        self._set_init_pose(self.init_pose)
+        self._frames = []
+        self._last_render_time = -np.inf
         return self._get_observation(), self._get_info()
     
     
@@ -466,13 +467,28 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def _get_info(self):
         return {}
     
+    def save_video(self, path: Path):
+        """Save rendered video since the beginning or the last
+        ``reset()``, whichever is the latest.
+        Only useful if ``render_mode`` is 'saved'.
+
+        Parameters
+        ----------
+        path : Path
+            Path to which the video should be saved.
+        """
+        if self.render_mode != 'saved':
+            logging.warning('Render mode is not "saved"; no video will be '
+                            'saved despite `save_video()` call.')
+        
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        logging.info(f'Saving video to {path}')
+        with imageio.get_writer(path, fps=self.render_config['fps']) as writer:
+            for frame in self._frames:
+                writer.append_data(frame)
+    
     
     def close(self):
         """Close the environment, save data, and release any resources."""
-        if self.render_mode == 'saved':
-            with imageio.get_writer(self.output_dir / 'video.mp4',
-                                    fps=self.render_config['fps']) as writer:
-                for frame in self._frames:
-                    writer.append_data(frame)
-        # Save data
-        ...
+        if self.render_mode == 'saved' and self.output_dir is not None:
+            self.save_video(self.output_dir / 'video.mp4')
