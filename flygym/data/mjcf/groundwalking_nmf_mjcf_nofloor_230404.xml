@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <mujoco model="Animat">
   <compiler autolimits="true" boundmass="1e-06" boundinertia="1e-06" angle="radian" eulerseq="xyz" convexhull="true" fusestatic="true"/>
-  <option timestep="0.0001" gravity="0 0 -9810000" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" mpr_iterations="100" collision="all"/>
+  <option timestep="0.0001" gravity="0 0 -9810000" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" mpr_iterations="100" collision="predefined"/>
   <size njmax="4096" nconmax="4096"/>
   <visual>
     <global offwidth="1280" offheight="720"/>
@@ -324,6 +324,7 @@
                     <joint name="joint_LFTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="100000.0" frictionloss="0.0"/>
                     <geom name="LFTarsus1_collision" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="4.7683716530855236e-05 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus1_collision" fluidcoef="0 0 0 0 0"/>
                     <geom name="LFTarsus1_visual" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="4.7683716530855236e-05 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus1_visual"/>
+
                     <inertial pos="8.2519054412841797 -3.517496632412076 -137.27636635303497" mass="4.64851133190333e-07" fullinertia="0.0020964557645231636 0.0021015949262804586 0.00017041431929651967 6.9055233648740828e-06 6.6763879480630491e-05 -6.6683636685964758e-05"/>
                     <body name="LFTarsus2" pos="1.4775395393371582 -0.82576274871826172 -225.51143169403076" quat="1 0 0 0">
                       <joint name="joint_LFTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="100000.0" frictionloss="0.0"/>
