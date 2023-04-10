@@ -15,6 +15,7 @@ FlyGym: Gymnasium environments for NeuroMechFly
    installation
    environments/index
    terrain/index
+   changelog
    develop
 
 `GitHub Repository <https://github.com/NeLy-EPFL/flygym>`_
