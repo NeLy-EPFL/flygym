@@ -3,8 +3,8 @@ set -e
 set -u
 
 # Find the absolute path of the flygym folder
-docker_dir=$(cd $(dirname $0); pwd -P)
-proj_root=$(dirname $(dirname $docker_dir))
+ig_docker_dir=$(realpath -P $(dirname $0))
+proj_root=$(dirname $(dirname $ig_docker_dir))
 cd $proj_root
 echo "Working in $(pwd)"
 
