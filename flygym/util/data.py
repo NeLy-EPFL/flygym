@@ -10,10 +10,15 @@ if not data_path.is_dir():
     )
 
 # MuJoCo
-mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
+mujoco_groundwalking_model_path = (
+    data_path / 'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
+)
 
 # Isaac Gym
-...
+isaacgym_asset_path = str(data_path)
+isaacgym_ground_walking_model_path = (
+    'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
+)
 
 # PyBullet
 ...
