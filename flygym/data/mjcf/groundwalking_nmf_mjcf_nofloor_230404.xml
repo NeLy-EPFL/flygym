@@ -795,10 +795,10 @@
     <position name="actuator_position_joint_RFTibia" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTibia" kp="2000000.0"/>
     <velocity name="actuator_velocity_joint_RFTibia" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTibia" kv="0.0"/>
     <motor name="actuator_torque_joint_RFTibia" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTibia"/>
-    <!--position name="actuator_position_joint_RFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus1" kp="2000000.0"/>
+    <position name="actuator_position_joint_RFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus1" kp="2000000.0"/>
     <velocity name="actuator_velocity_joint_RFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_RFTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus1"/>
-    <position name="actuator_position_joint_RFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus2" kp="1000000.0"/>
+    <!--position name="actuator_position_joint_RFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus2" kp="1000000.0"/>
     <velocity name="actuator_velocity_joint_RFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus2" kv="0.0"/>
     <motor name="actuator_torque_joint_RFTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus2"/>
     <position name="actuator_position_joint_RFTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus3" kp="1000000.0"/>
@@ -941,10 +941,10 @@
     <motor name="actuator_torque_joint_RHTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus4"/>
     <position name="actuator_position_joint_RHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus5" kp="1000000.0"/>
     <velocity name="actuator_velocity_joint_RHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_RHTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus5"/>
+    <motor name="actuator_torque_joint_RHTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus5"/-->
     <position name="actuator_position_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kp="2000000.0"/>
     <velocity name="actuator_velocity_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kv="0.0"/>
-    <motor name="actuator_torque_joint_LHCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHCoxa"/-->
+    <motor name="actuator_torque_joint_LHCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHCoxa"/>
     <position name="actuator_position_joint_LHCoxa_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa_yaw" kp="2000000.0"/>
     <velocity name="actuator_velocity_joint_LHCoxa_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa_yaw" kv="0.0"/>
     <motor name="actuator_torque_joint_LHCoxa_yaw" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHCoxa_yaw"/>
