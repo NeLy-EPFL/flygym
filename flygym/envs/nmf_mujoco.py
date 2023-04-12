@@ -377,7 +377,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all('joint')]
-        self._set_compliant_Tarsus(all_joints, stiff=0.0, damping=300)
+        self._set_compliant_Tarsus(all_joints, stiff=3.5e5, damping=100)
         # set init pose
         self._set_init_pose(self.init_pose)
 
@@ -402,6 +402,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 continue
             if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
                 self.physics.model.joint(f'Animat/{joint}').stiffness = stiff
+                #self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                 self.physics.model.joint(f'Animat/{joint}').damping = damping
 
         self.physics.reset()
