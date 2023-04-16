@@ -26,12 +26,13 @@ except ImportError:
 from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.data import default_pose_path, stretch_pose_path
+from flygym.util.data import default_pose_path, stretch_pose_path, zero_pose_path
 from flygym.util.config import all_leg_dofs, all_tarsi_collisions_geoms
 
 _init_pose_lookup = {
     'default': default_pose_path,
     'stretch': stretch_pose_path,
+    'zero': zero_pose_path,
 }
 _default_terrain_config = {
     'flat': {
@@ -133,7 +134,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         'render_modes': ['headless', 'viewer', 'saved'],
         'terrain': ['flat', 'gapped', 'blocks', 'ball'],
         'control': ['position', 'velocity', 'torque'],
-        'init_pose': ['default', 'stretch']
+        'init_pose': ['default', 'stretch', 'zero']
     }
 
     def __init__(self,
