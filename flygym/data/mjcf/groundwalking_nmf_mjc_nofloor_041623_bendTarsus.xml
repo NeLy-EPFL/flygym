@@ -297,7 +297,7 @@
         </body>
       </body>
       <body name="LFCoxa_roll" pos="-161.54563426971436 169.51037384569645 -230.35943508148193" quat="1 0 0 0">
-        <joint name="joint_LFCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0" frictionloss="0.0"/>
+        <joint name="joint_LFCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
         <inertial pos="-4.7683716530855236e-05 -1.1920929132713809e-05 0" mass="0.0" fullinertia="9.9999999999999995e-07 9.9999999999999995e-07 9.9999999999999995e-07 0 0 0"/>
         <body name="LFCoxa_yaw" pos="-5.9604644775390625e-05 -2.9802322387695312e-05 0" quat="1 0 0 0">
           <joint name="joint_LFCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
@@ -367,7 +367,7 @@
         </body>
       </body>
       <body name="LHCoxa_roll" pos="-783.72153639793396 86.993413046002388 -496.61201238632202" quat="1 0 0 0">
-        <joint name="joint_LHCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0" frictionloss="0.0"/>
+        <joint name="joint_LHCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
         <inertial pos="0 5.9604645663569045e-06 -9.5367433061710472e-05" mass="0.0" fullinertia="9.9999999999999995e-07 9.9999999999999995e-07 9.9999999999999995e-07 0 0 0"/>
         <body name="LHCoxa_yaw" pos="0 0 0" quat="1 0 0 0">
           <joint name="joint_LHCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
@@ -427,7 +427,7 @@
         </body>
       </body>
       <body name="LMCoxa_roll" pos="-556.87103420495987 124.90093149244785 -482.20914602279663" quat="1 0 0 0">
-        <joint name="joint_LMCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0" frictionloss="0.0"/>
+        <joint name="joint_LMCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
         <inertial pos="0 0 0.00019073486612342094" mass="0.0" fullinertia="9.9999999999999995e-07 9.9999999999999995e-07 9.9999999999999995e-07 0 0 0"/>
         <body name="LMCoxa_yaw" pos="0 -1.4901161193847656e-05 0.0002384185791015625" quat="1 0 0 0">
           <joint name="joint_LMCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="10000.0" frictionloss="0.0"/>
