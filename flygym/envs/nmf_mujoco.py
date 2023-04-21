@@ -333,15 +333,22 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.contacts = []
         self.contact_names = []
 
+        is_ground = lambda x: x is None or not ("visual" in x or "collision" in x)
+        is_tarsal = lambda x: "Tarsus" in x and "collision" in x
+
+        ground_id = 0
+
         for geom1 in arena.find_all("geom"):
             for geom2 in arena.find_all("geom"):
-                if (not ("visual" in geom1.name or "collision" in geom1.name) and
-                        ("Tarsus" in geom2.name and "collision" in geom2.name)):
+                if is_ground(geom1.name) and is_tarsal(str(geom2.name)):
+                    if geom1.name is None:
+                        geom1.name = f'groundblock_{ground_id}'
+                        ground_id += 1
                     # If not visual or collision in geom it is part of the ground
                     # Geom2 need to be a tarsus
                     self.contacts.append(arena.contact.add("pair",
                                                            name=f'{geom1.name}_{geom2.name}',
-                                                           geom1=geom1.name,
+                                                           geom1=str(geom1.name),
                                                            geom2=f'Animat/{geom2.name}',
                                                            solref="-1000000 -10000",
                                                            margin=0.0,
@@ -403,7 +410,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 continue
             if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
                 self.physics.model.joint(f'Animat/{joint}').stiffness = stiff
-                #self.physics.model.joint(f'Animat/{joint}').springref = 0.0
+                # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                 self.physics.model.joint(f'Animat/{joint}').damping = damping
 
         self.physics.reset()
