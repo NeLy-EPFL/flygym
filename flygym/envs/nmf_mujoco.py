@@ -259,6 +259,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                       name=f'actuatorfrc_motor_{joint}',
                                       actuator=f'actuator_torque_{joint}'),
             ])
+
         self.body_sensors = [
             self.model.sensor.add('framepos', name='thorax_pos',
                                   objtype='body', objname='Thorax'),
@@ -269,6 +270,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.sensor.add('frameangvel', name='thorax_angvel',
                                   objtype='body', objname='Thorax')
         ]
+
+        self.end_effector_sensors = []
+        self.end_effector_names = []
+        for body in self.model.find_all('body'):
+            if "Tarsus5" in body.name:
+                self.end_effector_names.append(body.name)
+                self.end_effector_sensors.append(self.model.sensor.add(
+                    'framepos', name=f'{body.name}_pos',
+                    objtype='body', objname=body.name)
+                )
 
         ## Add sites and touch sensors
         self.touch_sensors = []
@@ -519,10 +530,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # tarsi contact forces
         touch_sensordata = np.array(self.physics.bind(self.touch_sensors).sensordata)
 
+        # end effector position
+        ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
+
         return {
             'joints': joint_obs,
             'fly': fly_pos,
-            'contact_forces': touch_sensordata
+            'contact_forces': touch_sensordata,
+            'end_effectors': ee_pos
         }
 
     def _get_info(self):
