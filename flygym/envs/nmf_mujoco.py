@@ -27,12 +27,20 @@ from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.data import default_pose_path, stretch_pose_path, zero_pose_path
-from flygym.util.config import all_leg_dofs, all_tarsi_collisions_geoms
+from flygym.util.config import all_leg_dofs, all_tarsi_collisions_geoms, \
+    all_legs_collisions_geoms, all_legs_collisions_geoms_no_coxa
 
 _init_pose_lookup = {
     'default': default_pose_path,
     'stretch': stretch_pose_path,
     'zero': zero_pose_path,
+}
+_collision_lookup = {
+    'all': 'all',
+    'legs': all_legs_collisions_geoms,
+    'legs-no-coxa': all_legs_collisions_geoms_no_coxa,
+    'tarsi': all_tarsi_collisions_geoms,
+    'none': []
 }
 _default_terrain_config = {
     'flat': {
@@ -128,7 +136,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
         The MuJoCo sensors on thorax position and orientation.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
-    
+    self_contact_pairs: List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs that can be in contact with each other
+    self_contact_pair_names: List[str]
+        The names of the MuJoCo geom pairs that can be in contact with
+        each other
+    floor_contact_pairs: List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs that can be in contact with the floor
+    floor_contact_pair_names: List[str]
+        The names of the MuJoCo geom pairs that can be in contact with
+        the floor
+    touch_sensors: List[dm_control.mjcf.Element]
+        The MuJoCo touch sesnor used to conpute contact forces
+    end_effector_sensors: List[dm_control.mjcf.Element]
+        The set of position sensors on the end effectors
+
     """
     _metadata = {
         'render_modes': ['headless', 'viewer', 'saved'],
@@ -149,6 +171,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                  physics_config: Dict[str, Any] = {},
                  control: str = 'position',
                  init_pose: str = 'default',
+                 floor_collisions_geoms: str = 'legs',
+                 self_collisions_geoms: str = 'legs',
                  ) -> None:
         """Initialize a MuJoCo-based NeuroMechFly environment.
 
@@ -186,6 +210,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose : str, optional
             Which initial pose to start the simulation from. Currently only
             'default' is implemented.
+        floor_collisions_geoms :str
+            Which set of collisions should collide with the floor. Can be
+            'all', 'legs', or 'tarsi'.
+        self_collisions_geoms : str
+            Which set of collisions should collide with each other. Can be
+            'all', 'legs', 'legs-no-coxa', 'tarsi', or 'none'.
         """
         self.render_mode = render_mode
         self.render_config = copy.deepcopy(_default_render_config[render_mode])
@@ -271,6 +301,38 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                   objtype='body', objname='Thorax')
         ]
 
+        self_collisions_geoms = _collision_lookup[self_collisions_geoms]
+        if self_collisions_geoms == "all":
+            self_collisions_geoms = []
+            for geom in self.model.find_all('geom'):
+                if "collision" in geom.name:
+                    self_collisions_geoms.append(geom.name)
+
+        self.self_contact_pairs = []
+        self.self_contact_pairs_names = []
+
+        for geom1 in self_collisions_geoms:
+            for geom2 in self_collisions_geoms:
+                if geom1 != geom2 and not f'{geom1}_{geom2}' in self.self_contact_pairs_names:
+                    # Do not add contact if the parent bodies have a child parent relationship
+                    body1 = self.model.find("geom", geom1).parent
+                    body2 = self.model.find("geom", geom2).parent
+                    body1_children = [child.name for child in body1.all_children()
+                                      if child.tag == 'body']
+                    body2_children = [child.name for child in body2.all_children()
+                                        if child.tag == 'body']
+                    if not (body1.name == body2.name or body1.name in body2_children or body2.name in body1_children
+                            or body1.name in body2.parent.name or body2.name in body1.parent.name):
+                        self.self_contact_pairs.append(self.model.contact.add("pair",
+                                                                              name=f'{geom1}_{geom2}',
+                                                                              geom1=geom1,
+                                                                              geom2=geom2,
+                                                                              solref="-1000000 -10000",
+                                                                              margin=0.0
+                                                                              )
+                                                       )
+                        self.self_contact_pairs_names.append(f'{geom1}_{geom2}')
+
         self.end_effector_sensors = []
         self.end_effector_names = []
         for body in self.model.find_all('body'):
@@ -335,35 +397,39 @@ class NeuroMechFlyMuJoCo(gym.Env):
             raise NotImplementedError
 
         # Add collision between the ground and the fly
-        self.contacts = []
-        self.contact_names = []
+        floor_collisions_geoms = _collision_lookup[floor_collisions_geoms]
 
+        self.floor_contact_pairs = []
+        self.floor_contact_pairs_names = []
         is_ground = lambda x: x is None or not ("visual" in x or "collision" in x)
-        is_tarsal = lambda x: "Tarsus" in x and "collision" in x
-
         ground_id = 0
 
-        for geom1 in arena.find_all("geom"):
-            for geom2 in arena.find_all("geom"):
-                if is_ground(geom1.name) and is_tarsal(str(geom2.name)):
-                    if geom1.name is None:
-                        geom1.name = f'groundblock_{ground_id}'
+        if floor_collisions_geoms == "all":
+            floor_collisions_geoms = []
+            for geom in self.model.find_all('geom'):
+                if "collision" in geom.name:
+                    floor_collisions_geoms.append(geom.name)
+
+        for floor_geom in arena.find_all("geom"):
+            for animat_geom_name in floor_collisions_geoms:
+                if is_ground(floor_geom.name):
+                    if floor_geom.name is None:
+                        floor_geom.name = f'groundblock_{ground_id}'
                         ground_id += 1
-                    # If not visual or collision in geom it is part of the ground
-                    # Geom2 need to be a tarsus
-                    self.contacts.append(arena.contact.add("pair",
-                                                           name=f'{geom1.name}_{geom2.name}',
-                                                           geom1=str(geom1.name),
-                                                           geom2=f'Animat/{geom2.name}',
-                                                           solref="-1000000 -10000",
-                                                           margin=0.0,
-                                                           friction=np.repeat(
-                                                               np.mean([self.physics_config['friction'],
-                                                                        self.terrain_config['friction']], axis=0),
-                                                               (2, 1, 2))
-                                                           )
-                                         )
-                    self.contact_names.append(f'{geom1.name}-{geom2.name}')
+                    self.floor_contact_pairs.append(arena.contact.add("pair",
+                                                                      name=f'{floor_geom.name}_{animat_geom_name}',
+                                                                      geom1=f'Animat/{animat_geom_name}',
+                                                                      geom2=f'{floor_geom.name}',
+                                                                      solref="-1000000 -10000",
+                                                                      margin=0.0,
+                                                                      friction=np.repeat(
+                                                                          np.mean([self.physics_config['friction'],
+                                                                                   self.terrain_config['friction']],
+                                                                                  axis=0),
+                                                                          (2, 1, 2))
+                                                                      )
+                                                    )
+                    self.floor_contact_pairs_names.append(f'{floor_geom.name}_{animat_geom_name}')
 
         arena.option.timestep = timestep
         self.physics = mjcf.Physics.from_mjcf_model(arena)
@@ -489,16 +555,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == 'saved':
             width, height = self.render_config['window_size']
             camera = self.render_config['camera']
-
-            """for i, geom in enumerate(self.collision_tracked_geoms):
-                vis_geom = geom.replace('collision', 'visual')
-                touch_intensity = self.physics.bind(self.touch_sensors[i]).sensordata[0]
-                if touch_intensity > 0:
-                    # Empirically highest observed contact force is 500
-                    self.physics.model.geom(f'Animat/{vis_geom}').rgba = np.array([0.8, 0.2, 0.2, touch_intensity/500])
-                else:
-                    self.physics.model.geom(f'Animat/{vis_geom}').rgba = np.array([0.5, 0.5, 0.5, 1.0])"""
-
             img = self.physics.render(width=width, height=height, camera_id=camera)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
@@ -542,7 +598,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _get_info(self):
         return {}
-    
+
     def save_video(self, path: Path):
         """Save rendered video since the beginning or the last
         ``reset()``, whichever is the latest.
@@ -556,14 +612,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode != 'saved':
             logging.warning('Render mode is not "saved"; no video will be '
                             'saved despite `save_video()` call.')
-        
+
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f'Saving video to {path}')
         with imageio.get_writer(path, fps=self.render_config['fps']) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
-    
-    
+
     def close(self):
         """Close the environment, save data, and release any resources."""
         if self.render_mode == 'saved' and self.output_dir is not None:
