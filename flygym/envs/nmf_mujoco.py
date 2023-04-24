@@ -26,7 +26,8 @@ except ImportError:
 from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.data import default_pose_path, stretch_pose_path, zero_pose_path
+from flygym.util.data import default_pose_path, stretch_pose_path, \
+    zero_pose_path
 from flygym.util.config import all_leg_dofs, all_tarsi_collisions_geoms, \
     all_legs_collisions_geoms, all_legs_collisions_geoms_no_coxa
 
@@ -81,7 +82,8 @@ _default_physics_config = {
     'gravity': (0, 0, -9.81e5),
 }
 _default_render_config = {
-    'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60, 'camera': 1},
+    'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60,
+              'camera': 1},
     'headless': {}
 }
 
@@ -313,24 +315,33 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         for geom1 in self_collisions_geoms:
             for geom2 in self_collisions_geoms:
-                if geom1 != geom2 and not f'{geom1}_{geom2}' in self.self_contact_pairs_names:
+                is_duplicate = f'{geom1}_{geom2}' in self.self_contact_pairs_names
+                if geom1 != geom2 and not is_duplicate:
+
                     # Do not add contact if the parent bodies have a child parent relationship
                     body1 = self.model.find("geom", geom1).parent
                     body2 = self.model.find("geom", geom2).parent
-                    body1_children = [child.name for child in body1.all_children()
+                    body1_children = [child.name
+                                      for child in body1.all_children()
                                       if child.tag == 'body']
-                    body2_children = [child.name for child in body2.all_children()
-                                        if child.tag == 'body']
-                    if not (body1.name == body2.name or body1.name in body2_children or body2.name in body1_children
-                            or body1.name in body2.parent.name or body2.name in body1.parent.name):
-                        self.self_contact_pairs.append(self.model.contact.add("pair",
-                                                                              name=f'{geom1}_{geom2}',
-                                                                              geom1=geom1,
-                                                                              geom2=geom2,
-                                                                              solref="-1000000 -10000",
-                                                                              margin=0.0
-                                                                              )
-                                                       )
+                    body2_children = [child.name
+                                      for child in body2.all_children()
+                                      if child.tag == 'body']
+
+                    if not (body1.name == body2.name or
+                            body1.name in body2_children or
+                            body2.name in body1_children or
+                            body1.name in body2.parent.name or
+                            body2.name in body1.parent.name):
+                        contact_pair = self.model.contact.add(
+                            "pair",
+                            name=f'{geom1}_{geom2}',
+                            geom1=geom1,
+                            geom2=geom2,
+                            solref="-1000000 -10000",
+                            margin=0.0
+                        )
+                        self.self_contact_pairs.append(contact_pair)
                         self.self_contact_pairs_names.append(f'{geom1}_{geom2}')
 
         self.end_effector_sensors = []
@@ -338,10 +349,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         for body in self.model.find_all('body'):
             if "Tarsus5" in body.name:
                 self.end_effector_names.append(body.name)
-                self.end_effector_sensors.append(self.model.sensor.add(
+                end_effector_sensor = self.model.sensor.add(
                     'framepos', name=f'{body.name}_pos',
-                    objtype='body', objname=body.name)
+                    objtype='body', objname=body.name
                 )
+                self.end_effector_sensors.append(end_effector_sensor)
 
         ## Add sites and touch sensors
         self.touch_sensors = []
@@ -349,13 +361,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         for tracked_geom in collision_tracked_geoms:
             geom = self.model.find("geom", tracked_geom)
             body = geom.parent
-            site = body.add('site', name=f'site_{geom.name}', size=np.ones(3) * 1000,
+            site = body.add('site', name=f'site_{geom.name}',
+                            size=np.ones(3) * 1000,
                             pos=geom.pos, quat=geom.quat, type='sphere',
                             group=3)
-            self.touch_sensors.append(
-                self.model.sensor.add('touch', name=f'touch_{geom.name}',
-                                      site=site.name)
-            )
+            touch_sensor = self.model.sensor.add('touch',
+                                                 name=f'touch_{geom.name}',
+                                                 site=site.name)
+            self.touch_sensors.append( touch_sensor)
 
         # Add arena and put fly in it
         if terrain == 'flat':
@@ -401,7 +414,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.floor_contact_pairs = []
         self.floor_contact_pairs_names = []
-        is_ground = lambda x: x is None or not ("visual" in x or "collision" in x)
         ground_id = 0
 
         if floor_collisions_geoms == "all":
@@ -410,26 +422,33 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 if "collision" in geom.name:
                     floor_collisions_geoms.append(geom.name)
 
-        for floor_geom in arena.find_all("geom"):
+        for geom in arena.find_all("geom"):
+            is_ground = (geom.name is None or
+                         not ("visual" in geom.name or
+                              "collision" in geom.name))
             for animat_geom_name in floor_collisions_geoms:
-                if is_ground(floor_geom.name):
-                    if floor_geom.name is None:
-                        floor_geom.name = f'groundblock_{ground_id}'
+                if is_ground:
+                    if geom.name is None:
+                        geom.name = f'groundblock_{ground_id}'
                         ground_id += 1
-                    self.floor_contact_pairs.append(arena.contact.add("pair",
-                                                                      name=f'{floor_geom.name}_{animat_geom_name}',
-                                                                      geom1=f'Animat/{animat_geom_name}',
-                                                                      geom2=f'{floor_geom.name}',
-                                                                      solref="-1000000 -10000",
-                                                                      margin=0.0,
-                                                                      friction=np.repeat(
-                                                                          np.mean([self.physics_config['friction'],
-                                                                                   self.terrain_config['friction']],
-                                                                                  axis=0),
-                                                                          (2, 1, 2))
-                                                                      )
-                                                    )
-                    self.floor_contact_pairs_names.append(f'{floor_geom.name}_{animat_geom_name}')
+
+                    floor_contact_pair = arena.contact.add(
+                        "pair",
+                        name=f'{geom.name}_{animat_geom_name}',
+                        geom1=f'Animat/{animat_geom_name}',
+                        geom2=f'{geom.name}',
+                        solref="-1000000 -10000",
+                        margin=0.0,
+                        friction=np.repeat(
+                            np.mean([self.physics_config['friction'],
+                                     self.terrain_config['friction']], axis=0),
+                            (2, 1, 2)
+                        )
+                    )
+                    self.floor_contact_pairs.append(floor_contact_pair)
+                    self.floor_contact_pairs_names.append(
+                        f'{geom.name}_{animat_geom_name}'
+                    )
 
         arena.option.timestep = timestep
         self.physics = mjcf.Physics.from_mjcf_model(arena)
@@ -555,7 +574,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == 'saved':
             width, height = self.render_config['window_size']
             camera = self.render_config['camera']
-            img = self.physics.render(width=width, height=height, camera_id=camera)
+            img = self.physics.render(width=width, height=height,
+                                      camera_id=camera)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
         else:
@@ -584,7 +604,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
         # tarsi contact forces
-        touch_sensordata = np.array(self.physics.bind(self.touch_sensors).sensordata)
+        touch_sensordata = np.array(
+            self.physics.bind(self.touch_sensors).sensordata)
 
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
