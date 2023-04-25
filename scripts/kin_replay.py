@@ -8,7 +8,7 @@ import pickle
 from pathlib import Path
 from tqdm import trange
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
-from flygym.util.config import leg_dofs_fused_tarsi
+from flygym.util.config import all_leg_dofs
 
 # Initialize simulation
 run_time = 1
@@ -18,7 +18,7 @@ nmf = NeuroMechFlyMuJoCo(render_mode='saved',
                          timestep=1e-4,
                          render_config={'playspeed': 0.1},
                          init_pose='stretch',
-                         actuated_joints=leg_dofs_fused_tarsi)
+                         actuated_joints=all_leg_dofs)
 
 # Load recorded data
 data_path = Path(pkg_resources.resource_filename('flygym', 'data'))
