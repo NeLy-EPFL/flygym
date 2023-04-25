@@ -25,7 +25,8 @@ setup(
         'imageio',
         'imageio[pyav]',
         'imageio[ffmpeg]',
-        'tqdm'
+        'tqdm',
+        'pytest'
     ],
     extras_require={
         'mujoco': ['mujoco', 'dm_control'],
