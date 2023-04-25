@@ -26,13 +26,22 @@ except ImportError:
 from flygym.terrain.mujoco_terrain import \
     FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.data import default_pose_path, stretch_pose_path
-from flygym.util.config import all_leg_dofs
-
+from flygym.util.data import default_pose_path, stretch_pose_path, \
+    zero_pose_path
+from flygym.util.config import all_leg_dofs, all_tarsi_collisions_geoms, \
+    all_legs_collisions_geoms, all_legs_collisions_geoms_no_coxa
 
 _init_pose_lookup = {
     'default': default_pose_path,
     'stretch': stretch_pose_path,
+    'zero': zero_pose_path,
+}
+_collision_lookup = {
+    'all': 'all',
+    'legs': all_legs_collisions_geoms,
+    'legs-no-coxa': all_legs_collisions_geoms_no_coxa,
+    'tarsi': all_tarsi_collisions_geoms,
+    'none': []
 }
 _default_terrain_config = {
     'flat': {
@@ -73,10 +82,11 @@ _default_physics_config = {
     'gravity': (0, 0, -9.81e5),
 }
 _default_render_config = {
-    'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60},
+    'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60,
+              'camera': 1},
     'headless': {}
 }
-    
+
 
 class NeuroMechFlyMuJoCo(gym.Env):
     """A NeuroMechFly environment using MuJoCo as the physics engine.
@@ -128,19 +138,34 @@ class NeuroMechFlyMuJoCo(gym.Env):
         The MuJoCo sensors on thorax position and orientation.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
-    
+    self_contact_pairs: List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs that can be in contact with each other
+    self_contact_pair_names: List[str]
+        The names of the MuJoCo geom pairs that can be in contact with
+        each other
+    floor_contact_pairs: List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs that can be in contact with the floor
+    floor_contact_pair_names: List[str]
+        The names of the MuJoCo geom pairs that can be in contact with
+        the floor
+    touch_sensors: List[dm_control.mjcf.Element]
+        The MuJoCo touch sesnor used to conpute contact forces
+    end_effector_sensors: List[dm_control.mjcf.Element]
+        The set of position sensors on the end effectors
+
     """
     _metadata = {
         'render_modes': ['headless', 'viewer', 'saved'],
         'terrain': ['flat', 'gapped', 'blocks', 'ball'],
         'control': ['position', 'velocity', 'torque'],
-        'init_pose': ['default', 'stretch']
+        'init_pose': ['default', 'stretch', 'zero']
     }
-    
+
     def __init__(self,
                  render_mode: str = 'saved',
                  render_config: Dict[str, Any] = {},
                  actuated_joints: List = all_leg_dofs,
+                 collision_tracked_geoms: List = all_tarsi_collisions_geoms,
                  timestep: float = 0.0001,
                  output_dir: Optional[Path] = None,
                  terrain: str = 'flat',
@@ -148,6 +173,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                  physics_config: Dict[str, Any] = {},
                  control: str = 'position',
                  init_pose: str = 'default',
+                 floor_collisions_geoms: str = 'legs',
+                 self_collisions_geoms: str = 'legs',
                  ) -> None:
         """Initialize a MuJoCo-based NeuroMechFly environment.
 
@@ -185,11 +212,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose : str, optional
             Which initial pose to start the simulation from. Currently only
             'default' is implemented.
+        floor_collisions_geoms :str
+            Which set of collisions should collide with the floor. Can be
+            'all', 'legs', or 'tarsi'.
+        self_collisions_geoms : str
+            Which set of collisions should collide with each other. Can be
+            'all', 'legs', 'legs-no-coxa', 'tarsi', or 'none'.
         """
         self.render_mode = render_mode
         self.render_config = copy.deepcopy(_default_render_config[render_mode])
         self.render_config.update(render_config)
         self.actuated_joints = actuated_joints
+        self.collision_tracked_geoms = collision_tracked_geoms
         self.timestep = timestep
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -200,7 +234,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics_config = copy.deepcopy(_default_physics_config)
         self.physics_config.update(physics_config)
         self.control = control
-        
+
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
         bound = np.pi if control == 'position' else np.inf
@@ -218,7 +252,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # 3rd row: rate of change of fly orientation
             'fly': spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
         }
-        
+
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
         self.model.option.timestep = timestep
@@ -229,7 +263,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                          for k, v in yaml.safe_load(f)['joints'].items()}
         self.init_pose = {k: v for k, v in init_pose.items()
                           if k in actuated_joints}
-        
+
         # Fix unactuated joints and define list of actuated joints
         # for joint in model.find_all('joint'):
         #     if joint.name not in actuated_joints:
@@ -238,36 +272,104 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.find('actuator', f'actuator_{control}_{joint}')
             for joint in actuated_joints
         ]
-        
+
         # Add sensors
         self.joint_sensors = []
         for joint in actuated_joints:
             self.joint_sensors.extend([
                 self.model.sensor.add('jointpos',
-                                 name=f'jointpos_{joint}', joint=joint),
+                                      name=f'jointpos_{joint}', joint=joint),
                 self.model.sensor.add('jointvel',
-                                 name=f'jointvel_{joint}', joint=joint),
+                                      name=f'jointvel_{joint}', joint=joint),
                 self.model.sensor.add('actuatorfrc',
-                                 name=f'actuatorfrc_position_{joint}',
-                                 actuator=f'actuator_position_{joint}'),
+                                      name=f'actuatorfrc_position_{joint}',
+                                      actuator=f'actuator_position_{joint}'),
                 self.model.sensor.add('actuatorfrc',
-                                 name=f'actuatorfrc_velocity_{joint}',
-                                 actuator=f'actuator_velocity_{joint}'),
+                                      name=f'actuatorfrc_velocity_{joint}',
+                                      actuator=f'actuator_velocity_{joint}'),
                 self.model.sensor.add('actuatorfrc',
-                                 name=f'actuatorfrc_motor_{joint}',
-                                 actuator=f'actuator_torque_{joint}'),
+                                      name=f'actuatorfrc_motor_{joint}',
+                                      actuator=f'actuator_torque_{joint}'),
             ])
+
         self.body_sensors = [
             self.model.sensor.add('framepos', name='thorax_pos',
-                             objtype='body', objname='Thorax'),
+                                  objtype='body', objname='Thorax'),
             self.model.sensor.add('framelinvel', name='thorax_linvel',
-                             objtype='body', objname='Thorax'),
+                                  objtype='body', objname='Thorax'),
             self.model.sensor.add('framequat', name='thorax_quat',
-                             objtype='body', objname='Thorax'),
+                                  objtype='body', objname='Thorax'),
             self.model.sensor.add('frameangvel', name='thorax_angvel',
-                             objtype='body', objname='Thorax')
+                                  objtype='body', objname='Thorax')
         ]
-        
+
+        self_collisions_geoms = _collision_lookup[self_collisions_geoms]
+        if self_collisions_geoms == "all":
+            self_collisions_geoms = []
+            for geom in self.model.find_all('geom'):
+                if "collision" in geom.name:
+                    self_collisions_geoms.append(geom.name)
+
+        self.self_contact_pairs = []
+        self.self_contact_pairs_names = []
+
+        for geom1 in self_collisions_geoms:
+            for geom2 in self_collisions_geoms:
+                is_duplicate = f'{geom1}_{geom2}' in self.self_contact_pairs_names
+                if geom1 != geom2 and not is_duplicate:
+
+                    # Do not add contact if the parent bodies have a child parent relationship
+                    body1 = self.model.find("geom", geom1).parent
+                    body2 = self.model.find("geom", geom2).parent
+                    body1_children = [child.name
+                                      for child in body1.all_children()
+                                      if child.tag == 'body']
+                    body2_children = [child.name
+                                      for child in body2.all_children()
+                                      if child.tag == 'body']
+
+                    if not (body1.name == body2.name or
+                            body1.name in body2_children or
+                            body2.name in body1_children or
+                            body1.name in body2.parent.name or
+                            body2.name in body1.parent.name):
+                        contact_pair = self.model.contact.add(
+                            "pair",
+                            name=f'{geom1}_{geom2}',
+                            geom1=geom1,
+                            geom2=geom2,
+                            solref="-1000000 -10000",
+                            margin=0.0
+                        )
+                        self.self_contact_pairs.append(contact_pair)
+                        self.self_contact_pairs_names.append(f'{geom1}_{geom2}')
+
+        self.end_effector_sensors = []
+        self.end_effector_names = []
+        for body in self.model.find_all('body'):
+            if "Tarsus5" in body.name:
+                self.end_effector_names.append(body.name)
+                end_effector_sensor = self.model.sensor.add(
+                    'framepos', name=f'{body.name}_pos',
+                    objtype='body', objname=body.name
+                )
+                self.end_effector_sensors.append(end_effector_sensor)
+
+        ## Add sites and touch sensors
+        self.touch_sensors = []
+
+        for tracked_geom in collision_tracked_geoms:
+            geom = self.model.find("geom", tracked_geom)
+            body = geom.parent
+            site = body.add('site', name=f'site_{geom.name}',
+                            size=np.ones(3) * 1000,
+                            pos=geom.pos, quat=geom.quat, type='sphere',
+                            group=3)
+            touch_sensor = self.model.sensor.add('touch',
+                                                 name=f'touch_{geom.name}',
+                                                 site=site.name)
+            self.touch_sensors.append( touch_sensor)
+
         # Add arena and put fly in it
         if terrain == 'flat':
             my_terrain = FlatTerrain(
@@ -306,36 +408,76 @@ class NeuroMechFlyMuJoCo(gym.Env):
             arena = my_terrain.arena
         elif terrain == 'ball':
             raise NotImplementedError
-        
+
+        # Add collision between the ground and the fly
+        floor_collisions_geoms = _collision_lookup[floor_collisions_geoms]
+
+        self.floor_contact_pairs = []
+        self.floor_contact_pairs_names = []
+        ground_id = 0
+
+        if floor_collisions_geoms == "all":
+            floor_collisions_geoms = []
+            for geom in self.model.find_all('geom'):
+                if "collision" in geom.name:
+                    floor_collisions_geoms.append(geom.name)
+
+        for geom in arena.find_all("geom"):
+            is_ground = (geom.name is None or
+                         not ("visual" in geom.name or
+                              "collision" in geom.name))
+            for animat_geom_name in floor_collisions_geoms:
+                if is_ground:
+                    if geom.name is None:
+                        geom.name = f'groundblock_{ground_id}'
+                        ground_id += 1
+
+                    floor_contact_pair = arena.contact.add(
+                        "pair",
+                        name=f'{geom.name}_{animat_geom_name}',
+                        geom1=f'Animat/{animat_geom_name}',
+                        geom2=f'{geom.name}',
+                        solref="-1000000 -10000",
+                        margin=0.0,
+                        friction=np.repeat(
+                            np.mean([self.physics_config['friction'],
+                                     self.terrain_config['friction']], axis=0),
+                            (2, 1, 2)
+                        )
+                    )
+                    self.floor_contact_pairs.append(floor_contact_pair)
+                    self.floor_contact_pairs_names.append(
+                        f'{geom.name}_{animat_geom_name}'
+                    )
+
         arena.option.timestep = timestep
         self.physics = mjcf.Physics.from_mjcf_model(arena)
         self.curr_time = 0
         self._last_render_time = -np.inf
-        if render_mode != 'headless':        
+        if render_mode != 'headless':
             self._eff_render_interval = (self.render_config['playspeed'] /
                                          self.render_config['fps'])
         self._frames = []
-        
+
         # Ad hoc changes to gravity, stiffness, and friction
         for geom in [geom.name for geom in arena.find_all('geom')]:
             if 'collision' in geom:
                 self.physics.model.geom(f'Animat/{geom}').friction = \
                     self.physics_config['friction']
-        
+
         for joint in self.actuated_joints:
             if joint is not None:
                 self.physics.model.joint(f'Animat/{joint}').stiffness = \
                     self.physics_config['joint_stiffness']
-        
+
         self.physics.model.opt.gravity = self.physics_config['gravity']
-        
+
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all('joint')]
-        self._set_compliant_Tarsus(all_joints, kp=5.0, stiff=0.0)
+        self._set_compliant_Tarsus(all_joints, stiff=3.5e5, damping=100)
         # set init pose
         self._set_init_pose(self.init_pose)
-            
-    
+
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -345,33 +487,37 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     self.physics.named.data.qpos[
                         f'Animat/{self.actuators[i].joint.name}'
                     ] = angle_0
-    
-    
+
     def _set_compliant_Tarsus(self,
                               all_joints: List,
-                              kp: float = 5,
                               stiff: float = 0.0,
                               damping: float = 100):
-        """Set the Tarsus2/3/4/5 to be compliant by setting the kp
+        """Set the Tarsus2/3/4/5 to be compliant by setting the
         stifness and damping to a low value"""
-        for actuator in self.actuators:
-            if (('position' in actuator.name) and
-                    ('Tarsus' in actuator.name) and
-                    (not 'Tarsus1' in actuator.name)):
-                self.physics.model.actuator(
-                    f'Animat/{actuator.name}'
-                ).gainprm[0] = kp
-
         for joint in all_joints:
             if joint is None:
                 continue
             if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
                 self.physics.model.joint(f'Animat/{joint}').stiffness = stiff
+                # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                 self.physics.model.joint(f'Animat/{joint}').damping = damping
-        
+
         self.physics.reset()
-                    
-                    
+
+    def set_output_dir(self, output_dir: str):
+        """Set the output directory for the environment.
+        Allows the user to change the output directory after the
+        environment has been initialized. If the directory does not
+        exist, it will be created.
+        Parameters
+        ----------
+        output_dir : str
+            The output directory.
+        """
+        output_dir = Path.cwd() / output_dir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir = output_dir
+
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
@@ -391,8 +537,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._frames = []
         self._last_render_time = -np.inf
         return self._get_observation(), self._get_info()
-    
-    
+
     def step(self, action: ObsType
              ) -> Tuple[ObsType, float, bool, Dict[str, Any]]:
         """Step the Gym environment.
@@ -417,25 +562,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics.step()
         self.curr_time += self.timestep
         return self._get_observation(), self._get_info()
-    
-    
+
     def render(self):
         """Call the ``render`` method to update the renderer. It should
         be called every iteration; the method will decide by itself
         whether action is required."""
-        if self.render_mode  == 'headless':
+        if self.render_mode == 'headless':
             return
         if self.curr_time < self._last_render_time + self._eff_render_interval:
             return
         if self.render_mode == 'saved':
             width, height = self.render_config['window_size']
-            img = self.physics.render(width=width, height=height)
+            camera = self.render_config['camera']
+            img = self.physics.render(width=width, height=height,
+                                      camera_id=camera)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
         else:
             raise NotImplementedError
-    
-    
+
     def _get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
@@ -447,7 +592,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # torque from pos/vel/motor actuators
             joint_obs[2, i] = joint_sensordata[base_idx + 2:base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
-        
+
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
@@ -457,16 +602,24 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
-         
+
+        # tarsi contact forces
+        touch_sensordata = np.array(
+            self.physics.bind(self.touch_sensors).sensordata)
+
+        # end effector position
+        ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
+
         return {
             'joints': joint_obs,
             'fly': fly_pos,
+            'contact_forces': touch_sensordata,
+            'end_effectors': ee_pos
         }
-    
-    
+
     def _get_info(self):
         return {}
-    
+
     def save_video(self, path: Path):
         """Save rendered video since the beginning or the last
         ``reset()``, whichever is the latest.
@@ -480,14 +633,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode != 'saved':
             logging.warning('Render mode is not "saved"; no video will be '
                             'saved despite `save_video()` call.')
-        
+
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f'Saving video to {path}')
         with imageio.get_writer(path, fps=self.render_config['fps']) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
-    
-    
+
     def close(self):
         """Close the environment, save data, and release any resources."""
         if self.render_mode == 'saved' and self.output_dir is not None:
