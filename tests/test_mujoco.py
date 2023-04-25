@@ -30,7 +30,7 @@ def test_basic_untethered_sinewave():
         joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
         action = {'joints': joint_pos}
         obs, info = nmf.step(action)
-        nmf.render()
+        # nmf.render()
         obs_list.append(obs)
     nmf.close()
     
