@@ -2,6 +2,9 @@ name: MuJoCo Tests
 
 on: [push]
 
+env:
+  LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libGLEW.so
+
 jobs:
   build:
 
