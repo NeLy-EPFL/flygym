@@ -3,7 +3,7 @@ Execute an environment where all leg joints of the fly repeat a sinusoidal
 motion. The output will be saved as a video."""
 
 import numpy as np
-import pkg_resources
+import importlib.resources
 import pickle
 from pathlib import Path
 from tqdm import trange
@@ -21,9 +21,9 @@ nmf = NeuroMechFlyMuJoCo(render_mode='saved',
                          actuated_joints=all_leg_dofs)
 
 # Load recorded data
-data_path = Path(pkg_resources.resource_filename('flygym', 'data'))
-with open(data_path / 'behavior' / '210902_pr_fly1.pkl', 'rb') as f:
-    data = pickle.load(f)
+with importlib.resources.path('flygym', 'data') as data_path:
+    with open(data_path / 'behavior' / '210902_pr_fly1.pkl', 'rb') as f:
+        data = pickle.load(f)
 
 # Interpolate 5x
 num_steps = int(run_time / nmf.timestep)
