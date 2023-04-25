@@ -1,10 +1,8 @@
-import importlib.resources
+import pkg_resources as _pkg_resources
 from pathlib import Path as _Path
 
 
-with importlib.resources.path('flygym', 'data') as _data_path:
-    data_path = _data_path
-
+data_path = _Path(_pkg_resources.resource_filename('flygym', 'data'))
 if not data_path.is_dir():
     raise FileNotFoundError(
         f'Data directory not found (expected at {data_path}). '
