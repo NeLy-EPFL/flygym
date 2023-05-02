@@ -603,6 +603,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return self.get_observation()
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
+        """Get observation without stepping the physics simulation.
+
+        Returns
+        -------
+        ObsType
+            The observation as defined by the environment.
+        """
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
         joint_sensordata = self.physics.bind(self.joint_sensors).sensordata
