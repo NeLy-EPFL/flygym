@@ -549,7 +549,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_init_pose(self.init_pose)
         self._frames = []
         self._last_render_time = -np.inf
-        return self._get_observation(), self._get_info()
+        return self.get_observation(), self._get_info()
 
     def step(self, action: ObsType
              ) -> Tuple[ObsType, float, bool, Dict[str, Any]]:
@@ -574,7 +574,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics.bind(self.actuators).ctrl = action['joints']
         self.physics.step()
         self.curr_time += self.timestep
-        return self._get_observation(), self._get_info()
+        return self.get_observation(), self._get_info()
 
     def render(self):
         """Call the ``render`` method to update the renderer. It should
@@ -595,6 +595,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
             raise NotImplementedError
 
     def _get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
+        logging.warning(
+            '[DeprecationWarning] `_get_observation` is no longer intended '
+            'for internal use only; use `get_observation` instead in the '
+            'future.'
+        )
+        return self.get_observation()
+
+    def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
+        """Get observation without stepping the physics simulation.
+
+        Returns
+        -------
+        ObsType
+            The observation as defined by the environment.
+        """
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
         joint_sensordata = self.physics.bind(self.joint_sensors).sensordata
