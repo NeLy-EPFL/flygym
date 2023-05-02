@@ -251,6 +251,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # 2nd row: orientation of fly around x, y, z axes
             # 3rd row: rate of change of fly orientation
             'fly': spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
+            # contact forces: readings of the touch contact sensors, one
+            # placed for each of the ``collision_tracked_geoms``
+            'contact_forces': spaces.Box(low=-np.inf, high=np.inf,
+                                         shape=(len(self.touch_sensors),)),
+            # x, y, z positions of the end effectors (tarsus-5 segments)
+            'end_effectors': spaces.Box(low=-np.inf, high=np.inf,
+                                        shape=(3 * len(end_effector_sensors),)),
         }
 
         # Load NMF model
