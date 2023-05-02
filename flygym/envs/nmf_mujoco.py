@@ -257,7 +257,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                          shape=(len(self.touch_sensors),)),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             'end_effectors': spaces.Box(low=-np.inf, high=np.inf,
-                                        shape=(3 * len(end_effector_sensors),)),
+                                        shape=(3 * 6,)),
         }
 
         # Load NMF model
