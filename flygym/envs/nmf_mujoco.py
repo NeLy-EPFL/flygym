@@ -596,8 +596,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         logging.warning(
-            '[DeprecationWarning] `_get_observation` is no intended for '
-            'internal use only; use `get_observation` instead in the future.'
+            '[DeprecationWarning] `_get_observation` is no longer intended '
+            'for internal use only; use `get_observation` instead in the '
+            'future.'
         )
         return self.get_observation()
 
