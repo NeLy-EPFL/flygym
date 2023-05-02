@@ -53,6 +53,11 @@ The **observation** is a dictionary of the following format::
                             # 1st row: x, y, z velocity of the fly in arena
                             # 2nd row: orientation of fly around x, y, z axes
                             # 3rd row: rate of change of fly orientation
+        'contact_forces': np.ndarray,  # readings of the touch contact sensors,
+                                       # one placed for each of the
+                                       # ``collision_tracked_geoms``
+        'end_effectors': np.ndarray,  # x, y, z positions of the end effectors
+                                      # (tarsus-5 segments)
     }
 
 The **action** is a dictionary of the following format::
