@@ -243,14 +243,27 @@ class NeuroMechFlyMuJoCo(gym.Env):
         }
         self.observation_space = {
             # joints: shape (3, num_dofs): (pos, vel, torque) of each DoF
-            'joints': spaces.Box(low=-np.inf, high=np.inf,
-                                 shape=(3, num_dofs)),
+            'joints': spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3, num_dofs)
+            ),
             # fly: shape (4, 3):
             # 0th row: x, y, z position of the fly in arena
             # 1st row: x, y, z velocity of the fly in arena
             # 2nd row: orientation of fly around x, y, z axes
             # 3rd row: rate of change of fly orientation
-            'fly': spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
+            'fly': spaces.Box(
+                low=-np.inf, high=np.inf, shape=(4, 3)
+            ),
+            # contact forces: readings of the touch contact sensors, one
+            # placed for each of the ``collision_tracked_geoms``
+            'contact_forces': spaces.Box(
+                low=-np.inf, high=np.inf,
+                shape=(len(collision_tracked_geoms),)
+            ),
+            # x, y, z positions of the end effectors (tarsus-5 segments)
+            'end_effectors': spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3 * 6,)
+            ),
         }
 
         # Load NMF model
