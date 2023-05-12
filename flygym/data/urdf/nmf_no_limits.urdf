@@ -1,0 +1,2078 @@
+<?xml version="1.0" ?>
+<robot name="neuromechfly_noLimits">
+  <joint name="joint_A1A2" type="fixed">
+    <parent link="Thorax"/>
+    <child link="A1A2"/>
+    <origin xyz="-0.79042  0      -0.30019" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_A3" type="fixed">
+    <parent link="A1A2"/>
+    <child link="A3"/>
+    <origin xyz="-0.35647  0      -0.0007" rpy="0 -0.2618 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_A4" type="fixed">
+    <parent link="A3"/>
+    <child link="A4"/>
+    <origin xyz="-0.23758  0       0.00035" rpy="0 -0.2618 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_A5" type="fixed">
+    <parent link="A4"/>
+    <child link="A5"/>
+    <origin xyz="-2.1429e-01  0.0000e+00 -9.0000e-05" rpy="0 -0.2618 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_A6" type="fixed">
+    <parent link="A5"/>
+    <child link="A6"/>
+    <origin xyz="-0.26804  0       0.0005" rpy="0 -0.2618 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_Haustellum" type="fixed">
+    <parent link="Rostrum"/>
+    <child link="Haustellum"/>
+    <origin xyz="1.9000e-04 -4.4000e-04 -3.7145e-01" rpy="0 -0.1047 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415912429844184" upper="3.1415912429844184" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_Head" type="fixed">
+    <parent link="Head_yaw"/>
+    <child link="Head"/>
+    <origin xyz="0 0 0" rpy="0 0.1745 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.159385204943339" upper="3.159385204943339" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_Head_roll" type="fixed">
+    <parent link="Thorax"/>
+    <child link="Head_roll"/>
+    <origin xyz="0.01715 0      0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.8373615307932187" upper="1.8373615307932187" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_Head_yaw" type="fixed">
+    <parent link="Head_roll"/>
+    <child link="Head_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-4.031278066820278" upper="4.031278066820278" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LAntenna" type="fixed">
+    <parent link="Head"/>
+    <child link="LAntenna"/>
+    <origin xyz="0.4327  0.0669  0.13951" rpy="0.6109 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-2.9769279711748746" upper="2.9769279711748746" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LEye" type="fixed">
+    <parent link="Head"/>
+    <child link="LEye"/>
+    <origin xyz="0.23206 0      0.08921" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="0.0" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFCoxa" type="revolute">
+    <parent link="LFCoxa_yaw"/>
+    <child link="LFCoxa"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.2282643976845713" upper="1.4495346989023457" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFCoxa_roll" type="revolute">
+    <parent link="Thorax"/>
+    <child link="LFCoxa_roll"/>
+    <origin xyz="-0.06276  0.27    -0.13077" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.3926259000213714" upper="2.9374094429396944" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFCoxa_yaw" type="revolute">
+    <parent link="LFCoxa_roll"/>
+    <child link="LFCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.4671775930283628" upper="0.9960846172052743" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFFemur" type="revolute">
+    <parent link="LFCoxa"/>
+    <child link="LFFemur"/>
+    <origin xyz="0       0      -0.42548" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-4.986930927481532" upper="1.4560609499793291" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFFemur_roll" type="revolute">
+    <parent link="LFFemur"/>
+    <child link="LFFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.3250112850457034" upper="2.094381864379785" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTarsus1" type="revolute">
+    <parent link="LFTibia"/>
+    <child link="LFTarsus1"/>
+    <origin xyz="0       0      -0.51838" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.1797537086379344" upper="0.7236807617021788" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTarsus2" type="fixed">
+    <parent link="LFTarsus1"/>
+    <child link="LFTarsus2"/>
+    <origin xyz="0       0      -0.22551" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTarsus3" type="fixed">
+    <parent link="LFTarsus2"/>
+    <child link="LFTarsus3"/>
+    <origin xyz="0       0      -0.15366" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTarsus4" type="fixed">
+    <parent link="LFTarsus3"/>
+    <child link="LFTarsus4"/>
+    <origin xyz="0       0      -0.09849" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTarsus5" type="fixed">
+    <parent link="LFTarsus4"/>
+    <child link="LFTarsus5"/>
+    <origin xyz="0       0      -0.08699" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LFTibia" type="revolute">
+    <parent link="LFFemur_roll"/>
+    <child link="LFTibia"/>
+    <origin xyz="0       0      -0.70524" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.362989686468837" upper="4.222732123265363" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHCoxa" type="revolute">
+    <parent link="Thorax"/>
+    <child link="LHCoxa"/>
+    <origin xyz="-0.62848  0.08699 -0.60354" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.7845881258319358" upper="0.9714737818737863" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHCoxa_roll" type="revolute">
+    <parent link="LHCoxa_yaw"/>
+    <child link="LHCoxa_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0.6012615998580322" upper="4.120341207989709" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHCoxa_yaw" type="revolute">
+    <parent link="LHCoxa"/>
+    <child link="LHCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.2054830111397783" upper="0.9648974491050102" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHFemur" type="revolute">
+    <parent link="LHCoxa_roll"/>
+    <child link="LHFemur"/>
+    <origin xyz="-0.00027 -0.00022 -0.19941" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-5.553724929606129" upper="1.6139985085925022" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHFemur_roll" type="revolute">
+    <parent link="LHFemur"/>
+    <child link="LHFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.6037395230606006" upper="1.2753558258566688" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTarsus1" type="revolute">
+    <parent link="LHTibia"/>
+    <child link="LHTarsus1"/>
+    <origin xyz="2.5000e-04 -6.3000e-04 -6.8445e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.5134971441991394" upper="1.620555689251449" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTarsus2" type="fixed">
+    <parent link="LHTarsus1"/>
+    <child link="LHTarsus2"/>
+    <origin xyz="-5.0000e-05  6.4000e-04 -3.5274e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.141493684665977" upper="3.141493684665977" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTarsus3" type="fixed">
+    <parent link="LHTarsus2"/>
+    <child link="LHTarsus3"/>
+    <origin xyz="1.0000e-05 -9.6000e-04 -1.7505e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.141284903764955" upper="3.141284903764955" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTarsus4" type="fixed">
+    <parent link="LHTarsus3"/>
+    <child link="LHTarsus4"/>
+    <origin xyz="0       0.00095 -0.0967" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415625932679463" upper="3.1415625932679463" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTarsus5" type="fixed">
+    <parent link="LHTarsus4"/>
+    <child link="LHTarsus5"/>
+    <origin xyz="7.00e-05 -2.50e-04 -7.33e-02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415889959432577" upper="3.1415889959432577" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHTibia" type="revolute">
+    <parent link="LHFemur_roll"/>
+    <child link="LHTibia"/>
+    <origin xyz="1.3000e-04 -3.6000e-04 -8.3631e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.8187837662418334" upper="6.979499524663906" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHaltere" type="fixed">
+    <parent link="LHaltere_yaw"/>
+    <child link="LHaltere"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1447326076594218" upper="3.1447326076594218" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHaltere_roll" type="fixed">
+    <parent link="Thorax"/>
+    <child link="LHaltere_roll"/>
+    <origin xyz="-0.73973  0.21355 -0.27376" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LHaltere_yaw" type="fixed">
+    <parent link="LHaltere_roll"/>
+    <child link="LHaltere_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.138449878309415" upper="3.138449878309415" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMCoxa" type="revolute">
+    <parent link="Thorax"/>
+    <child link="LMCoxa"/>
+    <origin xyz="-0.41309  0.1249  -0.53092" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.6526553215644548" upper="0.3971977431863685" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMCoxa_roll" type="revolute">
+    <parent link="LMCoxa_yaw"/>
+    <child link="LMCoxa_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.1644733111051202" upper="3.843949339634286" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMCoxa_yaw" type="revolute">
+    <parent link="LMCoxa"/>
+    <child link="LMCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.9021147479376359" upper="0.8894058546241788" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMFemur" type="revolute">
+    <parent link="LMCoxa_roll"/>
+    <child link="LMFemur"/>
+    <origin xyz="-0.00021  0.0002  -0.18144" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.8856558255692613" upper="0.2503410005690172" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMFemur_roll" type="revolute">
+    <parent link="LMFemur"/>
+    <child link="LMFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.0108722591866903" upper="1.905502806284971" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTarsus1" type="revolute">
+    <parent link="LMTibia"/>
+    <child link="LMTarsus1"/>
+    <origin xyz="2.7000e-04  5.5000e-04 -6.6732e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.346926260092384" upper="0.831828895543576" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTarsus2" type="fixed">
+    <parent link="LMTarsus1"/>
+    <child link="LMTarsus2"/>
+    <origin xyz="0.00044 -0.00048 -0.29433" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415912429844184" upper="3.1415912429844184" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTarsus3" type="fixed">
+    <parent link="LMTarsus2"/>
+    <child link="LMTarsus3"/>
+    <origin xyz="-9.0000e-05 -9.0000e-05 -1.5916e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415889959432577" upper="3.1415889959432577" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTarsus4" type="fixed">
+    <parent link="LMTarsus3"/>
+    <child link="LMTarsus4"/>
+    <origin xyz="0.00023 -0.0001  -0.08973" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415813185581385" upper="3.1415813185581385" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTarsus5" type="fixed">
+    <parent link="LMTarsus4"/>
+    <child link="LMTarsus5"/>
+    <origin xyz="1.900e-04  9.000e-05 -6.327e-02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1414833859077995" upper="3.1414833859077995" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LMTibia" type="revolute">
+    <parent link="LMFemur_roll"/>
+    <child link="LMTibia"/>
+    <origin xyz="-9.7000e-04  5.8000e-04 -7.8367e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.5514814160669523" upper="5.025832418893524" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LWing" type="fixed">
+    <parent link="LWing_yaw"/>
+    <child link="LWing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LWing_roll" type="fixed">
+    <parent link="Thorax"/>
+    <child link="LWing_roll"/>
+    <origin xyz="-0.57237  0.36983  0.11341" rpy="0 0 1.5708"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_LWing_yaw" type="fixed">
+    <parent link="LWing_roll"/>
+    <child link="LWing_yaw"/>
+    <origin xyz="0 0 0" rpy="-0.2967 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RAntenna" type="fixed">
+    <parent link="Head"/>
+    <child link="RAntenna"/>
+    <origin xyz="0.43268 -0.068    0.13904" rpy="-0.6109 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-2.976923630144661" upper="2.976923630144661" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_REye" type="fixed">
+    <parent link="Head"/>
+    <child link="REye"/>
+    <origin xyz="0.23206 0      0.08921" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="0.0" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFCoxa" type="revolute">
+    <parent link="RFCoxa_yaw"/>
+    <child link="RFCoxa"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.2282643976845713" upper="1.4495346989023457" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFCoxa_roll" type="revolute">
+    <parent link="Thorax"/>
+    <child link="RFCoxa_roll"/>
+    <origin xyz="-0.06276 -0.27    -0.13077" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.9374094429396944" upper="1.3926259000213714" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFCoxa_yaw" type="revolute">
+    <parent link="RFCoxa_roll"/>
+    <child link="RFCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.9960846172052743" upper="1.4671775930283628" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFFemur" type="revolute">
+    <parent link="RFCoxa"/>
+    <child link="RFFemur"/>
+    <origin xyz="0       0      -0.42547" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-4.986930927481532" upper="1.4560609499793291" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFFemur_roll" type="revolute">
+    <parent link="RFFemur"/>
+    <child link="RFFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.094381864379785" upper="1.3250112850457034" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTarsus1" type="revolute">
+    <parent link="RFTibia"/>
+    <child link="RFTarsus1"/>
+    <origin xyz="0       0      -0.51841" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.1797537086379344" upper="0.7236807617021788" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTarsus2" type="fixed">
+    <parent link="RFTarsus1"/>
+    <child link="RFTarsus2"/>
+    <origin xyz="0       0      -0.22542" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTarsus3" type="fixed">
+    <parent link="RFTarsus2"/>
+    <child link="RFTarsus3"/>
+    <origin xyz="0       0      -0.15367" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTarsus4" type="fixed">
+    <parent link="RFTarsus3"/>
+    <child link="RFTarsus4"/>
+    <origin xyz="0      0     -0.0985" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTarsus5" type="fixed">
+    <parent link="RFTarsus4"/>
+    <child link="RFTarsus5"/>
+    <origin xyz="0       0      -0.08702" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RFTibia" type="revolute">
+    <parent link="RFFemur_roll"/>
+    <child link="RFTibia"/>
+    <origin xyz="0       0      -0.70524" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.362989686468837" upper="4.222732123265363" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHCoxa" type="revolute">
+    <parent link="Thorax"/>
+    <child link="RHCoxa"/>
+    <origin xyz="-0.62848 -0.08699 -0.60354" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.7845881258319358" upper="0.9714737818737863" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHCoxa_roll" type="revolute">
+    <parent link="RHCoxa_yaw"/>
+    <child link="RHCoxa_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-4.120341207989709" upper="-0.6012615998580322" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHCoxa_yaw" type="revolute">
+    <parent link="RHCoxa"/>
+    <child link="RHCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.9648974491050102" upper="1.2054830111397783" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHFemur" type="revolute">
+    <parent link="RHCoxa_roll"/>
+    <child link="RHFemur"/>
+    <origin xyz="-7.0000e-05  4.1000e-04 -1.9941e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-5.553724929606129" upper="1.6139985085925022" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHFemur_roll" type="revolute">
+    <parent link="RHFemur"/>
+    <child link="RHFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.2753558258566688" upper="1.6037395230606006" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTarsus1" type="revolute">
+    <parent link="RHTibia"/>
+    <child link="RHTarsus1"/>
+    <origin xyz="-2.6000e-04  6.6000e-04 -6.8445e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.5134971441991394" upper="1.620555689251449" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTarsus2" type="fixed">
+    <parent link="RHTarsus1"/>
+    <child link="RHTarsus2"/>
+    <origin xyz="2.5000e-04 -4.0000e-05 -3.5274e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415841273552365" upper="3.1415841273552365" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTarsus3" type="fixed">
+    <parent link="RHTarsus2"/>
+    <child link="RHTarsus3"/>
+    <origin xyz="0.00022 -0.00029 -0.17505" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415449915461044" upper="3.1415449915461044" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTarsus4" type="fixed">
+    <parent link="RHTarsus3"/>
+    <child link="RHTarsus4"/>
+    <origin xyz="-0.00051  0.00038 -0.09671" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415399357414633" upper="3.1415399357414633" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTarsus5" type="fixed">
+    <parent link="RHTarsus4"/>
+    <child link="RHTarsus5"/>
+    <origin xyz="0.00035 -0.0003  -0.0733" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415912429844184" upper="3.1415912429844184" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHTibia" type="revolute">
+    <parent link="RHFemur_roll"/>
+    <child link="RHTibia"/>
+    <origin xyz="8.0000e-05 -1.6000e-04 -8.3631e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.8187837662418334" upper="6.979499524663906" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHaltere" type="fixed">
+    <parent link="RHaltere_yaw"/>
+    <child link="RHaltere"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1428684122978283" upper="3.1428684122978283" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHaltere_roll" type="fixed">
+    <parent link="Thorax"/>
+    <child link="RHaltere_roll"/>
+    <origin xyz="-0.73973 -0.21355 -0.27376" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.1353070171048905" upper="3.1353070171048905" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RHaltere_yaw" type="fixed">
+    <parent link="RHaltere_roll"/>
+    <child link="RHaltere_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.1465925376054042" upper="3.1465925376054042" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMCoxa" type="revolute">
+    <parent link="Thorax"/>
+    <child link="RMCoxa"/>
+    <origin xyz="-0.41276 -0.1249  -0.53092" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.6526553215644548" upper="0.3971977431863685" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMCoxa_roll" type="revolute">
+    <parent link="RMCoxa_yaw"/>
+    <child link="RMCoxa_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.843949339634286" upper="0.1644733111051202" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMCoxa_yaw" type="revolute">
+    <parent link="RMCoxa"/>
+    <child link="RMCoxa_yaw"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.8894058546241788" upper="0.9021147479376359" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMFemur" type="revolute">
+    <parent link="RMCoxa_roll"/>
+    <child link="RMFemur"/>
+    <origin xyz="-0.00054 -0.00021 -0.18144" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.8856558255692613" upper="0.2503410005690172" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMFemur_roll" type="revolute">
+    <parent link="RMFemur"/>
+    <child link="RMFemur_roll"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.905502806284971" upper="1.0108722591866903" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTarsus1" type="revolute">
+    <parent link="RMTibia"/>
+    <child link="RMTarsus1"/>
+    <origin xyz="-1.4000e-04  8.3000e-04 -6.6732e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.346926260092384" upper="0.831828895543576" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTarsus2" type="fixed">
+    <parent link="RMTarsus1"/>
+    <child link="RMTarsus2"/>
+    <origin xyz="0.00057 -0.00048 -0.28996" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.141590306717268" upper="3.141590306717268" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTarsus3" type="fixed">
+    <parent link="RMTarsus2"/>
+    <child link="RMTarsus3"/>
+    <origin xyz="3.0000e-05  1.0000e-04 -1.6015e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415813185581385" upper="3.1415813185581385" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTarsus4" type="fixed">
+    <parent link="RMTarsus3"/>
+    <child link="RMTarsus4"/>
+    <origin xyz="-0.00048  0.00021 -0.09243" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14157869701418" upper="3.14157869701418" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTarsus5" type="fixed">
+    <parent link="RMTarsus4"/>
+    <child link="RMTarsus5"/>
+    <origin xyz="0.00161 -0.00014 -0.06372" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415740156856833" upper="3.1415740156856833" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RMTibia" type="revolute">
+    <parent link="RMFemur_roll"/>
+    <child link="RMTibia"/>
+    <origin xyz="-9.7000e-04 -5.0000e-05 -7.8367e-01" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.5514814160669523" upper="5.025832418893524" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RWing" type="fixed">
+    <parent link="RWing_yaw"/>
+    <child link="RWing"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1434539534027595" upper="3.1434539534027595" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RWing_roll" type="fixed">
+    <parent link="Thorax"/>
+    <child link="RWing_roll"/>
+    <origin xyz="-0.57237 -0.36983  0.11341" rpy="0 0 -1.5708"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.1415927410125732" upper="3.1415927410125732" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_RWing_yaw" type="fixed">
+    <parent link="RWing_roll"/>
+    <child link="RWing_yaw"/>
+    <origin xyz="0 0 0" rpy="0.2967 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.139730405101271" upper="3.139730405101271" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <joint name="joint_Rostrum" type="fixed">
+    <parent link="Head"/>
+    <child link="Rostrum"/>
+    <origin xyz="0.41506  0.00068 -0.2123" rpy="0 1.5708 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.1415841273552365" upper="3.1415841273552365" effort="10000000000.0" velocity="628.3185307179587"/>
+  </joint>
+  <link name="A1A2">
+    <inertial>
+      <mass value="8.571491383277525e-05"/>
+      <origin xyz="-2.1442e-01 -6.0000e-05  7.0710e-02" rpy="0 0 0"/>
+      <inertia ixx="5.379007258257524e-06" ixy="-2.7172143083138003e-10" ixz="-4.016699799635996e-07" iyy="2.8840520398898414e-06" iyz="1.2978086881476767e-09" izz="4.283754254534721e-06"/>
+    </inertial>
+    <collision name="A1A2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A1A2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="A1A2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A1A2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="A3">
+    <inertial>
+      <mass value="0.00010704018580061077"/>
+      <origin xyz="-5.987e-02 -6.000e-05 -2.268e-02" rpy="0 0 0"/>
+      <inertia ixx="8.996426496899934e-06" ixy="-1.0189078085903943e-10" ixz="-2.182086660608849e-07" iyy="4.18077287566254e-06" iyz="4.0700063622846777e-10" izz="6.520348442338967e-06"/>
+    </inertial>
+    <collision name="A3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="A3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="A4">
+    <inertial>
+      <mass value="9.752435108452857e-05"/>
+      <origin xyz="-6.720e-02 -2.000e-05 -1.719e-02" rpy="0 0 0"/>
+      <inertia ixx="8.05161514355576e-06" ixy="-2.350168474990703e-10" ixz="-1.6058848411617763e-07" iyy="3.257527734203393e-06" iyz="6.270709172547439e-11" izz="6.2418857754968594e-06"/>
+    </inertial>
+    <collision name="A4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="A4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="A5">
+    <inertial>
+      <mass value="9.704450609731538e-05"/>
+      <origin xyz="-8.348e-02  2.000e-05 -4.062e-02" rpy="0 0 0"/>
+      <inertia ixx="6.510006856983616e-06" ixy="-6.353942720115236e-10" ixz="2.510708473554063e-08" iyy="3.3950607369438554e-06" iyz="-1.1669246567412128e-09" izz="5.0585773842176395e-06"/>
+    </inertial>
+    <collision name="A5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="A5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="A6">
+    <inertial>
+      <mass value="6.267604318477003e-05"/>
+      <origin xyz="-5.385e-02  1.000e-05 -3.479e-02" rpy="0 0 0"/>
+      <inertia ixx="2.5686907519812623e-06" ixy="7.637514399896898e-11" ixz="-4.9756936064053624e-08" iyy="1.97061699442684e-06" iyz="4.215461293405398e-11" izz="2.0396207514768214e-06"/>
+    </inertial>
+    <collision name="A6_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A6.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="A6_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/A6.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="Haustellum">
+    <inertial>
+      <mass value="6.941066853014398e-06"/>
+      <origin xyz="0.2006   0.0047  -0.00878" rpy="0 0 0"/>
+      <inertia ixx="4.907255111440599e-08" ixy="1.7929555828165396e-10" ixz="4.998376081429952e-11" iyy="5.8887346186315783e-08" iyz="3.09533767001756e-10" izz="8.014157063555477e-08"/>
+    </inertial>
+    <collision name="Haustellum_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Haustellum.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="Haustellum_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Haustellum.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="Head">
+    <inertial>
+      <mass value="8.113157308044636e-05"/>
+      <origin xyz="0.20209 -0.00438  0.04394" rpy="0 0 0"/>
+      <inertia ixx="3.916686083637349e-06" ixy="5.496640594677064e-08" ixz="-1.355155214169488e-07" iyy="2.937974490210881e-06" iyz="-1.954467052189715e-08" izz="3.069572001355821e-06"/>
+    </inertial>
+    <collision name="Head_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Head.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="Head_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Head.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="Head_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="Head_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LAntenna">
+    <inertial>
+      <mass value="1.7777389383760332e-06"/>
+      <origin xyz="0.05091  0.01313 -0.11156" rpy="0 0 0"/>
+      <inertia ixx="1.2132654283335043e-08" ixy="6.34643864390147e-10" ixz="-1.0707396219956799e-09" iyy="1.0481508781908762e-08" iyz="-3.6379731017516985e-10" izz="4.970367756570775e-09"/>
+    </inertial>
+    <collision name="LAntenna_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LAntenna.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LAntenna_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LAntenna.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LEye">
+    <inertial>
+      <mass value="9.502325241495403e-06"/>
+      <origin xyz="-0.00703  0.30096 -0.02373" rpy="0 0 0"/>
+      <inertia ixx="1.3114464866873867e-07" ixy="-2.390665136022388e-08" ixz="-8.179075815846679e-09" iyy="1.7805336805296216e-07" iyz="5.857114763037776e-09" izz="8.81424038962953e-08"/>
+    </inertial>
+    <collision name="LEye_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LEye.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LEye_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LEye.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFCoxa">
+    <inertial>
+      <mass value="5.741707610995013e-06"/>
+      <origin xyz="0.00298 -0.03152 -0.25312" rpy="0 0 0"/>
+      <inertia ixx="5.983418637183175e-08" ixy="1.5355095860900972e-09" ixz="9.568855434245275e-10" iyy="5.79745744876736e-08" iyz="2.8728611156529988e-09" izz="1.4207714613335929e-08"/>
+    </inertial>
+    <collision name="LFCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LFCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LFFemur">
+    <inertial>
+      <mass value="7.992114412322805e-06"/>
+      <origin xyz="-0.01985 -0.00674 -0.35944" rpy="0 0 0"/>
+      <inertia ixx="2.7267902127637655e-07" ixy="2.2529365411735334e-10" ixz="-8.562267397467378e-09" iyy="2.732996498121526e-07" iyz="-1.6672479243976315e-08" izz="1.5735837661850214e-08"/>
+    </inertial>
+    <collision name="LFFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LFTarsus1">
+    <inertial>
+      <mass value="5.902334137063546e-07"/>
+      <origin xyz="-0.00459 -0.00942 -0.12341" rpy="0 0 0"/>
+      <inertia ixx="2.6619196564244832e-09" ixy="-6.696196350980393e-12" ixz="-8.499819284680847e-11" iyy="2.671119021702012e-09" iyz="2.4720518054378474e-11" izz="2.137105482392998e-10"/>
+    </inertial>
+    <collision name="LFTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFTarsus2">
+    <inertial>
+      <mass value="2.658976343874435e-07"/>
+      <origin xyz="-0.00128 -0.00532 -0.08914" rpy="0 0 0"/>
+      <inertia ixx="5.103329322322616e-10" ixy="-4.652931733921339e-12" ixz="2.2319235150477887e-11" iyy="5.110168665053002e-10" iyz="1.141795723786161e-12" izz="6.692566660715184e-11"/>
+    </inertial>
+    <collision name="LFTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFTarsus3">
+    <inertial>
+      <mass value="1.5048445915428457e-07"/>
+      <origin xyz="-0.00108 -0.00345 -0.05935" rpy="0 0 0"/>
+      <inertia ixx="1.2943798832106454e-10" ixy="-1.636254884174268e-12" ixz="7.384017845364119e-12" iyy="1.2973339477855396e-10" iyz="-3.5369691091179722e-12" izz="3.237591364465404e-11"/>
+    </inertial>
+    <collision name="LFTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFTarsus4">
+    <inertial>
+      <mass value="1.1769954786975934e-07"/>
+      <origin xyz="0.00087 -0.00147 -0.04997" rpy="0 0 0"/>
+      <inertia ixx="7.574844946658414e-11" ixy="-1.1218003527775303e-12" ixz="4.142658799359131e-12" iyy="7.619289827697055e-11" iyz="-1.8782525110208446e-12" izz="2.2848746233067172e-11"/>
+    </inertial>
+    <collision name="LFTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFTarsus5">
+    <inertial>
+      <mass value="1.4544444513923852e-07"/>
+      <origin xyz="0.00257 -0.00088 -0.05205" rpy="0 0 0"/>
+      <inertia ixx="1.135124894575874e-10" ixy="-5.371669362193046e-13" ixz="8.61959329236233e-12" iyy="1.203871149303067e-10" iyz="-1.0622825672702412e-12" izz="3.4301165518026506e-11"/>
+    </inertial>
+    <collision name="LFTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LFTibia">
+    <inertial>
+      <mass value="2.6268343212263377e-06"/>
+      <origin xyz="0.01139 -0.00358 -0.29302" rpy="0 0 0"/>
+      <inertia ixx="5.50390271997034e-08" ixy="1.5267819432842367e-10" ixz="1.8890251848431905e-09" iyy="5.5191946361538317e-08" iyz="2.1350840278172453e-09" izz="2.18284819569887e-09"/>
+    </inertial>
+    <collision name="LFTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LFTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LFTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHCoxa">
+    <inertial>
+      <mass value="3.2548936150106453e-06"/>
+      <origin xyz="-0.00382  0.02095 -0.101" rpy="0 0 0"/>
+      <inertia ixx="1.350804012338567e-08" ixy="-1.6370509791399278e-10" ixz="2.639987688459687e-10" iyy="1.4484483552670528e-08" iyz="2.2778771682240345e-09" izz="8.879176902911457e-09"/>
+    </inertial>
+    <collision name="LHCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LHCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LHFemur">
+    <inertial>
+      <mass value="1.1113719808091789e-05"/>
+      <origin xyz="0.03316 -0.01845 -0.43907" rpy="0 0 0"/>
+      <inertia ixx="5.240769260201016e-07" ixy="3.451887877192935e-09" ixz="8.697293494739268e-09" iyy="5.240994330025576e-07" iyz="1.0573373286421583e-08" izz="2.7097994814382908e-08"/>
+    </inertial>
+    <collision name="LHFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LHTarsus1">
+    <inertial>
+      <mass value="1.3249969982172918e-06"/>
+      <origin xyz="-0.00259  0.00406 -0.16764" rpy="0 0 0"/>
+      <inertia ixx="1.3948833895937138e-08" ixy="-3.408937645724606e-11" ixz="-1.3881187401653182e-10" iyy="1.3855442366983524e-08" iyz="1.1197135410054028e-10" izz="7.38346273473165e-10"/>
+    </inertial>
+    <collision name="LHTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHTarsus2">
+    <inertial>
+      <mass value="4.465595046515482e-07"/>
+      <origin xyz="-0.00133  0.00229 -0.09138" rpy="0 0 0"/>
+      <inertia ixx="1.2421568618269873e-09" ixy="3.9195335774079074e-12" ixz="2.460386567916838e-11" iyy="1.248205629659075e-09" iyz="-3.238046634512226e-11" izz="1.5854710744795977e-10"/>
+    </inertial>
+    <collision name="LHTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHTarsus3">
+    <inertial>
+      <mass value="1.717215492644912e-07"/>
+      <origin xyz="-0.00413  0.00321 -0.04882" rpy="0 0 0"/>
+      <inertia ixx="1.5704891128179778e-10" ixy="1.5793452052281098e-12" ixz="8.109874817632491e-13" iyy="1.597724065762652e-10" iyz="-1.1885304928094258e-12" izz="4.22558145229839e-11"/>
+    </inertial>
+    <collision name="LHTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHTarsus4">
+    <inertial>
+      <mass value="1.1443416496255567e-07"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="2.4683293542298094e-10" ixy="9.952485385943712e-15" ixz="1.827232963853714e-11" iyy="2.4985275489620366e-10" iyz="-9.339634542772557e-12" izz="2.642573729500649e-11"/>
+    </inertial>
+    <collision name="LHTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHTarsus5">
+    <inertial>
+      <mass value="1.5831647994397422e-07"/>
+      <origin xyz="-0.00176 -0.00035 -0.0526" rpy="0 0 0"/>
+      <inertia ixx="1.275534557952797e-10" ixy="1.0387493793363336e-12" ixz="5.673485524053406e-12" iyy="1.3596468492812532e-10" iyz="1.8938777007182306e-12" izz="4.324883583492056e-11"/>
+    </inertial>
+    <collision name="LHTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHTibia">
+    <inertial>
+      <mass value="4.280437218327039e-06"/>
+      <origin xyz="0.02332 -0.01545 -0.41772" rpy="0 0 0"/>
+      <inertia ixx="1.36571973333874e-07" ixy="-3.589734864313778e-10" ixz="6.984979984449975e-09" iyy="1.373299267463762e-07" iyz="-1.6120199397614828e-09" izz="4.931242386774536e-09"/>
+    </inertial>
+    <collision name="LHTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHaltere">
+    <inertial>
+      <mass value="1.4160896935430824e-06"/>
+      <origin xyz="-0.0082   0.20605 -0.00065" rpy="0 0 0"/>
+      <inertia ixx="1.4020303628986903e-08" ixy="-1.6711254076134715e-11" ixz="-2.8079219660502452e-11" iyy="1.9730319364747313e-09" iyz="-6.1248840665395e-11" izz="1.3649625794138886e-08"/>
+    </inertial>
+    <collision name="LHaltere_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHaltere.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LHaltere_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LHaltere.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LHaltere_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LHaltere_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LMCoxa">
+    <inertial>
+      <mass value="3.295969018637448e-06"/>
+      <origin xyz="-0.00134  0.00488 -0.07881" rpy="0 0 0"/>
+      <inertia ixx="1.613857024264124e-08" ixy="-5.2331361478733376e-11" ixz="4.438624551510217e-10" iyy="1.504033067194571e-08" iyz="4.489648201221683e-09" izz="1.0534992499367083e-08"/>
+    </inertial>
+    <collision name="LMCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LMCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LMFemur">
+    <inertial>
+      <mass value="8.23079136553737e-06"/>
+      <origin xyz="0.02351  0.00218 -0.40512" rpy="0 0 0"/>
+      <inertia ixx="4.0989546919810974e-07" ixy="-1.0178035657241587e-10" ixz="1.4528507113592936e-09" iyy="4.100231084980835e-07" iyz="3.526875993502687e-09" izz="1.3630461220192824e-08"/>
+    </inertial>
+    <collision name="LMFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LMTarsus1">
+    <inertial>
+      <mass value="6.662969614149409e-07"/>
+      <origin xyz="-0.0075   0.00019 -0.1536" rpy="0 0 0"/>
+      <inertia ixx="4.789018669521419e-09" ixy="-1.0316838500437653e-11" ixz="-2.7181504941603465e-10" iyy="4.822226563942478e-09" iyz="9.26397614655992e-11" izz="2.3640331294254783e-10"/>
+    </inertial>
+    <collision name="LMTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMTarsus2">
+    <inertial>
+      <mass value="2.988951419617774e-07"/>
+      <origin xyz="-0.00491  0.00082 -0.07917" rpy="0 0 0"/>
+      <inertia ixx="6.076981460248074e-10" ixy="1.1809765506624864e-12" ixz="-3.539365327898226e-12" iyy="6.124552873374273e-10" iyz="1.139464593442061e-11" izz="8.12316436190037e-11"/>
+    </inertial>
+    <collision name="LMTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMTarsus3">
+    <inertial>
+      <mass value="1.49359671801039e-07"/>
+      <origin xyz="-0.00209  0.00206 -0.04465" rpy="0 0 0"/>
+      <inertia ixx="1.1717508455759623e-10" ixy="8.825598086039782e-13" ixz="6.242686243253202e-12" iyy="1.2009349778572921e-10" iyz="-1.438987856164942e-12" izz="3.602772507055522e-11"/>
+    </inertial>
+    <collision name="LMTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMTarsus4">
+    <inertial>
+      <mass value="8.690413245737014e-08"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1.210531784475736e-10" ixy="-4.205742483408226e-14" ixz="1.0531468623995063e-11" iyy="1.2340492144548685e-10" iyz="-3.237890546850215e-12" izz="1.9293008159881107e-11"/>
+    </inertial>
+    <collision name="LMTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMTarsus5">
+    <inertial>
+      <mass value="1.4474194312568478e-07"/>
+      <origin xyz="-0.00103 -0.00054 -0.04305" rpy="0 0 0"/>
+      <inertia ixx="1.163034938087531e-10" ixy="-2.3589784652394145e-13" ixz="8.24390216345855e-12" iyy="1.2251731437552192e-10" iyz="1.2726489418338513e-12" izz="3.4839138473341044e-11"/>
+    </inertial>
+    <collision name="LMTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LMTibia">
+    <inertial>
+      <mass value="3.631542037586609e-06"/>
+      <origin xyz="0.02228  0.00372 -0.37377" rpy="0 0 0"/>
+      <inertia ixx="1.345167712576714e-07" ixy="2.9286402925858677e-10" ixz="7.144603790900179e-09" iyy="1.3461153702722584e-07" iyz="2.247245573385288e-09" izz="3.332214283800136e-09"/>
+    </inertial>
+    <collision name="LMTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LMTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LMTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LWing">
+    <inertial>
+      <mass value="2.500079241447992e-06"/>
+      <origin xyz="-0.11281  1.07769  0.08102" rpy="0 0 0"/>
+      <inertia ixx="7.968332571849391e-07" ixy="6.886744796609743e-08" ixz="7.821732080410048e-10" iyy="1.8077978855800485e-07" iyz="-4.182696170877211e-08" izz="9.635553787092022e-07"/>
+    </inertial>
+    <collision name="LWing_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LWing.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="LWing_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/LWing.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="LWing_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="LWing_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RAntenna">
+    <inertial>
+      <mass value="1.7777381698425424e-06"/>
+      <origin xyz="0.05092 -0.01329 -0.11155" rpy="0 0 0"/>
+      <inertia ixx="1.2118144852256564e-08" ixy="-6.470039446583768e-10" ixz="-1.0934780127445053e-09" iyy="1.048746933313142e-08" iyz="3.638498471065401e-10" izz="4.978045946204023e-09"/>
+    </inertial>
+    <collision name="RAntenna_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RAntenna.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RAntenna_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RAntenna.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="REye">
+    <inertial>
+      <mass value="8.241895909613487e-06"/>
+      <origin xyz="-0.01288 -0.31759 -0.03069" rpy="0 0 0"/>
+      <inertia ixx="1.1751616768767936e-07" ixy="2.0157095834173952e-08" ixz="-1.2295797136979536e-08" iyy="1.624799495495446e-07" iyz="-9.003112986527057e-09" izz="7.805335340170162e-08"/>
+    </inertial>
+    <collision name="REye_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/REye.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="REye_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/REye.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFCoxa">
+    <inertial>
+      <mass value="5.741706163530321e-06"/>
+      <origin xyz="0.00298  0.03152 -0.25312" rpy="0 0 0"/>
+      <inertia ixx="5.983416911264356e-08" ixy="-1.5355083040571808e-09" ixz="9.56871277198453e-10" iyy="5.79745586306428e-08" iyz="-2.872861574361646e-09" izz="1.4207707028825396e-08"/>
+    </inertial>
+    <collision name="RFCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RFCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RFFemur">
+    <inertial>
+      <mass value="7.99213320458308e-06"/>
+      <origin xyz="-0.01985  0.00674 -0.35944" rpy="0 0 0"/>
+      <inertia ixx="2.72696734586788e-07" ixy="-3.118284866606571e-10" ixz="-8.359438387289132e-09" iyy="2.728445283155863e-07" iyz="1.9876090547921418e-08" izz="1.617812996347602e-08"/>
+    </inertial>
+    <collision name="RFFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RFTarsus1">
+    <inertial>
+      <mass value="5.902334030056455e-07"/>
+      <origin xyz="-0.00459  0.00942 -0.12338" rpy="0 0 0"/>
+      <inertia ixx="2.661919493380233e-09" ixy="6.696252541221297e-12" ixz="-8.49988421563367e-11" iyy="2.671118876236604e-09" iyz="-2.4721904367683828e-11" izz="2.1371061734877214e-10"/>
+    </inertial>
+    <collision name="RFTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFTarsus2">
+    <inertial>
+      <mass value="2.6589763376152175e-07"/>
+      <origin xyz="-0.00128  0.00532 -0.0892" rpy="0 0 0"/>
+      <inertia ixx="5.103329473595504e-10" ixy="4.6529193246102694e-12" ixz="2.2319121199781353e-11" iyy="5.110168673582965e-10" iyz="-1.1420441148966488e-12" izz="6.692565506745885e-11"/>
+    </inertial>
+    <collision name="RFTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFTarsus3">
+    <inertial>
+      <mass value="1.5048445801063186e-07"/>
+      <origin xyz="-0.00108  0.00345 -0.0594" rpy="0 0 0"/>
+      <inertia ixx="1.2943799114767103e-10" ixy="1.6362498656956743e-12" ixz="7.383992388634351e-12" iyy="1.2973339731991452e-10" iyz="3.5369150183889013e-12" izz="3.237590515384331e-11"/>
+    </inertial>
+    <collision name="RFTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFTarsus4">
+    <inertial>
+      <mass value="1.1769954845621714e-07"/>
+      <origin xyz="0.00087  0.00147 -0.05002" rpy="0 0 0"/>
+      <inertia ixx="7.574845212622345e-11" ixy="1.1217974558331867e-12" ixz="4.142645119773969e-12" iyy="7.61929006021046e-11" iyz="1.8782227223917356e-12" izz="2.2848742197809424e-11"/>
+    </inertial>
+    <collision name="RFTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFTarsus5">
+    <inertial>
+      <mass value="1.4544445851261665e-07"/>
+      <origin xyz="0.00257  0.00089 -0.05208" rpy="0 0 0"/>
+      <inertia ixx="1.1351250822278854e-10" ixy="5.371606517909682e-13" ixz="8.61956236424173e-12" iyy="1.2038712906384415e-10" iyz="1.0622193925558108e-12" izz="3.430116323046479e-11"/>
+    </inertial>
+    <collision name="RFTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RFTibia">
+    <inertial>
+      <mass value="2.626834378398769e-06"/>
+      <origin xyz="0.01139  0.00358 -0.29302" rpy="0 0 0"/>
+      <inertia ixx="5.5039029499039883e-08" ixy="-1.526786740402749e-10" ixz="1.8890109702508788e-09" iyy="5.519194524654044e-08" iyz="-2.1351137781782823e-09" izz="2.1828496369105125e-09"/>
+    </inertial>
+    <collision name="RFTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RFTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RFTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHCoxa">
+    <inertial>
+      <mass value="3.2548946367291556e-06"/>
+      <origin xyz="-0.00372 -0.02086 -0.10102" rpy="0 0 0"/>
+      <inertia ixx="1.3508895444032225e-08" ixy="1.654774844295877e-10" ixz="2.5922456853699946e-10" iyy="1.4480297162125718e-08" iyz="-2.2830629086425194e-09" izz="8.882772581122752e-09"/>
+    </inertial>
+    <collision name="RHCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RHCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RHFemur">
+    <inertial>
+      <mass value="1.1113711231749002e-05"/>
+      <origin xyz="0.03316  0.01814 -0.43908" rpy="0 0 0"/>
+      <inertia ixx="5.240827422201451e-07" ixy="-3.4471113660241967e-09" ixz="8.719731828423071e-09" iyy="5.24104138833571e-07" iyz="-1.0271105917466366e-08" izz="2.708600536854334e-08"/>
+    </inertial>
+    <collision name="RHFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RHTarsus1">
+    <inertial>
+      <mass value="1.3250065372293525e-06"/>
+      <origin xyz="-0.00305 -0.00295 -0.16764" rpy="0 0 0"/>
+      <inertia ixx="1.3895980951092814e-08" ixy="5.7649647416818145e-11" ixz="-1.5814732178418856e-10" iyy="1.390914368810993e-08" iyz="-5.0070029915928587e-11" izz="7.380251977580928e-10"/>
+    </inertial>
+    <collision name="RHTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHTarsus2">
+    <inertial>
+      <mass value="4.4655875421415463e-07"/>
+      <origin xyz="-0.00116 -0.00243 -0.09136" rpy="0 0 0"/>
+      <inertia ixx="1.2470445836855713e-09" ixy="-4.81283578894369e-12" ixz="2.961874361372959e-11" iyy="1.2436939062143497e-09" iyz="1.8925046940676516e-11" izz="1.5816310328272482e-10"/>
+    </inertial>
+    <collision name="RHTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHTarsus3">
+    <inertial>
+      <mass value="1.7172138836448318e-07"/>
+      <origin xyz="-0.00404 -0.0008  -0.0487" rpy="0 0 0"/>
+      <inertia ixx="1.5904399360310196e-10" ixy="-1.96031748950318e-12" ixz="2.771068528733922e-12" iyy="1.5772485320176282e-10" iyz="7.02619778849401e-13" izz="4.230768869256705e-11"/>
+    </inertial>
+    <collision name="RHTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHTarsus4">
+    <inertial>
+      <mass value="1.144339255559854e-07"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="2.4880045871057033e-10" ixy="-8.665306614830621e-13" ixz="1.5510740709360946e-11" iyy="2.495037795783748e-10" iyz="5.9124502528420606e-12" izz="2.5945076195407573e-11"/>
+    </inertial>
+    <collision name="RHTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHTarsus5">
+    <inertial>
+      <mass value="1.5831640110915208e-07"/>
+      <origin xyz="-2.200e-04  7.000e-05 -5.258e-02" rpy="0 0 0"/>
+      <inertia ixx="1.2960215241164095e-10" ixy="-3.694578549733403e-12" ixz="4.1268544263261705e-12" iyy="1.339943547095337e-10" iyz="-3.473055390775781e-12" izz="4.3170067037872953e-11"/>
+    </inertial>
+    <collision name="RHTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHTibia">
+    <inertial>
+      <mass value="4.280436376694625e-06"/>
+      <origin xyz="0.02764  0.00965 -0.41772" rpy="0 0 0"/>
+      <inertia ixx="1.3645139921780716e-07" ixy="1.6544569735397049e-10" ixz="7.188265404547709e-09" iyy="1.374480931866307e-07" iyz="1.4109367971355452e-10" izz="4.93355751193845e-09"/>
+    </inertial>
+    <collision name="RHTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHaltere">
+    <inertial>
+      <mass value="1.41608730082593e-06"/>
+      <origin xyz="-0.00762 -0.20604 -0.00287" rpy="0 0 0"/>
+      <inertia ixx="1.3978402491582015e-08" ixy="-5.5496539257974766e-12" ixz="-1.206051894354656e-10" iyy="1.9730418168460516e-09" iyz="6.428633454569222e-11" izz="1.3691341329253386e-08"/>
+    </inertial>
+    <collision name="RHaltere_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHaltere.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RHaltere_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RHaltere.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RHaltere_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RHaltere_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RMCoxa">
+    <inertial>
+      <mass value="3.2959672355899836e-06"/>
+      <origin xyz="-0.00237 -0.00489 -0.07868" rpy="0 0 0"/>
+      <inertia ixx="1.613695807719273e-08" ixy="4.425496770662026e-11" ixz="4.542067827088831e-10" iyy="1.5040809094716003e-08" iyz="-4.489444227735521e-09" izz="1.0536086278613396e-08"/>
+    </inertial>
+    <collision name="RMCoxa_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMCoxa_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMCoxa.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMCoxa_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RMCoxa_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RMFemur">
+    <inertial>
+      <mass value="8.230783761246786e-06"/>
+      <origin xyz="0.02351 -0.0019  -0.40512" rpy="0 0 0"/>
+      <inertia ixx="4.098946651722347e-07" ixy="1.0081298820564105e-10" ixz="1.454365537695153e-09" iyy="4.1001732630376084e-07" iyz="-3.793532739913688e-09" izz="1.3635377978322353e-08"/>
+    </inertial>
+    <collision name="RMFemur_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMFemur_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMFemur.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMFemur_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RMTarsus1">
+    <inertial>
+      <mass value="6.662970856873481e-07"/>
+      <origin xyz="-0.0073  -0.00119 -0.15358" rpy="0 0 0"/>
+      <inertia ixx="4.786085609086714e-09" ixy="1.1229587764474996e-11" ixz="-2.9569437293485875e-10" iyy="4.8219637249730626e-09" iyz="-9.776456904030232e-11" izz="2.3959894502154354e-10"/>
+    </inertial>
+    <collision name="RMTarsus1_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTarsus1_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus1.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMTarsus2">
+    <inertial>
+      <mass value="2.9889542789081263e-07"/>
+      <origin xyz="-0.00344  0.00012 -0.08352" rpy="0 0 0"/>
+      <inertia ixx="6.076366844170667e-10" ixy="-1.0950554075613898e-12" ixz="-6.20691446924458e-12" iyy="6.124554874643867e-10" iyz="-1.1689124381363129e-11" izz="8.129374249924672e-11"/>
+    </inertial>
+    <collision name="RMTarsus2_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTarsus2_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus2.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMTarsus3">
+    <inertial>
+      <mass value="1.4935990140910388e-07"/>
+      <origin xyz="-0.00167 -0.00249 -0.04785" rpy="0 0 0"/>
+      <inertia ixx="1.1688266395709125e-10" ixy="-7.794464950887451e-13" ixz="7.868856596760551e-12" iyy="1.2007545882818493e-10" iyz="2.1131327010063204e-12" izz="3.633852681154664e-11"/>
+    </inertial>
+    <collision name="RMTarsus3_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTarsus3_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus3.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMTarsus4">
+    <inertial>
+      <mass value="8.690410754701314e-08"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1.2481655944836911e-10" ixy="7.294220203229696e-15" ixz="1.013155992588112e-11" iyy="1.2701130992511684e-10" iyz="3.379258134489198e-12" izz="1.9267101855701763e-11"/>
+    </inertial>
+    <collision name="RMTarsus4_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTarsus4_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus4.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMTarsus5">
+    <inertial>
+      <mass value="1.4474199837663808e-07"/>
+      <origin xyz="-0.00279  0.0007  -0.04338" rpy="0 0 0"/>
+      <inertia ixx="1.161128521476665e-10" ixy="3.5819690384350437e-13" ixz="9.152945036245464e-12" iyy="1.2253105655264746e-10" iyz="-2.7204171879651043e-13" izz="3.5016629429581806e-11"/>
+    </inertial>
+    <collision name="RMTarsus5_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTarsus5_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTarsus5.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RMTibia">
+    <inertial>
+      <mass value="3.631542526554793e-06"/>
+      <origin xyz="0.02185 -0.00313 -0.37384" rpy="0 0 0"/>
+      <inertia ixx="1.344839182531743e-07" ixy="-2.9221751414381424e-10" ixz="7.427049211709344e-09" iyy="1.3461719142282532e-07" iyz="-2.1286560896207155e-09" izz="3.359639293907525e-09"/>
+    </inertial>
+    <collision name="RMTibia_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RMTibia_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RMTibia.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RWing">
+    <inertial>
+      <mass value="2.4999207585520077e-06"/>
+      <origin xyz="-0.11114 -1.07757  0.08286" rpy="0 0 0"/>
+      <inertia ixx="7.970593666659577e-07" ixy="-6.891142838033076e-08" ixz="-9.141307803013943e-10" iyy="1.8083534732668685e-07" iyz="4.1646738365161963e-08" izz="9.638652132779502e-07"/>
+    </inertial>
+    <collision name="RWing_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RWing.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="RWing_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/RWing.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="RWing_roll">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="RWing_yaw">
+    <inertial>
+      <mass value="0.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="Rostrum">
+    <inertial>
+      <mass value="1.5627661807211787e-05"/>
+      <origin xyz="-0.00029 -0.00023 -0.18048" rpy="0 0 0"/>
+      <inertia ixx="2.1501503591927971e-07" ixy="2.487113348182675e-10" ixz="1.5850736040493317e-09" iyy="2.4625954993851593e-07" iyz="1.1258924842238655e-10" izz="2.1081350608473025e-07"/>
+    </inertial>
+    <collision name="Rostrum_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Rostrum.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="Rostrum_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Rostrum.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="Thorax">
+    <inertial>
+      <mass value="0.000307167823005631"/>
+      <origin xyz="-4.3118e-01 -3.5000e-04 -6.1350e-02" rpy="0 0 0"/>
+      <inertia ixx="2.863907937649747e-05" ixy="6.706319404043238e-10" ixz="2.4562308220203433e-06" iyy="3.335871241203942e-05" iyz="-3.760156002364519e-10" izz="2.611269843739091e-05"/>
+    </inertial>
+    <collision name="Thorax_collision">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Thorax.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </collision>
+    <visual name="Thorax_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/gymuser/flygym/flygym/data/mesh/Thorax.stl" scale="1000.0 1000.0 1000.0"/>
+      </geometry>
+    </visual>
+  </link>
+</robot>

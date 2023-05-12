@@ -352,3 +352,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,emacs,macos,linux,windows,visualstudiocode,git,python,jupyternotebooks
+
+# dumped cores
+core.*

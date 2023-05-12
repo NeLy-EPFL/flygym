@@ -16,9 +16,10 @@ mujoco_groundwalking_model_path = (
 
 # Isaac Gym
 isaacgym_asset_path = str(data_path)
-isaacgym_ground_walking_model_path = (
-    'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
-)
+# isaacgym_ground_walking_model_path = (
+#     'mjcf/groundwalking_nmf_mjcf_nofloor_230404.xml'
+# )
+isaacgym_ground_walking_model_path = 'urdf/nmf_no_limits.urdf'
 
 # PyBullet
 ...
