@@ -68,7 +68,7 @@ class NeuroMechFlyIsaacGym(gym.Env):
         terrain_config: Dict[str, Any] = {},
         physics_config: Dict[str, Any] = {},
         control: str = "position",
-        init_pose: str = "default",
+        init_pose: str = "stretch",
         use_gpu: bool = True,
         compute_device_id: int = 0,
         graphics_device_id: int = 0,
@@ -94,6 +94,7 @@ class NeuroMechFlyIsaacGym(gym.Env):
         self.graphics_device_id = graphics_device_id
         self.num_threads = num_threads
         self.compute_device = f"cuda:{compute_device_id}" if use_gpu else "cpu"
+        self.render_counter = 0
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -146,6 +147,13 @@ class NeuroMechFlyIsaacGym(gym.Env):
             self.viewer = self.ig_gym.create_viewer(
                 self.sim, gymapi.CameraProperties()
             )
+            # cam_pos = gymapi.Vec3(55, 25, 10)
+            # cam_target = gymapi.Vec3(45, 17, 0)
+            cam_pos = gymapi.Vec3(200, 90, 30)
+            cam_target = gymapi.Vec3(150, 50, 0)
+            self.ig_gym.viewer_camera_look_at(
+                self.viewer, None, cam_pos, cam_target
+            )
 
         # Initial root pose
         if init_pose == "default":
@@ -164,14 +172,23 @@ class NeuroMechFlyIsaacGym(gym.Env):
         self._make_ground()
         self.envs, self.actors, self._dof2idx = self._make_envs(num_envs)
         self._idx2dof = {v: k for k, v in self._dof2idx.items()}
+        self._dof_order = torch.tensor(
+            [self._dof2idx[joint] for joint in self.actuated_joints],
+            dtype=torch.int64,
+        )
         self.ig_gym.prepare_sim(self.sim)
 
         # Calculate initial state for each joint
         num_dofs = len(self.actuated_joints)
+        default_pos_li = []
+        for i in range(num_dofs):
+            joint = self._idx2dof[i]
+            if joint in init_pose_config:
+                default_pos_li.append(init_pose_config[joint])
+            else:
+                default_pos_li.append(0)
         self._default_dof_pos = torch.tensor(
-            [init_pose_config[self._idx2dof[i]] for i in range(num_dofs)],
-            dtype=torch.float32,
-            device=self.compute_device,
+            default_pos_li, dtype=torch.float32, device=self.compute_device
         )
         self._default_dof_vel = torch.zeros(
             num_dofs, dtype=torch.float32, device=self.compute_device
@@ -191,12 +208,12 @@ class NeuroMechFlyIsaacGym(gym.Env):
         self.obs_buffer = ...
         self.reward_buffer = ...
         self.reset_buffer = ...
-        self.time_buffer = ...
+        self.curr_step_buffer = torch.zeros(num_envs, dtype=torch.int32)
 
     def _make_ground(self):
         plane_params = gymapi.PlaneParams()
-        plane_params.static_friction = 1.0
-        plane_params.dynamic_friction = 1.0
+        plane_params.static_friction = 10.0
+        plane_params.dynamic_friction = 10.0
         plane_params.restitution = 0.0
         plane_params.normal = gymapi.Vec3(0, 0, 1)  # z-up
         self.ig_gym.add_ground(self.sim, plane_params)
@@ -215,7 +232,7 @@ class NeuroMechFlyIsaacGym(gym.Env):
 
         # Define initial root pose
         root_pose = gymapi.Transform()
-        root_pose.p = gymapi.Vec3(0, 0, 5)
+        root_pose.p = gymapi.Vec3(0, 0, 1.5)
         self._default_root_state = torch.tensor(
             [
                 root_pose.p.x,
@@ -249,8 +266,8 @@ class NeuroMechFlyIsaacGym(gym.Env):
 
             dof_props = self.ig_gym.get_actor_dof_properties(env, actor)
             dof_props["driveMode"] = gymapi.DOF_MODE_POS
-            dof_props["stiffness"].fill(10000)
-            dof_props["damping"].fill(50)
+            dof_props["stiffness"].fill(40000)
+            dof_props["damping"].fill(100)
             self.ig_gym.set_actor_dof_properties(env, actor, dof_props)
 
         # Get dictionary mapping joint names to DoF indices - this should be
@@ -264,6 +281,7 @@ class NeuroMechFlyIsaacGym(gym.Env):
             env_ids = torch.arange(self.num_envs)
         if len(env_ids) == 0:
             return
+        self.curr_step_buffer[env_ids] = 0
         env_ids_int32 = env_ids.to(
             dtype=torch.int32, device=self.compute_device
         )
@@ -287,9 +305,42 @@ class NeuroMechFlyIsaacGym(gym.Env):
             gymtorch.unwrap_tensor(env_ids_int32),
             len(env_ids_int32),
         )
-    
-    def step(self, action):
-        ...
+
+    def step(self, action, reset_mask=None):
+        if reset_mask is not None:
+            reset_env_ids = torch.tensor(np.where(reset_mask)[0])
+            self.reset(reset_env_ids.to(self.compute_device))
+
+        action = action[:, self._dof_order]
+        if (
+            action.device != self.compute_device
+            or action.dtype != torch.float32
+        ):
+            action = action.to(device=self.compute_device, dtype=torch.float32)
+        self.ig_gym.set_dof_position_target_tensor(
+            self.sim, gymtorch.unwrap_tensor(action)
+        )
+
+        # Get observation
+        self.ig_gym.refresh_dof_state_tensor(self.sim)
+        self.ig_gym.refresh_actor_root_state_tensor(self.sim)
+        self.ig_gym.refresh_force_sensor_tensor(self.sim)
+
+        # Step physics
+        self.ig_gym.simulate(self.sim)
+        self.ig_gym.fetch_results(self.sim, True)
+
+        # Render
+        if self.render_mode == "viewer" and self.render_counter % 5 == 0:
+            self.ig_gym.step_graphics(self.sim)
+            self.ig_gym.draw_viewer(self.viewer, self.sim, False)
+            self.ig_gym.sync_frame_time(self.sim)
+        if self.render_counter % 5 == 0:
+            filename = f"rendered/frame_{self.render_counter:06d}.png"
+            self.ig_gym.write_viewer_image_to_file(self.viewer, filename)
+        self.render_counter += 1
+
+        self.curr_step_buffer += 1
 
     def _test_simulate(self):
         t_idx = 0
@@ -305,10 +356,62 @@ class NeuroMechFlyIsaacGym(gym.Env):
             t_idx += 1
 
 
+import pkg_resources
+import pickle
+from flygym.util.config import leg_dofs_fused_tarsi
+
+
+def load_kin_replay_data(
+    target_timestep, actuated_joints=leg_dofs_fused_tarsi, run_time=1.0
+):
+    """Returns preselected kinematic data from a fly walking on a ball.
+
+    Parameters
+    ----------
+    target_timestep : float
+        Timestep to interpolate to.
+    actuated_joints : List[np.ndarray]
+        List of DoFs to actuate, by default leg_dofs_fused_tarsi
+    run_time : float, optional
+        Total amount of time to extract (in seconds), by default 1.0
+
+    Returns
+    -------
+    np.ndarray
+        Recorded kinematic data as an array of shape
+        (len(actuated_joints), int(run_time / target_timestep))
+    """
+    data_path = Path(pkg_resources.resource_filename("flygym", "data"))
+
+    with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
+        data = pickle.load(f)
+    # Interpolate 5x
+    num_steps = int(run_time / target_timestep)
+    data_block = np.zeros((len(actuated_joints), num_steps))
+    measure_t = np.arange(len(data["joint_LFCoxa"])) * data["meta"]["timestep"]
+    interp_t = np.arange(num_steps) * target_timestep
+    for i, joint in enumerate(actuated_joints):
+        data_block[i, :] = np.interp(interp_t, measure_t, data[joint])
+    return data_block
+
+
 if __name__ == "__main__":
-    env = NeuroMechFlyIsaacGym(num_envs=4)
+    num_envs = 1024
+    kin_data = load_kin_replay_data(target_timestep=1e-3)
+    env = NeuroMechFlyIsaacGym(
+        num_envs=num_envs, timestep=1e-3, render_mode="viewer"
+    )
     env.reset()
-    print("ok")
-    env._test_simulate()
-    env.reset()
-    env._test_simulate()
+    from time import time
+    from tqdm import trange
+
+    st = time()
+    for i in trange(kin_data.shape[1]):
+        curr_ref_state = torch.tensor(kin_data[:, i], device=env.compute_device)
+        curr_states = curr_ref_state.unsqueeze(0).expand(num_envs, -1)
+        env.step(curr_states)
+    print(f"Time taken: {time() - st:.2f}s")
+    # print("ok")
+    # env._test_simulate()
+    # env.reset()
+    # env._test_simulate()
