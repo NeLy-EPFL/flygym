@@ -30,10 +30,9 @@ _init_pose_lookup = {
 }
 _default_terrain_config = {
     "flat": {
-        "size": (50_000, 50_000),
-        "friction": (1, 0.005, 0.0001),
-        "fly_pos": (0, 0, 300),
-        "fly_orient": (0, 1, 0, 0.1),
+        "friction": (10, 10),
+        "fly_pos": (0, 0, 1.5),
+        # "fly_orient": (0, 1, 0, 0.1),
     },
 }
 _default_physics_config = {
@@ -49,8 +48,14 @@ _default_physics_config = {
     "num_velocity_iterations": 1,  # [1, 255]
 }
 _default_render_config = {
-    "saved": {"window_size": (640, 480), "playspeed": 1.0, "fps": 60},
-    "viewer": {"window_size": (640, 480), "max_playspeed": 1.0, "fps": 60},
+    # "saved": {"window_size": (640, 480), "playspeed": 1.0, "fps": 60},
+    "viewer": {
+        "window_size": (640, 480),
+        "max_playspeed": 1.0,
+        "fps": 60,
+        "cam_pos": (55, 25, 10),    # (200, 90, 30),
+        "cam_target": (45, 17, 0),    # (150, 50, 0),
+    },
     "headless": {},
 }
 
@@ -147,10 +152,8 @@ class NeuroMechFlyIsaacGym(gym.Env):
             self.viewer = self.ig_gym.create_viewer(
                 self.sim, gymapi.CameraProperties()
             )
-            # cam_pos = gymapi.Vec3(55, 25, 10)
-            # cam_target = gymapi.Vec3(45, 17, 0)
-            cam_pos = gymapi.Vec3(200, 90, 30)
-            cam_target = gymapi.Vec3(150, 50, 0)
+            cam_pos = gymapi.Vec3(*self.render_config["cam_pos"])
+            cam_target = gymapi.Vec3(*self.render_config["cam_target"])
             self.ig_gym.viewer_camera_look_at(
                 self.viewer, None, cam_pos, cam_target
             )
@@ -201,19 +204,14 @@ class NeuroMechFlyIsaacGym(gym.Env):
         self.dof_state = gymtorch.wrap_tensor(_dof_state)
         self.dof_pos = self.dof_state.view(self.num_envs, num_dofs, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, num_dofs, 2)[..., 1]
-        print(f"dof_pos: {self.dof_pos.shape}")
-        print(f"dof_state: {self.dof_state.shape}")
 
         # Create buffers to track status of each env
-        self.obs_buffer = ...
-        self.reward_buffer = ...
-        self.reset_buffer = ...
         self.curr_step_buffer = torch.zeros(num_envs, dtype=torch.int32)
 
     def _make_ground(self):
         plane_params = gymapi.PlaneParams()
-        plane_params.static_friction = 10.0
-        plane_params.dynamic_friction = 10.0
+        plane_params.static_friction = self.terrain_config["friction"][0]
+        plane_params.dynamic_friction = self.terrain_config["friction"][1]
         plane_params.restitution = 0.0
         plane_params.normal = gymapi.Vec3(0, 0, 1)  # z-up
         self.ig_gym.add_ground(self.sim, plane_params)
@@ -232,7 +230,7 @@ class NeuroMechFlyIsaacGym(gym.Env):
 
         # Define initial root pose
         root_pose = gymapi.Transform()
-        root_pose.p = gymapi.Vec3(0, 0, 1.5)
+        root_pose.p = gymapi.Vec3(*self.terrain_config["fly_pos"])
         self._default_root_state = torch.tensor(
             [
                 root_pose.p.x,
@@ -285,7 +283,6 @@ class NeuroMechFlyIsaacGym(gym.Env):
         env_ids_int32 = env_ids.to(
             dtype=torch.int32, device=self.compute_device
         )
-        print(f"Resetting envs {env_ids_int32}...")
 
         # Reset root pose
         self.root_state[env_ids, :] = self._default_root_state
@@ -331,87 +328,13 @@ class NeuroMechFlyIsaacGym(gym.Env):
         self.ig_gym.fetch_results(self.sim, True)
 
         # Render
-        if self.render_mode == "viewer" and self.render_counter % 5 == 0:
+        if self.render_mode == "viewer":  # and self.render_counter % 5 == 0:
             self.ig_gym.step_graphics(self.sim)
             self.ig_gym.draw_viewer(self.viewer, self.sim, False)
             self.ig_gym.sync_frame_time(self.sim)
-        if self.render_counter % 5 == 0:
-            filename = f"rendered/frame_{self.render_counter:06d}.png"
-            self.ig_gym.write_viewer_image_to_file(self.viewer, filename)
+        # if self.render_counter % 5 == 0:
+        #     filename = f"rendered/frame_{self.render_counter:06d}.png"
+        #     self.ig_gym.write_viewer_image_to_file(self.viewer, filename)
         self.render_counter += 1
 
         self.curr_step_buffer += 1
-
-    def _test_simulate(self):
-        t_idx = 0
-        # while not self.ig_gym.query_viewer_has_closed(self.viewer):
-        for i in range(500):
-            self.ig_gym.simulate(self.sim)
-            self.ig_gym.fetch_results(self.sim, True)
-            # update viewer
-            if self.render_mode == "viewer":
-                self.ig_gym.step_graphics(self.sim)
-                self.ig_gym.draw_viewer(self.viewer, self.sim, False)
-                self.ig_gym.sync_frame_time(self.sim)  # make it real time
-            t_idx += 1
-
-
-import pkg_resources
-import pickle
-from flygym.util.config import leg_dofs_fused_tarsi
-
-
-def load_kin_replay_data(
-    target_timestep, actuated_joints=leg_dofs_fused_tarsi, run_time=1.0
-):
-    """Returns preselected kinematic data from a fly walking on a ball.
-
-    Parameters
-    ----------
-    target_timestep : float
-        Timestep to interpolate to.
-    actuated_joints : List[np.ndarray]
-        List of DoFs to actuate, by default leg_dofs_fused_tarsi
-    run_time : float, optional
-        Total amount of time to extract (in seconds), by default 1.0
-
-    Returns
-    -------
-    np.ndarray
-        Recorded kinematic data as an array of shape
-        (len(actuated_joints), int(run_time / target_timestep))
-    """
-    data_path = Path(pkg_resources.resource_filename("flygym", "data"))
-
-    with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
-        data = pickle.load(f)
-    # Interpolate 5x
-    num_steps = int(run_time / target_timestep)
-    data_block = np.zeros((len(actuated_joints), num_steps))
-    measure_t = np.arange(len(data["joint_LFCoxa"])) * data["meta"]["timestep"]
-    interp_t = np.arange(num_steps) * target_timestep
-    for i, joint in enumerate(actuated_joints):
-        data_block[i, :] = np.interp(interp_t, measure_t, data[joint])
-    return data_block
-
-
-if __name__ == "__main__":
-    num_envs = 1024
-    kin_data = load_kin_replay_data(target_timestep=1e-3)
-    env = NeuroMechFlyIsaacGym(
-        num_envs=num_envs, timestep=1e-3, render_mode="viewer"
-    )
-    env.reset()
-    from time import time
-    from tqdm import trange
-
-    st = time()
-    for i in trange(kin_data.shape[1]):
-        curr_ref_state = torch.tensor(kin_data[:, i], device=env.compute_device)
-        curr_states = curr_ref_state.unsqueeze(0).expand(num_envs, -1)
-        env.step(curr_states)
-    print(f"Time taken: {time() - st:.2f}s")
-    # print("ok")
-    # env._test_simulate()
-    # env.reset()
-    # env._test_simulate()
