@@ -45,29 +45,29 @@ _collision_lookup = {
 }
 _default_terrain_config = {
     'flat': {
-        'size': (50_000, 50_000),
+        'size': (50, 50),
         'friction': (1, 0.005, 0.0001),
-        'fly_pos': (0, 0, 300),
+        'fly_pos': (0, 0, 0.5),
         'fly_orient': (0, 1, 0, 0.1)
     },
     'gapped': {
-        'x_range': (-10_000, 10_000),
-        'y_range': (-10_000, 10_000),
+        'x_range': (-10, 10),
+        'y_range': (-10, 10),
         'friction': (1, 0.005, 0.0001),
-        'gap_width': 200,
-        'block_width': 1000,
-        'gap_depth': 2000,
-        'fly_pos': (0, 0, 600),
+        'gap_width': 0.2,
+        'block_width': 1,
+        'gap_depth': 2,
+        'fly_pos': (0, 0, 0.6),
         'fly_orient': (0, 1, 0, 0.1)
     },
     'blocks': {
-        'x_range': (-10_000, 10_000),
-        'y_range': (-10_000, 10_000),
+        'x_range': (-10, 10),
+        'y_range': (-10, 10),
         'friction': (1, 0.005, 0.0001),
-        'block_size': 1000,
-        'height_range': (300, 300),
+        'block_size': 1,
+        'height_range': (0.3, 0.3),
         'rand_seed': 0,
-        'fly_pos': (0, 0, 600),
+        'fly_pos': (0, 0, 0.6),
         'fly_orient': (0, 1, 0, 0.1)
     },
     'ball': {
@@ -77,9 +77,11 @@ _default_terrain_config = {
     },
 }
 _default_physics_config = {
-    'joint_stiffness': 2500,
+    'joint_stiffness': 0.1,
+    'joint_damping': 0.01,
+    'actuator_kp': 60,
     'friction': (1, 0.005, 0.0001),
-    'gravity': (0, 0, -9.81e5),
+    'gravity': (0, 0, -9.81e3),
 }
 _default_render_config = {
     'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60,
@@ -268,10 +270,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # for joint in model.find_all('joint'):
         #     if joint.name not in actuated_joints:
         #         joint.type = 'fixed'
+
         self.actuators = [
             self.model.find('actuator', f'actuator_{control}_{joint}')
             for joint in actuated_joints
         ]
+
+        for act in self.actuators:
+            act.kp = self.physics_config['actuator_kp']
 
         # Add sensors
         self.joint_sensors = []
@@ -458,6 +464,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._eff_render_interval = (self.render_config['playspeed'] /
                                          self.render_config['fps'])
         self._frames = []
+        self._frame_count = 0
 
         # Ad hoc changes to gravity, stiffness, and friction
         for geom in [geom.name for geom in arena.find_all('geom')]:
@@ -469,15 +476,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if joint is not None:
                 self.physics.model.joint(f'Animat/{joint}').stiffness = \
                     self.physics_config['joint_stiffness']
+                self.physics.model.joint(f'Animat/{joint}').damping = \
+                    self.physics_config['joint_damping']
 
         self.physics.model.opt.gravity = self.physics_config['gravity']
 
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all('joint')]
-        self._set_compliant_Tarsus(all_joints, stiff=3.5e5, damping=100)
+        self._set_compliant_Tarsus(all_joints, stiff=1.5, damping=50.0)
         # set init pose
         self._set_init_pose(self.init_pose)
-
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -490,8 +498,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _set_compliant_Tarsus(self,
                               all_joints: List,
-                              stiff: float = 0.0,
-                              damping: float = 100):
+                              stiff: float = 1.0,
+                              damping: float = 0.1):
         """Set the Tarsus2/3/4/5 to be compliant by setting the
         stifness and damping to a low value"""
         for joint in all_joints:
@@ -636,6 +644,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f'Saving video to {path}')
+        assert len(self._frames) > 0, 'No frames to save'
+
         with imageio.get_writer(path, fps=self.render_config['fps']) as writer:
             for frame in self._frames:
                 writer.append_data(frame)

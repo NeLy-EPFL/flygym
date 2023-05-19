@@ -10,8 +10,8 @@ if not data_path.is_dir():
     )
 
 # MuJoCo
-mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjc_nofloor_230416_bendTarsus.xml'
-
+#mujoco_groundwalking_model_path = data_path / 'mjcf/groundwalking_nmf_mjc_nofloor_230416_bendTarsus.xml'
+mujoco_groundwalking_model_path = data_path / "mjcf/groundwalking_nmf_mjcf_nofloor_230518__bendTarsus_scaled.xml"
 # Isaac Gym
 ...
 
