@@ -77,9 +77,11 @@ _default_terrain_config = {
     },
 }
 _default_physics_config = {
-    'joint_stiffness': 0.1,
-    'joint_damping': 0.01,
-    'actuator_kp': 60,
+    'joint_stiffness': 0.05,
+    'joint_damping': 0.06,
+    'actuator_kp': 18.0,
+    'tarsus_stiffness': 0.0022,
+    'tarsus_damping': 1.26,
     'friction': (1, 0.005, 0.0001),
     'gravity': (0, 0, -9.81e3),
 }
@@ -236,6 +238,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics_config = copy.deepcopy(_default_physics_config)
         self.physics_config.update(physics_config)
         self.control = control
+
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -483,7 +486,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all('joint')]
-        self._set_compliant_Tarsus(all_joints, stiff=1.5, damping=50.0)
+        self._set_compliant_Tarsus(all_joints,
+                                   stiff=self.physics_config["tarsus_stiffness"],
+                                   damping=self.physics_config["tarsus_damping"])
         # set init pose
         self._set_init_pose(self.init_pose)
     def _set_init_pose(self, init_pose: Dict[str, float]):
