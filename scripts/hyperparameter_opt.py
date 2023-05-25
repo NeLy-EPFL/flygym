@@ -326,8 +326,8 @@ space = {'physics_config': {
     "joint_damping": hp.loguniform("joint_damping", np.log(1e-3), np.log(10)),
     "actuator_kp": hp.loguniform("actuator_kp", np.log(1e-3), np.log(70)),
 
-    "tarsus_stifness": hp.loguniform("tarsus_stifness", np.log(1e-3), np.log(10)),
-    " ": hp.loguniform("tarsus_damping", np.log(1e-3), np.log(10)),
+    "tarsus_stiffness": hp.loguniform("tarsus_stiffness", np.log(1e-3), np.log(10)),
+    "tarsus_damping": hp.loguniform("tarsus_damping", np.log(1e-3), np.log(10)),
 
     "friction": (hp.loguniform("sliding_friction", np.log(1e-4), np.log(10)),
                  hp.loguniform("torsional_friction", np.log(1e-4), np.log(10)),
