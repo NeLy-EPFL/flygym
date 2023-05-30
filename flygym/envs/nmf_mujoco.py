@@ -83,7 +83,7 @@ _default_physics_config = {
 }
 _default_render_config = {
     'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60,
-              'camera': 1},
+              'camera': 1, 'camera': 'Animat/camera_left_top'},
     'headless': {}
 }
 
