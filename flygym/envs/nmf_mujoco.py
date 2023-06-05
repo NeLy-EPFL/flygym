@@ -24,7 +24,7 @@ except ImportError:
     )
 
 from flygym.terrain.mujoco_terrain import \
-    FlatTerrain, Ball, GappedTerrain, ExtrudingBlocksTerrain
+    FlatTerrain, GappedTerrain, ExtrudingBlocksTerrain, MixedComplexTerrain
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.data import default_pose_path, stretch_pose_path, \
     zero_pose_path
@@ -70,6 +70,19 @@ _default_terrain_config = {
         'fly_pos': (0, 0, 600),
         'fly_orient': (0, 1, 0, 0.1)
     },
+    'mixed': {
+        'x_range': (-10_000, 10_000),
+        'y_range': (-10_000, 10_000),
+        'friction': (1, 0.005, 0.0001),
+        'gap_width': 200,
+        'block_width': 1000,
+        'gap_depth': 2000,
+        'block_size': 1000,
+        'height_range': (300, 300),
+        'rand_seed': 0,
+        'fly_pos': (0, 0, 600),
+        'fly_orient': (0, 1, 0, 0.1)
+    },
     'ball': {
         'radius': ...,
         'fly_pos': (0, 0, ...),
@@ -83,7 +96,7 @@ _default_physics_config = {
 }
 _default_render_config = {
     'saved': {'window_size': (640, 480), 'playspeed': 1.0, 'fps': 60,
-              'camera': 1},
+              'camera': 1, 'camera': 'Animat/camera_left_top'},
     'headless': {}
 }
 
@@ -419,8 +432,23 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                     rel_pos=self.terrain_config['fly_pos'],
                                     rel_angle=self.terrain_config['fly_orient'])
             arena = my_terrain.arena
-        elif terrain == 'ball':
-            raise NotImplementedError
+        elif terrain == 'mixed':
+            my_terrain = MixedComplexTerrain(
+                gap_width=self.terrain_config['gap_width'],
+                block_width=self.terrain_config['block_width'],
+                gap_depth=self.terrain_config['gap_depth'],
+                block_size=self.terrain_config['block_size'],
+                height_range=self.terrain_config['height_range'],
+                rand_seed=self.terrain_config['rand_seed'],
+                friction=self.terrain_config['friction']
+            )
+            my_terrain.spawn_entity(self.model,
+                                    rel_pos=self.terrain_config['fly_pos'],
+                                    rel_angle=self.terrain_config['fly_orient'])
+            arena = my_terrain.arena
+                
+        else:
+            raise NotImplementedError(f"Terrain type {terrain} not implemented")
 
         # Add collision between the ground and the fly
         floor_collisions_geoms = _collision_lookup[floor_collisions_geoms]
