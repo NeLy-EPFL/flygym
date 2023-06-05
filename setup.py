@@ -37,7 +37,7 @@ setup(
             "pytest",
             "ruff",
             "black",
-            "black_jupyter",
+            "black[jupyter]",
         ],
     },
 )
