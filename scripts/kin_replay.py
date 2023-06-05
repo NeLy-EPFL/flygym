@@ -40,7 +40,7 @@ obs_list = []
 for i in trange(num_steps):
     joint_pos = data_block[:, i]
     action = {"joints": joint_pos}
-    obs, info = nmf.step(action)
+    obs, reward, terminated, truncated, info = nmf.step(action)
     nmf.render()
     obs_list.append(obs)
 nmf.close()
