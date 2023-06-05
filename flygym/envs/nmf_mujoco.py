@@ -406,19 +406,19 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                     rel_pos=self.terrain_config['fly_pos'],
                                     rel_angle=self.terrain_config['fly_orient'])
             arena = my_terrain.arena
-        # elif terrain == 'gapped':
-        #     my_terrain = GappedTerrain(
-        #         x_range=self.terrain_config['x_range'],
-        #         y_range=self.terrain_config['y_range'],
-        #         gap_width=self.terrain_config['gap_width'],
-        #         block_width=self.terrain_config['block_width'],
-        #         gap_depth=self.terrain_config['gap_depth'],
-        #         friction=self.terrain_config['friction']
-        #     )
-        #     my_terrain.spawn_entity(self.model,
-        #                             rel_pos=self.terrain_config['fly_pos'],
-        #                             rel_angle=self.terrain_config['fly_orient'])
-        #     arena = my_terrain.arena
+        elif terrain == 'gapped':
+            my_terrain = GappedTerrain(
+                x_range=self.terrain_config['x_range'],
+                y_range=self.terrain_config['y_range'],
+                gap_width=self.terrain_config['gap_width'],
+                block_width=self.terrain_config['block_width'],
+                gap_depth=self.terrain_config['gap_depth'],
+                friction=self.terrain_config['friction']
+            )
+            my_terrain.spawn_entity(self.model,
+                                    rel_pos=self.terrain_config['fly_pos'],
+                                    rel_angle=self.terrain_config['fly_orient'])
+            arena = my_terrain.arena
         elif terrain == 'blocks':
             my_terrain = ExtrudingBlocksTerrain(
                 x_range=self.terrain_config['x_range'],
@@ -432,15 +432,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                     rel_pos=self.terrain_config['fly_pos'],
                                     rel_angle=self.terrain_config['fly_orient'])
             arena = my_terrain.arena
-        elif terrain == 'mixed' or terrain == 'gapped':
+        elif terrain == 'mixed':
             my_terrain = MixedComplexTerrain(
-                # gap_width=self.terrain_config['gap_width'],
-                # block_width=self.terrain_config['block_width'],
-                # gap_depth=self.terrain_config['gap_depth'],
-                # block_size=self.terrain_config['block_size'],
-                # height_range=self.terrain_config['height_range'],
-                # rand_seed=self.terrain_config['rand_seed'],
-                # friction=self.terrain_config['friction']
+                gap_width=self.terrain_config['gap_width'],
+                block_width=self.terrain_config['block_width'],
+                gap_depth=self.terrain_config['gap_depth'],
+                block_size=self.terrain_config['block_size'],
+                height_range=self.terrain_config['height_range'],
+                rand_seed=self.terrain_config['rand_seed'],
+                friction=self.terrain_config['friction']
             )
             my_terrain.spawn_entity(self.model,
                                     rel_pos=self.terrain_config['fly_pos'],
