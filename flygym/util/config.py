@@ -27,6 +27,7 @@ all_tarsi_collisions_geoms = [
     for pos in "FMH"
     for dof in ["Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
 ]
+all_tarsi_links = ["Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
 
 all_legs_collisions_geoms = [
     f"{side}{pos}{dof}_collision"
