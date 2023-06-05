@@ -276,7 +276,7 @@ class MixedComplexTerrain(BaseTerrain):
     
     def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
                            ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 0])
+        adj_pos = rel_pos + np.array([0, 0, 100])
         return adj_pos, rel_angle
 
 
