@@ -26,11 +26,11 @@ This process can be shown in the following code snippet::
         
         for step in range(1000):    # let's simulate 1000 steps max
             action = ...    # your controller decides what to do based on obs
-            obs, info = env.step(action)
+            obs, reward, terminated, truncated, info = env.step(action)
             env.render()
-            if is_done(obs):    # is the task already accomplished or failed?
+            if terminated or truncated:
                 break
-        
+
         env.close()
 
 Note that the action can be selected by any means defined by the user. It could be a function consisting only of if statements, or an artificial neural network predicting the best actions based on prior observation.
