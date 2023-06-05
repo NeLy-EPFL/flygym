@@ -16,7 +16,7 @@ joint_name_lookup = {
 
 
 def parse_args():
-    """ Parse arguments from command line """
+    """Parse arguments from command line"""
     parser = argparse.ArgumentParser(
         description=(
             "Selecte portion of DF3DPostProcessing joint angle output "

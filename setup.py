@@ -36,7 +36,7 @@ setup(
             "numpydoc",
             "pytest",
             "ruff",
-            "black~=23.0.0",
+            "black==23.3.0",
             "black[jupyter]",
         ],
     },

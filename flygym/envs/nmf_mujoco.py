@@ -90,7 +90,11 @@ _default_terrain_config = {
         "fly_pos": (0, 0, 600),
         "fly_orient": (0, 1, 0, 0.1),
     },
-    "ball": {"radius": ..., "fly_pos": (0, 0, ...), "fly_orient": (0, 1, 0, ...),},
+    "ball": {
+        "radius": ...,
+        "fly_pos": (0, 0, ...),
+        "fly_orient": (0, 1, 0, ...),
+    },
 }
 _default_physics_config = {
     "joint_stiffness": 2500,
@@ -360,7 +364,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             for geom2 in self_collisions_geoms:
                 is_duplicate = f"{geom1}_{geom2}" in self.self_contact_pairs_names
                 if geom1 != geom2 and not is_duplicate:
-
                     # Do not add contact if the parent bodies have a child parent relationship
                     body1 = self.model.find("geom", geom1).parent
                     body2 = self.model.find("geom", geom2).parent

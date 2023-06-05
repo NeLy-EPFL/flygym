@@ -8,12 +8,12 @@ from flygym.terrain.base import BaseTerrain
 
 class FlatTerrain(BaseTerrain):
     """Flat terrain with no obstacles.
-    
+
     Attributes
     ----------
     arena : mjcf.RootElement
         The arena object that the terrain is built on.
-    
+
     Parameters
     ----------
     size : Tuple[int, int]
@@ -63,7 +63,7 @@ class FlatTerrain(BaseTerrain):
 
 class GappedTerrain(BaseTerrain):
     """Terrain with horizontal gaps.
-    
+
     Attributes
     ----------
     arena : mjcf.RootElement
@@ -157,7 +157,7 @@ class GappedTerrain(BaseTerrain):
 
 class ExtrudingBlocksTerrain(BaseTerrain):
     """Terrain formed by blocks at random heights.
-    
+
     Attributes
     ----------
     arena : mjcf.RootElement
@@ -342,12 +342,12 @@ class MixedComplexTerrain(BaseTerrain):
 
 class Ball(BaseTerrain):
     """Fly tethered on a spherical threadmill.
-    
+
     Attributes
     ----------
     arena : mjcf.RootElement
         The arena object that the terrain is built on.
-    
+
     Parameters
     ----------
     radius : float, optional
