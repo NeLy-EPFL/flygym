@@ -3,7 +3,7 @@ import yaml
 import imageio
 import copy
 import logging
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, SupportsFloat
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
@@ -626,9 +626,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_init_pose(self.init_pose)
         self._frames = []
         self._last_render_time = -np.inf
-        return self.get_observation(), self._get_info()
+        return self.get_observation(), self.get_info()
 
-    def step(self, action: ObsType) -> Tuple[ObsType, float, bool, Dict[str, Any]]:
+    def step(
+        self, action: ObsType
+    ) -> Tuple[ObsType, SupportsFloat, bool, bool, Dict[str, Any]]:
         """Step the Gym environment.
 
         Parameters
@@ -641,6 +643,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
         -------
         ObsType
             The observation as defined by the environment.
+        SupportsFloat
+            The reward as defined by the environment.
+        bool
+            Whether the episode has terminated due to factors that
+            are defined within the Markov Decision Process (eg. task
+            completion/failure, etc).
+        bool
+            Whether the episode has terminated due to factors beyond
+            the Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
             Any additional information that is not part of the
             observation. This is an empty dictionary by default but
@@ -650,7 +661,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics.bind(self.actuators).ctrl = action["joints"]
         self.physics.step()
         self.curr_time += self.timestep
-        return self.get_observation(), self._get_info()
+        observation = self.get_observation()
+        reward = self.get_reward()
+        terminated = self.is_terminated()
+        truncated = self.is_truncated()
+        info = self.get_info()
+        return observation, reward, terminated, truncated, info
 
     def render(self):
         """Call the ``render`` method to update the renderer. It should
@@ -668,14 +684,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._last_render_time = self.curr_time
         else:
             raise NotImplementedError
-
-    def _get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
-        logging.warning(
-            "[DeprecationWarning] `_get_observation` is no longer intended "
-            "for internal use only; use `get_observation` instead in the "
-            "future."
-        )
-        return self.get_observation()
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
@@ -719,7 +727,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "end_effectors": ee_pos,
         }
 
-    def _get_info(self):
+    def get_reward(self):
+        return 0
+
+    def is_terminated(self):
+        return False
+
+    def is_truncated(self):
+        return False
+
+    def get_info(self):
         return {}
 
     def save_video(self, path: Path):
