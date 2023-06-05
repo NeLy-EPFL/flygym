@@ -36,6 +36,7 @@ from flygym.util.config import (
     all_tarsi_collisions_geoms,
     all_legs_collisions_geoms,
     all_legs_collisions_geoms_no_coxa,
+    all_tarsi_links,
 )
 
 _init_pose_lookup = {
@@ -192,7 +193,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         render_mode: str = "saved",
         render_config: Dict[str, Any] = {},
         actuated_joints: List = all_leg_dofs,
-        collision_tracked_geoms: List = all_tarsi_collisions_geoms,
+        contact_sensor_placements: List = all_tarsi_links,
         timestep: float = 0.0001,
         output_dir: Optional[Path] = None,
         terrain: str = "flat",
@@ -219,6 +220,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             for detailed options.
         actuated_joints : List, optional
             List of actuated joint DoFs, by default all leg DoFs
+        contact_sensor_placements : List, optional
+            List of geometries on each leg where a contact sensor should
+            be placed. By default all tarsi.
         timestep : float, optional
             Simulation timestep in seconds, by default 0.0001
         output_dir : Path, optional
@@ -250,7 +254,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.render_config = copy.deepcopy(_default_render_config[render_mode])
         self.render_config.update(render_config)
         self.actuated_joints = actuated_joints
-        self.collision_tracked_geoms = collision_tracked_geoms
+        self.contact_sensor_placements = contact_sensor_placements
         self.timestep = timestep
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -278,9 +282,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # 3rd row: rate of change of fly orientation
             "fly": spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
             # contact forces: readings of the touch contact sensors, one
-            # placed for each of the ``collision_tracked_geoms``
+            # placed for each of the ``contact_sensor_placements``
             "contact_forces": spaces.Box(
-                low=-np.inf, high=np.inf, shape=(len(collision_tracked_geoms),)
+                low=-np.inf,
+                high=np.inf,
+                shape=(
+                    6,
+                    len(contact_sensor_placements),
+                ),
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
@@ -411,23 +420,26 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         ## Add sites and touch sensors
         self.touch_sensors = []
-
-        for tracked_geom in collision_tracked_geoms:
-            geom = self.model.find("geom", tracked_geom)
-            body = geom.parent
-            site = body.add(
-                "site",
-                name=f"site_{geom.name}",
-                size=np.ones(3) * 1000,
-                pos=geom.pos,
-                quat=geom.quat,
-                type="sphere",
-                group=3,
-            )
-            touch_sensor = self.model.sensor.add(
-                "touch", name=f"touch_{geom.name}", site=site.name
-            )
-            self.touch_sensors.append(touch_sensor)
+        for side in "LR":
+            for pos in "FMH":
+                for tracked_geom in contact_sensor_placements:
+                    geom = self.model.find(
+                        "geom", f"{side}{pos}{tracked_geom}_collision"
+                    )
+                    body = geom.parent
+                    site = body.add(
+                        "site",
+                        name=f"site_{geom.name}",
+                        size=np.ones(3) * 1000,
+                        pos=geom.pos,
+                        quat=geom.quat,
+                        type="sphere",
+                        group=3,
+                    )
+                    touch_sensor = self.model.sensor.add(
+                        "touch", name=f"touch_{geom.name}", site=site.name
+                    )
+                    self.touch_sensors.append(touch_sensor)
 
         # Add arena and put fly in it
         if terrain == "flat":
@@ -715,7 +727,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
         # tarsi contact forces
-        touch_sensordata = np.array(self.physics.bind(self.touch_sensors).sensordata)
+        touch_sensordata = self.physics.bind(self.touch_sensors).sensordata
+        contact_forces = touch_sensordata.copy().reshape(
+            (6, len(self.contact_sensor_placements))
+        )
 
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
@@ -723,7 +738,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return {
             "joints": joint_obs,
             "fly": fly_pos,
-            "contact_forces": touch_sensordata,
+            "contact_forces": contact_forces,
             "end_effectors": ee_pos,
         }
 
