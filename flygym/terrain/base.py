@@ -9,7 +9,7 @@ class BaseTerrain(ABC):
     @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
         """Create a new terrain object.
-        
+
         Attributes
         ----------
         arena : Any
