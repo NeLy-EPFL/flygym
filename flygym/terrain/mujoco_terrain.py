@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Dict, Union, Optional
+from typing import Tuple, List, Dict, Union, Optional, Any
 from dm_control import mjcf
 
 from flygym.terrain.base import BaseTerrain
@@ -71,7 +71,7 @@ class GappedTerrain(BaseTerrain):
     """
     
     def __init__(self,
-                 x_range: Tuple[int, int] = (-10_000, 10_000),
+                 x_range: Tuple[int, int] = (-10_000, 20_000),
                  y_range: Tuple[int, int] = (-10_000, 10_000),
                  friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
                  gap_width: int = 200,
@@ -106,9 +106,10 @@ class GappedTerrain(BaseTerrain):
                                          rgb1=(.2, .3, .4), rgb2=(.3, .4, .5))
         grid = self.arena.asset.add('material', name='grid', texture=chequered,
                                     texrepeat=(10, 10), reflectance=0.1)
-        ground_size = (max(self.x_range), max(self.y_range), 1)
+        ground_size = ((self.x_range[1] - self.x_range[0]) / 2,
+                       max(self.y_range), 1)
         self.arena.worldbody.add('geom', type='plane', name='ground',
-                                 pos=(0, 0, -gap_depth / 2),
+                                 pos=(np.mean(x_range), 0, -gap_depth / 2),
                                  material=grid, size=ground_size)
     
     
@@ -149,7 +150,7 @@ class ExtrudingBlocksTerrain(BaseTerrain):
     """
     
     def __init__(self,
-                 x_range: Tuple[int, int] = (-10_000, 10_000),
+                 x_range: Tuple[int, int] = (-10_000, 20_000),
                  y_range: Tuple[int, int] = (-10_000, 10_000),
                  friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
                  block_size: int = 1000,
@@ -187,6 +188,91 @@ class ExtrudingBlocksTerrain(BaseTerrain):
                                          rgba=(0.3, 0.3, 0.3, 1),
                                          material=obstacle,
                                          friction=friction)
+    
+    def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
+                           ) -> Tuple[np.ndarray, np.ndarray]:
+        adj_pos = rel_pos + np.array([0, 0, 100])
+        return adj_pos, rel_angle
+
+
+class MixedComplexTerrain(BaseTerrain):
+    def __init__(self,
+                 friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+                 gap_width: int = 200,
+                 block_width: int = 1000,
+                 gap_depth: int = 2000,
+                 block_size: int = 1000,
+                 height_range: Tuple[int, int] = (300, 300),
+                 rand_seed: int = 0):
+        self.arena = mjcf.RootElement()
+        obstacle = self.arena.asset.add('material', name='obstacle',
+                                        reflectance=0.1)
+        chequered = self.arena.asset.add('texture', type='2d',
+                                         builtin='checker',
+                                         width=300, height=300,
+                                         rgb1=(.2, .3, .4), rgb2=(.3, .4, .5))
+        grid = self.arena.asset.add('material', name='grid', texture=chequered,
+                                    texrepeat=(10, 10), reflectance=0.1)
+        y_range = (-10_000, 10_000)
+        rand_state = np.random.RandomState(rand_seed)
+        
+        # Extruding blocks near origin
+        for x_range in [(-2_000, 2_000), (6_000, 8_000), (12_000, 14_000)]:
+            x_centers = np.arange(x_range[0] + block_size / 2, x_range[1],
+                                block_size)
+            y_centers = np.arange(y_range[0] + block_size / 2, y_range[1],
+                                block_size)
+            for i, x_pos in enumerate(x_centers):
+                for j, y_pos in enumerate(y_centers):
+                    is_i_odd = i % 2 == 1
+                    is_j_odd = j % 2 == 1
+                    
+                    if is_i_odd != is_j_odd:
+                        height = 100
+                    else:
+                        height = 100 + rand_state.uniform(*height_range)
+                    
+                    self.arena.worldbody.add('geom', type='box',
+                                            size=(block_size / 2,
+                                                block_size / 2,
+                                                height / 2),
+                                            pos=(x_pos, y_pos, height / 2 - 50),
+                                            rgba=(0.3, 0.3, 0.3, 1),
+                                            material=obstacle,
+                                            friction=friction)
+        
+        # Then gaps
+        for x_range in [(2_000, 4_000), (8_000, 10_000), (14_000, 16_000)]:
+            block_centers = np.arange(x_range[0] + block_width / 2,
+                                      x_range[1],
+                                      block_width + gap_width)
+            box_size = (block_width / 2,
+                        (y_range[1] - y_range[0]) / 2,
+                        gap_depth / 2)
+            for x_pos in block_centers:
+                self.arena.worldbody.add('geom', type='box', size=box_size,
+                                        pos=(x_pos, 0, -gap_depth / 2),
+                                        friction=friction,
+                                        rgba=(0.3, 0.3, 0.3, 1), material=obstacle)
+        
+            # add floor underneath
+            ground_size = ((x_range[1] - x_range[0]) / 2,
+                           max(y_range), 1)
+            self.arena.worldbody.add('geom', type='plane',
+                                     name=f'ground_{x_range[0]}',
+                                     pos=(np.mean(x_range), 0, -gap_depth / 2),
+                                     material=grid, size=ground_size)
+            
+        # Finally, flat areas
+        for x_range in [(-4_000, -2_000), (4_000, 6_000), (10_000, 12_000),
+                        (10_000, 18_000)]:
+            self.arena.worldbody.add('geom',
+                                     type='box',
+                                     size=(2_000 / 2, 20_000 / 2, 1),
+                                     pos=(np.mean(x_range), 0, -1),
+                                     friction=friction,
+                                     rgba=(0.3, 0.3, 0.3, 1),
+                                     material=obstacle)
     
     def get_spawn_position(self, rel_pos: np.ndarray, rel_angle: np.ndarray
                            ) -> Tuple[np.ndarray, np.ndarray]:
