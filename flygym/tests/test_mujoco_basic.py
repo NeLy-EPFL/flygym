@@ -20,10 +20,10 @@ def test_basic_untethered_sinewave():
         joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        # nmf.render()
         obs_list.append(obs)
     nmf.close()
 
     out_dir = temp_base_dir / "mujoco_basic_untethered_sinewave"
-    nmf.save_video(out_dir / "video.mp4")
+    # nmf.save_video(out_dir / "video.mp4")
     plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)
