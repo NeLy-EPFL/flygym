@@ -38,12 +38,9 @@ from flygym.util.config import (
     all_legs_collisions_geoms_no_coxa,
     all_tarsi_links,
 )
+from flygym.state import BaseState, stretched_pose
 
-_init_pose_lookup = {
-    "default": default_pose_path,
-    "stretch": stretch_pose_path,
-    "zero": zero_pose_path,
-}
+
 _collision_lookup = {
     "all": "all",
     "legs": all_legs_collisions_geoms,
@@ -200,7 +197,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         terrain_config: Dict[str, Any] = {},
         physics_config: Dict[str, Any] = {},
         control: str = "position",
-        init_pose: str = "default",
+        init_pose: BaseState = stretched_pose,
         floor_collisions_geoms: str = "legs",
         self_collisions_geoms: str = "legs",
     ) -> None:
@@ -240,9 +237,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         control : str, optional
             The joint controller type. Can be 'position', 'velocity', or
             'torque'., by default 'position'
-        init_pose : str, optional
-            Which initial pose to start the simulation from. Currently only
-            'default' is implemented.
+        init_pose : BaseState, optional
+            Which initial pose to start the simulation from. By default
+            "stretched" kinematic pose with all legs fully stretched.
         floor_collisions_geoms :str
             Which set of collisions should collide with the floor. Can be
             'all', 'legs', or 'tarsi'.
@@ -265,6 +262,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics_config = copy.deepcopy(_default_physics_config)
         self.physics_config.update(physics_config)
         self.control = control
+        self.init_pose = init_pose
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -297,14 +295,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
-        self.model.option.timestep = timestep
-        if init_pose not in self._metadata["init_pose"]:
-            raise ValueError(f"Invalid init_pose: {init_pose}")
-        with open(_init_pose_lookup[init_pose]) as f:
-            init_pose = {
-                k: np.deg2rad(v) for k, v in yaml.safe_load(f)["joints"].items()
-            }
-        self.init_pose = {k: v for k, v in init_pose.items() if k in actuated_joints}
 
         # Fix unactuated joints and define list of actuated joints
         # for joint in model.find_all('joint'):
