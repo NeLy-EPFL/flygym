@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict, Union, Optional, Any
 from dm_control import mjcf
 
-from flygym.terrain.base import BaseTerrain
+from flygym.arena.base import BaseArena
 
 
-class FlatTerrain(BaseTerrain):
+class FlatTerrain(BaseArena):
     """Flat terrain with no obstacles.
 
     Attributes
@@ -28,9 +28,9 @@ class FlatTerrain(BaseTerrain):
         size: Tuple[float, float] = (50_000, 50_000),
         friction: Tuple[float, float, float] = (100, 0.005, 0.0001),
     ):
-        self.arena = mjcf.RootElement()
+        self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
-        chequered = self.arena.asset.add(
+        chequered = self.root_element.asset.add(
             "texture",
             type="2d",
             builtin="checker",
@@ -39,14 +39,14 @@ class FlatTerrain(BaseTerrain):
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
-        grid = self.arena.asset.add(
+        grid = self.root_element.asset.add(
             "material",
             name="grid",
             texture=chequered,
             texrepeat=(10, 10),
             reflectance=0.1,
         )
-        self.arena.worldbody.add(
+        self.root_element.worldbody.add(
             "geom",
             type="plane",
             name="ground",
@@ -54,6 +54,7 @@ class FlatTerrain(BaseTerrain):
             size=ground_size,
             friction=friction,
         )
+        self.friction = friction
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
@@ -61,7 +62,7 @@ class FlatTerrain(BaseTerrain):
         return rel_pos, rel_angle
 
 
-class GappedTerrain(BaseTerrain):
+class GappedTerrain(BaseArena):
     """Terrain with horizontal gaps.
 
     Attributes
@@ -99,19 +100,22 @@ class GappedTerrain(BaseTerrain):
     ) -> None:
         self.x_range = x_range
         self.y_range = y_range
+        self.friction = friction
         self.gap_width = gap_width
         self.block_width = block_width
         self.gap_depth = gap_depth
 
         # add blocks
-        self.arena = mjcf.RootElement()
+        self.root_element = mjcf.RootElement()
         block_centers = np.arange(
             x_range[0] + block_width / 2, x_range[1], block_width + gap_width
         )
         box_size = (block_width / 2, (y_range[1] - y_range[0]) / 2, gap_depth / 2)
-        obstacle = self.arena.asset.add("material", name="obstacle", reflectance=0.1)
+        obstacle = self.root_element.asset.add(
+            "material", name="obstacle", reflectance=0.1
+        )
         for x_pos in block_centers:
-            self.arena.worldbody.add(
+            self.root_element.worldbody.add(
                 "geom",
                 type="box",
                 size=box_size,
@@ -122,7 +126,7 @@ class GappedTerrain(BaseTerrain):
             )
 
         # add floor underneath
-        chequered = self.arena.asset.add(
+        chequered = self.root_element.asset.add(
             "texture",
             type="2d",
             builtin="checker",
@@ -131,7 +135,7 @@ class GappedTerrain(BaseTerrain):
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
-        grid = self.arena.asset.add(
+        grid = self.root_element.asset.add(
             "material",
             name="grid",
             texture=chequered,
@@ -139,7 +143,7 @@ class GappedTerrain(BaseTerrain):
             reflectance=0.1,
         )
         ground_size = ((self.x_range[1] - self.x_range[0]) / 2, max(self.y_range), 1)
-        self.arena.worldbody.add(
+        self.root_element.worldbody.add(
             "geom",
             type="plane",
             name="ground",
@@ -155,7 +159,7 @@ class GappedTerrain(BaseTerrain):
         return adj_pos, rel_angle
 
 
-class ExtrudingBlocksTerrain(BaseTerrain):
+class BlocksTerrain(BaseArena):
     """Terrain formed by blocks at random heights.
 
     Attributes
@@ -196,12 +200,15 @@ class ExtrudingBlocksTerrain(BaseTerrain):
     ):
         self.x_range = x_range
         self.y_range = y_range
+        self.friction = friction
         self.block_size = block_size
         self.height_range = height_range
         rand_state = np.random.RandomState(rand_seed)
 
-        self.arena = mjcf.RootElement()
-        obstacle = self.arena.asset.add("material", name="obstacle", reflectance=0.1)
+        self.root_element = mjcf.RootElement()
+        obstacle = self.root_element.asset.add(
+            "material", name="obstacle", reflectance=0.1
+        )
 
         x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
         y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
@@ -215,7 +222,7 @@ class ExtrudingBlocksTerrain(BaseTerrain):
                 else:
                     height = 100 + rand_state.uniform(*height_range)
 
-                self.arena.worldbody.add(
+                self.root_element.worldbody.add(
                     "geom",
                     type="box",
                     size=(block_size / 2, block_size / 2, height / 2),
@@ -232,7 +239,7 @@ class ExtrudingBlocksTerrain(BaseTerrain):
         return adj_pos, rel_angle
 
 
-class MixedComplexTerrain(BaseTerrain):
+class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
@@ -243,9 +250,12 @@ class MixedComplexTerrain(BaseTerrain):
         height_range: Tuple[int, int] = (300, 300),
         rand_seed: int = 0,
     ):
-        self.arena = mjcf.RootElement()
-        obstacle = self.arena.asset.add("material", name="obstacle", reflectance=0.1)
-        chequered = self.arena.asset.add(
+        self.root_element = mjcf.RootElement()
+        self.friction = friction
+        obstacle = self.root_element.asset.add(
+            "material", name="obstacle", reflectance=0.1
+        )
+        chequered = self.root_element.asset.add(
             "texture",
             type="2d",
             builtin="checker",
@@ -254,7 +264,7 @@ class MixedComplexTerrain(BaseTerrain):
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
-        grid = self.arena.asset.add(
+        grid = self.root_element.asset.add(
             "material",
             name="grid",
             texture=chequered,
@@ -278,7 +288,7 @@ class MixedComplexTerrain(BaseTerrain):
                     else:
                         height = 100 + rand_state.uniform(*height_range)
 
-                    self.arena.worldbody.add(
+                    self.root_element.worldbody.add(
                         "geom",
                         type="box",
                         size=(block_size / 2, block_size / 2, height / 2),
@@ -295,7 +305,7 @@ class MixedComplexTerrain(BaseTerrain):
             )
             box_size = (block_width / 2, (y_range[1] - y_range[0]) / 2, gap_depth / 2)
             for x_pos in block_centers:
-                self.arena.worldbody.add(
+                self.root_element.worldbody.add(
                     "geom",
                     type="box",
                     size=box_size,
@@ -307,7 +317,7 @@ class MixedComplexTerrain(BaseTerrain):
 
             # add floor underneath
             ground_size = ((x_range[1] - x_range[0]) / 2, max(y_range), 1)
-            self.arena.worldbody.add(
+            self.root_element.worldbody.add(
                 "geom",
                 type="plane",
                 name=f"ground_{x_range[0]}",
@@ -323,7 +333,7 @@ class MixedComplexTerrain(BaseTerrain):
             (10_000, 12_000),
             (10_000, 18_000),
         ]:
-            self.arena.worldbody.add(
+            self.root_element.worldbody.add(
                 "geom",
                 type="box",
                 size=(2_000 / 2, 20_000 / 2, 1),
@@ -340,7 +350,7 @@ class MixedComplexTerrain(BaseTerrain):
         return adj_pos, rel_angle
 
 
-class Ball(BaseTerrain):
+class Ball(BaseArena):
     """Fly tethered on a spherical threadmill.
 
     Attributes

@@ -1,6 +1,7 @@
 import numpy as np
 
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
+from flygym.arena.mujoco_terrain import GappedTerrain, BlocksTerrain, MixedTerrain
 from flygym.tests import temp_base_dir
 
 
@@ -9,17 +10,20 @@ random_state = np.random.RandomState(0)
 
 def test_gapped_terrain():
     out_dir = temp_base_dir / "mujoco_gapped_terrain"
-    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, terrain="gapped")
+    arena = GappedTerrain()
+    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, arena=arena)
     nmf.close()
 
 
 def test_blocks_terrain():
     out_dir = temp_base_dir / "mujoco_blocks_terrain"
-    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, terrain="blocks")
+    arena = BlocksTerrain()
+    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, arena=arena)
     nmf.close()
 
 
 def test_mixed_terrain():
     out_dir = temp_base_dir / "mujoco_mixed_terrain"
-    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, terrain="mixed")
+    arena = MixedTerrain()
+    nmf = NeuroMechFlyMuJoCo(output_dir=out_dir, arena=arena)
     nmf.close()
