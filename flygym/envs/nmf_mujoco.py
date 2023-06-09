@@ -151,7 +151,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         contact_sensor_placements: List = all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 300.0),
+        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 1500.0),
         spawn_orient: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 0.1),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
@@ -207,6 +207,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.spawn_orient = spawn_orient
         self.control = control
         self.init_pose = init_pose
+        self.render_mode = sim_params.render_mode
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -397,8 +398,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             is_ground = geom.name is None or not (
                 "visual" in geom.name or "collision" in geom.name
             )
-            for animat_geom_name in floor_collisions_geoms:
-                if is_ground:
+            if is_ground:
+                for animat_geom_name in floor_collisions_geoms:
+                
                     if geom.name is None:
                         geom.name = f"groundblock_{ground_id}"
                         ground_id += 1
@@ -460,13 +462,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
-                if (self.actuators[i].joint.name in self.actuated_joints) and (
-                    self.actuators[i].joint.name in init_pose
-                ):
-                    angle_0 = init_pose[self.actuators[i].joint.name]
-                    self.physics.named.data.qpos[
-                        f"Animat/{self.actuators[i].joint.name}"
-                    ] = angle_0
+                curr_joint = self.actuators[i].joint.name
+                if (curr_joint in self.actuated_joints) and (curr_joint in init_pose):
+                    animat_name = f"Animat/{curr_joint}"
+                    self.physics.named.data.qpos[animat_name] = init_pose[curr_joint]
 
     def _set_compliant_Tarsus(
         self, all_joints: List, stiff: float = 0.0, damping: float = 100

@@ -7,18 +7,21 @@ import pkg_resources
 import pickle
 from pathlib import Path
 from tqdm import trange
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
+from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.state import stretched_pose
 from flygym.util.config import all_leg_dofs
 
 # Initialize simulation
-run_time = 1
-out_dir = Path("kin_replay")
-nmf = NeuroMechFlyMuJoCo(
-    render_mode="saved",
-    output_dir=out_dir,
+run_time = 0.1
+
+sim_params = MuJoCoParameters(
     timestep=1e-4,
-    render_config={"playspeed": 0.1},
-    init_pose="stretch",
+    render_mode="saved",
+    render_playspeed=0.1
+)
+nmf = NeuroMechFlyMuJoCo(
+    sim_params=sim_params,
+    init_pose=stretched_pose,
     actuated_joints=all_leg_dofs,
 )
 
@@ -44,3 +47,6 @@ for i in trange(num_steps):
     nmf.render()
     obs_list.append(obs)
 nmf.close()
+
+# Save video
+nmf.save_video(Path("kin_replay.mp4"))
