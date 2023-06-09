@@ -94,21 +94,53 @@ _default_terrain_config = {
         "fly_orient": (0, 1, 0, ...),
     },
 }
-_default_physics_config = {
-    "joint_stiffness": 2500,
-    "friction": (1, 0.005, 0.0001),
-    "gravity": (0, 0, -9.81e5),
-}
-_default_render_config = {
-    "saved": {
-        "window_size": (640, 480),
-        "playspeed": 1.0,
-        "fps": 60,
-        "camera": 1,
-        "camera": "Animat/camera_left_top",
-    },
-    "headless": {},
-}
+
+
+class MuJoCoParameters:
+    def __init__(
+        self,
+        timestep: float = 0.0001,
+        joint_stiffness: float = 2500,
+        friction: float = (1.0, 0.005, 0.0001),
+        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e5),
+        render_mode: str = "saved",
+        render_window_size: Tuple[int, int] = (640, 480),
+        render_playspeed: float = 1.0,
+        render_fps: int = 60,
+        render_camera: str = "Animat/camera_left_top",
+    ) -> None:
+        """Parameters of the MuJoCo simulation.
+
+        Parameters
+        ----------
+        timestep : float
+            Simulation timestep in seconds.
+        joint_stiffness : float, optional
+            Stiffness of actuated joints, by default 2500
+        friction : float, optional
+            , by default (1., 0.005., 0.0001)
+        gravity : Tuple[float, float, float], optional
+            _description_, by default (0., 0., -9.81e5)
+        render_mode : str, optional
+            _description_, by default "saved"
+        render_window_size : Tuple[int, int], optional
+            _description_, by default (640, 480)
+        render_playspeed : SupportsFloat, optional
+            _description_, by default 1.0
+        render_fps : int, optional
+            _description_, by default 60
+        render_camera : str, optional
+            _description_, by default "Animat/camera_left_top"
+        """
+        self.timestep = timestep
+        self.joint_stiffness = joint_stiffness
+        self.friction = friction
+        self.gravity = gravity
+        self.render_mode = render_mode
+        self.render_window_size = render_window_size
+        self.render_playspeed = render_playspeed
+        self.render_fps = render_fps
+        self.render_camera = render_camera
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -116,14 +148,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     Attributes
     ----------
-    render_mode : str
-        The rendering mode. Can be 'headless' (no graphic rendering),
-        'viewer' (display rendered images as the simulation takes
-        place), or 'saved' (saving the rendered video to a file under
-        ``output_dir`` at the end of the simulation).
-    render_config : Dict[str, Any]
-        Rendering configuration. Allowed parameters depend on the
-        rendering mode (``render_mode``).
     actuated_joints : List[str]
         List of actuated joints.
     timestep : float
@@ -135,8 +159,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
     terrain_config : Dict[str, Any]
         Terrain configuration. Allowed parameters depend on the terrain
         type (``terrain``).
-    physics_config : Dict[str, Any]
-        Physics configuration (gravity, joint stiffness, etc).
     control : str
         The joint controller type. Can be 'position', 'velocity', or
         'torque'.
@@ -187,15 +209,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def __init__(
         self,
-        render_mode: str = "saved",
-        render_config: Dict[str, Any] = {},
+        sim_params: MuJoCoParameters = None,
         actuated_joints: List = all_leg_dofs,
         contact_sensor_placements: List = all_tarsi_links,
-        timestep: float = 0.0001,
         output_dir: Optional[Path] = None,
         terrain: str = "flat",
         terrain_config: Dict[str, Any] = {},
-        physics_config: Dict[str, Any] = {},
         control: str = "position",
         init_pose: BaseState = stretched_pose,
         floor_collisions_geoms: str = "legs",
@@ -205,22 +224,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         Parameters
         ----------
-        render_mode : str, optional
-            The rendering mode. Can be 'headless' (no graphic rendering),
-            'viewer' (display rendered images as the simulation takes
-            place), or 'saved' (saving the rendered video to a file under
-            ``output_dir`` at the end of the simulation). By default
-            'saved'.
-        render_config : Dict[str, Any], optional
-            Rendering configuration. Allowed parameters depend on the
-            rendering mode (``render_mode``). See :ref:`mujoco_config`
-            for detailed options.
         actuated_joints : List, optional
             List of actuated joint DoFs, by default all leg DoFs
         contact_sensor_placements : List, optional
             List of geometries on each leg where a contact sensor should
             be placed. By default all tarsi.
-        timestep : float, optional
             Simulation timestep in seconds, by default 0.0001
         output_dir : Path, optional
             Directory to save simulation data (by default just the video,
@@ -231,9 +239,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         terrain_config : Dict[str, Any], optional
             Terrain configuration. Allowed parameters depend on the
             terrain type. See :ref:`mujoco_config` for detailed options.
-        physics_config : Dict[str, Any], optional
-            Physics configuration (gravity, joint stiffness, etc). See
-            :ref:`mujoco_config` for detailed options.
         control : str, optional
             The joint controller type. Can be 'position', 'velocity', or
             'torque'., by default 'position'
@@ -247,20 +252,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
             Which set of collisions should collide with each other. Can be
             'all', 'legs', 'legs-no-coxa', 'tarsi', or 'none'.
         """
-        self.render_mode = render_mode
-        self.render_config = copy.deepcopy(_default_render_config[render_mode])
-        self.render_config.update(render_config)
+        if sim_params is None:
+            sim_params = MuJoCoParameters()
+        self.sim_params = sim_params
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
-        self.timestep = timestep
+        self.timestep = sim_params.timestep
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir = output_dir
         self.terrain = terrain
         self.terrain_config = copy.deepcopy(_default_terrain_config[terrain])
         self.terrain_config.update(terrain_config)
-        self.physics_config = copy.deepcopy(_default_physics_config)
-        self.physics_config.update(physics_config)
         self.control = control
         self.init_pose = init_pose
 
@@ -526,7 +529,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         friction=np.repeat(
                             np.mean(
                                 [
-                                    self.physics_config["friction"],
+                                    self.sim_params.friction,
                                     self.terrain_config["friction"],
                                 ],
                                 axis=0,
@@ -539,13 +542,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         f"{geom.name}_{animat_geom_name}"
                     )
 
-        arena.option.timestep = timestep
+        arena.option.timestep = self.timestep
         self.physics = mjcf.Physics.from_mjcf_model(arena)
         self.curr_time = 0
         self._last_render_time = -np.inf
-        if render_mode != "headless":
+        if sim_params.render_mode != "headless":
             self._eff_render_interval = (
-                self.render_config["playspeed"] / self.render_config["fps"]
+                sim_params.render_playspeed / self.sim_params.render_fps
             )
         self._frames = []
 
@@ -554,15 +557,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if "collision" in geom:
                 self.physics.model.geom(
                     f"Animat/{geom}"
-                ).friction = self.physics_config["friction"]
+                ).friction = self.sim_params.friction
 
         for joint in self.actuated_joints:
             if joint is not None:
                 self.physics.model.joint(
                     f"Animat/{joint}"
-                ).stiffness = self.physics_config["joint_stiffness"]
+                ).stiffness = self.sim_params.joint_stiffness
 
-        self.physics.model.opt.gravity = self.physics_config["gravity"]
+        self.physics.model.opt.gravity = self.sim_params.gravity
 
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all("joint")]
@@ -679,8 +682,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.curr_time < self._last_render_time + self._eff_render_interval:
             return
         if self.render_mode == "saved":
-            width, height = self.render_config["window_size"]
-            camera = self.render_config["camera"]
+            width, height = self.sim_params.render_window_size
+            camera = self.sim_params.render_camera
             img = self.physics.render(width=width, height=height, camera_id=camera)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
@@ -762,7 +765,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
-        with imageio.get_writer(path, fps=self.render_config["fps"]) as writer:
+        with imageio.get_writer(path, fps=self.sim_params.render_fps) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
 

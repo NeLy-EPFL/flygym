@@ -1,6 +1,6 @@
 import numpy as np
 
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
+from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
 from flygym.tests import temp_base_dir
 from flygym.tests.common import plot_mujoco_rollout
 
@@ -9,7 +9,7 @@ random_state = np.random.RandomState(0)
 
 
 def test_basic_untethered_sinewave():
-    nmf = NeuroMechFlyMuJoCo(render_mode="saved")
+    nmf = NeuroMechFlyMuJoCo()
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
