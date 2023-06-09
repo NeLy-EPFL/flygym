@@ -3,18 +3,22 @@ Execute an environment where all leg joints of the fly repeat a sinusoidal
 motion. The output will be saved as a video."""
 
 import numpy as np
+import pkg_resources
 import matplotlib.pyplot as plt
 from pathlib import Path
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
+from tqdm import trange
+from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.state import stretched_pose
+from flygym.util.config import all_leg_dofs
+
 
 # First, we initialize simulation
 run_time = 1
-out_dir = Path("mujoco_basic_untethered_sinewave")
+sim_params = MuJoCoParameters(timestep=1e-4, render_mode="saved", render_playspeed=0.1)
 nmf = NeuroMechFlyMuJoCo(
-    render_mode="saved",
-    output_dir=out_dir,
-    init_pose="stretch",
-    render_config={"playspeed": 0.2},
+    sim_params=sim_params,
+    init_pose=stretched_pose,
+    actuated_joints=all_leg_dofs,
 )
 
 # Define the frequency, phase, and amplitude of the sinusoidal waves
@@ -23,13 +27,16 @@ phase = 2 * np.pi * np.random.rand(len(nmf.actuators))
 amp = 0.9
 
 obs_list = []  # keep track of the observed states
-while nmf.curr_time <= run_time:  # main loop
+num_steps = int(run_time / nmf.timestep)
+for i in trange(num_steps):
     joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
     action = {"joints": joint_pos}
     obs, reward, terminated, truncated, info = nmf.step(action)
     nmf.render()
     obs_list.append(obs)
 nmf.close()
+
+nmf.save_video(Path("sine_wave.mp4"))
 
 # Visualize joint angles, velocities, and forces over time
 num_joints_to_plot = 7
