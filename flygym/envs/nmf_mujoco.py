@@ -400,7 +400,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             )
             if is_ground:
                 for animat_geom_name in floor_collisions_geoms:
-                
                     if geom.name is None:
                         geom.name = f"groundblock_{ground_id}"
                         ground_id += 1
