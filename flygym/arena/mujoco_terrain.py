@@ -26,7 +26,7 @@ class FlatTerrain(BaseArena):
     def __init__(
         self,
         size: Tuple[float, float] = (50_000, 50_000),
-        friction: Tuple[float, float, float] = (100, 0.005, 0.0001),
+        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]

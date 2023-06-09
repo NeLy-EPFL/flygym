@@ -13,12 +13,8 @@ from flygym.util.config import all_leg_dofs
 
 
 # First, we initialize simulation
-run_time = .2
-sim_params = MuJoCoParameters(
-    timestep=1e-4,
-    render_mode="saved",
-    render_playspeed=0.1
-)
+run_time = 1
+sim_params = MuJoCoParameters(timestep=1e-4, render_mode="saved", render_playspeed=0.1)
 nmf = NeuroMechFlyMuJoCo(
     sim_params=sim_params,
     init_pose=stretched_pose,
