@@ -1,10 +1,13 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict, Any
+from dm_control import mjcf
 
 
-class BaseTerrain(ABC):
-    arena = None
+class BaseArena(ABC):
+    """Base class for all arenas."""
+
+    friction = (100.0, 0.005, 0.0001)
 
     @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
@@ -16,7 +19,7 @@ class BaseTerrain(ABC):
             The arena object that the terrain is built on. Exactly
             what it is depends on the physics simulator.
         """
-        pass
+        self.root_element = mjcf.RootElement()
 
     @abstractmethod
     def get_spawn_position(
@@ -67,5 +70,7 @@ class BaseTerrain(ABC):
             a is the rotation angle in unit as configured in the model.
         """
         adj_pos, adj_angle = self.get_spawn_position(rel_pos, rel_angle)
-        spawn_site = self.arena.worldbody.add("site", pos=adj_pos, axisangle=adj_angle)
+        spawn_site = self.root_element.worldbody.add(
+            "site", pos=adj_pos, axisangle=adj_angle
+        )
         spawn_site.attach(entity).add("freejoint")
