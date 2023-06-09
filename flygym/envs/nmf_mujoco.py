@@ -151,7 +151,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         contact_sensor_placements: List = all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 1500.0),
+        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 300.0),
         spawn_orient: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 0.1),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
