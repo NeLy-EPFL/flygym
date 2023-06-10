@@ -1,7 +1,7 @@
 import numpy as np
 
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
-from flygym.arena.mujoco_terrain import GappedTerrain, BlocksTerrain, MixedTerrain
+from flygym.arena.mujoco_arena import GappedTerrain, BlocksTerrain, MixedTerrain
 from flygym.tests import temp_base_dir
 
 
