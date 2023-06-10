@@ -75,6 +75,14 @@ class MuJoCoParameters:
         self.render_playspeed = render_playspeed
         self.render_fps = render_fps
         self.render_camera = render_camera
+    
+    def __str__(self) -> str:
+        attributes = vars(self)
+        attributes_str = [f"{key}: {value}" for key, value in attributes.items()]
+        return "MuJoCo Parameters:\n  " + "\n  ".join(attributes_str)
+    
+    def __repr__(self) -> str:
+        return str(self)
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
