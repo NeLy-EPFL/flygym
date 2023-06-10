@@ -494,9 +494,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def _add_touch_sensors(self):
         touch_sensors = []
         for tracked_geom in self.contact_sensor_placements:
-            geom = self.model.find(
-                "geom", f"{tracked_geom}_collision"
-            )
+            geom = self.model.find("geom", f"{tracked_geom}_collision")
             body = geom.parent
             site = body.add(
                 "site",
