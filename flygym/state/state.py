@@ -11,10 +11,12 @@ class BaseState(ABC):
 
     @abstractmethod
     def __iter__(self):
+        """Returns an iterator over the keys of the state."""
         raise NotImplementedError
 
     @abstractmethod
     def __getitem__(self, key: str) -> Any:
+        """Returns the value of a variable in the state given a key."""
         raise NotImplementedError
 
 

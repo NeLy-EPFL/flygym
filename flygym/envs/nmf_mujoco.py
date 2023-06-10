@@ -33,7 +33,7 @@ from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geom
 class MuJoCoParameters:
     """Parameters of the MuJoCo simulation.
 
-    Parameters
+    Attributes
     ----------
     timestep : float
         Simulation timestep in seconds.
@@ -160,43 +160,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         the fly in it.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
-
-    Parameters
-    ----------
-    sim_params : MuJoCoParameters, optional
-        Parameters of the MuJoCo simulation. Default parameters of
-        ``MuJoCoParameters`` will be used if not specified.
-    actuated_joints : List, optional
-        List of actuated joint DoFs, by default all leg DoFs.
-    contact_sensor_placements : List, optional
-        List of geometries on each leg where a contact sensor should be
-        placed. By default all tarsi.
-    output_dir : Path, optional
-        Directory to save simulation data. If ``None``, no data will be
-        saved. By default None.
-    arena : BaseWorld, optional
-        The arena in which the robot is placed. ``FlatTerrain`` will be
-        used if not specified.
-    spawn_pos : Tuple[froot_elementloat, float, float], optional
-        The (x, y, z) position in the arena defining where the fly will be
-        spawn, by default (0., 0., 300.).
-    spawn_orient : Tuple[float, float, float, float], optional
-        The spawn orientation of the fly, in the "axisangle" format
-        (x, y, z, a) where x, y, z define the rotation axis and a defines
-        the angle of rotation, by default (0., 1., 0., 0.1).
-    control : str, optional
-        The joint controller type. Can be "position", "velocity", or
-        "torque", by default "position".
-    init_pose : BaseState, optional
-        Which initial pose to start the simulation from. By default
-        "stretched" kinematic pose with all legs fully stretched.
-    floor_collisions :str
-        Which set of collisions should collide with the floor. Can be
-        "all", "legs", "tarsi" or a list of body names. By default "legs".
-    self_collisions : str
-        Which set of collisions should collide with each other. Can be
-        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of body
-        names. By default "legs".
     """
 
     def __init__(
@@ -213,6 +176,46 @@ class NeuroMechFlyMuJoCo(gym.Env):
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
     ) -> None:
+        """Initialize a NeuroMechFlyMuJoCo environment.
+
+        Parameters
+        ----------
+        sim_params : MuJoCoParameters, optional
+            Parameters of the MuJoCo simulation. Default parameters of
+            ``MuJoCoParameters`` will be used if not specified.
+        actuated_joints : List, optional
+            List of actuated joint DoFs, by default all leg DoFs.
+        contact_sensor_placements : List, optional
+            List of geometries on each leg where a contact sensor should be
+            placed. By default all tarsi.
+        output_dir : Path, optional
+            Directory to save simulation data. If ``None``, no data will be
+            saved. By default None.
+        arena : BaseWorld, optional
+            The arena in which the robot is placed. ``FlatTerrain`` will be
+            used if not specified.
+        spawn_pos : Tuple[froot_elementloat, float, float], optional
+            The (x, y, z) position in the arena defining where the fly will
+            be spawn, by default (0., 0., 300.).
+        spawn_orient : Tuple[float, float, float, float], optional
+            The spawn orientation of the fly, in the "axisangle" format
+            (x, y, z, a) where x, y, z define the rotation axis and a
+            defines the angle of rotation, by default (0., 1., 0., 0.1).
+        control : str, optional
+            The joint controller type. Can be "position", "velocity", or
+            "torque", by default "position".
+        init_pose : BaseState, optional
+            Which initial pose to start the simulation from. By default
+            "stretched" kinematic pose with all legs fully stretched.
+        floor_collisions :str
+            Which set of collisions should collide with the floor. Can be
+            "all", "legs", "tarsi" or a list of body names. By default
+            "legs".
+        self_collisions : str
+            Which set of collisions should collide with each other. Can be
+            "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+            body names. By default "legs".
+        """
         if sim_params is None:
             sim_params = MuJoCoParameters()
         if arena is None:
@@ -653,15 +656,51 @@ class NeuroMechFlyMuJoCo(gym.Env):
         }
 
     def get_reward(self):
+        """Get the reward for the current state of the environment. This
+        method always returns 0 unless extended by the user.
+
+        Returns
+        -------
+        SupportsFloat
+            The reward.
+        """
         return 0
 
     def is_terminated(self):
+        """Whether the episode has terminated due to factors that are
+        defined within the Markov Decision Process (eg. task completion/
+        failure, etc). This method always returns False unless extended by
+        the user.
+
+        Returns
+        -------
+        bool
+            Whether the simulation is terminated.
+        """
         return False
 
     def is_truncated(self):
+        """Whether the episode has terminated due to factors beyond the
+            Markov Decision Process (eg. time limit, etc). This method
+            always returns False unless extended by the user.
+
+        Returns
+        -------
+        bool
+            Whether the simulation is truncated.
+        """
         return False
 
     def get_info(self):
+        """Any additional information that is not part of the observation.
+        This method always returns an empty dictionary unless extended by
+        the user.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The dictionary containing additional information.
+        """
         return {}
 
     def save_video(self, path: Path):
