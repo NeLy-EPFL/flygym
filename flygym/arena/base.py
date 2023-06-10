@@ -16,8 +16,8 @@ class BaseArena(ABC):
         Attributes
         ----------
         arena : Any
-            The arena object that the terrain is built on. Exactly
-            what it is depends on the physics simulator.
+            The arena object that the terrain is built on. Exactly what it
+            is depends on the physics simulator.
         """
         self.root_element = mjcf.RootElement()
 
@@ -25,11 +25,11 @@ class BaseArena(ABC):
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Given a relative entity spawn position and orientation (as
-        if it was a simple flat terrain), return the abjusted position
-        and orientation. This is useful for environments that have
-        complex terrain (eg. with obstacles) where the entity's spawn
-        position needs to be shifted accordingly.
+        """Given a relative entity spawn position and orientation (as if it
+        was a simple flat terrain), return the abjusted position and
+        orientation. This is useful for environments that have complex
+        terrain (eg. with obstacles) where the entity's spawn position
+        needs to be shifted accordingly.
 
         Parameters
         ----------
@@ -61,13 +61,13 @@ class BaseArena(ABC):
         entity : mjcf.RootElement
             The entity to be added to the arena.
         rel_pos : np.ndarray
-            (x, y, z) position of the entity if it were spawned on a
-            simple flat environment.
+            (x, y, z) position of the entity if it were spawned on a simple
+            flat environment.
         rel_angle : np.ndarray
             Axis-angle representation (x, y, z, a) of the entity's
             orientation if it were spawned on a simple flat terrain.
-            (x, y, z) define the 3D vector that is the rotation axis;
-            a is the rotation angle in unit as configured in the model.
+            (x, y, z) define the 3D vector that is the rotation axis; a is
+            the rotation angle in unit as configured in the model.
         """
         adj_pos, adj_angle = self.get_spawn_position(rel_pos, rel_angle)
         spawn_site = self.root_element.worldbody.add(
