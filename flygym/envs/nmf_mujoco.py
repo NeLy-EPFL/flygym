@@ -24,7 +24,7 @@ except ImportError:
     )
 
 from flygym.arena import BaseArena
-from flygym.arena.mujoco_terrain import FlatTerrain
+from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
