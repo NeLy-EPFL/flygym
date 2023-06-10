@@ -67,5 +67,7 @@ def get_collision_geoms(config: str = "all") -> List[str]:
             for pos in "FMH"
             for dof in ["Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
         ]
+    elif config == "none":
+        return []
     else:
         raise ValueError(f"Unknown collision geometry configuration: {config}")
