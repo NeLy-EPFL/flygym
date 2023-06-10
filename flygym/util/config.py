@@ -25,7 +25,9 @@ leg_dofs_3_per_leg = [
 
 
 # Geometries
-all_tarsi_links = ["Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
+all_tarsi_links = [
+    f"{side}{pos}Tarsus{i}" for side in "LR" for pos in "FMH" for i in range(1, 6)
+]
 
 
 def get_collision_geoms(config: str = "all") -> List[str]:

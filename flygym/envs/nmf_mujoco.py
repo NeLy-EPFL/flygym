@@ -493,26 +493,24 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _add_touch_sensors(self):
         touch_sensors = []
-        for side in "LR":
-            for pos in "FMH":
-                for tracked_geom in self.contact_sensor_placements:
-                    geom = self.model.find(
-                        "geom", f"{side}{pos}{tracked_geom}_collision"
-                    )
-                    body = geom.parent
-                    site = body.add(
-                        "site",
-                        name=f"site_{geom.name}",
-                        size=np.ones(3) * 1000,
-                        pos=geom.pos,
-                        quat=geom.quat,
-                        type="sphere",
-                        group=3,
-                    )
-                    touch_sensor = self.model.sensor.add(
-                        "touch", name=f"touch_{geom.name}", site=site.name
-                    )
-                    touch_sensors.append(touch_sensor)
+        for tracked_geom in self.contact_sensor_placements:
+            geom = self.model.find(
+                "geom", f"{tracked_geom}_collision"
+            )
+            body = geom.parent
+            site = body.add(
+                "site",
+                name=f"site_{geom.name}",
+                size=np.ones(3) * 1000,
+                pos=geom.pos,
+                quat=geom.quat,
+                type="sphere",
+                group=3,
+            )
+            touch_sensor = self.model.sensor.add(
+                "touch", name=f"touch_{geom.name}", site=site.name
+            )
+            touch_sensors.append(touch_sensor)
         return touch_sensors
 
     def _set_init_pose(self, init_pose: Dict[str, float]):
@@ -641,9 +639,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # tarsi contact forces
         touch_sensordata = self.physics.bind(self.touch_sensors).sensordata
-        contact_forces = touch_sensordata.copy().reshape(
-            (6, len(self.contact_sensor_placements))
-        )
+        contact_forces = touch_sensordata.copy()
 
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
