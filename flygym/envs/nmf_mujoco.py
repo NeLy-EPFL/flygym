@@ -488,14 +488,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
     ):
         """Set the Tarsus2/3/4/5 to be compliant by setting the
         stifness and damping to a low value"""
-        for joint in all_joints:
-            if joint is None:
-                continue
-            if ("Tarsus" in joint) and (not "Tarsus1" in joint):
-                print(joint)
-                self.physics.model.joint(f"Animat/{joint}").stiffness = stiff
-                # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
-                self.physics.model.joint(f"Animat/{joint}").damping = damping
+        for side in "LR":
+            for pos in "FMH":
+                for tarsus_link in range(2, 5 + 1):
+                    joint = f"joint_{side}{pos}Tarsus{tarsus_link}"
+                    self.physics.model.joint(f"Animat/{joint}").stiffness = stiff
+                    # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
+                    self.physics.model.joint(f"Animat/{joint}").damping = damping
 
         self.physics.reset()
 
