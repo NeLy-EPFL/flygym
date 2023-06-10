@@ -3,7 +3,7 @@ import yaml
 import imageio
 import copy
 import logging
-from typing import List, Tuple, Dict, Any, Optional, SupportsFloat
+from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
@@ -27,22 +27,7 @@ from flygym.arena import BaseArena
 from flygym.arena.mujoco_terrain import FlatTerrain
 from flygym.state import BaseState, stretched_pose
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.config import (
-    all_leg_dofs,
-    all_tarsi_collisions_geoms,
-    all_legs_collisions_geoms,
-    all_legs_collisions_geoms_no_coxa,
-    all_tarsi_links,
-)
-
-
-_collision_lookup = {
-    "all": "all",
-    "legs": all_legs_collisions_geoms,
-    "legs-no-coxa": all_legs_collisions_geoms_no_coxa,
-    "tarsi": all_tarsi_collisions_geoms,
-    "none": [],
-}
+from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
 
 
 class MuJoCoParameters:
@@ -155,8 +140,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         spawn_orient: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 0.1),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
-        floor_collisions: str = "legs",
-        self_collisions: str = "legs",
+        floor_collisions: Union[str, List[str]] = "legs",
+        self_collisions: Union[str, List[str]] = "legs",
     ) -> None:
         """Initialize a MuJoCo-based NeuroMechFly environment.
 
@@ -208,6 +193,19 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.control = control
         self.init_pose = init_pose
         self.render_mode = sim_params.render_mode
+        self.end_effector_names = [
+            f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
+        ]
+
+        # Parse collisions specs
+        if isinstance(floor_collisions, str):
+            self.floor_colisions = get_collision_geoms(floor_collisions)
+        else:
+            self.floor_colisions = floor_collisions
+        if isinstance(self_collisions, str):
+            self.self_collisions = get_collision_geoms(self_collisions)
+        else:
+            self.self_collisions = self_collisions
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -220,144 +218,40 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
 
-        # Fix unactuated joints
-        # for joint in model.find_all('joint'):
-        #     if joint.name not in actuated_joints:
-        #         joint.type = 'fixed'
-
         # Define list of actuated joints
         self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
 
-        # Add sensors
-        self.joint_sensors = []
-        for joint in actuated_joints:
-            self.joint_sensors.extend(
-                [
-                    self.model.sensor.add(
-                        "jointpos", name=f"jointpos_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "jointvel", name=f"jointvel_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_position_{joint}",
-                        actuator=f"actuator_position_{joint}",
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_velocity_{joint}",
-                        actuator=f"actuator_velocity_{joint}",
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_motor_{joint}",
-                        actuator=f"actuator_torque_{joint}",
-                    ),
-                ]
-            )
-
-        self.body_sensors = [
-            self.model.sensor.add(
-                "framepos", name="thorax_pos", objtype="body", objname="Thorax"
-            ),
-            self.model.sensor.add(
-                "framelinvel", name="thorax_linvel", objtype="body", objname="Thorax"
-            ),
-            self.model.sensor.add(
-                "framequat", name="thorax_quat", objtype="body", objname="Thorax"
-            ),
-            self.model.sensor.add(
-                "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
-            ),
-        ]
-
-        # Define self contacts
-        if self_collisions == "all":
-            self_collisions_geoms = [
-                geom.name
-                for geom in self.model.find_all("geom")
-                if "collision" in geom.name
-            ]
-        else:
-            self_collisions_geoms = _collision_lookup[self_collisions]
-        self.self_contacts, self.self_contact_names = self._define_self_contacts(
-            self_collisions_geoms
-        )
-
-        self.end_effector_sensors = []
-        self.end_effector_names = []
-        for body in self.model.find_all("body"):
-            if "Tarsus5" in body.name:
-                self.end_effector_names.append(body.name)
-                end_effector_sensor = self.model.sensor.add(
-                    "framepos",
-                    name=f"{body.name}_pos",
-                    objtype="body",
-                    objname=body.name,
-                )
-                self.end_effector_sensors.append(end_effector_sensor)
-
-        ## Add sites and touch sensors
-        self.touch_sensors = []
-        for side in "LR":
-            for pos in "FMH":
-                for tracked_geom in contact_sensor_placements:
-                    geom = self.model.find(
-                        "geom", f"{side}{pos}{tracked_geom}_collision"
-                    )
-                    body = geom.parent
-                    site = body.add(
-                        "site",
-                        name=f"site_{geom.name}",
-                        size=np.ones(3) * 1000,
-                        pos=geom.pos,
-                        quat=geom.quat,
-                        type="sphere",
-                        group=3,
-                    )
-                    touch_sensor = self.model.sensor.add(
-                        "touch", name=f"touch_{geom.name}", site=site.name
-                    )
-                    self.touch_sensors.append(touch_sensor)
-
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
-        root_element = arena.root_element
+        self.arena_root = arena.root_element
+        self.arena_root.option.timestep = self.timestep
 
-        # Add collision between the ground and the fly
-        if floor_collisions == "all":
-            floor_collisions_geoms = [
-                geom.name
-                for geom in self.model.find_all("geom")
-                if "collision" in geom.name
-            ]
-        else:
-            floor_collisions_geoms = _collision_lookup[floor_collisions]
+        # Add collision/contacts
+        floor_collision_geoms = self._parse_collision_specs(floor_collisions)
         self.floor_contacts, self.floor_contact_names = self._define_floor_contacts(
-            root_element, floor_collisions_geoms
+            floor_collision_geoms
+        )
+        self_collision_geoms = self._parse_collision_specs(self_collisions)
+        self.self_contacts, self.self_contact_names = self._define_self_contacts(
+            self_collision_geoms
         )
 
-        root_element.option.timestep = self.timestep
-        self.physics = mjcf.Physics.from_mjcf_model(root_element)
-        self.curr_time = 0
-        self._last_render_time = -np.inf
-        if sim_params.render_mode != "headless":
-            self._eff_render_interval = (
-                sim_params.render_playspeed / self.sim_params.render_fps
-            )
-        self._frames = []
+        # Add sensors
+        self.joint_sensors = self._add_joint_sensors()
+        self.body_sensors = self._add_body_sensors()
+        self.end_effector_sensors = self._add_end_effector_sensors()
+        self.touch_sensors = self._add_touch_sensors()
 
-        # Ad hoc changes to gravity, stiffness, and friction
-        for geom in [geom.name for geom in root_element.find_all("geom")]:
+        # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
+        self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
+        for geom in [geom.name for geom in self.arena_root.find_all("geom")]:
             if "collision" in geom:
                 self.physics.model.geom(
                     f"Animat/{geom}"
                 ).friction = self.sim_params.friction
-
         for joint in self.actuated_joints:
             if joint is not None:
                 self.physics.model.joint(
@@ -366,11 +260,33 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.physics.model.opt.gravity = self.sim_params.gravity
 
-        # set complaint tarsus
-        all_joints = [joint.name for joint in root_element.find_all("joint")]
-        self._set_compliant_Tarsus(all_joints, stiff=3.5e5, damping=100)
-        # set init pose
+        # Make tarsi compliant and apply initial pose. MUST BE IN THIS ORDER!
+        all_joints = [joint.name for joint in self.arena_root.find_all("joint")]
+        self._set_compliant_tarsus(all_joints, stiff=3.5e5, damping=100)
         self._set_init_pose(self.init_pose)
+
+        # Set up a few things for rendering
+        self.curr_time = 0
+        self._last_render_time = -np.inf
+        if sim_params.render_mode != "headless":
+            self._eff_render_interval = (
+                sim_params.render_playspeed / self.sim_params.render_fps
+            )
+        self._frames = []
+
+    def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
+        if collision_spec == "all":
+            return [
+                geom.name
+                for geom in self.model.find_all("geom")
+                if "collision" in geom.name
+            ]
+        elif isinstance(collision_spec, str):
+            return get_collision_geoms(collision_spec)
+        elif isinstance(collision_spec, list):
+            return collision_spec
+        else:
+            raise ValueError(f"Unrecognized collision spec {collision_spec}")
 
     def _define_spaces(self, num_dofs, action_bound, num_contacts):
         action_space = {
@@ -440,12 +356,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         self_contact_pairs_names.append(f"{geom1}_{geom2}")
         return self_contact_pairs, self_contact_pairs_names
 
-    def _define_floor_contacts(self, root_element, floor_collisions_geoms):
+    def _define_floor_contacts(self, floor_collisions_geoms):
         floor_contact_pairs = []
         floor_contact_pairs_names = []
         ground_id = 0
 
-        for geom in root_element.find_all("geom"):
+        for geom in self.arena_root.find_all("geom"):
             is_ground = geom.name is None or not (
                 "visual" in geom.name or "collision" in geom.name
             )
@@ -461,7 +377,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         ],
                         axis=0,
                     )
-                    floor_contact_pair = root_element.contact.add(
+                    floor_contact_pair = self.arena_root.contact.add(
                         "pair",
                         name=f"{geom.name}_{animat_geom_name}",
                         geom1=f"Animat/{animat_geom_name}",
@@ -478,6 +394,87 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         return floor_contact_pairs, floor_contact_pairs_names
 
+    def _add_joint_sensors(self):
+        joint_sensors = []
+        for joint in self.actuated_joints:
+            joint_sensors.extend(
+                [
+                    self.model.sensor.add(
+                        "jointpos", name=f"jointpos_{joint}", joint=joint
+                    ),
+                    self.model.sensor.add(
+                        "jointvel", name=f"jointvel_{joint}", joint=joint
+                    ),
+                    self.model.sensor.add(
+                        "actuatorfrc",
+                        name=f"actuatorfrc_position_{joint}",
+                        actuator=f"actuator_position_{joint}",
+                    ),
+                    self.model.sensor.add(
+                        "actuatorfrc",
+                        name=f"actuatorfrc_velocity_{joint}",
+                        actuator=f"actuator_velocity_{joint}",
+                    ),
+                    self.model.sensor.add(
+                        "actuatorfrc",
+                        name=f"actuatorfrc_motor_{joint}",
+                        actuator=f"actuator_torque_{joint}",
+                    ),
+                ]
+            )
+        return joint_sensors
+
+    def _add_body_sensors(self):
+        lin_pos_sensor = self.model.sensor.add(
+            "framepos", name="thorax_pos", objtype="body", objname="Thorax"
+        )
+        lin_vel_sensor = self.model.sensor.add(
+            "framelinvel", name="thorax_linvel", objtype="body", objname="Thorax"
+        )
+        ang_pos_sensor = self.model.sensor.add(
+            "framequat", name="thorax_quat", objtype="body", objname="Thorax"
+        )
+        ang_vel_sensor = self.model.sensor.add(
+            "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
+        )
+        return [lin_pos_sensor, lin_vel_sensor, ang_pos_sensor, ang_vel_sensor]
+
+    def _add_end_effector_sensors(self):
+        end_effector_sensors = []
+        for name in self.end_effector_names:
+            sensor = self.model.sensor.add(
+                "framepos",
+                name=f"{name}_pos",
+                objtype="body",
+                objname=name,
+            )
+            end_effector_sensors.append(sensor)
+        return end_effector_sensors
+
+    def _add_touch_sensors(self):
+        touch_sensors = []
+        for side in "LR":
+            for pos in "FMH":
+                for tracked_geom in self.contact_sensor_placements:
+                    geom = self.model.find(
+                        "geom", f"{side}{pos}{tracked_geom}_collision"
+                    )
+                    body = geom.parent
+                    site = body.add(
+                        "site",
+                        name=f"site_{geom.name}",
+                        size=np.ones(3) * 1000,
+                        pos=geom.pos,
+                        quat=geom.quat,
+                        type="sphere",
+                        group=3,
+                    )
+                    touch_sensor = self.model.sensor.add(
+                        "touch", name=f"touch_{geom.name}", site=site.name
+                    )
+                    touch_sensors.append(touch_sensor)
+        return touch_sensors
+
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -486,7 +483,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     animat_name = f"Animat/{curr_joint}"
                     self.physics.named.data.qpos[animat_name] = init_pose[curr_joint]
 
-    def _set_compliant_Tarsus(
+    def _set_compliant_tarsus(
         self, all_joints: List, stiff: float = 0.0, damping: float = 100
     ):
         """Set the Tarsus2/3/4/5 to be compliant by setting the
@@ -495,6 +492,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if joint is None:
                 continue
             if ("Tarsus" in joint) and (not "Tarsus1" in joint):
+                print(joint)
                 self.physics.model.joint(f"Animat/{joint}").stiffness = stiff
                 # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                 self.physics.model.joint(f"Animat/{joint}").damping = damping
