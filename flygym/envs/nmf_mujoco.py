@@ -31,6 +31,34 @@ from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geom
 
 
 class MuJoCoParameters:
+    """Parameters of the MuJoCo simulation.
+
+    Parameters
+    ----------
+    timestep : float
+        Simulation timestep in seconds.
+    joint_stiffness : float, optional
+        Stiffness of actuated joints, by default 2500.
+    friction : float, optional
+        Sliding, torsional, and rolling friction coefficients, by default
+        (1, 0.005, 0.0001)
+    gravity : Tuple[float, float, float], optional
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e5).
+    render_mode : str, optional
+        The rendering mode. Can be "saved" or "headless", by default
+        "saved".
+    render_window_size : Tuple[int, int], optional
+        Size of the rendered images in pixels, by default (640, 480).
+    render_playspeed : SupportsFloat, optional
+        Play speed of the rendered video, by default 1.0.
+    render_fps : int, optional
+        FPS of the rendered video when played at ``render_playspeed``, by
+        default 60.
+    render_camera : str, optional
+        The camera that will be used for rendering, by default
+        "Animat/camera_left_top".
+    """
+
     def __init__(
         self,
         timestep: float = 0.0001,
@@ -43,29 +71,6 @@ class MuJoCoParameters:
         render_fps: int = 60,
         render_camera: str = "Animat/camera_left_top",
     ) -> None:
-        """Parameters of the MuJoCo simulation.
-
-        Parameters
-        ----------
-        timestep : float
-            Simulation timestep in seconds.
-        joint_stiffness : float, optional
-            Stiffness of actuated joints, by default 2500
-        friction : float, optional
-            , by default (1., 0.005., 0.0001)
-        gravity : Tuple[float, float, float], optional
-            _description_, by default (0., 0., -9.81e5)
-        render_mode : str, optional
-            _description_, by default "saved"
-        render_window_size : Tuple[int, int], optional
-            _description_, by default (640, 480)
-        render_playspeed : SupportsFloat, optional
-            _description_, by default 1.0
-        render_fps : int, optional
-            _description_, by default 60
-        render_camera : str, optional
-            _description_, by default "Animat/camera_left_top"
-        """
         self.timestep = timestep
         self.joint_stiffness = joint_stiffness
         self.friction = friction
@@ -75,12 +80,12 @@ class MuJoCoParameters:
         self.render_playspeed = render_playspeed
         self.render_fps = render_fps
         self.render_camera = render_camera
-    
+
     def __str__(self) -> str:
         attributes = vars(self)
         attributes_str = [f"{key}: {value}" for key, value in attributes.items()]
         return "MuJoCo Parameters:\n  " + "\n  ".join(attributes_str)
-    
+
     def __repr__(self) -> str:
         return str(self)
 
@@ -90,51 +95,108 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     Attributes
     ----------
+    sim_params : flygym.envs.nmf_mujoco.MuJoCoParameters
+        Parameters of the MuJoCo simulation.
     actuated_joints : List[str]
-        List of actuated joints.
-    timestep : float
+        List of names of actuated joints.
+    contact_sensor_placements : List[str]
+        List of body parts where contact sensors are placed.
+    timestep: float
         Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
+    arena : flygym.arena.BaseWorld
+        The arena in which the robot is placed.
+    spawn_pos : Tuple[froot_elementloat, float, float], optional
+        The (x, y, z) position in the arena defining where the fly will
+        be spawn.
+    spawn_orient : Tuple[float, float, float, float], optional
+        The spawn orientation of the fly, in the "axisangle" format
+        (x, y, z, a) where x, y, z define the rotation axis and a
+        defines the angle of rotation.
     control : str
-        The joint controller type. Can be 'position', 'velocity', or
-        'torque'.
-    init_pose : str
-        Which initial pose to start the simulation from. Currently only
-        'default' is implemented.
-    action_space : Dict[str, gym.spaces.Box]
-        Definition of the simulation's action space as a Gym
-        environment.
-    observation_space : Dict[str, gym.spaces.Box]
+        The joint controller type. Can be "position", "velocity", or
+        "torque".
+    init_pose : flygym.state.BaseState
+        Which initial pose to start the simulation from.
+    render_mode : str
+        The rendering mode. Can be "saved" or "headless".
+    end_effector_names : List[str]
+        List of names of end effectors; matches the order of end effector
+        sensor readings.
+    floor_collisions : List[str]
+        List of body parts that can collide with the floor.
+    self_collisions : List[str]
+        List of body parts that can collide with each other.
+    action_space : gymnasium.core.ObsType
+        Definition of the simulation's action space as a Gym environment.
+    observation_space : gymnasium.core.ObsType
         Definition of the simulation's observation space as a Gym
         environment.
+    actuators : List[dm_control.mjcf.Element]
+        The MuJoCo actuators.
     model : dm_control.mjcf.RootElement
         The MuJoCo model.
-    physics : dm_control.mujoco.Physics
-        The MuJoCo physics simulation.
-    actuators : Dict[str, dm_control.mjcf.Element]
-        The MuJoCo actuators.
-    joint_sensors : Dict[str, dm_control.mjcf.Element]
+    arena_root = dm_control.mjcf.RootElement
+        The root element of the arena.
+    floor_contacts : List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs that can collide with the floor.
+    floor_contact_names : List[str]
+        The names of the MuJoCo geom pairs that can collide with the floor.
+    self_contacts : List[dm_control.mjcf.Element]
+        The MuJoCo geom pairs within the fly model that can collide with
+        each other.
+    self_contact_names : List[str]
+        The names of MuJoCo geom pairs within the fly model that can
+        collide with each other.
+    joint_sensors : List[dm_control.mjcf.Element]
         The MuJoCo sensors on joint positions, velocities, and forces.
-    body_sensors : Dict[str, dm_control.mjcf.Element]
-        The MuJoCo sensors on thorax position and orientation.
+    body_sensors : List[dm_control.mjcf.Element]
+        The MuJoCo sensors on the root (thorax) position and orientation.
+    end_effector_sensors : List[dm_control.mjcf.Element]
+        The position sensors on the end effectors.
+    physics: dm_control.mjcf.Physics
+        The MuJoCo Physics object built from the arena's MJCF model with
+        the fly in it.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
-    self_contact_pairs: List[dm_control.mjcf.Element]
-        The MuJoCo geom pairs that can be in contact with each other
-    self_contact_pair_names: List[str]
-        The names of the MuJoCo geom pairs that can be in contact with
-        each other
-    floor_contact_pairs: List[dm_control.mjcf.Element]
-        The MuJoCo geom pairs that can be in contact with the floor
-    floor_contact_pair_names: List[str]
-        The names of the MuJoCo geom pairs that can be in contact with
-        the floor
-    touch_sensors: List[dm_control.mjcf.Element]
-        The MuJoCo touch sesnor used to conpute contact forces
-    end_effector_sensors: List[dm_control.mjcf.Element]
-        The set of position sensors on the end effectors
 
+    Parameters
+    ----------
+    sim_params : MuJoCoParameters, optional
+        Parameters of the MuJoCo simulation. Default parameters of
+        ``MuJoCoParameters`` will be used if not specified.
+    actuated_joints : List, optional
+        List of actuated joint DoFs, by default all leg DoFs.
+    contact_sensor_placements : List, optional
+        List of geometries on each leg where a contact sensor should be
+        placed. By default all tarsi.
+    output_dir : Path, optional
+        Directory to save simulation data. If ``None``, no data will be
+        saved. By default None.
+    arena : BaseWorld, optional
+        The arena in which the robot is placed. ``FlatTerrain`` will be
+        used if not specified.
+    spawn_pos : Tuple[froot_elementloat, float, float], optional
+        The (x, y, z) position in the arena defining where the fly will be
+        spawn, by default (0., 0., 300.).
+    spawn_orient : Tuple[float, float, float, float], optional
+        The spawn orientation of the fly, in the "axisangle" format
+        (x, y, z, a) where x, y, z define the rotation axis and a defines
+        the angle of rotation, by default (0., 1., 0., 0.1).
+    control : str, optional
+        The joint controller type. Can be "position", "velocity", or
+        "torque", by default "position".
+    init_pose : BaseState, optional
+        Which initial pose to start the simulation from. By default
+        "stretched" kinematic pose with all legs fully stretched.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names. By default "legs".
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of body
+        names. By default "legs".
     """
 
     def __init__(
@@ -151,39 +213,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
     ) -> None:
-        """Initialize a MuJoCo-based NeuroMechFly environment.
-
-        Parameters
-        ----------
-        actuated_joints : List, optional
-            List of actuated joint DoFs, by default all leg DoFs
-        contact_sensor_placements : List, optional
-            List of geometries on each leg where a contact sensor should
-            be placed. By default all tarsi.
-            Simulation timestep in seconds, by default 0.0001
-        output_dir : Path, optional
-            Directory to save simulation data (by default just the video,
-            but you can extend this class to save additional data).
-            If ``None``, no data will be saved. By default None
-        arena : BaseWorld, optional
-            XXX
-        spawn_pos : Tuple[froot_elementloat, float, float], optional
-            XXX, by default (0., 0., 300.)
-        spawn_orient : Tuple[float, float, float, float], optional
-            XXX, by default (0., 1., 0., 0.1)
-        control : str, optional
-            The joint controller type. Can be 'position', 'velocity', or
-            'torque'., by default 'position'
-        init_pose : BaseState, optional
-            Which initial pose to start the simulation from. By default
-            "stretched" kinematic pose with all legs fully stretched.
-        floor_collisions_geoms :str
-            Which set of collisions should collide with the floor. Can be
-            'all', 'legs', or 'tarsi'.
-        self_collisions_geoms : str
-            Which set of collisions should collide with each other. Can be
-            'all', 'legs', 'legs-no-coxa', 'tarsi', or 'none'.
-        """
         if sim_params is None:
             sim_params = MuJoCoParameters()
         if arena is None:
@@ -207,9 +236,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Parse collisions specs
         if isinstance(floor_collisions, str):
-            self.floor_colisions = get_collision_geoms(floor_collisions)
+            self.floor_collisions = get_collision_geoms(floor_collisions)
         else:
-            self.floor_colisions = floor_collisions
+            self.floor_collisions = floor_collisions
         if isinstance(self_collisions, str):
             self.self_collisions = get_collision_geoms(self_collisions)
         else:
@@ -270,7 +299,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Make tarsi compliant and apply initial pose. MUST BE IN THIS ORDER!
         all_joints = [joint.name for joint in self.arena_root.find_all("joint")]
-        self._set_compliant_tarsus(all_joints, stiff=3.5e5, damping=100)
+        self._set_compliant_tarsus(stiffness=3.5e5, damping=100)
         self._set_init_pose(self.init_pose)
 
         # Set up a few things for rendering
@@ -491,34 +520,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     animat_name = f"Animat/{curr_joint}"
                     self.physics.named.data.qpos[animat_name] = init_pose[curr_joint]
 
-    def _set_compliant_tarsus(
-        self, all_joints: List, stiff: float = 0.0, damping: float = 100
-    ):
-        """Set the Tarsus2/3/4/5 to be compliant by setting the
-        stifness and damping to a low value"""
+    def _set_compliant_tarsus(self, stiffness: float = 0.0, damping: float = 100):
+        """Set the Tarsus2/3/4/5 to be compliant by setting the stiffness
+        and damping to a low value"""
         for side in "LR":
             for pos in "FMH":
                 for tarsus_link in range(2, 5 + 1):
                     joint = f"joint_{side}{pos}Tarsus{tarsus_link}"
-                    self.physics.model.joint(f"Animat/{joint}").stiffness = stiff
+                    self.physics.model.joint(f"Animat/{joint}").stiffness = stiffness
                     # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                     self.physics.model.joint(f"Animat/{joint}").damping = damping
 
         self.physics.reset()
-
-    def set_output_dir(self, output_dir: str):
-        """Set the output directory for the environment.
-        Allows the user to change the output directory after the
-        environment has been initialized. If the directory does not
-        exist, it will be created.
-        Parameters
-        ----------
-        output_dir : str
-            The output directory.
-        """
-        output_dir = Path.cwd() / output_dir
-        output_dir.mkdir(parents=True, exist_ok=True)
-        self.output_dir = output_dir
 
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
@@ -528,10 +541,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ObsType
             The observation as defined by the environment.
         Dict[str, Any]
-            Any additional information that is not part of the
-            observation. This is an empty dictionary by default but
-            the user can override this method to return additional
-            information.
+            Any additional information that is not part of the observation.
+            This is an empty dictionary by default but the user can
+            override this method to return additional information.
         """
         self.physics.reset()
         self.curr_time = 0
@@ -548,8 +560,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         Parameters
         ----------
         action : ObsType
-            Action dictionary as defined by the environment's
-            action space.
+            Action dictionary as defined by the environment's action space.
 
         Returns
         -------
@@ -558,17 +569,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         SupportsFloat
             The reward as defined by the environment.
         bool
-            Whether the episode has terminated due to factors that
-            are defined within the Markov Decision Process (eg. task
+            Whether the episode has terminated due to factors that are
+            defined within the Markov Decision Process (eg. task
             completion/failure, etc).
         bool
-            Whether the episode has terminated due to factors beyond
-            the Markov Decision Process (eg. time limit, etc).
+            Whether the episode has terminated due to factors beyond the
+            Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
-            Any additional information that is not part of the
-            observation. This is an empty dictionary by default but
-            the user can override this method to return additional
-            information.
+            Any additional information that is not part of the observation.
+            This is an empty dictionary by default but the user can
+            override this method to return additional information.
         """
         self.physics.bind(self.actuators).ctrl = action["joints"]
         self.physics.step()
@@ -581,9 +591,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return observation, reward, terminated, truncated, info
 
     def render(self):
-        """Call the ``render`` method to update the renderer. It should
-        be called every iteration; the method will decide by itself
-        whether action is required."""
+        """Call the ``render`` method to update the renderer. It should be
+        called every iteration; the method will decide by itself whether
+        action is required."""
         if self.render_mode == "headless":
             return
         if self.curr_time < self._last_render_time + self._eff_render_interval:
@@ -655,9 +665,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return {}
 
     def save_video(self, path: Path):
-        """Save rendered video since the beginning or the last
-        ``reset()``, whichever is the latest.
-        Only useful if ``render_mode`` is 'saved'.
+        """Save rendered video since the beginning or the last ``reset()``,
+        whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
         Parameters
         ----------
