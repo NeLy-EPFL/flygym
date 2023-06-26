@@ -30,7 +30,7 @@ def test_basic_untethered_sinewave():
         joint_pos = np.zeros(len(nmf.actuated_joints))
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        # nmf.render()
         obs_list.append(obs)
     nmf.close()
 
