@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           #pip install sphinx sphinx_rtd_theme furo numpydoc
-          pip install -e ."[doc]"
+          pip install -e ."[dev]"
       - name: Sphinx build
         run: |
           sphinx-build doc/source _build

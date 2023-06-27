@@ -34,7 +34,7 @@ API Reference
 We provide a comprehensive API reference to the MuJoCo environment below.
 
 .. autoclass:: flygym.envs.nmf_mujoco.NeuroMechFlyMuJoCo
-   :members: __init__, reset, step, render, save_video, close
+   :members: __init__, reset, step, get_observation, render, save_video, close
 
 
 .. _mujoco_config:
