@@ -51,31 +51,31 @@ _collision_lookup = {
     "none": [],
 }
 _default_terrain_config = {
-    'flat': {
-        'size': (50, 50),
-        'friction': (1, 0.005, 0.0001),
-        'fly_pos': (0, 0, 0.5),
-        'fly_orient': (0, 1, 0, 0.1)
+    "flat": {
+        "size": (50, 50),
+        "friction": (1, 0.005, 0.0001),
+        "fly_pos": (0, 0, 0.5),
+        "fly_orient": (0, 1, 0, 0.1),
     },
-    'gapped': {
-        'x_range': (-10, 10),
-        'y_range': (-10, 10),
-        'friction': (1, 0.005, 0.0001),
-        'gap_width': 0.2,
-        'block_width': 1,
-        'gap_depth': 2,
-        'fly_pos': (0, 0, 0.6),
-        'fly_orient': (0, 1, 0, 0.1)
+    "gapped": {
+        "x_range": (-10, 10),
+        "y_range": (-10, 10),
+        "friction": (1, 0.005, 0.0001),
+        "gap_width": 0.2,
+        "block_width": 1,
+        "gap_depth": 2,
+        "fly_pos": (0, 0, 0.6),
+        "fly_orient": (0, 1, 0, 0.1),
     },
-    'blocks': {
-        'x_range': (-10, 10),
-        'y_range': (-10, 10),
-        'friction': (1, 0.005, 0.0001),
-        'block_size': 1,
-        'height_range': (0.3, 0.3),
-        'rand_seed': 0,
-        'fly_pos': (0, 0, 0.6),
-        'fly_orient': (0, 1, 0, 0.1)
+    "blocks": {
+        "x_range": (-10, 10),
+        "y_range": (-10, 10),
+        "friction": (1, 0.005, 0.0001),
+        "block_size": 1,
+        "height_range": (0.3, 0.3),
+        "rand_seed": 0,
+        "fly_pos": (0, 0, 0.6),
+        "fly_orient": (0, 1, 0, 0.1),
     },
     "mixed": {
         "x_range": (-10_000, 10_000),
@@ -97,14 +97,13 @@ _default_terrain_config = {
     },
 }
 _default_physics_config = {
-    'joint_stiffness': 0.05,
-    'joint_damping': 0.06,
-    'actuator_kp': 18.0,
-    'tarsus_stiffness': 2.2,
-    'tarsus_damping': 0.126,
-    'friction': (1, 0.005, 0.0001),
-    'gravity': (0, 0, -9.81e3),
-
+    "joint_stiffness": 0.05,
+    "joint_damping": 0.06,
+    "actuator_kp": 18.0,
+    "tarsus_stiffness": 2.2,
+    "tarsus_damping": 0.126,
+    "friction": (1, 0.005, 0.0001),
+    "gravity": (0, 0, -9.81e3),
 }
 _default_render_config = {
     "saved": {
@@ -313,7 +312,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ]
 
         for act in self.actuators:
-            act.kp = self.physics_config['actuator_kp']
+            act.kp = self.physics_config["actuator_kp"]
 
         # Add sensors
         self.joint_sensors = []
@@ -566,20 +565,22 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         for joint in self.actuated_joints:
             if joint is not None:
-                self.physics.model.joint(f'Animat/{joint}').stiffness = \
-                    self.physics_config['joint_stiffness']
-                self.physics.model.joint(f'Animat/{joint}').damping = \
-                    self.physics_config['joint_damping']
-
+                self.physics.model.joint(
+                    f"Animat/{joint}"
+                ).stiffness = self.physics_config["joint_stiffness"]
+                self.physics.model.joint(
+                    f"Animat/{joint}"
+                ).damping = self.physics_config["joint_damping"]
 
         self.physics.model.opt.gravity = self.physics_config["gravity"]
 
         # set complaint tarsus
-        all_joints = [joint.name for joint in arena.find_all('joint')]
+        all_joints = [joint.name for joint in arena.find_all("joint")]
         self._set_compliant_Tarsus(all_joints)
-        
+
         # set init pose
         self._set_init_pose(self.init_pose)
+
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -591,20 +592,19 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         f"Animat/{self.actuators[i].joint.name}"
                     ] = angle_0
 
-    def _set_compliant_Tarsus(self,
-                              all_joints: List):
+    def _set_compliant_Tarsus(self, all_joints: List):
         """Set the Tarsus2/3/4/5 to be compliant by setting the
         stifness and damping to a low value"""
         for joint in all_joints:
             if joint is None:
                 continue
-            if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
-                self.physics.model.joint(f'Animat/{joint}'
-                                         ).stiffness = \
-                    self.physics_config["tarsus_stiffness"]
-                self.physics.model.joint(f'Animat/{joint}'
-                                         ).damping = \
-                    self.physics_config["tarsus_damping"]
+            if ("Tarsus" in joint) and (not "Tarsus1" in joint):
+                self.physics.model.joint(
+                    f"Animat/{joint}"
+                ).stiffness = self.physics_config["tarsus_stiffness"]
+                self.physics.model.joint(
+                    f"Animat/{joint}"
+                ).damping = self.physics_config["tarsus_damping"]
 
         self.physics.reset()
 
