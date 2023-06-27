@@ -80,8 +80,8 @@ _default_physics_config = {
     'joint_stiffness': 0.05,
     'joint_damping': 0.06,
     'actuator_kp': 18.0,
-    'tarsus_stiffness': 0.0022,
-    'tarsus_damping': 1.26,
+    'tarsus_stiffness': 2.2,
+    'tarsus_damping': 0.126,
     'friction': (1, 0.005, 0.0001),
     'gravity': (0, 0, -9.81e3),
 }
