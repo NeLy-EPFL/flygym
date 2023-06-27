@@ -239,7 +239,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics_config.update(physics_config)
         self.control = control
 
-
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
         bound = np.pi if control == 'position' else np.inf
@@ -486,9 +485,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # set complaint tarsus
         all_joints = [joint.name for joint in arena.find_all('joint')]
-        self._set_compliant_Tarsus(all_joints,
-                                   stiff=self.physics_config["tarsus_stiffness"],
-                                   damping=self.physics_config["tarsus_damping"])
+        self._set_compliant_Tarsus(all_joints)
         # set init pose
         self._set_init_pose(self.init_pose)
     def _set_init_pose(self, init_pose: Dict[str, float]):
@@ -502,18 +499,19 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     ] = angle_0
 
     def _set_compliant_Tarsus(self,
-                              all_joints: List,
-                              stiff: float = 1.0,
-                              damping: float = 0.1):
+                              all_joints: List):
         """Set the Tarsus2/3/4/5 to be compliant by setting the
         stifness and damping to a low value"""
         for joint in all_joints:
             if joint is None:
                 continue
             if ('Tarsus' in joint) and (not 'Tarsus1' in joint):
-                self.physics.model.joint(f'Animat/{joint}').stiffness = stiff
-                # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
-                self.physics.model.joint(f'Animat/{joint}').damping = damping
+                self.physics.model.joint(f'Animat/{joint}'
+                                         ).stiffness = \
+                    self.physics_config["tarsus_stiffness"]
+                self.physics.model.joint(f'Animat/{joint}'
+                                         ).damping = \
+                    self.physics_config["tarsus_damping"]
 
         self.physics.reset()
 
