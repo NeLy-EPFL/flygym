@@ -74,3 +74,21 @@ class BaseArena(ABC):
             "site", pos=adj_pos, axisangle=adj_angle
         )
         spawn_site.attach(entity).add("freejoint")
+
+    def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:
+        """Get the odor intensity readings from the environment.
+
+        Parameters
+        ----------
+        antennae_pos : np.ndarray
+            The Cartesian coordinates of the antennae of the fly as a
+            (2, 3) NumPy array.
+
+        Returns
+        -------
+        np.ndarray
+            The odor intensity readings from the environment as a
+            (k, 2) NumPy array where k is the dimension of the odor
+            signal.
+        """
+        return np.zeros((0, 2))

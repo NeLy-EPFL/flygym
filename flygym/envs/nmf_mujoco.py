@@ -283,6 +283,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
+        self.antennae_sensors = self._add_antennae_sensors()
         self.touch_sensors = self._add_touch_sensors()
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
@@ -491,6 +492,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
             end_effector_sensors.append(sensor)
         return end_effector_sensors
 
+    def _add_antennae_sensors(self):
+        antennae_sensors = []
+        for name in ["LFuniculus", "RFuniculus"]:
+            sensor = self.model.sensor.add(
+                "framepos",
+                name=f"{name}_pos",
+                objtype="body",
+                objname=name,
+            )
+            antennae_sensors.append(sensor)
+        return antennae_sensors
+
     def _add_touch_sensors(self):
         touch_sensors = []
         for tracked_geom in self.contact_sensor_placements:
@@ -642,11 +655,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
 
+        # olfaction
+        antennae_pos = self.physics.bind(self.antennae_sensors).sensordata.reshape(2, 3)
+        odor_intensity = self.arena.get_olfaction(antennae_pos)
+
         return {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
+            "odor_intensity": odor_intensity,
         }
 
     def get_reward(self):
