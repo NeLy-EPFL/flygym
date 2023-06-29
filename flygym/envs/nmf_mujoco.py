@@ -38,12 +38,22 @@ class MuJoCoParameters:
     timestep : float
         Simulation timestep in seconds.
     joint_stiffness : float, optional
-        Stiffness of actuated joints, by default 2500.
+        Stiffness of actuated joints, by default 0.05.
+    joint_damping : float, optional
+        Damping coefficient of actuated joints, by default 0.06.
+    actuator_kp : float, optional
+        Position gain of the actuators, by default 18.0.
+    tarsus_stiffness : float, optional
+        Stiffness of the passive, compliant tarsus joints, by default 2.2.
+    tarsus_damping : float, optional
+        Damping coefficient of the passive, compliant tarsus joints, by
+        default 0.126.
     friction : float, optional
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     gravity : Tuple[float, float, float], optional
-        Gravity in (x, y, z) axes, by default (0., 0., -9.81e5).
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
+        the gravity is -9.81 * 1000 due to the scaling of the model.
     render_mode : str, optional
         The rendering mode. Can be "saved" or "headless", by default
         "saved".
