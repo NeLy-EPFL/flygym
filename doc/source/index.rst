@@ -14,7 +14,8 @@ FlyGym: Gymnasium environments for NeuroMechFly
    neuromechfly
    installation
    environments/index
-   terrain/index
+   arena/index
+   state
    changelog
    develop
 
@@ -36,8 +37,10 @@ The environments in this package serve as wrappers to provide a unified interfac
 
    for step in range(1000):
       action = ...    # your controller decides what to do based on obs
-      obs, info = env.step(action)
+      obs, reward, terminated, truncated, info = env.step(action)
       env.render()
+      if terminated or truncated:
+         break
 
    env.close()
 
