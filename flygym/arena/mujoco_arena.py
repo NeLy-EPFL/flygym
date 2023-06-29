@@ -27,7 +27,7 @@ class FlatTerrain(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (50_000, 50_000),
+        size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
     ):
         self.root_element = mjcf.RootElement()
@@ -74,31 +74,31 @@ class GappedTerrain(BaseArena):
 
     Parameters
     ----------
-    x_range : Tuple[int, int]
+    x_range : Tuple[float, float]
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
-        (-10_000, 20_000)
-    y_range : Tuple[int, int]
-        Same as above in y, by default (-10_000, 10_000)
+        (-10, 20)
+    y_range : Tuple[float, float]
+        Same as above in y, by default (-10, 10)
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    gap_width : int
-        Width of each gap, by default 200
-    block_width : int
-        Width of each block (piece of floor), by default 1000
-    gap_depth : int
-        Height of the gaps, by default 2000
+    gap_width : float
+        Width of each gap, by default 0.2
+    block_width : float
+        Width of each block (piece of floor), by default 1
+    gap_depth : float
+        Height of the gaps, by default 2
     """
 
     def __init__(
         self,
-        x_range: Tuple[int, int] = (-10_000, 20_000),
-        y_range: Tuple[int, int] = (-10_000, 10_000),
+        x_range: Tuple[float, float] = (-10, 20),
+        y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: int = 200,
-        block_width: int = 1000,
-        gap_depth: int = 2000,
+        gap_width: float = 0.2,
+        block_width: float = 1,
+        gap_depth: float = 2,
     ) -> None:
         self.x_range = x_range
         self.y_range = y_range
@@ -171,33 +171,33 @@ class BlocksTerrain(BaseArena):
 
     Parameters
     ----------
-    x_range : Tuple[int, int], optional
+    x_range : Tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
-        (-10_000, 20_000)
-    y_range : Tuple[int, int], optional
-        Same as above in y, by default (-10_000, 10_000)
+        (-10, 20)
+    y_range : Tuple[float, float], optional
+        Same as above in y, by default (-10, 10)
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    block_size : int, optional
+    block_size : float, optional
         The side length of the rectangular blocks forming the terrain, by
-        default 1000
-    height_range : Tuple[int, int], optional
+        default 1
+    height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (300, 300)
+        extruded, by default (0.3, 0.3)
     rand_seed : int, optional
         Seed for generating random block heights, by default 0
     """
 
     def __init__(
         self,
-        x_range: Tuple[int, int] = (-10_000, 20_000),
-        y_range: Tuple[int, int] = (-10_000, 10_000),
+        x_range: Tuple[float, float] = (-10, 20),
+        y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        block_size: int = 1000,
-        height_range: Tuple[int, int] = (300, 300),
+        block_size: float = 1,
+        height_range: Tuple[float, float] = (0.3, 0.3),
         rand_seed: int = 0,
     ):
         self.x_range = x_range
@@ -220,9 +220,9 @@ class BlocksTerrain(BaseArena):
                 is_j_odd = j % 2 == 1
 
                 if is_i_odd != is_j_odd:
-                    height = 100
+                    height = 0.1
                 else:
-                    height = 100 + rand_state.uniform(*height_range)
+                    height = 0.1 + rand_state.uniform(*height_range)
 
                 self.root_element.worldbody.add(
                     "geom",
@@ -249,19 +249,19 @@ class MixedTerrain(BaseArena):
     friction : Tuple[float, float, float], optional
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    gap_width : int
-        Width of each gap, by default 200
-    block_width : int
-        Width of each block (piece of floor), by default 1000
-    gap_depth : int
-        Height of the gaps, by default 2000
-    block_size : int, optional
+    gap_width : float
+        Width of each gap, by default 0.2
+    block_width : float
+        Width of each block (piece of floor), by default 1
+    gap_depth : float
+        Height of the gaps, by default 2
+    block_size : float, optional
         The side length of the rectangular blocks forming the terrain, by
-        default 1000
-    height_range : Tuple[int, int], optional
+        default 1
+    height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (300, 300)
+        extruded, by default (0.3, 0.3)
     rand_seed : int, optional
         Seed for generating random block heights, by default 0
     """
@@ -269,11 +269,11 @@ class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: int = 200,
-        block_width: int = 1000,
-        gap_depth: int = 2000,
-        block_size: int = 1000,
-        height_range: Tuple[int, int] = (300, 300),
+        gap_width: float = 0.2,
+        block_width: float = 1,
+        gap_depth: float = 2,
+        block_size: float = 1,
+        height_range: Tuple[float, float] = (0.3, 0.3),
         rand_seed: int = 0,
     ):
         self.root_element = mjcf.RootElement()
@@ -297,11 +297,11 @@ class MixedTerrain(BaseArena):
             texrepeat=(10, 10),
             reflectance=0.1,
         )
-        y_range = (-10_000, 10_000)
+        y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
 
         # Extruding blocks near origin
-        for x_range in [(-2_000, 2_000), (6_000, 8_000), (12_000, 14_000)]:
+        for x_range in [(-2, 2), (6, 8), (12, 14)]:
             x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
             y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
             for i, x_pos in enumerate(x_centers):
@@ -310,22 +310,22 @@ class MixedTerrain(BaseArena):
                     is_j_odd = j % 2 == 1
 
                     if is_i_odd != is_j_odd:
-                        height = 100
+                        height = 0.1
                     else:
-                        height = 100 + rand_state.uniform(*height_range)
+                        height = 0.1 + rand_state.uniform(*height_range)
 
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
                         size=(block_size / 2, block_size / 2, height / 2),
-                        pos=(x_pos, y_pos, height / 2 - 50),
+                        pos=(x_pos, y_pos, height / 2 - 0.05),
                         rgba=(0.3, 0.3, 0.3, 1),
                         material=obstacle,
                         friction=friction,
                     )
 
         # Then gaps
-        for x_range in [(2_000, 4_000), (8_000, 10_000), (14_000, 16_000)]:
+        for x_range in [(2, 4), (8, 10), (14, 16)]:
             block_centers = np.arange(
                 x_range[0] + block_width / 2, x_range[1], block_width + gap_width
             )
@@ -354,16 +354,16 @@ class MixedTerrain(BaseArena):
 
         # Finally, flat areas
         for x_range in [
-            (-4_000, -2_000),
-            (4_000, 6_000),
-            (10_000, 12_000),
-            (10_000, 18_000),
+            (-4, -2),
+            (4, 6),
+            (10, 12),
+            (10, 18),
         ]:
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
-                size=(2_000 / 2, 20_000 / 2, 1),
-                pos=(np.mean(x_range), 0, -1),
+                size=(2 / 2, 20 / 2, 0.001),
+                pos=(np.mean(x_range), 0, -0.001),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 1),
                 material=obstacle,
@@ -387,10 +387,10 @@ class Ball(BaseArena):
     Parameters
     ----------
     radius : float, optional
-        Radius of the ball, by default 5390.852782067457
+        Radius of the ball, by default 5.390852782067457
     ball_pos : Tuple[float, float, float], optional
         (x, y, z) mounting position of the ball, by default
-        (-98.67235483, -54.35809692, -5203.09506806)
+        (-0.09867235483, -0.05435809692, -5.20309506806)
     mass : float, optional
         Mass of the ball, by default 0.05456
     sliding_friction : float, optional
@@ -403,11 +403,11 @@ class Ball(BaseArena):
 
     def __init__(
         self,
-        radius: float = 5390.852782067457,
+        radius: float = 5.390852782067457,
         ball_pos: Tuple[float, float, float] = (
-            -98.67235483,
-            -54.35809692,
-            -5203.09506806,
+            -0.09867235483,
+            -0.05435809692,
+            -5.20309506806,
         ),
         mass: float = 0.05456,
         sliding_friction: float = 1.3,
@@ -432,7 +432,7 @@ class OdorArena(BaseArena):
 
     Parameters
     ----------
-    size : Tuple[int, int]
+    size : Tuple[float, float]
         The size of the terrain in (x, y) dimensions.
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
@@ -441,11 +441,11 @@ class OdorArena(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (50_000, 50_000),
+        size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        odor_source: np.ndarray = np.array([[10_000, 0, 0]]),
+        odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
-        diffuse_func: Callable = lambda x: (x / 1000) ** -2,
+        diffuse_func: Callable = lambda x: (x) ** -2,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
