@@ -36,8 +36,8 @@ class FlatTerrain(BaseArena):
             "texture",
             type="2d",
             builtin="checker",
-            width=1,
-            height=1,
+            width=300,
+            height=300,
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
@@ -132,8 +132,8 @@ class GappedTerrain(BaseArena):
             "texture",
             type="2d",
             builtin="checker",
-            width=1,
-            height=1,
+            width=300,
+            height=300,
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
@@ -285,8 +285,8 @@ class MixedTerrain(BaseArena):
             "texture",
             type="2d",
             builtin="checker",
-            width=1,
-            height=1,
+            width=300,
+            height=300,
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
@@ -453,8 +453,8 @@ class OdorArena(BaseArena):
             "texture",
             type="2d",
             builtin="checker",
-            width=1,
-            height=1,
+            width=300,
+            height=300,
             rgb1=(0.2, 0.3, 0.4),
             rgb2=(0.3, 0.4, 0.5),
         )
