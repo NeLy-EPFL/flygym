@@ -62,9 +62,13 @@ class MuJoCoParameters:
     def __init__(
         self,
         timestep: float = 0.0001,
-        joint_stiffness: float = 2500,
+        joint_stiffness: float = 0.05,
+        joint_damping: float = 0.06,
+        actuator_kp: float = 18.0,
+        tarsus_stiffness: float = 2.2,
+        tarsus_damping: float = 0.126,
         friction: float = (1.0, 0.005, 0.0001),
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e5),
+        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
         render_mode: str = "saved",
         render_window_size: Tuple[int, int] = (640, 480),
         render_playspeed: float = 1.0,
@@ -73,6 +77,10 @@ class MuJoCoParameters:
     ) -> None:
         self.timestep = timestep
         self.joint_stiffness = joint_stiffness
+        self.joint_damping = joint_damping
+        self.actuator_kp = actuator_kp
+        self.tarsus_stiffness = tarsus_stiffness
+        self.tarsus_damping = tarsus_damping
         self.friction = friction
         self.gravity = gravity
         self.render_mode = render_mode
@@ -169,7 +177,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         contact_sensor_placements: List = all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 300.0),
+        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orient: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 0.1),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
@@ -216,6 +224,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
             body names. By default "legs".
         """
+        from time import time
+
+        st = time()
         if sim_params is None:
             sim_params = MuJoCoParameters()
         if arena is None:
@@ -263,6 +274,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
+        for actuator in self.actuators:
+            actuator.kp = self.sim_params.actuator_kp
 
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
@@ -298,12 +311,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self.physics.model.joint(
                     f"Animat/{joint}"
                 ).stiffness = self.sim_params.joint_stiffness
+                self.physics.model.joint(
+                    f"Animat/{joint}"
+                ).damping = self.sim_params.joint_damping
 
         self.physics.model.opt.gravity = self.sim_params.gravity
 
         # Make tarsi compliant and apply initial pose. MUST BE IN THIS ORDER!
-        all_joints = [joint.name for joint in self.arena_root.find_all("joint")]
-        self._set_compliant_tarsus(stiffness=3.5e5, damping=100)
+        self._set_compliant_tarsus()
         self._set_init_pose(self.init_pose)
 
         # Set up a few things for rendering
@@ -532,15 +547,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     animat_name = f"Animat/{curr_joint}"
                     self.physics.named.data.qpos[animat_name] = init_pose[curr_joint]
 
-    def _set_compliant_tarsus(self, stiffness: float = 0.0, damping: float = 100):
+    def _set_compliant_tarsus(self):
         """Set the Tarsus2/3/4/5 to be compliant by setting the stiffness
         and damping to a low value"""
+        stiffness = self.sim_params.tarsus_stiffness
+        damping = self.sim_params.tarsus_damping
         for side in "LR":
             for pos in "FMH":
                 for tarsus_link in range(2, 5 + 1):
                     joint = f"joint_{side}{pos}Tarsus{tarsus_link}"
                     self.physics.model.joint(f"Animat/{joint}").stiffness = stiffness
-                    # self.physics.model.joint(f'Animat/{joint}').springref = 0.0
                     self.physics.model.joint(f"Animat/{joint}").damping = damping
 
         self.physics.reset()
