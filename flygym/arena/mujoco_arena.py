@@ -77,18 +77,18 @@ class GappedTerrain(BaseArena):
     x_range : Tuple[float, float]
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
-        (-10_000, 20_000)
+        (-10, 20)
     y_range : Tuple[float, float]
-        Same as above in y, by default (-10_000, 10_000)
+        Same as above in y, by default (-10, 10)
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     gap_width : float
-        Width of each gap, by default 200
+        Width of each gap, by default 0.2
     block_width : float
-        Width of each block (piece of floor), by default 1000
+        Width of each block (piece of floor), by default 1
     gap_depth : float
-        Height of the gaps, by default 2000
+        Height of the gaps, by default 2
     """
 
     def __init__(
@@ -174,19 +174,19 @@ class BlocksTerrain(BaseArena):
     x_range : Tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
-        (-10_000, 20_000)
+        (-10, 20)
     y_range : Tuple[float, float], optional
-        Same as above in y, by default (-10_000, 10_000)
+        Same as above in y, by default (-10, 10)
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     block_size : float, optional
         The side length of the rectangular blocks forming the terrain, by
-        default 1000
+        default 1
     height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (300, 300)
+        extruded, by default (0.3, 0.3)
     rand_seed : int, optional
         Seed for generating random block heights, by default 0
     """
@@ -250,18 +250,18 @@ class MixedTerrain(BaseArena):
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     gap_width : float
-        Width of each gap, by default 200
+        Width of each gap, by default 0.2
     block_width : float
-        Width of each block (piece of floor), by default 1000
+        Width of each block (piece of floor), by default 1
     gap_depth : float
-        Height of the gaps, by default 2000
+        Height of the gaps, by default 2
     block_size : float, optional
         The side length of the rectangular blocks forming the terrain, by
-        default 1000
+        default 1
     height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (300, 300)
+        extruded, by default (0.3, 0.3)
     rand_seed : int, optional
         Seed for generating random block heights, by default 0
     """
@@ -387,10 +387,10 @@ class Ball(BaseArena):
     Parameters
     ----------
     radius : float, optional
-        Radius of the ball, by default 5390.852782067457
+        Radius of the ball, by default 5.390852782067457
     ball_pos : Tuple[float, float, float], optional
         (x, y, z) mounting position of the ball, by default
-        (-98.67235483, -54.35809692, -5203.09506806)
+        (-0.09867235483, -0.05435809692, -5.20309506806)
     mass : float, optional
         Mass of the ball, by default 0.05456
     sliding_friction : float, optional
