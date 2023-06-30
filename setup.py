@@ -28,7 +28,7 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco", "dm_control"],
+        "mujoco": ["mujoco", "dm_control", "numba"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
@@ -38,6 +38,9 @@ setup(
             "ruff",
             "black==23.3.0",
             "black[jupyter]",
+            "shapely",
+            "rasterio",
+            "requests"
         ],
     },
 )
