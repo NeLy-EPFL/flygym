@@ -22,7 +22,7 @@ def test_basic_untethered_sinewave():
         odor_source=odor_source,
         peak_intensity=peak_intensity,
     )
-    nmf = NeuroMechFlyMuJoCo(arena=arena)
+    nmf = NeuroMechFlyMuJoCo(arena=arena, use_olfaction=True)
 
     # Run simulation
     obs_list = []

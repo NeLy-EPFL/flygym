@@ -193,6 +193,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
+        use_vision: bool = False,
+        use_olfaction: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -253,6 +255,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.spawn_orient = spawn_orient
         self.control = control
         self.init_pose = init_pose
+        self.use_vision = use_vision
+        self.use_olfaction = use_olfaction
         self.render_mode = sim_params.render_mode
         self.end_effector_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
@@ -306,7 +310,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
-        self.antennae_sensors = self._add_antennae_sensors()
+        self.antennae_sensors = self._add_antennae_sensors() if use_olfaction else None
         self.touch_sensors = self._add_touch_sensors()
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
@@ -681,17 +685,20 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
 
-        # olfaction
-        antennae_pos = self.physics.bind(self.antennae_sensors).sensordata.reshape(2, 3)
-        odor_intensity = self.arena.get_olfaction(antennae_pos)
-
-        return {
+        obs = {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
-            "odor_intensity": odor_intensity,
         }
+
+        # olfaction
+        if self.use_olfaction:
+            antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
+            odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(2, 3))
+            obs["odor_intensity"] = odor_intensity
+
+        return obs
 
     def get_reward(self):
         """Get the reward for the current state of the environment. This
