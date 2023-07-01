@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 
 
@@ -73,3 +74,11 @@ def get_collision_geoms(config: str = "all") -> List[str]:
         return []
     else:
         raise ValueError(f"Unknown collision geometry configuration: {config}")
+
+
+# Vision
+fovx_per_eye = 46 + 1
+fovy_per_eye = fovx_per_eye * (2 / np.sqrt(3))
+raw_img_height_px = 512
+raw_img_width_px = 450
+retina_side_len_hex = 16

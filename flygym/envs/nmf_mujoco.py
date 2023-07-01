@@ -26,8 +26,21 @@ except ImportError:
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
+from flygym.util.vision import (
+    raw_image_to_hex_pxls,
+    hex_pxls_to_human_readable,
+    ommatidia_id_map,
+    num_pixels_per_ommatidia,
+)
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
+from flygym.util.config import (
+    all_leg_dofs,
+    all_tarsi_links,
+    get_collision_geoms,
+    fovy_per_eye,
+    raw_img_height_px,
+    raw_img_width_px,
+)
 
 
 class MuJoCoParameters:
@@ -84,6 +97,7 @@ class MuJoCoParameters:
         render_playspeed: float = 1.0,
         render_fps: int = 60,
         render_camera: str = "Animat/camera_left_top",
+        vision_refresh_rate: int = 1000,
     ) -> None:
         self.timestep = timestep
         self.joint_stiffness = joint_stiffness
@@ -98,6 +112,7 @@ class MuJoCoParameters:
         self.render_playspeed = render_playspeed
         self.render_fps = render_fps
         self.render_camera = render_camera
+        self.vision_refresh_rate = vision_refresh_rate
 
     def __str__(self) -> str:
         attributes = vars(self)
@@ -282,6 +297,40 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
+
+        # Add cameras imitating the fly's eyes
+        self.curr_visual_input = None
+        self._last_vision_update_time = -np.inf
+        self._eff_visual_render_interval = 1 / self.sim_params.vision_refresh_rate
+        if self.use_vision:
+            left_eye_pos = (0.75, 0.3, 1.32)
+            for side in ["L", "R"]:
+                if side == "L":
+                    eye_pos = left_eye_pos
+                    euler = (1.57, -0.4676, 0)
+                else:
+                    eye_pos = (left_eye_pos[0], -left_eye_pos[1], left_eye_pos[2])
+                    euler = (-1.57, -0.4676, 3.14)
+                cam = self.model.worldbody.add(
+                    "camera",
+                    name=f"camera_{side}Eye",
+                    pos=eye_pos,
+                    dclass="nmf",
+                    mode="track",
+                    euler=euler,
+                    fovy="146.71",
+                )
+                # # visual camera position markers: left black, right white
+                # red_dot_left = self.model.worldbody.add(
+                #     "body", name=f"red_dot_{side}", pos=eye_pos
+                # )
+                # red_dot_left.add(
+                #     "geom",
+                #     name=f"red_dot_{side}_geom_visual",
+                #     type="sphere",
+                #     size=[0.15],
+                #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
+                # )
 
         # Define list of actuated joints
         self.actuators = [
@@ -649,6 +698,26 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise NotImplementedError
 
+    def _update_vision(self) -> np.ndarray:
+        next_render_time = (
+            self._last_vision_update_time + self._eff_visual_render_interval
+        )
+        if self.curr_time < next_render_time:
+            return
+        ommatidia_readouts = []
+        for side in ["L", "R"]:
+            img = self.physics.render(
+                width=raw_img_width_px,
+                height=raw_img_height_px,
+                camera_id=f"camera_{side}Eye",
+            )
+            readouts_per_eye = raw_image_to_hex_pxls(
+                img, num_pixels_per_ommatidia, ommatidia_id_map
+            )
+            ommatidia_readouts.append(readouts_per_eye)
+        self.curr_visual_input = np.array(ommatidia_readouts)
+        self._last_vision_update_time = self.curr_time
+
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
@@ -697,6 +766,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
             antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
             odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(2, 3))
             obs["odor_intensity"] = odor_intensity
+
+        # vision
+        if self.use_vision:
+            self._update_vision()
+            obs["vision"] = self.curr_visual_input
 
         return obs
 
