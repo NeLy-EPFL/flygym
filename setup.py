@@ -40,7 +40,7 @@ setup(
             "black[jupyter]",
             "shapely",
             "rasterio",
-            "requests"
+            "requests",
         ],
     },
 )
