@@ -18,11 +18,9 @@ def test_basic_untethered_sinewave():
 
     # Initialize simulation
     num_steps = 100
-    arena = OdorArena(
-        odor_source=odor_source,
-        peak_intensity=peak_intensity,
-    )
-    nmf = NeuroMechFlyMuJoCo(arena=arena, use_olfaction=True)
+    arena = OdorArena(odor_source=odor_source, peak_intensity=peak_intensity)
+    sim_params = MuJoCoParameters(enable_olfaction=True)
+    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, arena=arena)
 
     # Run simulation
     obs_list = []
