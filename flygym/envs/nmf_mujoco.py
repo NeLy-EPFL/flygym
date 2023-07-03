@@ -40,6 +40,8 @@ from flygym.util.config import (
     fovy_per_eye,
     raw_img_height_px,
     raw_img_width_px,
+    eye_positions,
+    eye_orientations,
 )
 
 
@@ -92,12 +94,15 @@ class MuJoCoParameters:
         tarsus_damping: float = 0.126,
         friction: float = (1.0, 0.005, 0.0001),
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
+        enable_olfaction: bool = False,
+        enable_vision: bool = False,
+        render_raw_vision: bool = False,
         render_mode: str = "saved",
         render_window_size: Tuple[int, int] = (640, 480),
         render_playspeed: float = 1.0,
         render_fps: int = 60,
         render_camera: str = "Animat/camera_left_top",
-        vision_refresh_rate: int = 1000,
+        vision_refresh_rate: int = 500,
     ) -> None:
         self.timestep = timestep
         self.joint_stiffness = joint_stiffness
@@ -107,6 +112,9 @@ class MuJoCoParameters:
         self.tarsus_damping = tarsus_damping
         self.friction = friction
         self.gravity = gravity
+        self.enable_olfaction = enable_olfaction
+        self.enable_vision = enable_vision
+        self.render_raw_vision = render_raw_vision
         self.render_mode = render_mode
         self.render_window_size = render_window_size
         self.render_playspeed = render_playspeed
@@ -208,8 +216,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
-        use_vision: bool = False,
-        use_olfaction: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -270,8 +276,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.spawn_orient = spawn_orient
         self.control = control
         self.init_pose = init_pose
-        self.use_vision = use_vision
-        self.use_olfaction = use_olfaction
         self.render_mode = sim_params.render_mode
         self.end_effector_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
@@ -300,37 +304,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Add cameras imitating the fly's eyes
         self.curr_visual_input = None
+        self.curr_raw_visual_input = None
         self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.sim_params.vision_refresh_rate
-        if self.use_vision:
-            left_eye_pos = (0.75, 0.3, 1.32)
-            for side in ["L", "R"]:
-                if side == "L":
-                    eye_pos = left_eye_pos
-                    euler = (1.57, -0.4676, 0)
-                else:
-                    eye_pos = (left_eye_pos[0], -left_eye_pos[1], left_eye_pos[2])
-                    euler = (-1.57, -0.4676, 3.14)
-                cam = self.model.worldbody.add(
-                    "camera",
-                    name=f"camera_{side}Eye",
-                    pos=eye_pos,
-                    dclass="nmf",
-                    mode="track",
-                    euler=euler,
-                    fovy="146.71",
-                )
-                # # visual camera position markers: left black, right white
-                # red_dot_left = self.model.worldbody.add(
-                #     "body", name=f"red_dot_{side}", pos=eye_pos
-                # )
-                # red_dot_left.add(
-                #     "geom",
-                #     name=f"red_dot_{side}_geom_visual",
-                #     type="sphere",
-                #     size=[0.15],
-                #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
-                # )
+        self._vision_update_mask = []
+        if self.sim_params.enable_vision:
+            self._configure_eyes()
 
         # Define list of actuated joints
         self.actuators = [
@@ -359,7 +338,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
-        self.antennae_sensors = self._add_antennae_sensors() if use_olfaction else None
+        self.antennae_sensors = (
+            self._add_antennae_sensors() if sim_params.enable_olfaction else None
+        )
         self.touch_sensors = self._add_touch_sensors()
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
@@ -392,6 +373,31 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 sim_params.render_playspeed / self.sim_params.render_fps
             )
         self._frames = []
+
+        self.reset()
+
+    def _configure_eyes(self):
+        for i, side in enumerate(["L", "R"]):
+            self.model.worldbody.add(
+                "camera",
+                name=f"camera_{side}Eye",
+                pos=eye_positions[i],
+                dclass="nmf",
+                mode="track",
+                euler=eye_orientations[i],
+                fovy=fovy_per_eye,
+            )
+            # # visual camera position markers: left black, right white
+            # red_dot_left = self.model.worldbody.add(
+            #     "body", name=f"red_dot_{side}", pos=eye_pos
+            # )
+            # red_dot_left.add(
+            #     "geom",
+            #     name=f"red_dot_{side}_geom_visual",
+            #     type="sphere",
+            #     size=[0.15],
+            #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
+            # )
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -641,6 +647,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_init_pose(self.init_pose)
         self._frames = []
         self._last_render_time = -np.inf
+        self._last_vision_update_time = -np.inf
+        self.curr_raw_visual_input = None
+        self.curr_visual_input = None
+        self._vision_update_mask = []
         return self.get_observation(), self.get_info()
 
     def step(
@@ -703,20 +713,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._last_vision_update_time + self._eff_visual_render_interval
         )
         if self.curr_time < next_render_time:
+            self._vision_update_mask.append(False)
             return
+        self._vision_update_mask.append(True)
+        raw_visual_input = []
         ommatidia_readouts = []
         for side in ["L", "R"]:
             img = self.physics.render(
                 width=raw_img_width_px,
                 height=raw_img_height_px,
-                camera_id=f"camera_{side}Eye",
+                camera_id=f"Animat/camera_{side}Eye",
             )
             readouts_per_eye = raw_image_to_hex_pxls(
-                img, num_pixels_per_ommatidia, ommatidia_id_map
+                np.ascontiguousarray(img), num_pixels_per_ommatidia, ommatidia_id_map
             )
             ommatidia_readouts.append(readouts_per_eye)
+            raw_visual_input.append(img)
         self.curr_visual_input = np.array(ommatidia_readouts)
+        if self.sim_params.render_raw_vision:
+            self.curr_raw_visual_input = np.array(raw_visual_input)
         self._last_vision_update_time = self.curr_time
+
+    @property
+    def vision_update_mask(self) -> np.ndarray:
+        return np.array(self._vision_update_mask[1:])
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
@@ -762,15 +782,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         }
 
         # olfaction
-        if self.use_olfaction:
+        if self.sim_params.enable_olfaction:
             antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
             odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(2, 3))
             obs["odor_intensity"] = odor_intensity
 
         # vision
-        if self.use_vision:
+        if self.sim_params.enable_vision:
             self._update_vision()
             obs["vision"] = self.curr_visual_input
+            if self.sim_params.render_raw_vision:
+                obs["raw_vision"] = self.curr_raw_visual_input
 
         return obs
 
