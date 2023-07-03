@@ -706,6 +706,7 @@
     <camera name="camera_left_top" class="nmf" mode="track" ipd="0.068" pos="0 6 2" euler="-1.25 0 3.14"/>
     <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 0" euler="1.57 0.5 0"/>
     <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 24 8" euler="-1.3 0 3.14"/>
+    <camera name="camera_top_zoomout" class="nmf" mode="track"  ipd="0.068" pos="0 0 80" euler="0 0 0"/>
   </worldbody>
   <actuator>
     <position name="actuator_position_joint_Head_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_Head_yaw" kp="0.9"/>
