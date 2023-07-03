@@ -55,16 +55,27 @@ class FovCalibrationArena(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="cylinder",
-                size=(1, 50),
+                size=(0.5, 50),
                 pos=(x, left_y, 25),
                 rgba=colors[0][i],
             )
             self.root_element.worldbody.add(
                 "geom",
                 type="cylinder",
-                size=(1, 50),
+                size=(0.5, 50),
                 pos=(x, -left_y, 25),
                 rgba=colors[1][i],
+            )
+        
+        for i in range(36):
+            x = np.sin(i * np.pi / 18) * 20
+            y = np.cos(i * np.pi / 18) * 20
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.1, 50),
+                pos=(x, y, 25),
+                rgba=(1, 1, 1, 0.5),
             )
 
     def get_spawn_position(
@@ -79,7 +90,7 @@ sim_params = MuJoCoParameters(
     render_mode="saved",
     render_playspeed=0.1,
     render_camera="Animat/camera_LEye",
-    # render_camera="Animat/camera_left_top_zoomout",
+    # render_camera="Animat/camera_top_zoomout",
 )
 arena = FovCalibrationArena()
 nmf = NeuroMechFlyMuJoCo(
@@ -87,6 +98,7 @@ nmf = NeuroMechFlyMuJoCo(
     arena=arena,
     init_pose=stretched_pose,
     actuated_joints=all_leg_dofs,
+    use_vision=True,
 )
 nmf.render()
 image = nmf._frames[0]
