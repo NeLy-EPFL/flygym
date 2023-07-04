@@ -10,7 +10,7 @@ from flygym.arena.mujoco_arena import OdorArena
 random_state = np.random.RandomState(0)
 
 
-def test_basic_untethered_sinewave():
+def test_odor_dimensions():
     num_sources = 5
     num_dims = 4
     odor_source = np.zeros((num_sources, 3))
