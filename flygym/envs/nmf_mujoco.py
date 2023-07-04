@@ -5,6 +5,7 @@ import copy
 import logging
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
+from dataclasses import dataclass
 from scipy.spatial.transform import Rotation as R
 
 import gymnasium as gym
@@ -45,6 +46,7 @@ from flygym.util.config import (
 )
 
 
+@dataclass
 class MuJoCoParameters:
     """Parameters of the MuJoCo simulation.
 
@@ -94,51 +96,23 @@ class MuJoCoParameters:
         500.
     """
 
-    def __init__(
-        self,
-        timestep: float = 0.0001,
-        joint_stiffness: float = 0.05,
-        joint_damping: float = 0.06,
-        actuator_kp: float = 18.0,
-        tarsus_stiffness: float = 2.2,
-        tarsus_damping: float = 0.126,
-        friction: float = (1.0, 0.005, 0.0001),
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
-        enable_olfaction: bool = False,
-        enable_vision: bool = False,
-        render_raw_vision: bool = False,
-        render_mode: str = "saved",
-        render_window_size: Tuple[int, int] = (640, 480),
-        render_playspeed: float = 1.0,
-        render_fps: int = 60,
-        render_camera: str = "Animat/camera_left_top",
-        vision_refresh_rate: int = 500,
-    ) -> None:
-        self.timestep = timestep
-        self.joint_stiffness = joint_stiffness
-        self.joint_damping = joint_damping
-        self.actuator_kp = actuator_kp
-        self.tarsus_stiffness = tarsus_stiffness
-        self.tarsus_damping = tarsus_damping
-        self.friction = friction
-        self.gravity = gravity
-        self.enable_olfaction = enable_olfaction
-        self.enable_vision = enable_vision
-        self.render_raw_vision = render_raw_vision
-        self.render_mode = render_mode
-        self.render_window_size = render_window_size
-        self.render_playspeed = render_playspeed
-        self.render_fps = render_fps
-        self.render_camera = render_camera
-        self.vision_refresh_rate = vision_refresh_rate
-
-    def __str__(self) -> str:
-        attributes = vars(self)
-        attributes_str = [f"{key}: {value}" for key, value in attributes.items()]
-        return "MuJoCo Parameters:\n  " + "\n  ".join(attributes_str)
-
-    def __repr__(self) -> str:
-        return str(self)
+    timestep: float = 0.0001
+    joint_stiffness: float = 0.05
+    joint_damping: float = 0.06
+    actuator_kp: float = 18.0
+    tarsus_stiffness: float = 2.2
+    tarsus_damping: float = 0.126
+    friction: float = (1.0, 0.005, 0.0001)
+    gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
+    enable_olfaction: bool = False
+    enable_vision: bool = False
+    render_raw_vision: bool = False
+    render_mode: str = "saved"
+    render_window_size: Tuple[int, int] = (640, 480)
+    render_playspeed: float = 1.0
+    render_fps: int = 60
+    render_camera: str = "Animat/camera_left_top"
+    vision_refresh_rate: int = 500
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
