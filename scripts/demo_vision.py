@@ -92,8 +92,6 @@ class FovCalibrationArena(BaseArena):
 
 # Initialize simulation
 run_time = 1
-
-# Visualize static camera views upon initialization
 sim_params = MuJoCoParameters(
     timestep=1e-4,
     render_mode="saved",
@@ -126,12 +124,11 @@ for i, joint in enumerate(nmf.actuated_joints):
 obs, reward, terminated, truncated, info = nmf.step({"joints": data_block[:, 0]})
 nmf.render()
 
+# Visualize static camera views upon initialization
 plt.imshow(nmf._frames[0])
 plt.show()
-
 plt.imshow(nmf.curr_raw_visual_input[0])
 plt.show()
-
 nmf.close()
 
 # Visualize camera views during simulation

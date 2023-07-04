@@ -69,6 +69,13 @@ class MuJoCoParameters:
     gravity : Tuple[float, float, float], optional
         Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
         the gravity is -9.81 * 1000 due to the scaling of the model.
+    enable_olfaction : bool, optional
+        Whether to enable olfaction, by default False.
+    enable_vision : bool, optional
+        Whether to enable vision, by default False.
+    render_raw_vision : bool, optional
+        If ``enable_vision`` is True, whether to render the raw vision
+        (raw pixel values before binning by ommatidia), by default False.
     render_mode : str, optional
         The rendering mode. Can be "saved" or "headless", by default
         "saved".
@@ -82,6 +89,9 @@ class MuJoCoParameters:
     render_camera : str, optional
         The camera that will be used for rendering, by default
         "Animat/camera_left_top".
+    vision_refresh_rate : int, optional
+        The rate at which the vision sensor is updated, in Hz, by default
+        500.
     """
 
     def __init__(
@@ -201,6 +211,28 @@ class NeuroMechFlyMuJoCo(gym.Env):
         the fly in it.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
+    curr_visual_input : np.ndarray
+        The current visual input from the fly's eyes. This is our
+        simulation of what the fly might see through its compound eyes.
+        It is a (2, N, 2) array where the first dimension is for the left
+        and right eyes, the second dimension is for the N ommatidia, and
+        the third dimension is for the two channels.
+    curr_raw_visual_input : np.ndarray
+        The current raw visual input from the fly's eyes. This is the raw
+        camera reading before we simulate what the fly actually sees with
+        its compound eyes. It is a (2, H, W, 3) array where the first
+        dimension is for the left and right eyes, and the remaining
+        dimensions are for the RGB image.
+    vision_update_mask : np.ndarray
+        The refresh frequency of the visual system is often loser than the
+        same as the physics simulation time step. This 1D mask, whose
+        size is the same as the number of simulation time steps, indicates
+        in which time steps the visual inputs have been refreshed. In other
+        words, the visual input frames where this mask is False are
+        repititions of the previous updated visual input frames.
+    antennae_sensors : Union[None, List[dm_control.mjcf.Element], None]
+        If olfaction is enabled, this is a list of the MuJoCo sensors on
+        the antenna positions.
     """
 
     def __init__(
