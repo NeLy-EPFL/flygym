@@ -1,7 +1,6 @@
 import numpy as np
 import pkg_resources
 import pickle
-import scipy.stats
 import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import trange
