@@ -407,9 +407,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         #         color = np.random.uniform(size=4)
         #         color[3] = 1
         #         geom.rgba = color
-        #         if (
-        #             collision_geom_name := name.replace("_visual", "_collision")
-        #         ) in all_geoms:
+        #         collision_geom_name = name.replace("_visual", "_collision")
+        #         if collision_geom_name in all_geoms:
         #             print(f"  changing color for collision geom too")
         #             all_geoms[collision_geom_name].rgba = color
 
@@ -422,9 +421,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
         for base_name in base_names:
             self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
-            if (
-                col_geom := self.model.find("geom", f"{base_name}_collision")
-            ) is not None:
+            col_geom = self.model.find("geom", f"{base_name}_collision")
+            if col_geom is not None:
                 col_geom.rgba = (0.5, 0.5, 0.5, 0)
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
