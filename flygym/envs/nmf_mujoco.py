@@ -389,7 +389,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             )
             # # visual camera position markers: left black, right white
             # red_dot_left = self.model.worldbody.add(
-            #     "body", name=f"red_dot_{side}", pos=eye_pos
+            #     "body", name=f"red_dot_{side}", pos=eye_positions[i]
             # )
             # red_dot_left.add(
             #     "geom",
@@ -398,6 +398,34 @@ class NeuroMechFlyMuJoCo(gym.Env):
             #     size=[0.15],
             #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
             # )
+
+        # # Randomize all colors
+        # all_geoms = {geom.name: geom for geom in self.model.find_all("geom")}
+        # for name, geom in all_geoms.items():
+        #     if "visual" in name:
+        #         print(f"Changing color for {name}")
+        #         color = np.random.uniform(size=4)
+        #         color[3] = 1
+        #         geom.rgba = color
+        #         if (
+        #             collision_geom_name := name.replace("_visual", "_collision")
+        #         ) in all_geoms:
+        #             print(f"  changing color for collision geom too")
+        #             all_geoms[collision_geom_name].rgba = color
+
+        # Make foreleg femur and tibia transparent
+        base_names = [
+            f"{side}{part}"
+            for side in ["L", "R"]
+            for part in ["FCoxa", "Eye", "Arista", "Funiculus", "Pedicel"]
+        ]
+        base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
+        for base_name in base_names:
+            self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
+            if (
+                col_geom := self.model.find("geom", f"{base_name}_collision")
+            ) is not None:
+                col_geom.rgba = (0.5, 0.5, 0.5, 0)
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
