@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats
+import pytest
 
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
 from flygym.tests import temp_base_dir
@@ -8,11 +9,15 @@ from flygym.util.config import (
     raw_img_height_px,
     num_ommatidia_per_eye,
 )
+from flygym.util.vision import visualize_visual_input
 
 
 random_state = np.random.RandomState(0)
 
 
+@pytest.mark.skip(
+    reason="github actions runner doesn't have a display; render will fail"
+)
 def test_vision_dimensions():
     # Initialize simulation
     num_steps = 100
@@ -39,3 +44,13 @@ def test_vision_dimensions():
     )
     assert obs["raw_vision"].shape == (2, raw_img_height_px, raw_img_width_px, 3)
     assert obs["vision"].shape == (2, num_ommatidia_per_eye, 2)
+
+    # Test postprocessing
+    visualize_visual_input(
+        output_path=temp_base_dir / "vision/eyes.mp4",
+        vision_data_li=[x["vision"] for x in obs_list],
+        raw_vision_data_li=[x["raw_vision"] for x in obs_list],
+        vision_update_mask=nmf.vision_update_mask,
+        vision_refresh_rate=sim_params.vision_refresh_rate,
+        playback_speed=0.1,
+    )

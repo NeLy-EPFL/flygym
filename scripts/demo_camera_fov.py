@@ -6,13 +6,12 @@ from dm_control import mjcf
 from typing import Tuple
 from tqdm import trange
 from pathlib import Path
-from matplotlib.animation import FuncAnimation
 
 from flygym.arena import BaseArena
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
 from flygym.state import stretched_pose
 from flygym.util.config import all_leg_dofs
-from flygym.util.vision import hex_pxls_to_human_readable, ommatidia_id_map
+from flygym.util.vision import visualize_visual_input
 
 
 class FovCalibrationArena(BaseArena):
@@ -160,41 +159,11 @@ for i in trange(num_steps):
 nmf.close()
 nmf.save_video(Path("vision_arena.mp4"))
 
-vision_data = np.array([x["vision"] for x in obs_list])
-vision_data_key_frames = vision_data[nmf.vision_update_mask, :, :, :]
-raw_vision_data = np.array([x["raw_vision"] for x in obs_list])
-raw_vision_key_frames = raw_vision_data[nmf.vision_update_mask, :, :, :]
-num_frames = vision_data_key_frames.shape[0]
-
-raw_images = []
-readable_processed_images = []
-for i in range(num_frames):
-    frame_data = vision_data_key_frames[i, :, :]
-    left_img = hex_pxls_to_human_readable(frame_data[0, :], ommatidia_id_map)
-    right_img = hex_pxls_to_human_readable(frame_data[1, :], ommatidia_id_map)
-    readable_processed_images.append([left_img, right_img])
-readable_processed_images = np.array(readable_processed_images)
-
-# Compile video
-fig, axs = plt.subplots(2, 2, figsize=(8, 8))
-
-
-def update(frame):
-    for i, side in enumerate(["Left", "Right"]):
-        axs[0, i].cla()
-        axs[0, i].imshow(raw_vision_key_frames[frame, i, :, :, :])
-        axs[0, i].axis("off")
-        axs[0, i].set_title(f"{side} eye")
-
-        axs[1, i].cla()
-        axs[1, i].imshow(
-            readable_processed_images[frame, i, :, :], cmap="gray", vmin=0, vmax=255
-        )
-        axs[1, i].axis("off")
-
-
-playback_speed = 0.1
-interval_1x_speed = 1000 / sim_params.vision_refresh_rate
-interval = interval_1x_speed / playback_speed
-animation = FuncAnimation(fig, update, frames=num_frames, interval=interval)
-animation.save("eyes.mp4", dpi=100, writer="ffmpeg")
+visualize_visual_input(
+    output_path=Path("eyes.mp4"),
+    vision_data_li=[x["vision"] for x in obs_list],
+    raw_vision_data_li=[x["raw_vision"] for x in obs_list],
+    vision_update_mask=nmf.vision_update_mask,
+    vision_refresh_rate=sim_params.vision_refresh_rate,
+    playback_speed=0.1,
+)
