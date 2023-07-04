@@ -91,31 +91,10 @@ class FovCalibrationArena(BaseArena):
         return rel_pos, rel_angle
 
 
-# run_time = 1e-4
-# sim_params = MuJoCoParameters(
-#     timestep=1e-4,
-#     render_mode="saved",
-#     render_playspeed=0.1,
-#     render_camera="Animat/camera_LEye",
-#     # render_camera="Animat/camera_top_zoomout",
-# )
-# arena = FovCalibrationArena()
-# nmf = NeuroMechFlyMuJoCo(
-#     sim_params=sim_params,
-#     arena=arena,
-#     init_pose=stretched_pose,
-#     actuated_joints=all_leg_dofs,
-#     use_vision=True,
-# )
-# nmf.render()
-# image = nmf._frames[0]
-# plt.imshow(image)
-# plt.show()
-
-
 # Initialize simulation
 run_time = 1
 
+# Visualize static camera views upon initialization
 sim_params = MuJoCoParameters(
     timestep=1e-4,
     render_mode="saved",
@@ -148,15 +127,15 @@ for i, joint in enumerate(nmf.actuated_joints):
 obs, reward, terminated, truncated, info = nmf.step({"joints": data_block[:, 0]})
 nmf.render()
 
-# plt.imshow(nmf._frames[0])
-# plt.show()
+plt.imshow(nmf._frames[0])
+plt.show()
 
-# plt.imshow(nmf.curr_raw_visual_input[0])
-# plt.show()
+plt.imshow(nmf.curr_raw_visual_input[0])
+plt.show()
 
-# nmf.close()
+nmf.close()
 
-# Run simulation
+# Visualize camera views during simulation
 sim_params = MuJoCoParameters(
     timestep=1e-4,
     render_mode="saved",
@@ -196,6 +175,7 @@ for i in range(num_frames):
     readable_processed_images.append([left_img, right_img])
 readable_processed_images = np.array(readable_processed_images)
 
+# Compile video
 fig, axs = plt.subplots(2, 2, figsize=(8, 8))
 
 
