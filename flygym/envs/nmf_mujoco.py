@@ -29,6 +29,11 @@ from flygym.state import BaseState, stretched_pose
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
 
+try:
+    import cv2
+except ImportError:
+    print("OpenCV not installed. Rendering of contact forces is disabled.")
+
 
 class MuJoCoParameters:
     """Parameters of the MuJoCo simulation.
@@ -193,6 +198,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
+        draw_contacts: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -233,6 +239,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             Which set of collisions should collide with each other. Can be
             "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
             body names. By default "legs".
+        draw_contacts : bool, optional
+            Whether to draw contacts in the simulation. By default False.
         """
         from time import time
 
@@ -301,13 +309,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.self_contacts, self.self_contact_names = self._define_self_contacts(
             self_collision_geoms
         )
+        self.contact_sensor_placements = [
+            f"Animat/{body}" for body in self.contact_sensor_placements
+        ]
 
         # Add sensors
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
         self.antennae_sensors = self._add_antennae_sensors()
-        self.touch_sensors = self._add_touch_sensors()
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
@@ -339,6 +349,24 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 sim_params.render_playspeed / self.sim_params.render_fps
             )
         self._frames = []
+
+        self.draw_contacts = draw_contacts
+        if self.draw_contacts:
+            try:
+                import cv2
+            except ImportError:
+                raise ImportError(
+                    "Cannot draw contacts without OpenCV. Please switch to " "dev mode."
+                )
+            self._last_contact_force = []
+            self._last_contact_pos = []
+            width, height = self.sim_params.render_window_size
+            self.contact_camera = dm_control.mujoco.Camera(
+                self.physics,
+                camera_id=self.sim_params.render_camera,
+                width=width,
+                height=height,
+            )
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -529,26 +557,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             antennae_sensors.append(sensor)
         return antennae_sensors
 
-    def _add_touch_sensors(self):
-        touch_sensors = []
-        for tracked_geom in self.contact_sensor_placements:
-            geom = self.model.find("geom", f"{tracked_geom}_collision")
-            body = geom.parent
-            site = body.add(
-                "site",
-                name=f"site_{geom.name}",
-                size=np.ones(3) * 1000,
-                pos=geom.pos,
-                quat=geom.quat,
-                type="sphere",
-                group=3,
-            )
-            touch_sensor = self.model.sensor.add(
-                "touch", name=f"touch_{geom.name}", site=site.name
-            )
-            touch_sensors.append(touch_sensor)
-        return touch_sensors
-
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -640,10 +648,55 @@ class NeuroMechFlyMuJoCo(gym.Env):
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
             img = self.physics.render(width=width, height=height, camera_id=camera)
+            if self.draw_contacts:
+                img = self._draw_contacts(img)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
+
         else:
             raise NotImplementedError
+
+    def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
+        """Draw contacts as arrow wich length is proportional to the force
+        magnitude. The arrow is drown at the center of the body. It uses the
+        camera matrix to transfer from the global space to the pixels space."""
+
+        contact_indexes = np.nonzero(np.sum(self._last_contact_force, axis=1))[0]
+        n_contacts = len(contact_indexes)
+        force_arrow_points = np.tile(
+            self._last_contact_pos[contact_indexes, :], (2, 1)
+        ).squeeze()
+        force_arrow_points[n_contacts:] += self._last_contact_force[contact_indexes, :]
+
+        camera_matrix = self.contact_camera.matrix
+
+        # code sample from dm_control demo notebook
+        xyz_global = force_arrow_points.T
+
+        # Camera matrices multiply homogenous [x, y, z, 1] vectors.
+        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
+        corners_homogeneous[:3, :] = xyz_global
+
+        # Project world coordinates into pixel space. See:
+        # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
+        xs, ys, s = camera_matrix @ corners_homogeneous
+        # x and y are in the pixel coordinate system.
+        x = np.rint(xs / s).astype(int)
+        y = np.rint(ys / s).astype(int)
+
+        img = img.astype(np.uint8)
+
+        # Draw the contact forces
+        for i in range(n_contacts):
+            img = cv2.arrowedLine(
+                img,
+                [x[i], y[i]],
+                [x[i + n_contacts], y[i + n_contacts]],
+                color=(255, 0, 0),
+                thickness=2,
+            )
+
+        return img
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
@@ -675,8 +728,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
         # tarsi contact forces
-        touch_sensordata = self.physics.bind(self.touch_sensors).sensordata
-        contact_forces = touch_sensordata.copy()
+        contact_forces = self.physics.named.data.cfrc_ext[
+            self.contact_sensor_placements
+        ].copy()
+
+        if self.draw_contacts:
+            self._last_contact_force = contact_forces[:, 1:][:, ::2]
+            self._last_contact_pos = self.physics.named.data.xpos[
+                self.contact_sensor_placements
+            ].copy()
 
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
