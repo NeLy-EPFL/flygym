@@ -358,6 +358,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 raise ImportError(
                     "Cannot draw contacts without OpenCV. Please switch to " "dev mode."
                 )
+            self.contact_bodies_ids = set(
+                [self.physics.model.body(b) for b in self.contact_sensor_placements]
+            )
             self._last_contact_force = []
             self._last_contact_pos = []
             width, height = self.sim_params.render_window_size
@@ -728,6 +731,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
         # tarsi contact forces
+        """contact_forces = np.zeros((3, len(self.contact_sensor_placements)))
+        if self.physics.named.data.ncon > 0:
+            tracked_geom1 = self.contact_bodies_ids.intersection(self.physics.named.data.contact.geom1)
+            tracked_geom2 = self.contact_bodies_ids.intersection(self.physics.named.data.contact.geom2)
+            for i in """
+
         contact_forces = self.physics.named.data.cfrc_ext[
             self.contact_sensor_placements
         ].copy()
