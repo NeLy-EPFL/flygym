@@ -44,7 +44,20 @@ for i in trange(num_steps):
     obs_list.append(obs)
 
 nmf.render()
-snapshot = nmf.get_last_frame()
+snapshot_side = nmf.get_last_frame()
+nmf.sim_params.render_camera = "Animat/camera_front"
+nmf.render(force=True)
+snapshot_front = nmf.get_last_frame()
+
+"""width, height = nmf.sim_params.render_window_size
+snapshot_front = nmf.physics.render(
+    width=width,
+    height=height,
+    camera_id="Animat/camera_left"
+    )
+"""
+
+snapshot = np.concatenate((snapshot_side, snapshot_front), axis=1)
 snapshot = cv2.cvtColor(snapshot, cv2.COLOR_RGB2BGR)
 cv2.imshow("nmf_snapshot", snapshot)
 cv2.waitKey(0)
