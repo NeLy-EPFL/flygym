@@ -26,8 +26,13 @@ except ImportError:
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
-from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
+from flygym.util.data import mujoco_groundwalking_model_path, texture_images_path
+from flygym.util.config import (
+    all_leg_dofs,
+    all_tarsi_links,
+    get_collision_geoms,
+    colors,
+)
 
 
 class MuJoCoParameters:
@@ -279,6 +284,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
 
+        self._set_geom_colors()
+
         # Define list of actuated joints
         self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
@@ -353,6 +360,141 @@ class NeuroMechFlyMuJoCo(gym.Env):
             return collision_spec
         else:
             raise ValueError(f"Unrecognized collision spec {collision_spec}")
+
+    def _set_geom_colors(self):
+        for bodypart in colors.keys():
+            if bodypart in ["A12345", "A6"]:
+                self.model.asset.add(
+                    "texture",
+                    name=f"{bodypart}_texture",
+                    type="cube",
+                    builtin="gradient",
+                    mark="random",
+                    random=0.3,
+                    markrgb=colors[bodypart][2],
+                    rgb1=colors[bodypart][0],
+                    rgb2=colors[bodypart][1],
+                    width=200,
+                    height=200,
+                )
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    texture=f"{bodypart}_texture",
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    texuniform=True,
+                    texrepeat=[1, 1],
+                )
+            elif bodypart in [""]:
+                # load texture images files in the following order:
+                # 1. anterior_texture path
+                # 2. posterior_texture path
+                # 3. dorsal_texture path
+                # 4. ventral_texture path
+                # 5. left_texture path
+                # 6. right_texture path
+
+                anterior_path = texture_images_path / "Thorax/cube_anterior.png"
+                posterior_path = texture_images_path / "Thorax/cube_posterior.png"
+                dorsal_path = texture_images_path / "Thorax/cube_dorsal.png"
+                ventral_path = texture_images_path / "Thorax/cube_ventral.png"
+                left_path = texture_images_path / "Thorax/cube_sides.png"
+                right_path = texture_images_path / "Thorax/cube_sides.png"
+
+                self.model.asset.add(
+                    "texture",
+                    name=f"{bodypart}_texture",
+                    fileright=right_path.as_posix(),
+                    fileleft=left_path.as_posix(),
+                    fileup=dorsal_path.as_posix(),
+                    filedown=ventral_path.as_posix(),
+                    filefront=anterior_path.as_posix(),
+                    fileback=posterior_path.as_posix(),
+                    type="cube",
+                    width=100,
+                    height=100,
+                )
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    texture=f"{bodypart}_texture",
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                )
+            elif bodypart in ["thorax", "coxa", "femur", "tibia", "tarsus"]:
+                size = 500
+                random = 0.05
+                if bodypart == "thorax":
+                    size = 100
+                    random = 0.3
+
+                self.model.asset.add(
+                    "texture",
+                    name=f"{bodypart}_texture",
+                    type="cube",
+                    builtin="flat",
+                    rgb1=colors[bodypart][0],
+                    rgb2=colors[bodypart][0],
+                    markrgb=colors[bodypart][1],
+                    mark="random",
+                    random=random,
+                    width=size,
+                    height=size,
+                )
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    texture=f"{bodypart}_texture",
+                    rgba=colors[bodypart][2],
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    texuniform=True,
+                    texrepeat=[1, 1],
+                )
+            else:
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    rgba=colors[bodypart],
+                )
+
+        for geom in self.model.find_all("geom"):
+            if "visual" in geom.name:
+                if geom.name[1:-7] == "Eye":
+                    geom.material = "eyes_material"
+                elif geom.name[2:-7] == "Coxa":
+                    geom.material = "coxa_material"
+                elif geom.name[2:-7] == "Femur":
+                    geom.material = "femur_material"
+                elif geom.name[2:-7] == "Tibia":
+                    geom.material = "tibia_material"
+                elif geom.name[2:-8] == "Tarsus":
+                    geom.material = "tarsus_material"
+                elif geom.name[1:-7] == "Wing":
+                    geom.material = "wings_material"
+                elif geom.name[0:-7] in ["A1A2", "A3", "A4", "A5"]:
+                    geom.material = "A12345_material"
+                elif geom.name[0:-7] == "A6":
+                    geom.material = "A6_material"
+                elif geom.name[0:-7] == "Thorax":
+                    geom.material = "thorax_material"
+                elif geom.name[0:-7] in ["Haustellum", "Rostrum"]:
+                    geom.material = "proboscis_material"
+                elif geom.name[1:-7] == "Arista":
+                    geom.material = "aristas_material"
+                elif geom.name[1:-7] in ["Pedicel", "Funiculus"]:
+                    geom.material = "antennas_material"
+                elif geom.name[1:-7] == "Haltere":
+                    geom.material = "halteres_material"
+                else:
+                    geom.material = "body_material"
 
     def _define_spaces(self, num_dofs, action_bound, num_contacts):
         action_space = {
@@ -761,6 +903,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         with imageio.get_writer(path, fps=self.sim_params.render_fps) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
+
+    def get_last_frame(self):
+        """Get the last rendered frame. Only useful if ``render_mode`` is
+        'saved'.
+        Returns
+        -------
+        np.ndarray
+            The last rendered frame.
+        """
+
+        return self._frames[-1]
 
     def close(self):
         """Close the environment, save data, and release any resources."""
