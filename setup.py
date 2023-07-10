@@ -26,6 +26,7 @@ setup(
         "imageio[pyav]",
         "imageio[ffmpeg]",
         "tqdm",
+        "opencv-python",
     ],
     extras_require={
         "mujoco": ["mujoco", "dm_control"],
