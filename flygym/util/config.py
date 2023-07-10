@@ -1,4 +1,5 @@
 from typing import List
+import numpy as np
 
 
 # DoF definitions
@@ -29,49 +30,67 @@ all_tarsi_links = [
     f"{side}{pos}Tarsus{i}" for side in "LR" for pos in "FMH" for i in range(1, 6)
 ]
 
+cuticule_color = np.array([150 / 255, 100 / 255, 30 / 255])
+cuticule_variation = np.array([178 / 255, 126 / 255, 51 / 255])
+cuticule_bellow = np.array([210 / 255, 170 / 255, 120 / 255])
+cuticule_A6_top = np.array([100 / 255, 50 / 255, 0 / 255])
+
 colors = {
     "wings": [91 / 100, 96 / 100, 97 / 100, 0.3],
     "eyes": [67 / 100, 21 / 100, 12 / 100, 1],
     "body": [160 / 255, 120 / 255, 50 / 255, 1],
+    "head": [
+        cuticule_color,
+        [178 / 255, 126 / 255, 51 / 255],
+        [1, 1, 1, 1],
+    ],
     "coxa": [
-        [150 / 255, 100 / 255, 30 / 255],
+        cuticule_color,
         [0, 0, 0],
         [1, 1, 1, 0.8],
     ],
     "femur": [
-        [160 / 255, 110 / 255, 40 / 255],
+        cuticule_color + 10 / 255,
         [0, 0, 0],
         [1, 1, 1, 0.7],
     ],
     "tibia": [
-        [170 / 255, 120 / 255, 50 / 255],
+        cuticule_color + 20 / 255,
         [0, 0, 0],
         [1, 1, 1, 0.6],
     ],
     "tarsus": [
-        [190 / 255, 130 / 255, 60 / 255],
+        cuticule_color + 30 / 255,
         [0, 0, 0],
         [1, 1, 1, 0.5],
     ],
     "A12345": [
-        [130 / 255, 80 / 255, 10 / 255],
-        [210 / 255, 170 / 255, 120 / 255],
-        [178 / 255, 126 / 255, 51 / 255],
+        cuticule_color,
+        cuticule_bellow,
+        cuticule_variation,
     ],
     "thorax": [
-        [150 / 255, 100 / 255, 30 / 255],
-        [178 / 255, 126 / 255, 51 / 255],
+        cuticule_color,
+        cuticule_variation,
         [1, 1, 1, 1],
     ],
     "A6": [
-        [100 / 255, 50 / 255, 0 / 255],
-        [210 / 255, 170 / 255, 120 / 255],
-        [178 / 255, 126 / 255, 51 / 255],
+        cuticule_A6_top,
+        cuticule_bellow,
+        cuticule_variation,
     ],
-    "proboscis": [150 / 255, 100 / 255, 30 / 255, 1],
+    "proboscis": [
+        cuticule_color,
+        [0, 0, 0],
+        [1, 1, 1, 0.8],
+    ],
     "aristas": [67 / 255, 52 / 255, 40 / 255, 255 / 255],
-    "antennas": [150 / 255, 100 / 255, 30 / 255, 1],
-    "halteres": [150 / 255, 110 / 255, 60 / 255, 255 / 255],
+    "antennas": [
+        cuticule_color,
+        [0, 0, 0],
+        [1, 1, 1, 0.8],
+    ],
+    "halteres": [150 / 255, 110 / 255, 60 / 255, 0.6],
 }
 
 

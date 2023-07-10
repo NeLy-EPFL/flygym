@@ -63,4 +63,6 @@ cv2.imshow("nmf_snapshot", snapshot)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+cv2.imwrite("nmf_snapshot.png", snapshot)
+
 nmf.close()

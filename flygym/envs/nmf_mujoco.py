@@ -387,49 +387,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     texuniform=True,
                     texrepeat=[1, 1],
                 )
-            elif bodypart in [""]:
-                # load texture images files in the following order:
-                # 1. anterior_texture path
-                # 2. posterior_texture path
-                # 3. dorsal_texture path
-                # 4. ventral_texture path
-                # 5. left_texture path
-                # 6. right_texture path
-
-                anterior_path = texture_images_path / "Thorax/cube_anterior.png"
-                posterior_path = texture_images_path / "Thorax/cube_posterior.png"
-                dorsal_path = texture_images_path / "Thorax/cube_dorsal.png"
-                ventral_path = texture_images_path / "Thorax/cube_ventral.png"
-                left_path = texture_images_path / "Thorax/cube_sides.png"
-                right_path = texture_images_path / "Thorax/cube_sides.png"
-
-                self.model.asset.add(
-                    "texture",
-                    name=f"{bodypart}_texture",
-                    fileright=right_path.as_posix(),
-                    fileleft=left_path.as_posix(),
-                    fileup=dorsal_path.as_posix(),
-                    filedown=ventral_path.as_posix(),
-                    filefront=anterior_path.as_posix(),
-                    fileback=posterior_path.as_posix(),
-                    type="cube",
-                    width=100,
-                    height=100,
-                )
-                self.model.asset.add(
-                    "material",
-                    name=f"{bodypart}_material",
-                    texture=f"{bodypart}_texture",
-                    specular=0.0,
-                    shininess=0.0,
-                    reflectance=0.0,
-                )
-            elif bodypart in ["thorax", "coxa", "femur", "tibia", "tarsus"]:
+            elif bodypart in [
+                "thorax",
+                "coxa",
+                "femur",
+                "tibia",
+                "tarsus",
+                "head",
+                "antennas",
+                "proboscis",
+            ]:
                 size = 500
                 random = 0.05
-                if bodypart == "thorax":
-                    size = 100
+
+                if bodypart in ["thorax", "head"]:
+                    size = 50
                     random = 0.3
+                elif bodypart in ["antennas", "proboscis"]:
+                    size = 50
+                    random = 0.1
 
                 self.model.asset.add(
                     "texture",
@@ -493,6 +469,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     geom.material = "antennas_material"
                 elif geom.name[1:-7] == "Haltere":
                     geom.material = "halteres_material"
+                elif geom.name[:-7] == "Head":
+                    geom.material = "head_material"
                 else:
                     geom.material = "body_material"
 
@@ -770,13 +748,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         info = self.get_info()
         return observation, reward, terminated, truncated, info
 
-    def render(self):
+    def render(self, force: bool = False):
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
-        action is required."""
+        action is required.
+        Rendering can be forced by setting ``force=True``."""
         if self.render_mode == "headless":
             return
-        if self.curr_time < self._last_render_time + self._eff_render_interval:
+        if (
+            self.curr_time < self._last_render_time + self._eff_render_interval
+            and not force
+        ):
             return
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
