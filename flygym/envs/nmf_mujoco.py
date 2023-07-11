@@ -199,6 +199,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
         draw_contacts: bool = False,
+        decompose_contacts: bool = False,
+        contact_threshold: float = 0.0,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -309,15 +311,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.self_contacts, self.self_contact_names = self._define_self_contacts(
             self_collision_geoms
         )
-        self.contact_sensor_placements = [
-            f"Animat/{body}" for body in self.contact_sensor_placements
-        ]
 
         # Add sensors
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
         self.antennae_sensors = self._add_antennae_sensors()
+        self._add_force_sensors()
+
+        self.contact_sensor_placements = [
+            f"Animat/{body}" for body in self.contact_sensor_placements
+        ]
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
@@ -370,6 +374,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 width=width,
                 height=height,
             )
+            self.decompose_contacts = decompose_contacts
+            self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+            self.contact_threshold = contact_threshold
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -560,6 +567,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
             antennae_sensors.append(sensor)
         return antennae_sensors
 
+    def _add_force_sensors(self):
+        """
+        Add force sensors to the tracked bodies
+        Without them the cfrc_ext is zero
+        Returns
+        -------
+        All force sensors
+        """
+        force_sensors = []
+        for tracked_geom in self.contact_sensor_placements:
+            body = self.model.find("body", tracked_geom)
+            site = body.add(
+                "site",
+                name=f"{tracked_geom}_site",
+                pos=[0, 0, 0],
+                size=np.ones(3) * 0.005,
+            )
+            force_sensor = self.model.sensor.add(
+                "force", name=f"force_{body.name}", site=site.name
+            )
+            force_sensors.append(force_sensor)
+
+        return force_sensors
+
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -663,13 +694,23 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Draw contacts as arrow wich length is proportional to the force
         magnitude. The arrow is drown at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
-
-        contact_indexes = np.nonzero(np.sum(self._last_contact_force, axis=1))[0]
+        contact_indexes = np.nonzero(
+            np.linalg.norm(self._last_contact_force, axis=1) > self.contact_threshold
+        )[0]
         n_contacts = len(contact_indexes)
         force_arrow_points = np.tile(
             self._last_contact_pos[contact_indexes, :], (2, 1)
         ).squeeze()
         force_arrow_points[n_contacts:] += self._last_contact_force[contact_indexes, :]
+
+        if self.decompose_contacts:
+            force_arrow_points = np.tile(
+                force_arrow_points[:n_contacts], (4, 1)
+            ).squeeze()
+            for j in range(3):
+                force_arrow_points[
+                    (j + 1) * n_contacts : (j + 2) * n_contacts, j
+                ] += self._last_contact_force[contact_indexes, j]
 
         camera_matrix = self.contact_camera.matrix
 
@@ -691,13 +732,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Draw the contact forces
         for i in range(n_contacts):
-            img = cv2.arrowedLine(
-                img,
-                [x[i], y[i]],
-                [x[i + n_contacts], y[i + n_contacts]],
-                color=(255, 0, 0),
-                thickness=2,
-            )
+            if self.decompose_contacts:
+                for j in range(3):
+                    img = cv2.arrowedLine(
+                        img,
+                        [x[i], y[i]],
+                        [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]],
+                        color=self.decompose_colors[j],
+                        thickness=2,
+                        tipLength=0.0,
+                    )
+            else:
+                img = cv2.arrowedLine(
+                    img,
+                    [x[i], y[i]],
+                    [x[i + n_contacts], y[i + n_contacts]],
+                    color=(255, 0, 0),
+                    thickness=2,
+                    tipLength=0.0,
+                )
 
         return img
 
