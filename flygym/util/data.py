@@ -24,4 +24,3 @@ mujoco_groundwalking_model_path = (
 default_pose_path = data_path / "pose/pose_default.yaml"
 stretch_pose_path = data_path / "pose/pose_stretch.yaml"
 zero_pose_path = data_path / "pose/pose_zero.yaml"
-
