@@ -26,7 +26,7 @@ except ImportError:
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
-from flygym.util.data import mujoco_groundwalking_model_path, texture_images_path
+from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.config import (
     all_leg_dofs,
     all_tarsi_links,
@@ -214,7 +214,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir : Path, optional
             Directory to save simulation data. If ``None``, no data will be
             saved. By default None.
-        arena : BaseWorld, optional
+        texture_images_path : BaseWorld, optional
             The arena in which the robot is placed. ``FlatTerrain`` will be
             used if not specified.
         spawn_pos : Tuple[froot_elementloat, float, float], optional
