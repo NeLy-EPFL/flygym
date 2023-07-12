@@ -3,6 +3,7 @@ import yaml
 import imageio
 import copy
 import logging
+import sys
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
@@ -22,17 +23,16 @@ except ImportError:
         "by running `pip install flygym[mujoco]` or "
         '`pip install -e ."[mujoco]"` if installing locally.'
     )
+try:
+    import cv2
+except ImportError:
+    pass
 
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
 from flygym.util.data import mujoco_groundwalking_model_path
 from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
-
-try:
-    import cv2
-except ImportError:
-    print("OpenCV not installed. Rendering of contact forces is disabled.")
 
 
 class MuJoCoParameters:
@@ -361,14 +361,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
             )
         self._frames = []
 
+        if draw_contacts:
+            if "cv2" not in sys.modules:
+                logging.warning(
+                    "Overriding `draw_contacts` to False because OpenCV is required "
+                    "to draw the arrows but it is not installed."
+                )
+                draw_contacts = False
         self.draw_contacts = draw_contacts
         if self.draw_contacts:
-            try:
-                import cv2
-            except ImportError:
-                raise ImportError(
-                    "Cannot draw contacts without OpenCV. Please switch to " "dev mode."
-                )
             self._last_contact_force = []
             self._last_contact_pos = []
             width, height = self.sim_params.render_window_size
@@ -383,10 +384,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
             self.contact_threshold = contact_threshold
             if self.contact_threshold < 1e-4:
-                import warnings
-
-                warnings.warn(
-                    "Low threshold values might lead to very long arrow tips (inconsistent with arrow length)."
+                logging.warning(
+                    "Low threshold values might lead to very long arrow tips "
+                    "(inconsistent with arrow length)."
                 )
 
             self.tip_length = tip_length
