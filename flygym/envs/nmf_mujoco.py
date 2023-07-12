@@ -5,6 +5,7 @@ import copy
 import logging
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
+from dataclasses import dataclass
 from scipy.spatial.transform import Rotation as R
 
 import gymnasium as gym
@@ -26,10 +27,26 @@ except ImportError:
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
+from flygym.util.vision import (
+    raw_image_to_hex_pxls,
+    hex_pxls_to_human_readable,
+    ommatidia_id_map,
+    num_pixels_per_ommatidia,
+)
 from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.config import all_leg_dofs, all_tarsi_links, get_collision_geoms
+from flygym.util.config import (
+    all_leg_dofs,
+    all_tarsi_links,
+    get_collision_geoms,
+    fovy_per_eye,
+    raw_img_height_px,
+    raw_img_width_px,
+    eye_positions,
+    eye_orientations,
+)
 
 
+@dataclass
 class MuJoCoParameters:
     """Parameters of the MuJoCo simulation.
 
@@ -54,6 +71,13 @@ class MuJoCoParameters:
     gravity : Tuple[float, float, float], optional
         Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
         the gravity is -9.81 * 1000 due to the scaling of the model.
+    enable_olfaction : bool, optional
+        Whether to enable olfaction, by default False.
+    enable_vision : bool, optional
+        Whether to enable vision, by default False.
+    render_raw_vision : bool, optional
+        If ``enable_vision`` is True, whether to render the raw vision
+        (raw pixel values before binning by ommatidia), by default False.
     render_mode : str, optional
         The rendering mode. Can be "saved" or "headless", by default
         "saved".
@@ -67,45 +91,28 @@ class MuJoCoParameters:
     render_camera : str, optional
         The camera that will be used for rendering, by default
         "Animat/camera_left_top".
+    vision_refresh_rate : int, optional
+        The rate at which the vision sensor is updated, in Hz, by default
+        500.
     """
 
-    def __init__(
-        self,
-        timestep: float = 0.0001,
-        joint_stiffness: float = 0.05,
-        joint_damping: float = 0.06,
-        actuator_kp: float = 18.0,
-        tarsus_stiffness: float = 2.2,
-        tarsus_damping: float = 0.126,
-        friction: float = (1.0, 0.005, 0.0001),
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
-        render_mode: str = "saved",
-        render_window_size: Tuple[int, int] = (640, 480),
-        render_playspeed: float = 1.0,
-        render_fps: int = 60,
-        render_camera: str = "Animat/camera_left_top",
-    ) -> None:
-        self.timestep = timestep
-        self.joint_stiffness = joint_stiffness
-        self.joint_damping = joint_damping
-        self.actuator_kp = actuator_kp
-        self.tarsus_stiffness = tarsus_stiffness
-        self.tarsus_damping = tarsus_damping
-        self.friction = friction
-        self.gravity = gravity
-        self.render_mode = render_mode
-        self.render_window_size = render_window_size
-        self.render_playspeed = render_playspeed
-        self.render_fps = render_fps
-        self.render_camera = render_camera
-
-    def __str__(self) -> str:
-        attributes = vars(self)
-        attributes_str = [f"{key}: {value}" for key, value in attributes.items()]
-        return "MuJoCo Parameters:\n  " + "\n  ".join(attributes_str)
-
-    def __repr__(self) -> str:
-        return str(self)
+    timestep: float = 0.0001
+    joint_stiffness: float = 0.05
+    joint_damping: float = 0.06
+    actuator_kp: float = 18.0
+    tarsus_stiffness: float = 2.2
+    tarsus_damping: float = 0.126
+    friction: float = (1.0, 0.005, 0.0001)
+    gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
+    enable_olfaction: bool = False
+    enable_vision: bool = False
+    render_raw_vision: bool = False
+    render_mode: str = "saved"
+    render_window_size: Tuple[int, int] = (640, 480)
+    render_playspeed: float = 1.0
+    render_fps: int = 60
+    render_camera: str = "Animat/camera_left_top"
+    vision_refresh_rate: int = 500
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -178,6 +185,28 @@ class NeuroMechFlyMuJoCo(gym.Env):
         the fly in it.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
+    curr_visual_input : np.ndarray
+        The current visual input from the fly's eyes. This is our
+        simulation of what the fly might see through its compound eyes.
+        It is a (2, N, 2) array where the first dimension is for the left
+        and right eyes, the second dimension is for the N ommatidia, and
+        the third dimension is for the two channels.
+    curr_raw_visual_input : np.ndarray
+        The current raw visual input from the fly's eyes. This is the raw
+        camera reading before we simulate what the fly actually sees with
+        its compound eyes. It is a (2, H, W, 3) array where the first
+        dimension is for the left and right eyes, and the remaining
+        dimensions are for the RGB image.
+    vision_update_mask : np.ndarray
+        The refresh frequency of the visual system is often loser than the
+        same as the physics simulation time step. This 1D mask, whose
+        size is the same as the number of simulation time steps, indicates
+        in which time steps the visual inputs have been refreshed. In other
+        words, the visual input frames where this mask is False are
+        repititions of the previous updated visual input frames.
+    antennae_sensors : Union[None, List[dm_control.mjcf.Element], None]
+        If olfaction is enabled, this is a list of the MuJoCo sensors on
+        the antenna positions.
     """
 
     def __init__(
@@ -279,6 +308,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
 
+        # Add cameras imitating the fly's eyes
+        self.curr_visual_input = None
+        self.curr_raw_visual_input = None
+        self._last_vision_update_time = -np.inf
+        self._eff_visual_render_interval = 1 / self.sim_params.vision_refresh_rate
+        self._vision_update_mask = []
+        if self.sim_params.enable_vision:
+            self._configure_eyes()
+
         # Define list of actuated joints
         self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
@@ -306,7 +344,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.joint_sensors = self._add_joint_sensors()
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
-        self.antennae_sensors = self._add_antennae_sensors()
+        self.antennae_sensors = (
+            self._add_antennae_sensors() if sim_params.enable_olfaction else None
+        )
         self.touch_sensors = self._add_touch_sensors()
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
@@ -339,6 +379,57 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 sim_params.render_playspeed / self.sim_params.render_fps
             )
         self._frames = []
+
+        self.reset()
+
+    def _configure_eyes(self):
+        for i, side in enumerate(["L", "R"]):
+            self.model.worldbody.add(
+                "camera",
+                name=f"camera_{side}Eye",
+                pos=eye_positions[i],
+                dclass="nmf",
+                mode="track",
+                euler=eye_orientations[i],
+                fovy=fovy_per_eye,
+            )
+            # # visual camera position markers: left black, right white
+            # red_dot_left = self.model.worldbody.add(
+            #     "body", name=f"red_dot_{side}", pos=eye_positions[i]
+            # )
+            # red_dot_left.add(
+            #     "geom",
+            #     name=f"red_dot_{side}_geom_visual",
+            #     type="sphere",
+            #     size=[0.15],
+            #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
+            # )
+
+        # # Randomize all colors
+        # all_geoms = {geom.name: geom for geom in self.model.find_all("geom")}
+        # for name, geom in all_geoms.items():
+        #     if "visual" in name:
+        #         print(f"Changing color for {name}")
+        #         color = np.random.uniform(size=4)
+        #         color[3] = 1
+        #         geom.rgba = color
+        #         collision_geom_name = name.replace("_visual", "_collision")
+        #         if collision_geom_name in all_geoms:
+        #             print(f"  changing color for collision geom too")
+        #             all_geoms[collision_geom_name].rgba = color
+
+        # Make foreleg femur and tibia transparent
+        base_names = [
+            f"{side}{part}"
+            for side in ["L", "R"]
+            for part in ["FCoxa", "Eye", "Arista", "Funiculus", "Pedicel"]
+        ]
+        base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
+        for base_name in base_names:
+            self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
+            col_geom = self.model.find("geom", f"{base_name}_collision")
+            if col_geom is not None:
+                col_geom.rgba = (0.5, 0.5, 0.5, 0)
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -588,6 +679,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_init_pose(self.init_pose)
         self._frames = []
         self._last_render_time = -np.inf
+        self._last_vision_update_time = -np.inf
+        self.curr_raw_visual_input = None
+        self.curr_visual_input = None
+        self._vision_update_mask = []
         return self.get_observation(), self.get_info()
 
     def step(
@@ -645,6 +740,36 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise NotImplementedError
 
+    def _update_vision(self) -> np.ndarray:
+        next_render_time = (
+            self._last_vision_update_time + self._eff_visual_render_interval
+        )
+        if self.curr_time < next_render_time:
+            self._vision_update_mask.append(False)
+            return
+        self._vision_update_mask.append(True)
+        raw_visual_input = []
+        ommatidia_readouts = []
+        for side in ["L", "R"]:
+            img = self.physics.render(
+                width=raw_img_width_px,
+                height=raw_img_height_px,
+                camera_id=f"Animat/camera_{side}Eye",
+            )
+            readouts_per_eye = raw_image_to_hex_pxls(
+                np.ascontiguousarray(img), num_pixels_per_ommatidia, ommatidia_id_map
+            )
+            ommatidia_readouts.append(readouts_per_eye)
+            raw_visual_input.append(img)
+        self.curr_visual_input = np.array(ommatidia_readouts)
+        if self.sim_params.render_raw_vision:
+            self.curr_raw_visual_input = np.array(raw_visual_input)
+        self._last_vision_update_time = self.curr_time
+
+    @property
+    def vision_update_mask(self) -> np.ndarray:
+        return np.array(self._vision_update_mask[1:])
+
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
@@ -681,17 +806,27 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
 
-        # olfaction
-        antennae_pos = self.physics.bind(self.antennae_sensors).sensordata.reshape(2, 3)
-        odor_intensity = self.arena.get_olfaction(antennae_pos)
-
-        return {
+        obs = {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
-            "odor_intensity": odor_intensity,
         }
+
+        # olfaction
+        if self.sim_params.enable_olfaction:
+            antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
+            odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(2, 3))
+            obs["odor_intensity"] = odor_intensity
+
+        # vision
+        if self.sim_params.enable_vision:
+            self._update_vision()
+            obs["vision"] = self.curr_visual_input
+            if self.sim_params.render_raw_vision:
+                obs["raw_vision"] = self.curr_raw_visual_input
+
+        return obs
 
     def get_reward(self):
         """Get the reward for the current state of the environment. This
