@@ -38,8 +38,8 @@ class FlatTerrain(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.3, 0.3, 0.3),
-            rgb2=(0.25, 0.25, 0.25),
+            rgb1=(0.2, 0.3, 0.4),
+            rgb2=(0.3, 0.4, 0.5),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -134,8 +134,8 @@ class GappedTerrain(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.3, 0.3, 0.3),
-            rgb2=(0.25, 0.25, 0.25),
+            rgb1=(0.2, 0.3, 0.4),
+            rgb2=(0.3, 0.4, 0.5),
         )
         grid = self.root_element.asset.add(
             "material",
