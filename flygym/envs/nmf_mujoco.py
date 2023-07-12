@@ -88,7 +88,7 @@ class MuJoCoParameters:
         render_window_size: Tuple[int, int] = (640, 480),
         render_playspeed: float = 1.0,
         render_fps: int = 60,
-        render_camera: str = "Animat/camera_left_top",
+        render_camera: str = "Animat/camera_left",
     ) -> None:
         self.timestep = timestep
         self.joint_stiffness = joint_stiffness
