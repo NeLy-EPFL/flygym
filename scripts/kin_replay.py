@@ -19,7 +19,6 @@ nmf = NeuroMechFlyMuJoCo(
     sim_params=sim_params,
     init_pose=stretched_pose,
     actuated_joints=all_leg_dofs,
-    draw_contacts=True,
 )
 
 # Load recorded data
