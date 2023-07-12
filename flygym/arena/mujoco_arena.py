@@ -437,6 +437,17 @@ class OdorArena(BaseArena):
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
+    odor_source : np.ndarray
+        The position of the odor source in (x, y, z) coordinates. The shape
+        of the array is (n_sources, 3).
+    peak_intensity : np.ndarray
+        The peak intensity of the odor source. The shape of the array is
+        (n_sources, n_dimensions). Note that the odor intensity can be
+        multidimensional.
+    diffuse_func : Callable
+        The function that, given a distance from the odor source, returns
+        the relative intensity of the odor. By default, this is a inverse
+        square relationship.
     """
 
     def __init__(

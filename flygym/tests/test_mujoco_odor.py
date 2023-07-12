@@ -10,7 +10,7 @@ from flygym.arena.mujoco_arena import OdorArena
 random_state = np.random.RandomState(0)
 
 
-def test_basic_untethered_sinewave():
+def test_odor_dimensions():
     num_sources = 5
     num_dims = 4
     odor_source = np.zeros((num_sources, 3))
@@ -18,11 +18,9 @@ def test_basic_untethered_sinewave():
 
     # Initialize simulation
     num_steps = 100
-    arena = OdorArena(
-        odor_source=odor_source,
-        peak_intensity=peak_intensity,
-    )
-    nmf = NeuroMechFlyMuJoCo(arena=arena)
+    arena = OdorArena(odor_source=odor_source, peak_intensity=peak_intensity)
+    sim_params = MuJoCoParameters(enable_olfaction=True)
+    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, arena=arena)
 
     # Run simulation
     obs_list = []
