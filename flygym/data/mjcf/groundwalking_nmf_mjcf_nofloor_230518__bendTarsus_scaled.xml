@@ -146,7 +146,7 @@
     <mesh name="mesh_RMTarsus5_collision" class="nmf" file="../mesh/RMTarsus5.stl" scale="1000 1000 1000"/>
     <mesh name="mesh_RMTarsus5_visual" class="nmf" file="../mesh/RMTarsus5.stl" scale="1000 1000 1000"/>
     <mesh name="mesh_RWing_visual" class="nmf" file="../mesh/RWing.stl" scale="1000 1000 1000"/>
-    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.8 0.8 0.8" rgb2="0.8 0.8 0.8" width="800" height="800"/>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="1.0 1.0 1.0" rgb2="1.0 1.0 1.0" width="10" height="10"/>
   </asset>
   <worldbody>
     <body name="Thorax" pos="0.49564525485038757 -0.018091375008225441 1.2966440916061401" quat="1 0 0 0">
@@ -699,13 +699,12 @@
     <light name="light_animat_bottom" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 -80" dir="0 0 1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
     <camera name="camera_back" class="nmf" mode="track" ipd="0.068" pos="-6 0 2" euler="0 -1.3 -1.57"/>
     <camera name="camera_front" class="nmf" mode="track" ipd="0.068" pos="6 0 2" euler="0 1.3 1.57"/>
-    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8 2" euler="-1.3 0 3.14"/>
-    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8 2" euler="1.3 0 0"/>
+    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8 2" euler="-1.36 0 3.05"/>
+    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8 2" euler="1.38 0 0.095"/>
     <camera name="camera_top" class="nmf" mode="track"  ipd="0.068" pos="0 0 8" euler="0 0 0"/>
     <camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
-    <camera name="camera_left_top" class="nmf" mode="track" ipd="0.068" pos="0 6 2" euler="-1.25 0 3.14"/>
-    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 0" euler="1.57 0.5 0"/>
-    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 24 8" euler="-1.3 0 3.14"/>
+    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 2" euler="1.32 0.5 0.2"/>
+    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 20" euler="-0.4 0 3.14"/>
   </worldbody>
   <actuator>
     <position name="actuator_position_joint_Head_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_Head_yaw" kp="0.9"/>
