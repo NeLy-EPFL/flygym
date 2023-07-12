@@ -24,3 +24,7 @@ mujoco_groundwalking_model_path = (
 default_pose_path = data_path / "pose/pose_default.yaml"
 stretch_pose_path = data_path / "pose/pose_stretch.yaml"
 zero_pose_path = data_path / "pose/pose_zero.yaml"
+
+# Vision
+sample_visual_path = data_path / "vision/banana.jpg"
+ommatidia_id_map_path = data_path / "vision/ommatidia_id_map.npy"

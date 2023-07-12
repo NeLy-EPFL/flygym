@@ -1,7 +1,6 @@
 import numpy as np
 import pkg_resources
 import pickle
-import scipy.stats
 import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import trange
@@ -13,7 +12,9 @@ from flygym.util.config import all_leg_dofs
 # Initialize simulation
 run_time = 1
 
-sim_params = MuJoCoParameters(timestep=1e-4, render_mode="saved", render_playspeed=0.1)
+sim_params = MuJoCoParameters(
+    timestep=1e-4, render_mode="saved", render_playspeed=0.1, enable_olfaction=True
+)
 odor_source = [[2000, -500, 0], [5000, 500, 0]]
 peak_intensity = [[80, 0], [0, 100]]
 arena = OdorArena(
