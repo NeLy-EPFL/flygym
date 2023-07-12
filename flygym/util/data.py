@@ -25,6 +25,3 @@ default_pose_path = data_path / "pose/pose_default.yaml"
 stretch_pose_path = data_path / "pose/pose_stretch.yaml"
 zero_pose_path = data_path / "pose/pose_zero.yaml"
 
-# Textures
-
-texture_images_path = data_path / "texture_files"
