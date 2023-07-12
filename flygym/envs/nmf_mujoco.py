@@ -199,8 +199,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
         draw_contacts: bool = False,
-        decompose_contacts: bool = False,
-        contact_threshold: float = 0.0,
+        decompose_contacts: bool = True,
+        contact_threshold: float = 0.1,
+        tip_length: float = 10,  # number of pixels
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -243,6 +244,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
             body names. By default "legs".
         draw_contacts : bool, optional
             Whether to draw contacts in the simulation. By default False.
+        decompose_contacts : bool, optional
+            Wheter to decompose the contact forces into normal and tangential
+        contact_threshold : float, optional
+            The threshold for contact detection. By default 0.1.
+        tip_length : float, optional
+            The length of the contact force arrows in pixels. By default 10.
         """
         from time import time
 
@@ -362,9 +369,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 raise ImportError(
                     "Cannot draw contacts without OpenCV. Please switch to " "dev mode."
                 )
-            self.contact_bodies_ids = set(
-                [self.physics.model.body(b) for b in self.contact_sensor_placements]
-            )
             self._last_contact_force = []
             self._last_contact_pos = []
             width, height = self.sim_params.render_window_size
@@ -375,8 +379,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 height=height,
             )
             self.decompose_contacts = decompose_contacts
+            self.decompose_contacts = decompose_contacts
             self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
             self.contact_threshold = contact_threshold
+            if self.contact_threshold < 1e-4:
+                import warnings
+
+                warnings.warn(
+                    "Low threshold values might lead to very long arrow tips (inconsistent with arrow length)."
+                )
+
+            self.tip_length = tip_length
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -412,7 +425,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "contact_forces": spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(6, num_contacts),
+                shape=(3, num_contacts),
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
@@ -695,63 +708,79 @@ class NeuroMechFlyMuJoCo(gym.Env):
         magnitude. The arrow is drown at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
         contact_indexes = np.nonzero(
-            np.linalg.norm(self._last_contact_force, axis=1) > self.contact_threshold
+            np.linalg.norm(self._last_contact_force, axis=0) > self.contact_threshold
         )[0]
+
         n_contacts = len(contact_indexes)
-        force_arrow_points = np.tile(
-            self._last_contact_pos[contact_indexes, :], (2, 1)
-        ).squeeze()
-        force_arrow_points[n_contacts:] += self._last_contact_force[contact_indexes, :]
+        # Build an array of start and end points for the force arrows
+        if n_contacts > 0:
+            if not self.decompose_contacts:
+                force_arrow_points = np.tile(
+                    self._last_contact_pos[:, contact_indexes], (1, 2)
+                ).squeeze()
 
-        if self.decompose_contacts:
-            force_arrow_points = np.tile(
-                force_arrow_points[:n_contacts], (4, 1)
-            ).squeeze()
-            for j in range(3):
-                force_arrow_points[
-                    (j + 1) * n_contacts : (j + 2) * n_contacts, j
-                ] += self._last_contact_force[contact_indexes, j]
-
-        camera_matrix = self.contact_camera.matrix
-
-        # code sample from dm_control demo notebook
-        xyz_global = force_arrow_points.T
-
-        # Camera matrices multiply homogenous [x, y, z, 1] vectors.
-        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
-        corners_homogeneous[:3, :] = xyz_global
-
-        # Project world coordinates into pixel space. See:
-        # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
-        xs, ys, s = camera_matrix @ corners_homogeneous
-        # x and y are in the pixel coordinate system.
-        x = np.rint(xs / s).astype(int)
-        y = np.rint(ys / s).astype(int)
-
-        img = img.astype(np.uint8)
-
-        # Draw the contact forces
-        for i in range(n_contacts):
-            if self.decompose_contacts:
+                force_arrow_points[:, n_contacts:] += self._last_contact_force[
+                    :, contact_indexes
+                ]
+            else:
+                force_arrow_points = np.tile(
+                    self._last_contact_pos[:, contact_indexes], (1, 4)
+                ).squeeze()
                 for j in range(3):
+                    force_arrow_points[
+                        j, (j + 1) * n_contacts : (j + 2) * n_contacts
+                    ] += self._last_contact_force[j, contact_indexes]
+
+            camera_matrix = self.contact_camera.matrix
+
+            # code sample from dm_control demo notebook
+            xyz_global = force_arrow_points
+
+            # Camera matrices multiply homogenous [x, y, z, 1] vectors.
+            corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
+            corners_homogeneous[:3, :] = xyz_global
+
+            # Project world coordinates into pixel space. See:
+            # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
+            xs, ys, s = camera_matrix @ corners_homogeneous
+            # x and y are in the pixel coordinate system.
+            x = np.rint(xs / s).astype(int)
+            y = np.rint(ys / s).astype(int)
+
+            img = img.astype(np.uint8)
+
+            # Draw the contact forces
+            for i in range(n_contacts):
+                pts1 = [x[i], y[i]]
+                if self.decompose_contacts:
+                    for j in range(3):
+                        pts2 = np.array(
+                            [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
+                        )
+                        if np.linalg.norm(
+                            force_arrow_points[:, i]
+                            - force_arrow_points[:, i + (j + 1) * n_contacts]
+                        ) > max(1e-4, self.contact_threshold):
+                            r = self.tip_length / np.linalg.norm(pts2 - pts1)
+                            img = cv2.arrowedLine(
+                                img,
+                                pts1,
+                                pts2,
+                                color=self.decompose_colors[j],
+                                thickness=2,
+                                tipLength=r,
+                            )
+                else:
+                    pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
+                    r = self.tip_length / np.linalg.norm(pts2 - pts1)
                     img = cv2.arrowedLine(
                         img,
-                        [x[i], y[i]],
-                        [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]],
-                        color=self.decompose_colors[j],
+                        pts1,
+                        pts2,
+                        color=(255, 0, 0),
                         thickness=2,
-                        tipLength=0.0,
+                        tipLength=r,
                     )
-            else:
-                img = cv2.arrowedLine(
-                    img,
-                    [x[i], y[i]],
-                    [x[i + n_contacts], y[i + n_contacts]],
-                    color=(255, 0, 0),
-                    thickness=2,
-                    tipLength=0.0,
-                )
-
         return img
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
@@ -783,25 +812,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
-        # tarsi contact forces
-        """contact_forces = np.zeros((3, len(self.contact_sensor_placements)))
-        if self.physics.named.data.ncon > 0:
-            tracked_geom1 = self.contact_bodies_ids.intersection(self.physics.named.data.contact.geom1)
-            tracked_geom2 = self.contact_bodies_ids.intersection(self.physics.named.data.contact.geom2)
-            for i in """
-
-        contact_forces = self.physics.named.data.cfrc_ext[
-            self.contact_sensor_placements
-        ].copy()
-
-        if self.draw_contacts:
-            self._last_contact_force = contact_forces[:, 1:][:, ::2]
-            self._last_contact_pos = self.physics.named.data.xpos[
-                self.contact_sensor_placements
+        # contact forces from crf_ext (first three componenents are rotational (torque ?))
+        contact_forces = (
+            self.physics.named.data.cfrc_ext[self.contact_sensor_placements][
+                :, 3:
             ].copy()
+        ).T
+        # if draw contacts same last contact forces and positiions
+        if self.draw_contacts:
+            self._last_contact_force = contact_forces
+            self._last_contact_pos = (
+                self.physics.named.data.xpos[self.contact_sensor_placements].copy().T
+            )
 
         # end effector position
-        ee_pos = self.physics.bind(self.end_effector_sensors).sensordata
+        ee_pos = self.physics.bind(self.end_effector_sensors).sensordata.copy()
 
         # olfaction
         antennae_pos = self.physics.bind(self.antennae_sensors).sensordata.reshape(2, 3)
