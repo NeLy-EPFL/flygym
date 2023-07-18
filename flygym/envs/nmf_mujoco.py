@@ -43,6 +43,7 @@ from flygym.util.config import (
     all_leg_dofs,
     all_tarsi_links,
     get_collision_geoms,
+    colors,
     fovy_per_eye,
     raw_img_height_px,
     raw_img_width_px,
@@ -116,7 +117,7 @@ class MuJoCoParameters:
     render_window_size: Tuple[int, int] = (640, 480)
     render_playspeed: float = 1.0
     render_fps: int = 60
-    render_camera: str = "Animat/camera_left_top"
+    render_camera: str = "Animat/camera_left"
     vision_refresh_rate: int = 500
 
 
@@ -333,6 +334,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Load NMF model
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
 
+        self._set_geom_colors()
+
         # Add cameras imitating the fly's eyes
         self.curr_visual_input = None
         self.curr_raw_visual_input = None
@@ -494,6 +497,119 @@ class NeuroMechFlyMuJoCo(gym.Env):
             return collision_spec
         else:
             raise ValueError(f"Unrecognized collision spec {collision_spec}")
+
+    def _set_geom_colors(self):
+        for bodypart in colors.keys():
+            if bodypart in ["A12345", "A6"]:
+                self.model.asset.add(
+                    "texture",
+                    name=f"{bodypart}_texture",
+                    type="cube",
+                    builtin="gradient",
+                    mark="random",
+                    random=0.3,
+                    markrgb=colors[bodypart][2],
+                    rgb1=colors[bodypart][0],
+                    rgb2=colors[bodypart][1],
+                    width=200,
+                    height=200,
+                )
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    texture=f"{bodypart}_texture",
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    texuniform=True,
+                    texrepeat=[1, 1],
+                )
+            elif bodypart in [
+                "thorax",
+                "coxa",
+                "femur",
+                "tibia",
+                "tarsus",
+                "head",
+                "antennas",
+                "proboscis",
+            ]:
+                size = 500
+                random = 0.05
+
+                if bodypart in ["thorax", "head"]:
+                    size = 50
+                    random = 0.3
+                elif bodypart in ["antennas", "proboscis"]:
+                    size = 50
+                    random = 0.1
+
+                self.model.asset.add(
+                    "texture",
+                    name=f"{bodypart}_texture",
+                    type="cube",
+                    builtin="flat",
+                    rgb1=colors[bodypart][0],
+                    rgb2=colors[bodypart][0],
+                    markrgb=colors[bodypart][1],
+                    mark="random",
+                    random=random,
+                    width=size,
+                    height=size,
+                )
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    texture=f"{bodypart}_texture",
+                    rgba=colors[bodypart][2],
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    texuniform=True,
+                    texrepeat=[1, 1],
+                )
+            else:
+                self.model.asset.add(
+                    "material",
+                    name=f"{bodypart}_material",
+                    specular=0.0,
+                    shininess=0.0,
+                    reflectance=0.0,
+                    rgba=colors[bodypart],
+                )
+
+        for geom in self.model.find_all("geom"):
+            if "visual" in geom.name:
+                if geom.name[1:-7] == "Eye":
+                    geom.material = "eyes_material"
+                elif geom.name[2:-7] == "Coxa":
+                    geom.material = "coxa_material"
+                elif geom.name[2:-7] == "Femur":
+                    geom.material = "femur_material"
+                elif geom.name[2:-7] == "Tibia":
+                    geom.material = "tibia_material"
+                elif geom.name[2:-8] == "Tarsus":
+                    geom.material = "tarsus_material"
+                elif geom.name[1:-7] == "Wing":
+                    geom.material = "wings_material"
+                elif geom.name[0:-7] in ["A1A2", "A3", "A4", "A5"]:
+                    geom.material = "A12345_material"
+                elif geom.name[0:-7] == "A6":
+                    geom.material = "A6_material"
+                elif geom.name[0:-7] == "Thorax":
+                    geom.material = "thorax_material"
+                elif geom.name[0:-7] in ["Haustellum", "Rostrum"]:
+                    geom.material = "proboscis_material"
+                elif geom.name[1:-7] == "Arista":
+                    geom.material = "aristas_material"
+                elif geom.name[1:-7] in ["Pedicel", "Funiculus"]:
+                    geom.material = "antennas_material"
+                elif geom.name[1:-7] == "Haltere":
+                    geom.material = "halteres_material"
+                elif geom.name[:-7] == "Head":
+                    geom.material = "head_material"
+                else:
+                    geom.material = "body_material"
 
     def _define_spaces(self, num_dofs, action_bound, num_contacts):
         action_space = {
@@ -777,13 +893,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         info = self.get_info()
         return observation, reward, terminated, truncated, info
 
-    def render(self):
+    def render(self, force: bool = False):
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
-        action is required."""
+        action is required.
+        Rendering can be forced by setting ``force=True``."""
         if self.render_mode == "headless":
             return
-        if self.curr_time < self._last_render_time + self._eff_render_interval:
+        if (
+            self.curr_time < self._last_render_time + self._eff_render_interval
+            and not force
+        ):
             return
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
@@ -1041,6 +1161,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         with imageio.get_writer(path, fps=self.sim_params.render_fps) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
+
+    def get_last_frame(self):
+        """Get the last rendered frame. Only useful if ``render_mode`` is
+        'saved'.
+        Returns
+        -------
+        np.ndarray
+            The last rendered frame.
+        """
+
+        return self._frames[-1]
 
     def close(self):
         """Close the environment, save data, and release any resources."""
