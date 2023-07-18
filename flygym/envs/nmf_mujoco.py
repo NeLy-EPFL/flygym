@@ -248,7 +248,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir : Path, optional
             Directory to save simulation data. If ``None``, no data will be
             saved. By default None.
-        texture_images_path : BaseWorld, optional
+        arena : BaseWorld, optional
             The arena in which the robot is placed. ``FlatTerrain`` will be
             used if not specified.
         spawn_pos : Tuple[froot_elementloat, float, float], optional
