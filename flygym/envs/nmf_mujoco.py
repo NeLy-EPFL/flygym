@@ -101,7 +101,7 @@ class MuJoCoParameters:
         The rate at which the vision sensor is updated, in Hz, by default
         500.
     """
-    
+
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
@@ -335,7 +335,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.model = mjcf.from_path(mujoco_groundwalking_model_path)
 
         self._set_geom_colors()
-        
+
         # Add cameras imitating the fly's eyes
         self.curr_visual_input = None
         self.curr_raw_visual_input = None
