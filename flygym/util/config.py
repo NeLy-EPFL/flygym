@@ -152,10 +152,10 @@ num_ommatidia_per_eye = 3 * retina_side_len_hex**2 - 3 * retina_side_len_hex + 1
 
 # Sensor positions
 sensor_positions = {
-    "LEye_cam": ("LEye", (-0.03, 0.38, -0.03), (1.57, -0.4676, 0), (1, 0, 0, 1)),
-    "REye_cam": ("REye", (-0.03, -0.38, 0.03), (-1.57, -0.4676, 3.14), (1, 0, 0, 1)),
-    "LMaxillaryPalp_sensor": ("Rostrum", (-0.15, 0.15, -0.15), (1, 1, 0, 1)),
-    "RMaxillaryPalp_sensor": ("Rostrum", (-0.15, -0.15, -0.15), (1, 1, 0, 1)),
-    "LAntenna_sensor": ("LFuniculus", (0.02, 0.00, -0.10), (0, 0, 1, 1)),
-    "RAntenna_sensor": ("RFuniculus", (0.02, 0.00, -0.10), (0, 0, 1, 1)),
+    "LEye_cam": ("LEye", (-0.03, 0.38, 0), (1.57, -0.4676, 0), (0.07, 0.45, 0.35, 1)),
+    "REye_cam": ("REye", (-0.03, -0.38, 0), (-1.57, -0.4676, 3.14), (0.07, 0.45, 0.35, 1)),
+    "LMaxillaryPalp_sensor": ("Rostrum", (-0.15, 0.15, -0.15), (0.9, 0.73, 0.08, 1)),
+    "RMaxillaryPalp_sensor": ("Rostrum", (-0.15, -0.15, -0.15), (0.9, 0.73, 0.08, 1)),
+    "LAntenna_sensor": ("LFuniculus", (0.02, 0.00, -0.10), (0.08, 0.4, 0.9, 1)),
+    "RAntenna_sensor": ("RFuniculus", (0.02, 0.00, -0.10), (0.08, 0.4, 0.9, 1)),
 }
