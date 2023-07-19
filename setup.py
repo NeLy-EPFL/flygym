@@ -41,6 +41,7 @@ setup(
             "shapely",
             "rasterio",
             "requests",
+            "opencv-python",
         ],
     },
 )

@@ -34,4 +34,4 @@ def test_odor_dimensions():
 
     # Check dimensionality
     odor = np.array([obs["odor_intensity"] for obs in obs_list])
-    assert odor.shape == (num_steps, num_dims, 2)
+    assert odor.shape == (num_steps, num_dims, 4)
