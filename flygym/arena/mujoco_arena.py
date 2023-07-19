@@ -38,8 +38,8 @@ class FlatTerrain(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -113,9 +113,6 @@ class GappedTerrain(BaseArena):
             x_range[0] + block_width / 2, x_range[1], block_width + gap_width
         )
         box_size = (block_width / 2, (y_range[1] - y_range[0]) / 2, gap_depth / 2)
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
         for x_pos in block_centers:
             self.root_element.worldbody.add(
                 "geom",
@@ -124,33 +121,16 @@ class GappedTerrain(BaseArena):
                 pos=(x_pos, 0, 0),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 1),
-                material=obstacle,
             )
 
         # add floor underneath
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-        )
         ground_size = ((self.x_range[1] - self.x_range[0]) / 2, max(self.y_range), 1)
         self.root_element.worldbody.add(
             "geom",
             type="plane",
             name="ground",
             pos=(np.mean(x_range), 0, -gap_depth / 2),
-            material=grid,
+            rgba=(0.3, 0.3, 0.3, 1),
             size=ground_size,
         )
 
@@ -208,9 +188,6 @@ class BlocksTerrain(BaseArena):
         rand_state = np.random.RandomState(rand_seed)
 
         self.root_element = mjcf.RootElement()
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
 
         x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
         y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
@@ -230,14 +207,13 @@ class BlocksTerrain(BaseArena):
                     size=(block_size / 2, block_size / 2, height / 2),
                     pos=(x_pos, y_pos, height / 2),
                     rgba=(0.3, 0.3, 0.3, 1),
-                    material=obstacle,
                     friction=friction,
                 )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 100])
+        adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
 
 
@@ -278,25 +254,6 @@ class MixedTerrain(BaseArena):
     ):
         self.root_element = mjcf.RootElement()
         self.friction = friction
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-        )
         y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
 
@@ -320,7 +277,6 @@ class MixedTerrain(BaseArena):
                         size=(block_size / 2, block_size / 2, height / 2),
                         pos=(x_pos, y_pos, height / 2 - 0.05),
                         rgba=(0.3, 0.3, 0.3, 1),
-                        material=obstacle,
                         friction=friction,
                     )
 
@@ -338,7 +294,6 @@ class MixedTerrain(BaseArena):
                     pos=(x_pos, 0, -gap_depth / 2),
                     friction=friction,
                     rgba=(0.3, 0.3, 0.3, 1),
-                    material=obstacle,
                 )
 
             # add floor underneath
@@ -348,7 +303,7 @@ class MixedTerrain(BaseArena):
                 type="plane",
                 name=f"ground_{x_range[0]}",
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
-                material=grid,
+                rgba=(0.3, 0.3, 0.3, 1),
                 size=ground_size,
             )
 
@@ -366,13 +321,12 @@ class MixedTerrain(BaseArena):
                 pos=(np.mean(x_range), 0, -0.001),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 1),
-                material=obstacle,
             )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 100])
+        adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
 
 
