@@ -429,6 +429,8 @@ class OdorArena(BaseArena):
     ----------
     arena : mjcf.RootElement
         The arena object that the terrain is built on.
+    num_sensors : int = 4
+        2x antennae + 2x max. palps
 
     Parameters
     ----------
@@ -449,6 +451,8 @@ class OdorArena(BaseArena):
         the relative intensity of the odor. By default, this is a inverse
         square relationship.
     """
+
+    num_sensors = 4
 
     def __init__(
         self,
@@ -498,10 +502,14 @@ class OdorArena(BaseArena):
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(_odor_source_repeated, self.odor_dim, axis=1)
-        _odor_source_repeated = np.repeat(_odor_source_repeated, 2, axis=2)
+        _odor_source_repeated = np.repeat(
+            _odor_source_repeated, self.num_sensors, axis=2
+        )
         self._odor_source_repeated = _odor_source_repeated
         _peak_intensity_repeated = self.peak_odor_intensity[:, :, np.newaxis]
-        _peak_intensity_repeated = np.repeat(_peak_intensity_repeated, 2, axis=2)
+        _peak_intensity_repeated = np.repeat(
+            _peak_intensity_repeated, self.num_sensors, axis=2
+        )
         self._peak_intensity_repeated = _peak_intensity_repeated
 
     def get_spawn_position(
@@ -513,30 +521,30 @@ class OdorArena(BaseArena):
         """
         Notes
         -----
-        2: number of antennae
+        w = 4: number of sensors (2x antennae + 2x max. palps)
         3: spatial dimensionality
         k: data dimensionality
         n: number of odor sources
 
         Input - odor source position: [n, 3]
-        Input - antennae position: [2, 3]
+        Input - sensor positions: [w, 3]
         Input - peak intensity: [n, k]
         Input - difusion function: f(dist)
 
-        Reshape sources to S = [n, k*, 2*, 3] (* means repeated)
-        Reshape antennae position to A = [n*, k*, 2, 3] (* means repeated)
-        Subtract, getting an Delta = [n, k, 2, 3] array of rel difference
-        Calculate Euclidean disctance: D = [n, k, 2]
+        Reshape sources to S = [n, k*, w*, 3] (* means repeated)
+        Reshape sensor position to A = [n*, k*, w, 3] (* means repeated)
+        Subtract, getting an Delta = [n, k, w, 3] array of rel difference
+        Calculate Euclidean disctance: D = [n, k, w]
 
-        Apply pre-integrated difusion function: S = f(D) -> [n, k, 2]
-        Reshape peak intensities to P = [n, k, 2*]
-        Apply scaling: I = P * S -> [n, k, 2] element wise
+        Apply pre-integrated difusion function: S = f(D) -> [n, k, w]
+        Reshape peak intensities to P = [n, k, w*]
+        Apply scaling: I = P * S -> [n, k, w] element wise
 
-        Output - Sum over the first axis: [k, 2]
+        Output - Sum over the first axis: [k, w]
         """
         antennae_pos_repeated = antennae_pos[np.newaxis, np.newaxis, :, :]
-        dist_3d = antennae_pos_repeated - self._odor_source_repeated  # (n, k, 2, 3)
-        dist_euc = np.linalg.norm(dist_3d, axis=3)  # (n, k, 2)
-        scaling = self.diffuse_func(dist_euc)  # (n, k, 2)
-        intensity = self._peak_intensity_repeated * scaling  # (n, k, 2)
-        return intensity.sum(axis=0)  # (k, 2)
+        dist_3d = antennae_pos_repeated - self._odor_source_repeated  # (n, k, w, 3)
+        dist_euc = np.linalg.norm(dist_3d, axis=3)  # (n, k, w)
+        scaling = self.diffuse_func(dist_euc)  # (n, k, w)
+        intensity = self._peak_intensity_repeated * scaling  # (n, k, w)
+        return intensity.sum(axis=0)  # (k, w)
