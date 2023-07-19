@@ -1,7 +1,5 @@
 import numpy as np
-import yaml
 import imageio
-import copy
 import logging
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
@@ -41,8 +39,7 @@ from flygym.util.config import (
     fovy_per_eye,
     raw_img_height_px,
     raw_img_width_px,
-    eye_positions,
-    eye_orientations,
+    sensor_positions,
 )
 
 
@@ -222,6 +219,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
+        draw_markers: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -286,6 +284,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.end_effector_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
+        self._draw_markers = draw_markers
 
         # Parse collisions specs
         if isinstance(floor_collisions, str):
@@ -383,53 +382,41 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.reset()
 
     def _configure_eyes(self):
-        for i, side in enumerate(["L", "R"]):
-            self.model.worldbody.add(
+        for name in ["LEye_cam", "REye_cam"]:
+            parent_name, position, euler_angle, rgba = sensor_positions[name]
+            parent_body = self.model.find("body", parent_name)
+            sensor_body = parent_body.add("body", name=f"{name}_body", pos=position)
+            sensor_body.add(
                 "camera",
-                name=f"camera_{side}Eye",
-                pos=eye_positions[i],
+                name=name,
                 dclass="nmf",
                 mode="track",
-                euler=eye_orientations[i],
+                euler=euler_angle,
                 fovy=fovy_per_eye,
             )
-            # # visual camera position markers: left black, right white
-            # red_dot_left = self.model.worldbody.add(
-            #     "body", name=f"red_dot_{side}", pos=eye_positions[i]
-            # )
-            # red_dot_left.add(
-            #     "geom",
-            #     name=f"red_dot_{side}_geom_visual",
-            #     type="sphere",
-            #     size=[0.15],
-            #     rgba=[0, 0, 0, 1] if side == "L" else [1, 1, 1, 1],
-            # )
+            if self._draw_markers:
+                sensor_body.add(
+                    "geom",
+                    name=f"{name}_marker",
+                    type="sphere",
+                    size=[0.06],
+                    rgba=rgba,
+                )
 
-        # # Randomize all colors
-        # all_geoms = {geom.name: geom for geom in self.model.find_all("geom")}
-        # for name, geom in all_geoms.items():
-        #     if "visual" in name:
-        #         print(f"Changing color for {name}")
-        #         color = np.random.uniform(size=4)
-        #         color[3] = 1
-        #         geom.rgba = color
-        #         collision_geom_name = name.replace("_visual", "_collision")
-        #         if collision_geom_name in all_geoms:
-        #             print(f"  changing color for collision geom too")
-        #             all_geoms[collision_geom_name].rgba = color
-
-        # Make foreleg femur and tibia transparent
-        base_names = [
-            f"{side}{part}"
-            for side in ["L", "R"]
-            for part in ["FCoxa", "Eye", "Arista", "Funiculus", "Pedicel"]
-        ]
-        base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
-        for base_name in base_names:
-            self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
-            col_geom = self.model.find("geom", f"{base_name}_collision")
-            if col_geom is not None:
-                col_geom.rgba = (0.5, 0.5, 0.5, 0)
+        # Make some parts transparent
+        if not self._draw_markers:
+            # if True:
+            base_names = [
+                f"{side}{part}"
+                for side in ["L", "R"]
+                for part in ["FCoxa", "Eye", "Arista", "Funiculus", "Pedicel"]
+            ]
+            base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
+            for base_name in base_names:
+                self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
+                col_geom = self.model.find("geom", f"{base_name}_collision")
+                if col_geom is not None:
+                    col_geom.rgba = (0.5, 0.5, 0.5, 0)
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -519,9 +506,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ground_id = 0
 
         for geom in self.arena_root.find_all("geom"):
-            is_ground = geom.name is None or not (
-                "visual" in geom.name or "collision" in geom.name
-            )
+            if geom.name is None:
+                is_ground = True
+            elif "visual" in geom.name or "collision" in geom.name:
+                is_ground = False
+            elif "cam" in geom.name or "sensor" in geom.name:
+                is_ground = False
+            else:
+                is_ground = True
             if is_ground:
                 for animat_geom_name in floor_collisions_geoms:
                     if geom.name is None:
@@ -609,15 +601,40 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return end_effector_sensors
 
     def _add_antennae_sensors(self):
+        sensor_names = [
+            "LAntenna_sensor",
+            "RAntenna_sensor",
+            "LMaxillaryPalp_sensor",
+            "RMaxillaryPalp_sensor",
+        ]
         antennae_sensors = []
-        for name in ["LFuniculus", "RFuniculus"]:
+        for name in sensor_names:
+            parent_name, position, rgba = sensor_positions[name]
+            print(parent_name, position)
+            parent_body = self.model.find("body", parent_name)
+            sensor_body = parent_body.add("body", name=f"{name}_body", pos=position)
             sensor = self.model.sensor.add(
                 "framepos",
-                name=f"{name}_pos",
+                name=f"{name}_pos_sensor",
                 objtype="body",
-                objname=name,
+                objname=f"{name}_body",
             )
             antennae_sensors.append(sensor)
+            if self._draw_markers:
+                sensor_body.add(
+                    "geom",
+                    name=f"{name}_marker",
+                    type="sphere",
+                    size=[0.06],
+                    rgba=rgba,
+                )
+            # sensor = self.model.sensor.add(
+            #     "framepos",
+            #     name=f"{name}_pos",
+            #     objtype="body",
+            #     objname=name,
+            # )
+
         return antennae_sensors
 
     def _add_touch_sensors(self):
@@ -754,7 +771,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             img = self.physics.render(
                 width=raw_img_width_px,
                 height=raw_img_height_px,
-                camera_id=f"Animat/camera_{side}Eye",
+                camera_id=f"Animat/{side}Eye_cam",
             )
             readouts_per_eye = raw_image_to_hex_pxls(
                 np.ascontiguousarray(img), num_pixels_per_ommatidia, ommatidia_id_map
@@ -816,7 +833,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # olfaction
         if self.sim_params.enable_olfaction:
             antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
-            odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(2, 3))
+            odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(4, 3))
             obs["odor_intensity"] = odor_intensity
 
         # vision

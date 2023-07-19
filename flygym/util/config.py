@@ -83,5 +83,15 @@ raw_img_height_px = 512
 raw_img_width_px = 450
 retina_side_len_hex = 16
 num_ommatidia_per_eye = 3 * retina_side_len_hex**2 - 3 * retina_side_len_hex + 1
-eye_positions = [(0.75, 0.3, 1.32), (0.75, -0.3, 1.32)]  # left, right
-eye_orientations = [(1.57, -0.4676, 0), (-1.57, -0.4676, 3.14)]  # L, R as Euler angles
+# eye_positions = [(0.75, 0.3, 1.32), (0.75, -0.3, 1.32)]  # left, right
+# eye_orientations = [(1.57, -0.4676, 0), (-1.57, -0.4676, 3.14)]  # L, R as Euler angles
+
+# Sensor positions
+sensor_positions = {
+    "LEye_cam": ("LEye", (-0.03, 0.38, -0.03), (1.57, -0.4676, 0), (1, 0, 0, 1)),
+    "REye_cam": ("REye", (-0.03, -0.38, 0.03), (-1.57, -0.4676, 3.14), (1, 0, 0, 1)),
+    "LMaxillaryPalp_sensor": ("Rostrum", (-0.15, 0.15, -0.15), (1, 1, 0, 1)),
+    "RMaxillaryPalp_sensor": ("Rostrum", (-0.15, -0.15, -0.15), (1, 1, 0, 1)),
+    "LAntenna_sensor": ("LFuniculus", (0.02, 0.00, -0.10), (0, 0, 1, 1)),
+    "RAntenna_sensor": ("RFuniculus", (0.02, 0.00, -0.10), (0, 0, 1, 1)),
+}
