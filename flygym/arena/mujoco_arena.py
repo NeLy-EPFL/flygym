@@ -415,7 +415,7 @@ class OdorArena(BaseArena):
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
-        diffuse_func: Callable = lambda x: x ** -2,
+        diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
     ):
         self.root_element = mjcf.RootElement()
