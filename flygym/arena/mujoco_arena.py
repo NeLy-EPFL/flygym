@@ -6,6 +6,7 @@ from typing import Tuple, List, Dict, Union, Optional, Any, Callable
 from dm_control import mjcf
 
 from flygym.arena.base import BaseArena
+from flygym.util.data import color_cycle_rgb
 
 
 class FlatTerrain(BaseArena):
@@ -414,7 +415,8 @@ class OdorArena(BaseArena):
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
-        diffuse_func: Callable = lambda x: (x) ** -2,
+        diffuse_func: Callable = lambda x: x ** -2,
+        marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -424,8 +426,8 @@ class OdorArena(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -452,6 +454,20 @@ class OdorArena(BaseArena):
             )
         self.odor_dim = self.peak_odor_intensity.shape[1]
         self.diffuse_func = diffuse_func
+
+        # Add markers at the odor sources
+        if marker_colors is None:
+            marker_colors = []
+            num_odor_sources = self.odor_source.shape[0]
+            for i in range(num_odor_sources):
+                rgb = np.array(color_cycle_rgb[i % num_odor_sources]) / 255
+                rgba = (*rgb, 1)
+                marker_colors.append(rgba)
+        for i, (pos, rgba) in enumerate(zip(self.odor_source, marker_colors)):
+            marker_body = self.root_element.worldbody.add(
+                "body", name=f"odor_source_marker_{i}", pos=pos, mocap=True
+            )
+            marker_body.add("geom", type="capsule", size=(0.1, 0.1), rgba=rgba)
 
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
