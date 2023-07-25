@@ -20,7 +20,7 @@ def test_odor_dimensions():
     num_steps = 100
     arena = OdorArena(odor_source=odor_source, peak_intensity=peak_intensity)
     sim_params = MuJoCoParameters(enable_olfaction=True)
-    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, arena=arena)
+    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, arena=arena, adhesion=False)
 
     # Run simulation
     obs_list = []
