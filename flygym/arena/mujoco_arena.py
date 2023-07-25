@@ -6,6 +6,7 @@ from typing import Tuple, List, Dict, Union, Optional, Any, Callable
 from dm_control import mjcf
 
 from flygym.arena.base import BaseArena
+from flygym.util.data import color_cycle_rgb
 
 
 class FlatTerrain(BaseArena):
@@ -38,8 +39,8 @@ class FlatTerrain(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -113,9 +114,6 @@ class GappedTerrain(BaseArena):
             x_range[0] + block_width / 2, x_range[1], block_width + gap_width
         )
         box_size = (block_width / 2, (y_range[1] - y_range[0]) / 2, gap_depth / 2)
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
         for x_pos in block_centers:
             self.root_element.worldbody.add(
                 "geom",
@@ -124,33 +122,16 @@ class GappedTerrain(BaseArena):
                 pos=(x_pos, 0, 0),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 1),
-                material=obstacle,
             )
 
         # add floor underneath
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-        )
         ground_size = ((self.x_range[1] - self.x_range[0]) / 2, max(self.y_range), 1)
         self.root_element.worldbody.add(
             "geom",
             type="plane",
             name="ground",
             pos=(np.mean(x_range), 0, -gap_depth / 2),
-            material=grid,
+            rgba=(0.3, 0.3, 0.3, 1),
             size=ground_size,
         )
 
@@ -208,9 +189,6 @@ class BlocksTerrain(BaseArena):
         rand_state = np.random.RandomState(rand_seed)
 
         self.root_element = mjcf.RootElement()
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
 
         x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
         y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
@@ -230,14 +208,13 @@ class BlocksTerrain(BaseArena):
                     size=(block_size / 2, block_size / 2, height / 2),
                     pos=(x_pos, y_pos, height / 2),
                     rgba=(0.3, 0.3, 0.3, 1),
-                    material=obstacle,
                     friction=friction,
                 )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 100])
+        adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
 
 
@@ -278,25 +255,6 @@ class MixedTerrain(BaseArena):
     ):
         self.root_element = mjcf.RootElement()
         self.friction = friction
-        obstacle = self.root_element.asset.add(
-            "material", name="obstacle", reflectance=0.1
-        )
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-        )
         y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
 
@@ -320,7 +278,6 @@ class MixedTerrain(BaseArena):
                         size=(block_size / 2, block_size / 2, height / 2),
                         pos=(x_pos, y_pos, height / 2 - 0.05),
                         rgba=(0.3, 0.3, 0.3, 1),
-                        material=obstacle,
                         friction=friction,
                     )
 
@@ -338,7 +295,6 @@ class MixedTerrain(BaseArena):
                     pos=(x_pos, 0, -gap_depth / 2),
                     friction=friction,
                     rgba=(0.3, 0.3, 0.3, 1),
-                    material=obstacle,
                 )
 
             # add floor underneath
@@ -348,7 +304,7 @@ class MixedTerrain(BaseArena):
                 type="plane",
                 name=f"ground_{x_range[0]}",
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
-                material=grid,
+                rgba=(0.3, 0.3, 0.3, 1),
                 size=ground_size,
             )
 
@@ -366,13 +322,12 @@ class MixedTerrain(BaseArena):
                 pos=(np.mean(x_range), 0, -0.001),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 1),
-                material=obstacle,
             )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 100])
+        adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
 
 
@@ -429,6 +384,8 @@ class OdorArena(BaseArena):
     ----------
     arena : mjcf.RootElement
         The arena object that the terrain is built on.
+    num_sensors : int = 4
+        2x antennae + 2x max. palps
 
     Parameters
     ----------
@@ -450,13 +407,16 @@ class OdorArena(BaseArena):
         square relationship.
     """
 
+    num_sensors = 4
+
     def __init__(
         self,
         size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
-        diffuse_func: Callable = lambda x: (x) ** -2,
+        diffuse_func: Callable = lambda x: x**-2,
+        marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -466,8 +426,8 @@ class OdorArena(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -495,13 +455,31 @@ class OdorArena(BaseArena):
         self.odor_dim = self.peak_odor_intensity.shape[1]
         self.diffuse_func = diffuse_func
 
+        # Add markers at the odor sources
+        if marker_colors is None:
+            marker_colors = []
+            num_odor_sources = self.odor_source.shape[0]
+            for i in range(num_odor_sources):
+                rgb = np.array(color_cycle_rgb[i % num_odor_sources]) / 255
+                rgba = (*rgb, 1)
+                marker_colors.append(rgba)
+        for i, (pos, rgba) in enumerate(zip(self.odor_source, marker_colors)):
+            marker_body = self.root_element.worldbody.add(
+                "body", name=f"odor_source_marker_{i}", pos=pos, mocap=True
+            )
+            marker_body.add("geom", type="capsule", size=(0.1, 0.1), rgba=rgba)
+
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(_odor_source_repeated, self.odor_dim, axis=1)
-        _odor_source_repeated = np.repeat(_odor_source_repeated, 2, axis=2)
+        _odor_source_repeated = np.repeat(
+            _odor_source_repeated, self.num_sensors, axis=2
+        )
         self._odor_source_repeated = _odor_source_repeated
         _peak_intensity_repeated = self.peak_odor_intensity[:, :, np.newaxis]
-        _peak_intensity_repeated = np.repeat(_peak_intensity_repeated, 2, axis=2)
+        _peak_intensity_repeated = np.repeat(
+            _peak_intensity_repeated, self.num_sensors, axis=2
+        )
         self._peak_intensity_repeated = _peak_intensity_repeated
 
     def get_spawn_position(
@@ -513,30 +491,30 @@ class OdorArena(BaseArena):
         """
         Notes
         -----
-        2: number of antennae
+        w = 4: number of sensors (2x antennae + 2x max. palps)
         3: spatial dimensionality
         k: data dimensionality
         n: number of odor sources
 
         Input - odor source position: [n, 3]
-        Input - antennae position: [2, 3]
+        Input - sensor positions: [w, 3]
         Input - peak intensity: [n, k]
         Input - difusion function: f(dist)
 
-        Reshape sources to S = [n, k*, 2*, 3] (* means repeated)
-        Reshape antennae position to A = [n*, k*, 2, 3] (* means repeated)
-        Subtract, getting an Delta = [n, k, 2, 3] array of rel difference
-        Calculate Euclidean disctance: D = [n, k, 2]
+        Reshape sources to S = [n, k*, w*, 3] (* means repeated)
+        Reshape sensor position to A = [n*, k*, w, 3] (* means repeated)
+        Subtract, getting an Delta = [n, k, w, 3] array of rel difference
+        Calculate Euclidean disctance: D = [n, k, w]
 
-        Apply pre-integrated difusion function: S = f(D) -> [n, k, 2]
-        Reshape peak intensities to P = [n, k, 2*]
-        Apply scaling: I = P * S -> [n, k, 2] element wise
+        Apply pre-integrated difusion function: S = f(D) -> [n, k, w]
+        Reshape peak intensities to P = [n, k, w*]
+        Apply scaling: I = P * S -> [n, k, w] element wise
 
-        Output - Sum over the first axis: [k, 2]
+        Output - Sum over the first axis: [k, w]
         """
         antennae_pos_repeated = antennae_pos[np.newaxis, np.newaxis, :, :]
-        dist_3d = antennae_pos_repeated - self._odor_source_repeated  # (n, k, 2, 3)
-        dist_euc = np.linalg.norm(dist_3d, axis=3)  # (n, k, 2)
-        scaling = self.diffuse_func(dist_euc)  # (n, k, 2)
-        intensity = self._peak_intensity_repeated * scaling  # (n, k, 2)
-        return intensity.sum(axis=0)  # (k, 2)
+        dist_3d = antennae_pos_repeated - self._odor_source_repeated  # (n, k, w, 3)
+        dist_euc = np.linalg.norm(dist_3d, axis=3)  # (n, k, w)
+        scaling = self.diffuse_func(dist_euc)  # (n, k, w)
+        intensity = self._peak_intensity_repeated * scaling  # (n, k, w)
+        return intensity.sum(axis=0)  # (k, w)
