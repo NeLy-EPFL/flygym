@@ -76,6 +76,16 @@ class MuJoCoParameters:
     gravity : Tuple[float, float, float], optional
         Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
         the gravity is -9.81 * 1000 due to the scaling of the model.
+    contact_solref: Tuple[float, float], optional
+        Contact reference parameter as defined in
+        https://mujoco.readthedocs.io/en/stable/modeling.html#impedance,
+        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts are very stiff (avoid penetration with adhesion
+        stifness could be decreased if instability is a problem)
+    contact_solimp: Tuple[float, float, float, float, float], optional
+        Contact impedance parameter as defined in
+        https://mujoco.readthedocs.io/en/stable/modeling.html#reference,
+        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts are very stiff (avoid penetration with adhesion
+        stifness could be decreased if instability is a problem)
     enable_olfaction : bool, optional
         Whether to enable olfaction, by default False.
     enable_vision : bool, optional
@@ -109,6 +119,14 @@ class MuJoCoParameters:
     tarsus_damping: float = 0.126
     friction: float = (1.0, 0.005, 0.0001)
     gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
+    contact_solref: Tuple[float, float] = (2e-4, 1e3)
+    contact_solimp: Tuple[float, float, float, float, float] = (
+        9.99e-01,
+        9.999e-01,
+        1.0e-03,
+        5.0e-01,
+        2.0e00,
+    )
     enable_olfaction: bool = False
     enable_vision: bool = False
     render_raw_vision: bool = False
@@ -233,6 +251,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         tip_length: float = 10,  # number of pixels
         adhesion: bool = True,
         adhesion_gain: float = 40,
+        draw_adhesion: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -283,6 +302,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             The length of the contact force arrows in pixels. By default 10.
         adhesion : bool, optional
             Whether to enable adhesion. By default True.
+        draw_adhesion : bool, optional
+            Whether to signal that adhesion is on by changing the color of the
+             concerned leg. By default False.
         adhesion_gain : float, optional
             The gain of the adhesion force. By default 40.
         """
@@ -328,7 +350,66 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             self.self_collisions = self_collisions
 
+        self.n_legs = 6
+
         self.adhesion = adhesion
+        self.adhesion_counter = np.zeros(self.n_legs)
+        self.adhesion_refractory_counter = np.zeros(self.n_legs)
+        self.adhesion_dur = 200
+        self.adhesion_refractory_dur = 500
+        # Order is based on the self.last_tarsalseg_names
+        leglift_reference_joint = [
+            "Tibia",
+            "Femur_roll",
+            "Femur_roll",
+            "Tibia",
+            "Femur_roll",
+            "Femur_roll",
+        ]
+        self.leglift_ref_jnt_id = [
+            self.actuated_joints.index("joint_" + tarsus_joint[:2] + joint)
+            for tarsus_joint, joint in zip(
+                self.last_tarsalseg_names, leglift_reference_joint
+            )
+        ]
+        adhesion_comparison_dir = ["inf", "inf", "inf", "inf", "sup", "sup"]
+        self.adhesion_sup_id = np.array(
+            [c_dir == "sup" for c_dir in adhesion_comparison_dir]
+        )
+        # joint velocities threshold extracted from experiments
+        self.adhesion_threshold = np.array(
+            [
+                -22.24454997,
+                -12.13565398,
+                -9.14855537,
+                -20.7181815,
+                12.49711737,
+                10.15158114,
+            ]
+        )
+        self.last_refjnt_angvel = np.zeros(self.n_legs)
+
+        self.draw_adhesion = draw_adhesion
+        if self.draw_adhesion and not self.adhesion:
+            logging.warning(
+                "Overriding `draw_adhesion` to False because adhesion is not enabled."
+            )
+            self.draw_adhesion = False
+
+        if self.draw_adhesion:
+            self._last_adhesion = np.zeros(6)
+            self.leg_adhesion_drawing_segments = np.array(
+                [
+                    [
+                        "Animat/" + tarsus5.replace("5", str(i)) + "_visual"
+                        for i in range(1, 6)
+                    ]
+                    for tarsus5 in self.last_tarsalseg_names
+                ]
+            )
+            self.adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
+            sample_geom_rba = self.leg_adhesion_drawing_segments[0][0]
+            self.base_rgba = [0.5, 0.5, 0.5, 1.0]
 
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
@@ -402,7 +483,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     f"Animat/{joint}"
                 ).damping = self.sim_params.joint_damping
 
-        self.physics.model.opt.gravity = self.sim_params.gravity
+        # Set gravity
+        self.set_gravity(self.sim_params.gravity)
 
         # Make tarsi compliant and apply initial pose. MUST BE IN THIS ORDER!
         self._set_compliant_tarsus()
@@ -508,9 +590,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         action_space = {
             "joints": spaces.Box(
                 low=-action_bound, high=action_bound, shape=(num_dofs,)
-
             ),
-            'adhesion': spaces.Discrete(n=2, start=0) # 0: no adhesion, 1: adhesion
+            "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
         }
         observation_space = {
             # joints: shape (3, num_dofs): (pos, vel, torque) of each DoF
@@ -567,8 +648,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
                             name=f"{geom1}_{geom2}",
                             geom1=geom1,
                             geom2=geom2,
-                            solref="-1000000 -10000",
-                            margin=0.0,
+                            solref=self.sim_params.contact_solref,
+                            solimp=self.sim_params.contact_solimp,
+                            margin=0.0,  # change margin to avoid penetration
                         )
                         self_contact_pairs.append(contact_pair)
                         self_contact_pairs_names.append(f"{geom1}_{geom2}")
@@ -600,8 +682,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         name=f"{geom.name}_{animat_geom_name}",
                         geom1=f"Animat/{animat_geom_name}",
                         geom2=f"{geom.name}",
-                        solref="-1000000 -10000",
-                        margin=0.0,
+                        solref=self.sim_params.contact_solref,
+                        solimp=self.sim_params.contact_solimp,
+                        margin=0.0,  # change margin to avoid penetration
                         friction=np.repeat(
                             mean_friction,
                             (2, 1, 2),
@@ -709,13 +792,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         adhesion_actuators = []
         for name in self.last_tarsalseg_names:
             adhesion_actuators.append(
-                self.model.actuator.add('adhesion',
-                                        name=f"{name}_adhesion",
-                                        gain=f"{gain}",
-                                        body=name, ctrlrange="0 1000000",
-                                        forcerange="-inf inf")
+                self.model.actuator.add(
+                    "adhesion",
+                    name=f"{name}_adhesion",
+                    gain=f"{gain}",
+                    body=name,
+                    ctrlrange="0 1000000",
+                    forcerange="-inf inf",
+                )
             )
         return adhesion_actuators
+
     def _set_init_pose(self, init_pose: Dict[str, float]):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
@@ -738,6 +825,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.physics.reset()
 
+    def set_gravity(self, gravity: List[float]):
+        """Set the gravity of the environment.
+
+        Parameters
+        ----------
+        gravity : List[float]
+            The gravity vector.
+        """
+        self.physics.model.opt.gravity[:] = gravity
+
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
@@ -751,6 +848,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             override this method to return additional information.
         """
         self.physics.reset()
+        if np.any(self.physics.model.opt.gravity[:] - self.sim_params.gravity > 1e-3):
+            self.set_gravity(self.sim_params.gravity)
         self.curr_time = 0
         self._set_init_pose(self.init_pose)
         self._frames = []
@@ -790,7 +889,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
             override this method to return additional information.
         """
         self.physics.bind(self.actuators).ctrl = action["joints"]
-        self.physics.bind(self.adhesion_actuators).ctrl = action['adhesion']
+        if self.adhesion:
+            self.physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
+            if self.draw_adhesion:
+                self._last_adhesion = action["adhesion"]
         self.physics.step()
         self.curr_time += self.timestep
         observation = self.get_observation()
@@ -800,24 +902,72 @@ class NeuroMechFlyMuJoCo(gym.Env):
         info = self.get_info()
         return observation, reward, terminated, truncated, info
 
+    def get_adhesion_vector(self):
+        adhesion = np.ones(len(self.last_tarsalseg_names))
+        adhesion[
+            np.logical_and(
+                self.adhesion_sup_id,
+                self.last_refjnt_angvel > self.adhesion_threshold,
+            )
+        ] = 0
+        adhesion[
+            np.logical_and(
+                ~self.adhesion_sup_id,
+                self.last_refjnt_angvel < self.adhesion_threshold,
+            )
+        ] = 0
+        adhesion[self.adhesion_counter > 0] = 0
+        # During the refractory period, adhesion is ON; by defualt adhesion is on only switch it off when lifting the leg
+        adhesion[self.adhesion_refractory_counter > 0] = 1
+
+        self.adhesion_counter[
+            np.logical_or(adhesion <= 0, self.adhesion_counter > 0)
+        ] += 1
+        self.adhesion_refractory_counter[
+            np.logical_or(
+                self.adhesion_counter > self.adhesion_dur,
+                self.adhesion_refractory_counter > 0,
+            )
+        ] += 1
+        self.adhesion_refractory_counter[
+            self.adhesion_refractory_counter > self.adhesion_refractory_dur
+        ] = 0
+        self.adhesion_counter[self.adhesion_counter > self.adhesion_dur] = 0
+        return adhesion
+
     def render(self):
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
         action is required."""
         if self.render_mode == "headless":
-            return
+            return None
         if self.curr_time < self._last_render_time + self._eff_render_interval:
-            return
+            return None
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
+            if self.draw_adhesion:
+                self._draw_adhesion()
             img = self.physics.render(width=width, height=height, camera_id=camera)
             if self.draw_contacts:
                 img = self._draw_contacts(img)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
+            return self._frames
         else:
             raise NotImplementedError
+
+    def _draw_adhesion(self):
+        """Highlight the tarsal segments of the leg having adhesion"""
+        if np.any(self._last_adhesion == 1):
+            self.physics.named.model.geom_rgba[
+                self.leg_adhesion_drawing_segments[self._last_adhesion == 1].flatten()
+            ] = self.adhesion_rgba
+        if np.any(self._last_adhesion == 0):
+            self.physics.named.model.geom_rgba[
+                self.leg_adhesion_drawing_segments[self._last_adhesion == 0].flatten()
+            ] = self.base_rgba
+        return
 
     def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
         """Draw contacts as arrow wich length is proportional to the force
@@ -948,6 +1098,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
+        if self.adhesion:
+            self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
+
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
@@ -1064,6 +1217,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         with imageio.get_writer(path, fps=self.sim_params.render_fps) as writer:
             for frame in self._frames:
                 writer.append_data(frame)
+
+    def get_last_frame(self):
+        """Get the last rendered frame. Only useful if ``render_mode`` is
+        'saved'.
+        Returns
+        -------
+        np.ndarray
+            The last rendered frame.
+        """
+
+        return self._frames[-1]
 
     def close(self):
         """Close the environment, save data, and release any resources."""
