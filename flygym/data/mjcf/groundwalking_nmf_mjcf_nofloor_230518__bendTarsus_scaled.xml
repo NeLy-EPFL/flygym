@@ -146,7 +146,7 @@
     <mesh name="mesh_RMTarsus5_collision" class="nmf" file="../mesh/RMTarsus5.stl" scale="1000 1000 1000"/>
     <mesh name="mesh_RMTarsus5_visual" class="nmf" file="../mesh/RMTarsus5.stl" scale="1000 1000 1000"/>
     <mesh name="mesh_RWing_visual" class="nmf" file="../mesh/RWing.stl" scale="1000 1000 1000"/>
-    <texture name="skybox" type="skybox" builtin="gradient" rgb1="1.0 0.0 0.0" rgb2="1.0 1.0 1.0" width="800" height="800"/>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="1.0 1.0 1.0" rgb2="1.0 1.0 1.0" width="10" height="10"/>
   </asset>
   <worldbody>
     <body name="Thorax" pos="0.49564525485038757 -0.018091375008225441 1.2966440916061401" quat="1 0 0 0">
@@ -697,16 +697,17 @@
     </body>
     <light name="light_animat_top" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 80" dir="0 0 -1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
     <light name="light_animat_bottom" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 -80" dir="0 0 1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
-    <camera name="camera_back" class="nmf" mode="track" ipd="0.068" pos="-8 0 0" euler="1.57 -1.57 0"/>
-    <camera name="camera_front" class="nmf" mode="track" ipd="0.068" pos="8 0 0" euler="1.57 1.57 0"/>
-    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8 0" euler="-1.57 0 3.14"/>
-    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8 0" euler="1.57 0 0"/>
+    <camera name="camera_back" class="nmf" mode="track" ipd="0.068" pos="-6 0 2" euler="0 -1.3 -1.57"/>
+    <camera name="camera_front" class="nmf" mode="track" ipd="0.068" pos="6 0 2" euler="0 1.3 1.57"/>
+    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8 2" euler="-1.36 0 3.05"/>
+    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8 2" euler="1.38 0 0.095"/>
     <camera name="camera_top" class="nmf" mode="track"  ipd="0.068" pos="0 0 8" euler="0 0 0"/>
     <camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
-    <camera name="camera_left_top" class="nmf" mode="track" ipd="0.068" pos="0 6 2" euler="-1.25 0 3.14"/>
-    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 0" euler="1.57 0.5 0"/>
-    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 24 8" euler="-1.3 0 3.14"/>
+    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 2" euler="1.32 0.5 0.2"/>
+    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 20" euler="-0.4 0 3.14"/>
     <camera name="camera_top_zoomout" class="nmf" mode="track"  ipd="0.068" pos="0 0 80" euler="0 0 0"/>
+    <camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 3 1" euler="-1.57 0.72 3.14" fovy="30"/>
+    <camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 1.57 0" fovy="15"/>
   </worldbody>
   <actuator>
     <position name="actuator_position_joint_Head_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_Head_yaw" kp="0.9"/>
@@ -793,18 +794,6 @@
     <position name="actuator_position_joint_RFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_RFTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus1"/>
-    <!--position name="actuator_position_joint_RFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_RFTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus2"/>
-    <position name="actuator_position_joint_RFTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RFTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_RFTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus3"/>
-    <position name="actuator_position_joint_RFTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RFTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_RFTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus4"/>
-    <position name="actuator_position_joint_RFTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RFTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RFTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_RFTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RFTarsus5"/-->
     <position name="actuator_position_joint_LFCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LFCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_LFCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFCoxa"/>
@@ -826,18 +815,6 @@
     <position name="actuator_position_joint_LFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LFTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_LFTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFTarsus1"/>
-    <!--position name="actuator_position_joint_LFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LFTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_LFTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFTarsus2"/>
-    <position name="actuator_position_joint_LFTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LFTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_LFTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFTarsus3"/>
-    <position name="actuator_position_joint_LFTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LFTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_LFTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFTarsus4"/>
-    <position name="actuator_position_joint_LFTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LFTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LFTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_LFTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LFTarsus5"/-->
     <position name="actuator_position_joint_RMCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RMCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_RMCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMCoxa"/>
@@ -859,18 +836,6 @@
     <position name="actuator_position_joint_RMTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RMTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_RMTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMTarsus1"/>
-    <!--position name="actuator_position_joint_RMTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RMTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_RMTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMTarsus2"/>
-    <position name="actuator_position_joint_RMTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RMTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_RMTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMTarsus3"/>
-    <position name="actuator_position_joint_RMTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RMTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_RMTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMTarsus4"/>
-    <position name="actuator_position_joint_RMTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RMTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RMTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_RMTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RMTarsus5"/-->
     <position name="actuator_position_joint_LMCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LMCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_LMCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMCoxa"/>
@@ -892,18 +857,6 @@
     <position name="actuator_position_joint_LMTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LMTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_LMTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMTarsus1"/>
-    <!--position name="actuator_position_joint_LMTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LMTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_LMTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMTarsus2"/>
-    <position name="actuator_position_joint_LMTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LMTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_LMTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMTarsus3"/>
-    <position name="actuator_position_joint_LMTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LMTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_LMTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMTarsus4"/>
-    <position name="actuator_position_joint_LMTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LMTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LMTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_LMTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LMTarsus5"/-->
     <position name="actuator_position_joint_RHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_RHCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHCoxa"/>
@@ -925,18 +878,6 @@
     <position name="actuator_position_joint_RHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_RHTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus1"/>
-    <!--position name="actuator_position_joint_RHTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RHTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_RHTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus2"/>
-    <position name="actuator_position_joint_RHTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RHTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_RHTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus3"/>
-    <position name="actuator_position_joint_RHTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RHTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_RHTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus4"/>
-    <position name="actuator_position_joint_RHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_RHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_RHTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus5"/-->
     <position name="actuator_position_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_LHCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHCoxa"/>
@@ -958,500 +899,7 @@
     <position name="actuator_position_joint_LHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_LHTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus1"/>
-    <!--position name="actuator_position_joint_LHTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus2" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LHTarsus2" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus2" kv="0.0"/>
-    <motor name="actuator_torque_joint_LHTarsus2" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus2"/>
-    <position name="actuator_position_joint_LHTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus3" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LHTarsus3" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus3" kv="0.0"/>
-    <motor name="actuator_torque_joint_LHTarsus3" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus3"/>
-    <position name="actuator_position_joint_LHTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus4" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LHTarsus4" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus4" kv="0.0"/>
-    <motor name="actuator_torque_joint_LHTarsus4" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus4"/>
-    <position name="actuator_position_joint_LHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus5" kp="1.0"/>
-    <velocity name="actuator_velocity_joint_LHTarsus5" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus5" kv="0.0"/>
-    <motor name="actuator_torque_joint_LHTarsus5" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus5"/-->
   </actuator>
   <sensor>
-    <!--framelinvel name="framelinvel_neuromechfly_antennae_separated_20221104" objtype="body" objname="neuromechfly_antennae_separated_20221104"/>
-    <frameangvel name="frameangvel_neuromechfly_antennae_separated_20221104" objtype="body" objname="neuromechfly_antennae_separated_20221104"/>
-    <framelinvel name="framelinvel_Thorax" objtype="body" objname="Thorax"/>
-    <frameangvel name="frameangvel_Thorax" objtype="body" objname="Thorax"/>
-    <framelinvel name="framelinvel_A1A2" objtype="body" objname="A1A2"/>
-    <frameangvel name="frameangvel_A1A2" objtype="body" objname="A1A2"/>
-    <framelinvel name="framelinvel_A3" objtype="body" objname="A3"/>
-    <frameangvel name="frameangvel_A3" objtype="body" objname="A3"/>
-    <framelinvel name="framelinvel_A4" objtype="body" objname="A4"/>
-    <frameangvel name="frameangvel_A4" objtype="body" objname="A4"/>
-    <framelinvel name="framelinvel_A5" objtype="body" objname="A5"/>
-    <frameangvel name="frameangvel_A5" objtype="body" objname="A5"/>
-    <framelinvel name="framelinvel_A6" objtype="body" objname="A6"/>
-    <frameangvel name="frameangvel_A6" objtype="body" objname="A6"/>
-    <framelinvel name="framelinvel_Head_roll" objtype="body" objname="Head_roll"/>
-    <frameangvel name="frameangvel_Head_roll" objtype="body" objname="Head_roll"/>
-    <framelinvel name="framelinvel_Head_yaw" objtype="body" objname="Head_yaw"/>
-    <frameangvel name="frameangvel_Head_yaw" objtype="body" objname="Head_yaw"/>
-    <framelinvel name="framelinvel_Head" objtype="body" objname="Head"/>
-    <frameangvel name="frameangvel_Head" objtype="body" objname="Head"/>
-    <framelinvel name="framelinvel_LEye" objtype="body" objname="LEye"/>
-    <frameangvel name="frameangvel_LEye" objtype="body" objname="LEye"/>
-    <framelinvel name="framelinvel_LPedicel_roll" objtype="body" objname="LPedicel_roll"/>
-    <frameangvel name="frameangvel_LPedicel_roll" objtype="body" objname="LPedicel_roll"/>
-    <framelinvel name="framelinvel_LPedicel_yaw" objtype="body" objname="LPedicel_yaw"/>
-    <frameangvel name="frameangvel_LPedicel_yaw" objtype="body" objname="LPedicel_yaw"/>
-    <framelinvel name="framelinvel_LPedicel" objtype="body" objname="LPedicel"/>
-    <frameangvel name="frameangvel_LPedicel" objtype="body" objname="LPedicel"/>
-    <framelinvel name="framelinvel_LFuniculus_roll" objtype="body" objname="LFuniculus_roll"/>
-    <frameangvel name="frameangvel_LFuniculus_roll" objtype="body" objname="LFuniculus_roll"/>
-    <framelinvel name="framelinvel_LFuniculus_yaw" objtype="body" objname="LFuniculus_yaw"/>
-    <frameangvel name="frameangvel_LFuniculus_yaw" objtype="body" objname="LFuniculus_yaw"/>
-    <framelinvel name="framelinvel_LFuniculus" objtype="body" objname="LFuniculus"/>
-    <frameangvel name="frameangvel_LFuniculus" objtype="body" objname="LFuniculus"/>
-    <framelinvel name="framelinvel_LArista_roll" objtype="body" objname="LArista_roll"/>
-    <frameangvel name="frameangvel_LArista_roll" objtype="body" objname="LArista_roll"/>
-    <framelinvel name="framelinvel_LArista_yaw" objtype="body" objname="LArista_yaw"/>
-    <frameangvel name="frameangvel_LArista_yaw" objtype="body" objname="LArista_yaw"/>
-    <framelinvel name="framelinvel_LArista" objtype="body" objname="LArista"/>
-    <frameangvel name="frameangvel_LArista" objtype="body" objname="LArista"/>
-    <framelinvel name="framelinvel_REye" objtype="body" objname="REye"/>
-    <frameangvel name="frameangvel_REye" objtype="body" objname="REye"/>
-    <framelinvel name="framelinvel_Rostrum" objtype="body" objname="Rostrum"/>
-    <frameangvel name="frameangvel_Rostrum" objtype="body" objname="Rostrum"/>
-    <framelinvel name="framelinvel_Haustellum" objtype="body" objname="Haustellum"/>
-    <frameangvel name="frameangvel_Haustellum" objtype="body" objname="Haustellum"/>
-    <framelinvel name="framelinvel_RPedicel_roll" objtype="body" objname="RPedicel_roll"/>
-    <frameangvel name="frameangvel_RPedicel_roll" objtype="body" objname="RPedicel_roll"/>
-    <framelinvel name="framelinvel_RPedicel_yaw" objtype="body" objname="RPedicel_yaw"/>
-    <frameangvel name="frameangvel_RPedicel_yaw" objtype="body" objname="RPedicel_yaw"/>
-    <framelinvel name="framelinvel_RPedicel" objtype="body" objname="RPedicel"/>
-    <frameangvel name="frameangvel_RPedicel" objtype="body" objname="RPedicel"/>
-    <framelinvel name="framelinvel_RFuniculus_roll" objtype="body" objname="RFuniculus_roll"/>
-    <frameangvel name="frameangvel_RFuniculus_roll" objtype="body" objname="RFuniculus_roll"/>
-    <framelinvel name="framelinvel_RFuniculus_yaw" objtype="body" objname="RFuniculus_yaw"/>
-    <frameangvel name="frameangvel_RFuniculus_yaw" objtype="body" objname="RFuniculus_yaw"/>
-    <framelinvel name="framelinvel_RFuniculus" objtype="body" objname="RFuniculus"/>
-    <frameangvel name="frameangvel_RFuniculus" objtype="body" objname="RFuniculus"/>
-    <framelinvel name="framelinvel_RArista_roll" objtype="body" objname="RArista_roll"/>
-    <frameangvel name="frameangvel_RArista_roll" objtype="body" objname="RArista_roll"/>
-    <framelinvel name="framelinvel_RArista_yaw" objtype="body" objname="RArista_yaw"/>
-    <frameangvel name="frameangvel_RArista_yaw" objtype="body" objname="RArista_yaw"/>
-    <framelinvel name="framelinvel_RArista" objtype="body" objname="RArista"/>
-    <frameangvel name="frameangvel_RArista" objtype="body" objname="RArista"/>
-    <framelinvel name="framelinvel_LFCoxa_roll" objtype="body" objname="LFCoxa_roll"/>
-    <frameangvel name="frameangvel_LFCoxa_roll" objtype="body" objname="LFCoxa_roll"/>
-    <framelinvel name="framelinvel_LFCoxa_yaw" objtype="body" objname="LFCoxa_yaw"/>
-    <frameangvel name="frameangvel_LFCoxa_yaw" objtype="body" objname="LFCoxa_yaw"/>
-    <framelinvel name="framelinvel_LFCoxa" objtype="body" objname="LFCoxa"/>
-    <frameangvel name="frameangvel_LFCoxa" objtype="body" objname="LFCoxa"/>
-    <framelinvel name="framelinvel_LFFemur" objtype="body" objname="LFFemur"/>
-    <frameangvel name="frameangvel_LFFemur" objtype="body" objname="LFFemur"/>
-    <framelinvel name="framelinvel_LFFemur_roll" objtype="body" objname="LFFemur_roll"/>
-    <frameangvel name="frameangvel_LFFemur_roll" objtype="body" objname="LFFemur_roll"/>
-    <framelinvel name="framelinvel_LFTibia" objtype="body" objname="LFTibia"/>
-    <frameangvel name="frameangvel_LFTibia" objtype="body" objname="LFTibia"/>
-    <framelinvel name="framelinvel_LFTarsus1" objtype="body" objname="LFTarsus1"/>
-    <frameangvel name="frameangvel_LFTarsus1" objtype="body" objname="LFTarsus1"/>
-    <framelinvel name="framelinvel_LFTarsus2" objtype="body" objname="LFTarsus2"/>
-    <frameangvel name="frameangvel_LFTarsus2" objtype="body" objname="LFTarsus2"/>
-    <framelinvel name="framelinvel_LFTarsus3" objtype="body" objname="LFTarsus3"/>
-    <frameangvel name="frameangvel_LFTarsus3" objtype="body" objname="LFTarsus3"/>
-    <framelinvel name="framelinvel_LFTarsus4" objtype="body" objname="LFTarsus4"/>
-    <frameangvel name="frameangvel_LFTarsus4" objtype="body" objname="LFTarsus4"/>
-    <framelinvel name="framelinvel_LFTarsus5" objtype="body" objname="LFTarsus5"/>
-    <frameangvel name="frameangvel_LFTarsus5" objtype="body" objname="LFTarsus5"/>
-    <framelinvel name="framelinvel_LHaltere_roll" objtype="body" objname="LHaltere_roll"/>
-    <frameangvel name="frameangvel_LHaltere_roll" objtype="body" objname="LHaltere_roll"/>
-    <framelinvel name="framelinvel_LHaltere_yaw" objtype="body" objname="LHaltere_yaw"/>
-    <frameangvel name="frameangvel_LHaltere_yaw" objtype="body" objname="LHaltere_yaw"/>
-    <framelinvel name="framelinvel_LHaltere" objtype="body" objname="LHaltere"/>
-    <frameangvel name="frameangvel_LHaltere" objtype="body" objname="LHaltere"/>
-    <framelinvel name="framelinvel_LHCoxa_roll" objtype="body" objname="LHCoxa_roll"/>
-    <frameangvel name="frameangvel_LHCoxa_roll" objtype="body" objname="LHCoxa_roll"/>
-    <framelinvel name="framelinvel_LHCoxa_yaw" objtype="body" objname="LHCoxa_yaw"/>
-    <frameangvel name="frameangvel_LHCoxa_yaw" objtype="body" objname="LHCoxa_yaw"/>
-    <framelinvel name="framelinvel_LHCoxa" objtype="body" objname="LHCoxa"/>
-    <frameangvel name="frameangvel_LHCoxa" objtype="body" objname="LHCoxa"/>
-    <framelinvel name="framelinvel_LHFemur" objtype="body" objname="LHFemur"/>
-    <frameangvel name="frameangvel_LHFemur" objtype="body" objname="LHFemur"/>
-    <framelinvel name="framelinvel_LHFemur_roll" objtype="body" objname="LHFemur_roll"/>
-    <frameangvel name="frameangvel_LHFemur_roll" objtype="body" objname="LHFemur_roll"/>
-    <framelinvel name="framelinvel_LHTibia" objtype="body" objname="LHTibia"/>
-    <frameangvel name="frameangvel_LHTibia" objtype="body" objname="LHTibia"/>
-    <framelinvel name="framelinvel_LHTarsus1" objtype="body" objname="LHTarsus1"/>
-    <frameangvel name="frameangvel_LHTarsus1" objtype="body" objname="LHTarsus1"/>
-    <framelinvel name="framelinvel_LHTarsus2" objtype="body" objname="LHTarsus2"/>
-    <frameangvel name="frameangvel_LHTarsus2" objtype="body" objname="LHTarsus2"/>
-    <framelinvel name="framelinvel_LHTarsus3" objtype="body" objname="LHTarsus3"/>
-    <frameangvel name="frameangvel_LHTarsus3" objtype="body" objname="LHTarsus3"/>
-    <framelinvel name="framelinvel_LHTarsus4" objtype="body" objname="LHTarsus4"/>
-    <frameangvel name="frameangvel_LHTarsus4" objtype="body" objname="LHTarsus4"/>
-    <framelinvel name="framelinvel_LHTarsus5" objtype="body" objname="LHTarsus5"/>
-    <frameangvel name="frameangvel_LHTarsus5" objtype="body" objname="LHTarsus5"/>
-    <framelinvel name="framelinvel_LMCoxa_roll" objtype="body" objname="LMCoxa_roll"/>
-    <frameangvel name="frameangvel_LMCoxa_roll" objtype="body" objname="LMCoxa_roll"/>
-    <framelinvel name="framelinvel_LMCoxa_yaw" objtype="body" objname="LMCoxa_yaw"/>
-    <frameangvel name="frameangvel_LMCoxa_yaw" objtype="body" objname="LMCoxa_yaw"/>
-    <framelinvel name="framelinvel_LMCoxa" objtype="body" objname="LMCoxa"/>
-    <frameangvel name="frameangvel_LMCoxa" objtype="body" objname="LMCoxa"/>
-    <framelinvel name="framelinvel_LMFemur" objtype="body" objname="LMFemur"/>
-    <frameangvel name="frameangvel_LMFemur" objtype="body" objname="LMFemur"/>
-    <framelinvel name="framelinvel_LMFemur_roll" objtype="body" objname="LMFemur_roll"/>
-    <frameangvel name="frameangvel_LMFemur_roll" objtype="body" objname="LMFemur_roll"/>
-    <framelinvel name="framelinvel_LMTibia" objtype="body" objname="LMTibia"/>
-    <frameangvel name="frameangvel_LMTibia" objtype="body" objname="LMTibia"/>
-    <framelinvel name="framelinvel_LMTarsus1" objtype="body" objname="LMTarsus1"/>
-    <frameangvel name="frameangvel_LMTarsus1" objtype="body" objname="LMTarsus1"/>
-    <framelinvel name="framelinvel_LMTarsus2" objtype="body" objname="LMTarsus2"/>
-    <frameangvel name="frameangvel_LMTarsus2" objtype="body" objname="LMTarsus2"/>
-    <framelinvel name="framelinvel_LMTarsus3" objtype="body" objname="LMTarsus3"/>
-    <frameangvel name="frameangvel_LMTarsus3" objtype="body" objname="LMTarsus3"/>
-    <framelinvel name="framelinvel_LMTarsus4" objtype="body" objname="LMTarsus4"/>
-    <frameangvel name="frameangvel_LMTarsus4" objtype="body" objname="LMTarsus4"/>
-    <framelinvel name="framelinvel_LMTarsus5" objtype="body" objname="LMTarsus5"/>
-    <frameangvel name="frameangvel_LMTarsus5" objtype="body" objname="LMTarsus5"/>
-    <framelinvel name="framelinvel_LWing_roll" objtype="body" objname="LWing_roll"/>
-    <frameangvel name="frameangvel_LWing_roll" objtype="body" objname="LWing_roll"/>
-    <framelinvel name="framelinvel_LWing_yaw" objtype="body" objname="LWing_yaw"/>
-    <frameangvel name="frameangvel_LWing_yaw" objtype="body" objname="LWing_yaw"/>
-    <framelinvel name="framelinvel_LWing" objtype="body" objname="LWing"/>
-    <frameangvel name="frameangvel_LWing" objtype="body" objname="LWing"/>
-    <framelinvel name="framelinvel_RFCoxa_roll" objtype="body" objname="RFCoxa_roll"/>
-    <frameangvel name="frameangvel_RFCoxa_roll" objtype="body" objname="RFCoxa_roll"/>
-    <framelinvel name="framelinvel_RFCoxa_yaw" objtype="body" objname="RFCoxa_yaw"/>
-    <frameangvel name="frameangvel_RFCoxa_yaw" objtype="body" objname="RFCoxa_yaw"/>
-    <framelinvel name="framelinvel_RFCoxa" objtype="body" objname="RFCoxa"/>
-    <frameangvel name="frameangvel_RFCoxa" objtype="body" objname="RFCoxa"/>
-    <framelinvel name="framelinvel_RFFemur" objtype="body" objname="RFFemur"/>
-    <frameangvel name="frameangvel_RFFemur" objtype="body" objname="RFFemur"/>
-    <framelinvel name="framelinvel_RFFemur_roll" objtype="body" objname="RFFemur_roll"/>
-    <frameangvel name="frameangvel_RFFemur_roll" objtype="body" objname="RFFemur_roll"/>
-    <framelinvel name="framelinvel_RFTibia" objtype="body" objname="RFTibia"/>
-    <frameangvel name="frameangvel_RFTibia" objtype="body" objname="RFTibia"/>
-    <framelinvel name="framelinvel_RFTarsus1" objtype="body" objname="RFTarsus1"/>
-    <frameangvel name="frameangvel_RFTarsus1" objtype="body" objname="RFTarsus1"/>
-    <framelinvel name="framelinvel_RFTarsus2" objtype="body" objname="RFTarsus2"/>
-    <frameangvel name="frameangvel_RFTarsus2" objtype="body" objname="RFTarsus2"/>
-    <framelinvel name="framelinvel_RFTarsus3" objtype="body" objname="RFTarsus3"/>
-    <frameangvel name="frameangvel_RFTarsus3" objtype="body" objname="RFTarsus3"/>
-    <framelinvel name="framelinvel_RFTarsus4" objtype="body" objname="RFTarsus4"/>
-    <frameangvel name="frameangvel_RFTarsus4" objtype="body" objname="RFTarsus4"/>
-    <framelinvel name="framelinvel_RFTarsus5" objtype="body" objname="RFTarsus5"/>
-    <frameangvel name="frameangvel_RFTarsus5" objtype="body" objname="RFTarsus5"/>
-    <framelinvel name="framelinvel_RHaltere_roll" objtype="body" objname="RHaltere_roll"/>
-    <frameangvel name="frameangvel_RHaltere_roll" objtype="body" objname="RHaltere_roll"/>
-    <framelinvel name="framelinvel_RHaltere_yaw" objtype="body" objname="RHaltere_yaw"/>
-    <frameangvel name="frameangvel_RHaltere_yaw" objtype="body" objname="RHaltere_yaw"/>
-    <framelinvel name="framelinvel_RHaltere" objtype="body" objname="RHaltere"/>
-    <frameangvel name="frameangvel_RHaltere" objtype="body" objname="RHaltere"/>
-    <framelinvel name="framelinvel_RHCoxa_roll" objtype="body" objname="RHCoxa_roll"/>
-    <frameangvel name="frameangvel_RHCoxa_roll" objtype="body" objname="RHCoxa_roll"/>
-    <framelinvel name="framelinvel_RHCoxa_yaw" objtype="body" objname="RHCoxa_yaw"/>
-    <frameangvel name="frameangvel_RHCoxa_yaw" objtype="body" objname="RHCoxa_yaw"/>
-    <framelinvel name="framelinvel_RHCoxa" objtype="body" objname="RHCoxa"/>
-    <frameangvel name="frameangvel_RHCoxa" objtype="body" objname="RHCoxa"/>
-    <framelinvel name="framelinvel_RHFemur" objtype="body" objname="RHFemur"/>
-    <frameangvel name="frameangvel_RHFemur" objtype="body" objname="RHFemur"/>
-    <framelinvel name="framelinvel_RHFemur_roll" objtype="body" objname="RHFemur_roll"/>
-    <frameangvel name="frameangvel_RHFemur_roll" objtype="body" objname="RHFemur_roll"/>
-    <framelinvel name="framelinvel_RHTibia" objtype="body" objname="RHTibia"/>
-    <frameangvel name="frameangvel_RHTibia" objtype="body" objname="RHTibia"/>
-    <framelinvel name="framelinvel_RHTarsus1" objtype="body" objname="RHTarsus1"/>
-    <frameangvel name="frameangvel_RHTarsus1" objtype="body" objname="RHTarsus1"/>
-    <framelinvel name="framelinvel_RHTarsus2" objtype="body" objname="RHTarsus2"/>
-    <frameangvel name="frameangvel_RHTarsus2" objtype="body" objname="RHTarsus2"/>
-    <framelinvel name="framelinvel_RHTarsus3" objtype="body" objname="RHTarsus3"/>
-    <frameangvel name="frameangvel_RHTarsus3" objtype="body" objname="RHTarsus3"/>
-    <framelinvel name="framelinvel_RHTarsus4" objtype="body" objname="RHTarsus4"/>
-    <frameangvel name="frameangvel_RHTarsus4" objtype="body" objname="RHTarsus4"/>
-    <framelinvel name="framelinvel_RHTarsus5" objtype="body" objname="RHTarsus5"/>
-    <frameangvel name="frameangvel_RHTarsus5" objtype="body" objname="RHTarsus5"/>
-    <framelinvel name="framelinvel_RMCoxa_roll" objtype="body" objname="RMCoxa_roll"/>
-    <frameangvel name="frameangvel_RMCoxa_roll" objtype="body" objname="RMCoxa_roll"/>
-    <framelinvel name="framelinvel_RMCoxa_yaw" objtype="body" objname="RMCoxa_yaw"/>
-    <frameangvel name="frameangvel_RMCoxa_yaw" objtype="body" objname="RMCoxa_yaw"/>
-    <framelinvel name="framelinvel_RMCoxa" objtype="body" objname="RMCoxa"/>
-    <frameangvel name="frameangvel_RMCoxa" objtype="body" objname="RMCoxa"/>
-    <framelinvel name="framelinvel_RMFemur" objtype="body" objname="RMFemur"/>
-    <frameangvel name="frameangvel_RMFemur" objtype="body" objname="RMFemur"/>
-    <framelinvel name="framelinvel_RMFemur_roll" objtype="body" objname="RMFemur_roll"/>
-    <frameangvel name="frameangvel_RMFemur_roll" objtype="body" objname="RMFemur_roll"/>
-    <framelinvel name="framelinvel_RMTibia" objtype="body" objname="RMTibia"/>
-    <frameangvel name="frameangvel_RMTibia" objtype="body" objname="RMTibia"/>
-    <framelinvel name="framelinvel_RMTarsus1" objtype="body" objname="RMTarsus1"/>
-    <frameangvel name="frameangvel_RMTarsus1" objtype="body" objname="RMTarsus1"/>
-    <framelinvel name="framelinvel_RMTarsus2" objtype="body" objname="RMTarsus2"/>
-    <frameangvel name="frameangvel_RMTarsus2" objtype="body" objname="RMTarsus2"/>
-    <framelinvel name="framelinvel_RMTarsus3" objtype="body" objname="RMTarsus3"/>
-    <frameangvel name="frameangvel_RMTarsus3" objtype="body" objname="RMTarsus3"/>
-    <framelinvel name="framelinvel_RMTarsus4" objtype="body" objname="RMTarsus4"/>
-    <frameangvel name="frameangvel_RMTarsus4" objtype="body" objname="RMTarsus4"/>
-    <framelinvel name="framelinvel_RMTarsus5" objtype="body" objname="RMTarsus5"/>
-    <frameangvel name="frameangvel_RMTarsus5" objtype="body" objname="RMTarsus5"/>
-    <framelinvel name="framelinvel_RWing_roll" objtype="body" objname="RWing_roll"/>
-    <frameangvel name="frameangvel_RWing_roll" objtype="body" objname="RWing_roll"/>
-    <framelinvel name="framelinvel_RWing_yaw" objtype="body" objname="RWing_yaw"/>
-    <frameangvel name="frameangvel_RWing_yaw" objtype="body" objname="RWing_yaw"/>
-    <framelinvel name="framelinvel_RWing" objtype="body" objname="RWing"/>
-    <frameangvel name="frameangvel_RWing" objtype="body" objname="RWing"/>
-    <actuatorfrc name="actuatorfrc_position_joint_Head_yaw" actuator="actuator_position_joint_Head_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_Head_yaw" actuator="actuator_velocity_joint_Head_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_Head_yaw" actuator="actuator_torque_joint_Head_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_Head" actuator="actuator_position_joint_Head"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_Head" actuator="actuator_velocity_joint_Head"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_Head" actuator="actuator_torque_joint_Head"/>
-    <actuatorfrc name="actuatorfrc_position_joint_Head_roll" actuator="actuator_position_joint_Head_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_Head_roll" actuator="actuator_velocity_joint_Head_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_Head_roll" actuator="actuator_torque_joint_Head_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LPedicel_yaw" actuator="actuator_position_joint_LPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LPedicel_yaw" actuator="actuator_velocity_joint_LPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LPedicel_yaw" actuator="actuator_torque_joint_LPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LPedicel" actuator="actuator_position_joint_LPedicel"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LPedicel" actuator="actuator_velocity_joint_LPedicel"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LPedicel" actuator="actuator_torque_joint_LPedicel"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LPedicel_roll" actuator="actuator_position_joint_LPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LPedicel_roll" actuator="actuator_velocity_joint_LPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LPedicel_roll" actuator="actuator_torque_joint_LPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFuniculus" actuator="actuator_position_joint_LFuniculus"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFuniculus" actuator="actuator_velocity_joint_LFuniculus"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFuniculus" actuator="actuator_torque_joint_LFuniculus"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFuniculus_roll" actuator="actuator_position_joint_LFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFuniculus_roll" actuator="actuator_velocity_joint_LFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFuniculus_roll" actuator="actuator_torque_joint_LFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFuniculus_yaw" actuator="actuator_position_joint_LFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFuniculus_yaw" actuator="actuator_velocity_joint_LFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFuniculus_yaw" actuator="actuator_torque_joint_LFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LArista" actuator="actuator_position_joint_LArista"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LArista" actuator="actuator_velocity_joint_LArista"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LArista" actuator="actuator_torque_joint_LArista"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LArista_roll" actuator="actuator_position_joint_LArista_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LArista_roll" actuator="actuator_velocity_joint_LArista_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LArista_roll" actuator="actuator_torque_joint_LArista_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LArista_yaw" actuator="actuator_position_joint_LArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LArista_yaw" actuator="actuator_velocity_joint_LArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LArista_yaw" actuator="actuator_torque_joint_LArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RPedicel_yaw" actuator="actuator_position_joint_RPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RPedicel_yaw" actuator="actuator_velocity_joint_RPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RPedicel_yaw" actuator="actuator_torque_joint_RPedicel_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RPedicel" actuator="actuator_position_joint_RPedicel"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RPedicel" actuator="actuator_velocity_joint_RPedicel"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RPedicel" actuator="actuator_torque_joint_RPedicel"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RPedicel_roll" actuator="actuator_position_joint_RPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RPedicel_roll" actuator="actuator_velocity_joint_RPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RPedicel_roll" actuator="actuator_torque_joint_RPedicel_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFuniculus" actuator="actuator_position_joint_RFuniculus"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFuniculus" actuator="actuator_velocity_joint_RFuniculus"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFuniculus" actuator="actuator_torque_joint_RFuniculus"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFuniculus_roll" actuator="actuator_position_joint_RFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFuniculus_roll" actuator="actuator_velocity_joint_RFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFuniculus_roll" actuator="actuator_torque_joint_RFuniculus_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFuniculus_yaw" actuator="actuator_position_joint_RFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFuniculus_yaw" actuator="actuator_velocity_joint_RFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFuniculus_yaw" actuator="actuator_torque_joint_RFuniculus_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RArista" actuator="actuator_position_joint_RArista"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RArista" actuator="actuator_velocity_joint_RArista"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RArista" actuator="actuator_torque_joint_RArista"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RArista_roll" actuator="actuator_position_joint_RArista_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RArista_roll" actuator="actuator_velocity_joint_RArista_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RArista_roll" actuator="actuator_torque_joint_RArista_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RArista_yaw" actuator="actuator_position_joint_RArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RArista_yaw" actuator="actuator_velocity_joint_RArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RArista_yaw" actuator="actuator_torque_joint_RArista_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFCoxa" actuator="actuator_position_joint_RFCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFCoxa" actuator="actuator_velocity_joint_RFCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFCoxa" actuator="actuator_torque_joint_RFCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFCoxa_yaw" actuator="actuator_position_joint_RFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFCoxa_yaw" actuator="actuator_velocity_joint_RFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFCoxa_yaw" actuator="actuator_torque_joint_RFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFCoxa_roll" actuator="actuator_position_joint_RFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFCoxa_roll" actuator="actuator_velocity_joint_RFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFCoxa_roll" actuator="actuator_torque_joint_RFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFFemur" actuator="actuator_position_joint_RFFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFFemur" actuator="actuator_velocity_joint_RFFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFFemur" actuator="actuator_torque_joint_RFFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFFemur_roll" actuator="actuator_position_joint_RFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFFemur_roll" actuator="actuator_velocity_joint_RFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFFemur_roll" actuator="actuator_torque_joint_RFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTibia" actuator="actuator_position_joint_RFTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTibia" actuator="actuator_velocity_joint_RFTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTibia" actuator="actuator_torque_joint_RFTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTarsus1" actuator="actuator_position_joint_RFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTarsus1" actuator="actuator_velocity_joint_RFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTarsus1" actuator="actuator_torque_joint_RFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTarsus2" actuator="actuator_position_joint_RFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTarsus2" actuator="actuator_velocity_joint_RFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTarsus2" actuator="actuator_torque_joint_RFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTarsus3" actuator="actuator_position_joint_RFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTarsus3" actuator="actuator_velocity_joint_RFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTarsus3" actuator="actuator_torque_joint_RFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTarsus4" actuator="actuator_position_joint_RFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTarsus4" actuator="actuator_velocity_joint_RFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTarsus4" actuator="actuator_torque_joint_RFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RFTarsus5" actuator="actuator_position_joint_RFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RFTarsus5" actuator="actuator_velocity_joint_RFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RFTarsus5" actuator="actuator_torque_joint_RFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFCoxa" actuator="actuator_position_joint_LFCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFCoxa" actuator="actuator_velocity_joint_LFCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFCoxa" actuator="actuator_torque_joint_LFCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFCoxa_yaw" actuator="actuator_position_joint_LFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFCoxa_yaw" actuator="actuator_velocity_joint_LFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFCoxa_yaw" actuator="actuator_torque_joint_LFCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFCoxa_roll" actuator="actuator_position_joint_LFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFCoxa_roll" actuator="actuator_velocity_joint_LFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFCoxa_roll" actuator="actuator_torque_joint_LFCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFFemur" actuator="actuator_position_joint_LFFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFFemur" actuator="actuator_velocity_joint_LFFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFFemur" actuator="actuator_torque_joint_LFFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFFemur_roll" actuator="actuator_position_joint_LFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFFemur_roll" actuator="actuator_velocity_joint_LFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFFemur_roll" actuator="actuator_torque_joint_LFFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTibia" actuator="actuator_position_joint_LFTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTibia" actuator="actuator_velocity_joint_LFTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTibia" actuator="actuator_torque_joint_LFTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTarsus1" actuator="actuator_position_joint_LFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTarsus1" actuator="actuator_velocity_joint_LFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTarsus1" actuator="actuator_torque_joint_LFTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTarsus2" actuator="actuator_position_joint_LFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTarsus2" actuator="actuator_velocity_joint_LFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTarsus2" actuator="actuator_torque_joint_LFTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTarsus3" actuator="actuator_position_joint_LFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTarsus3" actuator="actuator_velocity_joint_LFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTarsus3" actuator="actuator_torque_joint_LFTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTarsus4" actuator="actuator_position_joint_LFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTarsus4" actuator="actuator_velocity_joint_LFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTarsus4" actuator="actuator_torque_joint_LFTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LFTarsus5" actuator="actuator_position_joint_LFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LFTarsus5" actuator="actuator_velocity_joint_LFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LFTarsus5" actuator="actuator_torque_joint_LFTarsus5"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMCoxa" actuator="actuator_position_joint_RMCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMCoxa" actuator="actuator_velocity_joint_RMCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMCoxa" actuator="actuator_torque_joint_RMCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMCoxa_yaw" actuator="actuator_position_joint_RMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMCoxa_yaw" actuator="actuator_velocity_joint_RMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMCoxa_yaw" actuator="actuator_torque_joint_RMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMCoxa_roll" actuator="actuator_position_joint_RMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMCoxa_roll" actuator="actuator_velocity_joint_RMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMCoxa_roll" actuator="actuator_torque_joint_RMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMFemur" actuator="actuator_position_joint_RMFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMFemur" actuator="actuator_velocity_joint_RMFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMFemur" actuator="actuator_torque_joint_RMFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMFemur_roll" actuator="actuator_position_joint_RMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMFemur_roll" actuator="actuator_velocity_joint_RMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMFemur_roll" actuator="actuator_torque_joint_RMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTibia" actuator="actuator_position_joint_RMTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTibia" actuator="actuator_velocity_joint_RMTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTibia" actuator="actuator_torque_joint_RMTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTarsus1" actuator="actuator_position_joint_RMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTarsus1" actuator="actuator_velocity_joint_RMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTarsus1" actuator="actuator_torque_joint_RMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTarsus2" actuator="actuator_position_joint_RMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTarsus2" actuator="actuator_velocity_joint_RMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTarsus2" actuator="actuator_torque_joint_RMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTarsus3" actuator="actuator_position_joint_RMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTarsus3" actuator="actuator_velocity_joint_RMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTarsus3" actuator="actuator_torque_joint_RMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTarsus4" actuator="actuator_position_joint_RMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTarsus4" actuator="actuator_velocity_joint_RMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTarsus4" actuator="actuator_torque_joint_RMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RMTarsus5" actuator="actuator_position_joint_RMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RMTarsus5" actuator="actuator_velocity_joint_RMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RMTarsus5" actuator="actuator_torque_joint_RMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMCoxa" actuator="actuator_position_joint_LMCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMCoxa" actuator="actuator_velocity_joint_LMCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMCoxa" actuator="actuator_torque_joint_LMCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMCoxa_yaw" actuator="actuator_position_joint_LMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMCoxa_yaw" actuator="actuator_velocity_joint_LMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMCoxa_yaw" actuator="actuator_torque_joint_LMCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMCoxa_roll" actuator="actuator_position_joint_LMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMCoxa_roll" actuator="actuator_velocity_joint_LMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMCoxa_roll" actuator="actuator_torque_joint_LMCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMFemur" actuator="actuator_position_joint_LMFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMFemur" actuator="actuator_velocity_joint_LMFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMFemur" actuator="actuator_torque_joint_LMFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMFemur_roll" actuator="actuator_position_joint_LMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMFemur_roll" actuator="actuator_velocity_joint_LMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMFemur_roll" actuator="actuator_torque_joint_LMFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTibia" actuator="actuator_position_joint_LMTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTibia" actuator="actuator_velocity_joint_LMTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTibia" actuator="actuator_torque_joint_LMTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTarsus1" actuator="actuator_position_joint_LMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTarsus1" actuator="actuator_velocity_joint_LMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTarsus1" actuator="actuator_torque_joint_LMTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTarsus2" actuator="actuator_position_joint_LMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTarsus2" actuator="actuator_velocity_joint_LMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTarsus2" actuator="actuator_torque_joint_LMTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTarsus3" actuator="actuator_position_joint_LMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTarsus3" actuator="actuator_velocity_joint_LMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTarsus3" actuator="actuator_torque_joint_LMTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTarsus4" actuator="actuator_position_joint_LMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTarsus4" actuator="actuator_velocity_joint_LMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTarsus4" actuator="actuator_torque_joint_LMTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LMTarsus5" actuator="actuator_position_joint_LMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LMTarsus5" actuator="actuator_velocity_joint_LMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LMTarsus5" actuator="actuator_torque_joint_LMTarsus5"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHCoxa" actuator="actuator_position_joint_RHCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHCoxa" actuator="actuator_velocity_joint_RHCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHCoxa" actuator="actuator_torque_joint_RHCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHCoxa_yaw" actuator="actuator_position_joint_RHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHCoxa_yaw" actuator="actuator_velocity_joint_RHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHCoxa_yaw" actuator="actuator_torque_joint_RHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHCoxa_roll" actuator="actuator_position_joint_RHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHCoxa_roll" actuator="actuator_velocity_joint_RHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHCoxa_roll" actuator="actuator_torque_joint_RHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHFemur" actuator="actuator_position_joint_RHFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHFemur" actuator="actuator_velocity_joint_RHFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHFemur" actuator="actuator_torque_joint_RHFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHFemur_roll" actuator="actuator_position_joint_RHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHFemur_roll" actuator="actuator_velocity_joint_RHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHFemur_roll" actuator="actuator_torque_joint_RHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTibia" actuator="actuator_position_joint_RHTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTibia" actuator="actuator_velocity_joint_RHTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTibia" actuator="actuator_torque_joint_RHTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTarsus1" actuator="actuator_position_joint_RHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTarsus1" actuator="actuator_velocity_joint_RHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTarsus1" actuator="actuator_torque_joint_RHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTarsus2" actuator="actuator_position_joint_RHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTarsus2" actuator="actuator_velocity_joint_RHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTarsus2" actuator="actuator_torque_joint_RHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTarsus3" actuator="actuator_position_joint_RHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTarsus3" actuator="actuator_velocity_joint_RHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTarsus3" actuator="actuator_torque_joint_RHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTarsus4" actuator="actuator_position_joint_RHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTarsus4" actuator="actuator_velocity_joint_RHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTarsus4" actuator="actuator_torque_joint_RHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_RHTarsus5" actuator="actuator_position_joint_RHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_RHTarsus5" actuator="actuator_velocity_joint_RHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_RHTarsus5" actuator="actuator_torque_joint_RHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHCoxa" actuator="actuator_position_joint_LHCoxa"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHCoxa" actuator="actuator_velocity_joint_LHCoxa"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHCoxa" actuator="actuator_torque_joint_LHCoxa"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHCoxa_yaw" actuator="actuator_position_joint_LHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHCoxa_yaw" actuator="actuator_velocity_joint_LHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHCoxa_yaw" actuator="actuator_torque_joint_LHCoxa_yaw"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHCoxa_roll" actuator="actuator_position_joint_LHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHCoxa_roll" actuator="actuator_velocity_joint_LHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHCoxa_roll" actuator="actuator_torque_joint_LHCoxa_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHFemur" actuator="actuator_position_joint_LHFemur"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHFemur" actuator="actuator_velocity_joint_LHFemur"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHFemur" actuator="actuator_torque_joint_LHFemur"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHFemur_roll" actuator="actuator_position_joint_LHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHFemur_roll" actuator="actuator_velocity_joint_LHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHFemur_roll" actuator="actuator_torque_joint_LHFemur_roll"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTibia" actuator="actuator_position_joint_LHTibia"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTibia" actuator="actuator_velocity_joint_LHTibia"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTibia" actuator="actuator_torque_joint_LHTibia"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTarsus1" actuator="actuator_position_joint_LHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus1" actuator="actuator_velocity_joint_LHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus1" actuator="actuator_torque_joint_LHTarsus1"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTarsus2" actuator="actuator_position_joint_LHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus2" actuator="actuator_velocity_joint_LHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus2" actuator="actuator_torque_joint_LHTarsus2"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTarsus3" actuator="actuator_position_joint_LHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus3" actuator="actuator_velocity_joint_LHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus3" actuator="actuator_torque_joint_LHTarsus3"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTarsus4" actuator="actuator_position_joint_LHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus4" actuator="actuator_velocity_joint_LHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus4" actuator="actuator_torque_joint_LHTarsus4"/>
-    <actuatorfrc name="actuatorfrc_position_joint_LHTarsus5" actuator="actuator_position_joint_LHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_velocity_joint_LHTarsus5" actuator="actuator_velocity_joint_LHTarsus5"/>
-    <actuatorfrc name="actuatorfrc_motor_joint_LHTarsus5" actuator="actuator_torque_joint_LHTarsus5"/-->
   </sensor>
 </mujoco>
