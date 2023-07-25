@@ -9,7 +9,7 @@ random_state = np.random.RandomState(0)
 
 
 def test_basic_untethered_sinewave():
-    nmf = NeuroMechFlyMuJoCo()
+    nmf = NeuroMechFlyMuJoCo(adhesion=False)
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))

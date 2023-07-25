@@ -24,7 +24,7 @@ def test_vision_dimensions():
     sim_params = MuJoCoParameters(
         enable_olfaction=True, enable_vision=True, render_raw_vision=True
     )
-    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params)
+    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, adhesion=False)
 
     # Run simulation
     obs_list = []
