@@ -32,7 +32,7 @@ def test_stretched_pose():
 def test_zero_pose():
     from flygym.state import zero_pose
 
-    nmf = NeuroMechFlyMuJoCo(init_pose=zero_pose, adhesion=False)
+    nmf = NeuroMechFlyMuJoCo(init_pose=zero_pose, adhesion=False, spawn_pos=(0, 0, 3))
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
