@@ -85,3 +85,17 @@ retina_side_len_hex = 16
 num_ommatidia_per_eye = 3 * retina_side_len_hex**2 - 3 * retina_side_len_hex + 1
 eye_positions = [(0.75, 0.3, 1.32), (0.75, -0.3, 1.32)]  # left, right
 eye_orientations = [(1.57, -0.4676, 0), (-1.57, -0.4676, 3.14)]  # L, R as Euler angles
+
+
+# Leg adhesion
+# joint velocities threshold extracted from experiments
+adhesion_speed_thresholds = np.array(
+    [
+        -22.24454997,
+        -12.13565398,
+        -9.14855537,
+        -20.7181815,
+        12.49711737,
+        10.15158114,
+    ]
+)

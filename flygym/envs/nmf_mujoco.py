@@ -29,26 +29,12 @@ try:
 except ImportError:
     pass
 
+import flygym.util.vision as vision
+import flygym.util.config as config
+import flygym.util.data as data
 from flygym.arena import BaseArena
 from flygym.arena.mujoco_arena import FlatTerrain
 from flygym.state import BaseState, stretched_pose
-from flygym.util.vision import (
-    raw_image_to_hex_pxls,
-    hex_pxls_to_human_readable,
-    ommatidia_id_map,
-    num_pixels_per_ommatidia,
-)
-from flygym.util.data import mujoco_groundwalking_model_path
-from flygym.util.config import (
-    all_leg_dofs,
-    all_tarsi_links,
-    get_collision_geoms,
-    fovy_per_eye,
-    raw_img_height_px,
-    raw_img_width_px,
-    eye_positions,
-    eye_orientations,
-)
 
 
 @dataclass
@@ -79,13 +65,15 @@ class MuJoCoParameters:
     contact_solref: Tuple[float, float], optional
         Contact reference parameter as defined in
         https://mujoco.readthedocs.io/en/stable/modeling.html#impedance,
-        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts are very stiff (avoid penetration with adhesion
-        stifness could be decreased if instability is a problem)
+        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts
+        are very stiff (avoid penetration with adhesion
+        stiffness could be decreased if instability is a problem)
     contact_solimp: Tuple[float, float, float, float, float], optional
         Contact impedance parameter as defined in
         https://mujoco.readthedocs.io/en/stable/modeling.html#reference,
-        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts are very stiff (avoid penetration with adhesion
-        stifness could be decreased if instability is a problem)
+        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts
+        are very stiff (avoid penetration with adhesion
+        stiffness could be decreased if instability is a problem)
     enable_olfaction : bool, optional
         Whether to enable olfaction, by default False.
     enable_vision : bool, optional
@@ -235,8 +223,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def __init__(
         self,
         sim_params: MuJoCoParameters = None,
-        actuated_joints: List = all_leg_dofs,
-        contact_sensor_placements: List = all_tarsi_links,
+        actuated_joints: List = config.all_leg_dofs,
+        contact_sensor_placements: List = config.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
@@ -342,11 +330,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Parse collisions specs
         if isinstance(floor_collisions, str):
-            self.floor_collisions = get_collision_geoms(floor_collisions)
+            self.floor_collisions = config.get_collision_geoms(floor_collisions)
         else:
             self.floor_collisions = floor_collisions
         if isinstance(self_collisions, str):
-            self.self_collisions = get_collision_geoms(self_collisions)
+            self.self_collisions = config.get_collision_geoms(self_collisions)
         else:
             self.self_collisions = self_collisions
 
@@ -376,17 +364,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.adhesion_sup_id = np.array(
             [c_dir == "sup" for c_dir in adhesion_comparison_dir]
         )
-        # joint velocities threshold extracted from experiments
-        self.adhesion_threshold = np.array(
-            [
-                -22.24454997,
-                -12.13565398,
-                -9.14855537,
-                -20.7181815,
-                12.49711737,
-                10.15158114,
-            ]
-        )
         self.last_refjnt_angvel = np.zeros(self.n_legs)
 
         self.draw_adhesion = draw_adhesion
@@ -408,7 +385,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 ]
             )
             self.adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
-            sample_geom_rba = self.leg_adhesion_drawing_segments[0][0]
             self.base_rgba = [0.5, 0.5, 0.5, 1.0]
 
         # Define action and observation spaces
@@ -420,7 +396,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         )
 
         # Load NMF model
-        self.model = mjcf.from_path(mujoco_groundwalking_model_path)
+        self.model = mjcf.from_path(data.mujoco_groundwalking_model_path)
 
         # Add cameras imitating the fly's eyes
         self.curr_visual_input = None
@@ -528,15 +504,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.worldbody.add(
                 "camera",
                 name=f"camera_{side}Eye",
-                pos=eye_positions[i],
+                pos=config.eye_positions[i],
                 dclass="nmf",
                 mode="track",
-                euler=eye_orientations[i],
-                fovy=fovy_per_eye,
+                euler=config.eye_orientations[i],
+                fovy=config.fovy_per_eye,
             )
             # # visual camera position markers: left black, right white
             # red_dot_left = self.model.worldbody.add(
-            #     "body", name=f"red_dot_{side}", pos=eye_positions[i]
+            #     "body", name=f"red_dot_{side}", pos=config.eye_positions[i]
             # )
             # red_dot_left.add(
             #     "geom",
@@ -580,7 +556,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 if "collision" in geom.name
             ]
         elif isinstance(collision_spec, str):
-            return get_collision_geoms(collision_spec)
+            return config.get_collision_geoms(collision_spec)
         elif isinstance(collision_spec, list):
             return collision_spec
         else:
@@ -907,17 +883,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
         adhesion[
             np.logical_and(
                 self.adhesion_sup_id,
-                self.last_refjnt_angvel > self.adhesion_threshold,
+                self.last_refjnt_angvel > config.adhesion_speed_thresholds,
             )
         ] = 0
         adhesion[
             np.logical_and(
                 ~self.adhesion_sup_id,
-                self.last_refjnt_angvel < self.adhesion_threshold,
+                self.last_refjnt_angvel < config.adhesion_speed_thresholds,
             )
         ] = 0
         adhesion[self.adhesion_counter > 0] = 0
-        # During the refractory period, adhesion is ON; by defualt adhesion is on only switch it off when lifting the leg
+        # During the refractory period, adhesion is ON; by defualt adhesion
+        # is on only switch it off when lifting the leg
         adhesion[self.adhesion_refractory_counter > 0] = 1
 
         self.adhesion_counter[
@@ -1061,12 +1038,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ommatidia_readouts = []
         for side in ["L", "R"]:
             img = self.physics.render(
-                width=raw_img_width_px,
-                height=raw_img_height_px,
+                width=config.raw_img_width_px,
+                height=config.raw_img_height_px,
                 camera_id=f"Animat/camera_{side}Eye",
             )
-            readouts_per_eye = raw_image_to_hex_pxls(
-                np.ascontiguousarray(img), num_pixels_per_ommatidia, ommatidia_id_map
+            readouts_per_eye = vision.raw_image_to_hex_pxls(
+                np.ascontiguousarray(img),
+                vision.num_pixels_per_ommatidia,
+                vision.ommatidia_id_map,
             )
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(img)
