@@ -1308,7 +1308,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """
         return {}
 
-    def save_video(self, path: Path):
+    def save_video(self, path: Path, stabilization_time=0.005):
         """Save rendered video since the beginning or the last ``reset()``,
         whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
@@ -1316,6 +1316,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ----------
         path : Path
             Path to which the video should be saved.
+        stabilization_time : float, optional
+            Time (in seconds) to wait before starting to render the video.
+            This might be wanted because it takes a few frames for the
+            position controller to move the joints to the specified angles
+            from the default, all-stretched position. By default 0.005s
         """
         if self.render_mode != "saved":
             logging.warning(
@@ -1323,10 +1328,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 "saved despite `save_video()` call."
             )
 
+        num_stab_frames = int(stabilization_time / self.timestep)
+
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
         with imageio.get_writer(path, fps=self.sim_params.render_fps) as writer:
-            for frame in self._frames:
+            for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
 
     def get_last_frame(self):
