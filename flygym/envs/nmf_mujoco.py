@@ -250,7 +250,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         contact_threshold: float = 0.1,
         tip_length: float = 10,  # number of pixels
         adhesion: bool = True,
-        adhesion_gain: float = 40,
+        adhesion_gain: float = 20,
         draw_adhesion: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
