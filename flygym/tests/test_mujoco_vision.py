@@ -15,9 +15,9 @@ from flygym.util.vision import visualize_visual_input
 random_state = np.random.RandomState(0)
 
 
-# @pytest.mark.skip(
-#     reason="github actions runner doesn't have a display; render will fail"
-# )
+@pytest.mark.skip(
+    reason="github actions runner doesn't have a display; render will fail"
+)
 def test_vision_dimensions():
     # Initialize simulation
     num_steps = 100
