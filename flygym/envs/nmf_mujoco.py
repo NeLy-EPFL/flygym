@@ -5,6 +5,7 @@ import sys
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
 from pathlib import Path
 from dataclasses import dataclass
+from copy import deepcopy
 from scipy.spatial.transform import Rotation as R
 
 import gymnasium as gym
@@ -95,6 +96,21 @@ class MuJoCoParameters:
     vision_refresh_rate : int, optional
         The rate at which the vision sensor is updated, in Hz, by default
         500.
+    draw_contacts : bool, optional
+        Whether to draw contacts in the simulation. By default False.
+    decompose_contacts : bool, optional
+        Whether to decompose the contact forces into normal and tangential
+    contact_threshold : float, optional
+        The threshold for contact detection. By default 0.1.
+    tip_length : float, optional
+        The length of the contact force arrows in pixels. By default 10.
+    enable_adhesion : bool, optional
+        Whether to enable adhesion. By default False.
+    draw_adhesion : bool, optional
+        Whether to signal that adhesion is on by changing the color of the
+        concerned leg. By default False.
+    adhesion_gain : float, optional
+        The gain of the adhesion force. By default 40.
     """
 
     timestep: float = 0.0001
@@ -122,6 +138,16 @@ class MuJoCoParameters:
     render_fps: int = 60
     render_camera: str = "Animat/camera_left"
     vision_refresh_rate: int = 500
+    enable_adhesion: bool = False
+    adhesion_gain: float = 20
+    draw_adhesion: bool = False
+    draw_markers: bool = False
+    draw_contacts: bool = False
+    tip_length: float = 10  # number of pixels
+    decompose_contacts: bool = True
+    contact_threshold: float = 0.1
+    adhesion_duration = 0.02
+    adhesion_refractory_duration = 0.05
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -231,14 +257,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
-        draw_markers: bool = False,
-        draw_contacts: bool = False,
-        decompose_contacts: bool = True,
-        contact_threshold: float = 0.1,
-        tip_length: float = 10,  # number of pixels
-        adhesion: bool = True,
-        adhesion_gain: float = 20,
-        draw_adhesion: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -279,21 +297,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             Which set of collisions should collide with each other. Can be
             "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
             body names. By default "legs".
-        draw_contacts : bool, optional
-            Whether to draw contacts in the simulation. By default False.
-        decompose_contacts : bool, optional
-            Whether to decompose the contact forces into normal and tangential
-        contact_threshold : float, optional
-            The threshold for contact detection. By default 0.1.
-        tip_length : float, optional
-            The length of the contact force arrows in pixels. By default 10.
-        adhesion : bool, optional
-            Whether to enable adhesion. By default True.
-        draw_adhesion : bool, optional
-            Whether to signal that adhesion is on by changing the color of the
-             concerned leg. By default False.
-        adhesion_gain : float, optional
-            The gain of the adhesion force. By default 40.
         """
         from time import time
 
@@ -302,7 +305,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             sim_params = MuJoCoParameters()
         if arena is None:
             arena = FlatTerrain()
-        self.sim_params = sim_params
+        self.sim_params = deepcopy(sim_params)
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.timestep = sim_params.timestep
@@ -318,15 +321,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.last_tarsalseg_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
-        self._draw_markers = draw_markers
-        if draw_contacts:
-            if "cv2" not in sys.modules:
-                logging.warning(
-                    "Overriding `draw_contacts` to False because OpenCV is required "
-                    "to draw the arrows but it is not installed."
-                )
-                draw_contacts = False
-        self.draw_contacts = draw_contacts
+        if self.sim_params.draw_contacts and "cv2" not in sys.modules:
+            logging.warning(
+                "Overriding `draw_contacts` to False because OpenCV is required "
+                "to draw the arrows but it is not installed."
+            )
+            self.sim_params.draw_contacts = False
 
         # Parse collisions specs
         if isinstance(floor_collisions, str):
@@ -340,11 +340,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.n_legs = 6
 
-        self.adhesion = adhesion
+        self.adhesion_duration_steps = int(
+            self.sim_params.adhesion_duration / self.timestep
+        )
+        self.adhesion_refractory_duration_steps = int(
+            self.sim_params.adhesion_refractory_duration / self.timestep
+        )
         self.adhesion_counter = np.zeros(self.n_legs)
         self.adhesion_refractory_counter = np.zeros(self.n_legs)
-        self.adhesion_dur = 200
-        self.adhesion_refractory_dur = 500
+
         # Order is based on the self.last_tarsalseg_names
         leglift_reference_joint = [
             "Tibia",
@@ -366,14 +370,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         )
         self.last_refjnt_angvel = np.zeros(self.n_legs)
 
-        self.draw_adhesion = draw_adhesion
-        if self.draw_adhesion and not self.adhesion:
+        if self.sim_params.draw_adhesion and not self.sim_params.enable_adhesion:
             logging.warning(
                 "Overriding `draw_adhesion` to False because adhesion is not enabled."
             )
-            self.draw_adhesion = False
+            self.sim_params.draw_adhesion = False
 
-        if self.draw_adhesion:
+        if self.sim_params.draw_adhesion:
             self._last_adhesion = np.zeros(6)
             self.leg_adhesion_drawing_segments = np.array(
                 [
@@ -443,7 +446,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.contact_sensor_placements = [
             f"Animat/{body}" for body in self.contact_sensor_placements
         ]
-        self.adhesion_actuators = self._add_adhesion_actuators(adhesion_gain)
+        self.adhesion_actuators = self._add_adhesion_actuators(
+            self.sim_params.adhesion_gain
+        )
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
@@ -477,7 +482,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             )
         self._frames = []
 
-        if self.draw_contacts:
+        if self.sim_params.draw_contacts:
             self._last_contact_force = []
             self._last_contact_pos = []
             width, height = self.sim_params.render_window_size
@@ -487,17 +492,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 width=width,
                 height=height,
             )
-            self.decompose_contacts = decompose_contacts
-            self.decompose_contacts = decompose_contacts
             self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
-            self.contact_threshold = contact_threshold
-            if self.contact_threshold < 1e-4:
+            if self.sim_params.contact_threshold < 1e-4:
                 logging.warning(
                     "Low threshold values might lead to very long arrow tips "
                     "(inconsistent with arrow length)."
                 )
-
-            self.tip_length = tip_length
 
         self.reset()
 
@@ -514,7 +514,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 euler=euler_angle,
                 fovy=config.fovy_per_eye,
             )
-            if self._draw_markers:
+            if self.sim_params.draw_markers:
                 sensor_body.add(
                     "geom",
                     name=f"{name}_marker",
@@ -524,7 +524,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 )
 
         # Make some parts transparent
-        if not self._draw_markers:
+        if not self.sim_params.draw_markers:
             # if True:
             base_names = [
                 f"{side}{part}"
@@ -855,7 +855,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 objname=f"{name}_body",
             )
             antennae_sensors.append(sensor)
-            if self._draw_markers:
+            if self.sim_params.draw_markers:
                 sensor_body.add(
                     "geom",
                     name=f"{name}_marker",
@@ -997,9 +997,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             override this method to return additional information.
         """
         self.physics.bind(self.actuators).ctrl = action["joints"]
-        if self.adhesion:
+        if self.sim_params.enable_adhesion:
             self.physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
-            if self.draw_adhesion:
+            if self.sim_params.draw_adhesion:
                 self._last_adhesion = action["adhesion"]
         self.physics.step()
         self.curr_time += self.timestep
@@ -1055,10 +1055,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
-            if self.draw_adhesion:
+            if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
             img = self.physics.render(width=width, height=height, camera_id=camera)
-            if self.draw_contacts:
+            if self.sim_params.draw_contacts:
                 img = self._draw_contacts(img)
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
@@ -1082,14 +1082,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Draw contacts as arrow wich length is proportional to the force
         magnitude. The arrow is drown at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
+        contact_forces = np.linalg.norm(self._last_contact_force, axis=0)
         contact_indexes = np.nonzero(
-            np.linalg.norm(self._last_contact_force, axis=0) > self.contact_threshold
+            contact_forces > self.sim_params.contact_threshold
         )[0]
 
         n_contacts = len(contact_indexes)
         # Build an array of start and end points for the force arrows
         if n_contacts > 0:
-            if not self.decompose_contacts:
+            if not self.sim_params.decompose_contacts:
                 force_arrow_points = np.tile(
                     self._last_contact_pos[:, contact_indexes], (1, 2)
                 ).squeeze()
@@ -1127,7 +1128,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # Draw the contact forces
             for i in range(n_contacts):
                 pts1 = [x[i], y[i]]
-                if self.decompose_contacts:
+                if self.sim_params.decompose_contacts:
                     for j in range(3):
                         pts2 = np.array(
                             [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
@@ -1135,8 +1136,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         if np.linalg.norm(
                             force_arrow_points[:, i]
                             - force_arrow_points[:, i + (j + 1) * n_contacts]
-                        ) > max(1e-4, self.contact_threshold):
-                            r = self.tip_length / np.linalg.norm(pts2 - pts1)
+                        ) > max(1e-4, self.sim_params.contact_threshold):
+                            r = self.sim_params.tip_length / np.linalg.norm(pts2 - pts1)
                             img = cv2.arrowedLine(
                                 img,
                                 pts1,
@@ -1147,7 +1148,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                             )
                 else:
                     pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
-                    r = self.tip_length / np.linalg.norm(pts2 - pts1)
+                    r = self.sim_params.tip_length / np.linalg.norm(pts2 - pts1)
                     img = cv2.arrowedLine(
                         img,
                         pts1,
@@ -1172,7 +1173,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             img = self.physics.render(
                 width=config.raw_img_width_px,
                 height=config.raw_img_height_px,
-                camera_id=f"Animat/camera_{side}Eye",
+                camera_id=f"Animat/{side}Eye_cam",
             )
             readouts_per_eye = vision.raw_image_to_hex_pxls(
                 np.ascontiguousarray(img),
@@ -1209,7 +1210,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
-        if self.adhesion:
+        if self.sim_params.enable_adhesion:
             self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
 
         # fly position and orientation
@@ -1229,7 +1230,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             ].copy()
         ).T
         # if draw contacts same last contact forces and positiions
-        if self.draw_contacts:
+        if self.sim_params.draw_contacts:
             self._last_contact_force = contact_forces
             self._last_contact_pos = (
                 self.physics.named.data.xpos[self.contact_sensor_placements].copy().T
