@@ -21,7 +21,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          sudo apt-get install -y libgl1-mesa-glx libosmesa6
+          sudo apt-cache search mesa
+          sudo apt-get update && apt-get install -y libgl1-mesa-glx libosmesa6
+          # sudo apt-get install -y libgl1-mesa-glx libosmesa6
           python -m pip install --upgrade pip
           pip install pyrender
           pip install -e ."[mujoco]"
