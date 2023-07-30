@@ -440,7 +440,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.body_sensors = self._add_body_sensors()
         self.end_effector_sensors = self._add_end_effector_sensors()
         self.antennae_sensors = (
-            self._add_antennae_sensors() if sim_params.enable_olfaction else None
+            self._add_odor_sensors() if sim_params.enable_olfaction else None
         )
         self._add_force_sensors()
         self.contact_sensor_placements = [
@@ -523,20 +523,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     rgba=rgba,
                 )
 
-        # Make some parts transparent
-        if not self.sim_params.draw_markers:
-            # if True:
-            base_names = [
-                f"{side}{part}"
-                for side in ["L", "R"]
-                for part in ["FCoxa", "Eye", "Arista", "Funiculus", "Pedicel"]
-            ]
-            base_names += ["Head", "Rostrum", "Haustellum", "Thorax"]
-            for base_name in base_names:
-                self.model.find("geom", f"{base_name}_visual").rgba = (0.5, 0.5, 0.5, 0)
-                col_geom = self.model.find("geom", f"{base_name}_collision")
-                if col_geom is not None:
-                    col_geom.rgba = (0.5, 0.5, 0.5, 0)
+        # Make list of geometries that are hidden during visual input rendering
+        self._geoms_to_hide = []
+        for segment in config.hidden_segments_for_vision:
+            # all body segments have a visual geom - add this first
+            visual_geom_name = f"{segment}_visual"
+            self._geoms_to_hide.append(visual_geom_name)
+            # some body segments also have a collision geom - add this if it exists
+            collision_geom_name = f"{segment}_collision"
+            collision_geom = self.model.find("geom", collision_geom_name)
+            if collision_geom is not None:
+                self._geoms_to_hide.append(collision_geom_name)
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -836,7 +833,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             end_effector_sensors.append(sensor)
         return end_effector_sensors
 
-    def _add_antennae_sensors(self):
+    def _add_odor_sensors(self):
         sensor_names = [
             "LAntenna_sensor",
             "RAntenna_sensor",
@@ -1169,19 +1166,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._vision_update_mask.append(True)
         raw_visual_input = []
         ommatidia_readouts = []
+        for geom in self._geoms_to_hide:
+            self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
         for side in ["L", "R"]:
-            img = self.physics.render(
+            raw_img = self.physics.render(
                 width=config.raw_img_width_px,
                 height=config.raw_img_height_px,
                 camera_id=f"Animat/{side}Eye_cam",
             )
+            fish_img = vision.correct_fisheye(
+                raw_img,
+                config.fisheye_distortion_coefficient,
+                config.fisheye_zoom,
+                config.raw_img_height_px,
+                config.raw_img_width_px,
+            )
             readouts_per_eye = vision.raw_image_to_hex_pxls(
-                np.ascontiguousarray(img),
+                np.ascontiguousarray(fish_img),
                 vision.num_pixels_per_ommatidia,
                 vision.ommatidia_id_map,
             )
             ommatidia_readouts.append(readouts_per_eye)
-            raw_visual_input.append(img)
+            raw_visual_input.append(fish_img)
+        for geom in self._geoms_to_hide:
+            self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
         self.curr_visual_input = np.array(ommatidia_readouts)
         if self.sim_params.render_raw_vision:
             self.curr_raw_visual_input = np.array(raw_visual_input)
