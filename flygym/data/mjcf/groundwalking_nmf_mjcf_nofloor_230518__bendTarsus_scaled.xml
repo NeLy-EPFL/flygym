@@ -705,7 +705,6 @@
     <camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
     <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="5 -8 2" euler="1.32 0.5 0.2"/>
     <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 20" euler="-0.4 0 3.14"/>
-    <camera name="camera_top_zoomout" class="nmf" mode="track"  ipd="0.068" pos="0 0 80" euler="0 0 0"/>
     <camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 3 1" euler="-1.57 0.72 3.14" fovy="30"/>
     <camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 1.57 0" fovy="15"/>
   </worldbody>

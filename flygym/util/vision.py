@@ -159,3 +159,33 @@ def visualize_visual_input(
     animation = FuncAnimation(fig, update, frames=num_frames, interval=interval)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     animation.save(output_path, dpi=100, writer="ffmpeg")
+
+
+@nb.njit(parallel=True)
+def correct_fisheye(img, distortion_coefficient, zoom, nrows, ncols):
+    """Based on https://github.com/Gil-Mor/iFish, MIT License."""
+
+    dst_img = np.zeros((nrows, ncols, 3), dtype="uint8")
+
+    # easier calcultion if we traverse x, y in dst image
+    for dst_row in nb.prange(nrows):
+        for dst_col in nb.prange(ncols):
+            # normalize row and col to be in interval of [-1, 1] and apply zoom
+            dst_row_norm = ((2 * dst_row - nrows) / nrows) / zoom
+            dst_col_norm = ((2 * dst_col - ncols) / ncols) / zoom
+
+            # get normalized row and col dist from center, +1e-6 to avoid div by 0
+            dst_radius_norm = np.sqrt(dst_col_norm**2 + dst_row_norm**2)
+            denom = 1 - (distortion_coefficient * (dst_radius_norm**2)) + 1e-6
+            src_row_norm = dst_row_norm / denom
+            src_col_norm = dst_col_norm / denom
+
+            # convert the normalized distorted row and col back to image pixels
+            src_row = int(((src_row_norm + 1) * nrows) / 2)
+            src_col = int(((src_col_norm + 1) * ncols) / 2)
+
+            # if new pixel is in bounds copy from source pixel to destination pixel
+            if 0 <= src_row and src_row < nrows and 0 <= src_col and src_col < ncols:
+                dst_img[dst_row][dst_col] = img[src_row][src_col]
+
+    return dst_img
