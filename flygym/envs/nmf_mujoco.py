@@ -499,8 +499,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     "(inconsistent with arrow length)."
                 )
 
-        self.reset()
-
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
             parent_name, position, euler_angle, rgba = config.sensor_positions[name]
@@ -993,6 +991,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             This is an empty dictionary by default but the user can
             override this method to return additional information.
         """
+        self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self.actuators).ctrl = action["joints"]
         if self.sim_params.enable_adhesion:
             self.physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
