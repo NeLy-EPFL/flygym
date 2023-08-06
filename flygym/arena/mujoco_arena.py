@@ -48,6 +48,7 @@ class FlatTerrain(BaseArena):
             texture=chequered,
             texrepeat=(10, 10),
             reflectance=0.1,
+            rgba=(1.0, 1.0, 1.0, 0.8),
         )
         self.root_element.worldbody.add(
             "geom",
@@ -121,7 +122,7 @@ class GappedTerrain(BaseArena):
                 size=box_size,
                 pos=(x_pos, 0, 0),
                 friction=friction,
-                rgba=(0.3, 0.3, 0.3, 1),
+                rgba=(0.3, 0.3, 0.3, 0.8),
             )
 
         # add floor underneath
@@ -131,7 +132,7 @@ class GappedTerrain(BaseArena):
             type="plane",
             name="ground",
             pos=(np.mean(x_range), 0, -gap_depth / 2),
-            rgba=(0.3, 0.3, 0.3, 1),
+            rgba=(0.3, 0.3, 0.3, 0.8),
             size=ground_size,
         )
 
@@ -207,7 +208,7 @@ class BlocksTerrain(BaseArena):
                     type="box",
                     size=(block_size / 2, block_size / 2, height / 2),
                     pos=(x_pos, y_pos, height / 2),
-                    rgba=(0.3, 0.3, 0.3, 1),
+                    rgba=(0.3, 0.3, 0.3, 0.8),
                     friction=friction,
                 )
 
@@ -277,7 +278,7 @@ class MixedTerrain(BaseArena):
                         type="box",
                         size=(block_size / 2, block_size / 2, height / 2),
                         pos=(x_pos, y_pos, height / 2 - 0.05),
-                        rgba=(0.3, 0.3, 0.3, 1),
+                        rgba=(0.3, 0.3, 0.3, 0.8),
                         friction=friction,
                     )
 
@@ -294,7 +295,7 @@ class MixedTerrain(BaseArena):
                     size=box_size,
                     pos=(x_pos, 0, -gap_depth / 2),
                     friction=friction,
-                    rgba=(0.3, 0.3, 0.3, 1),
+                    rgba=(0.3, 0.3, 0.3, 0.8),
                 )
 
             # add floor underneath
@@ -304,7 +305,7 @@ class MixedTerrain(BaseArena):
                 type="plane",
                 name=f"ground_{x_range[0]}",
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
-                rgba=(0.3, 0.3, 0.3, 1),
+                rgba=(0.3, 0.3, 0.3, 0.8),
                 size=ground_size,
             )
 
@@ -318,10 +319,10 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
-                size=(2 / 2, 20 / 2, 0.001),
-                pos=(np.mean(x_range), 0, -0.001),
+                size=(2 / 2, 20 / 2, 3.0),
+                pos=(np.mean(x_range), 0, -3.0),
                 friction=friction,
-                rgba=(0.3, 0.3, 0.3, 1),
+                rgba=(0.3, 0.3, 0.3, 0.8),
             )
 
     def get_spawn_position(
@@ -331,7 +332,53 @@ class MixedTerrain(BaseArena):
         return adj_pos, rel_angle
 
 
-class Ball(BaseArena):
+class Thetered(BaseArena):
+    """Fly tethered in the air"""
+
+    def __init__(self, *args: List, **kwargs: Dict):
+        """Create a new terrain object.
+
+        Attributes
+        ----------
+        arena : Any
+            The arena object that the terrain is built on. Exactly what it
+            is depends on the physics simulator.
+        """
+        self.root_element = mjcf.RootElement()
+
+    def get_spawn_position(
+        self, rel_pos: np.ndarray, rel_angle: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        return rel_pos, rel_angle
+
+    def spawn_entity(
+        self, entity: Any, rel_pos: np.ndarray, rel_angle: np.ndarray
+    ) -> None:
+        """Add an entity (eg. the fly) to the arena.
+
+        Parameters
+        ----------
+        entity : mjcf.RootElement
+            The entity to be added to the arena.
+        rel_pos : np.ndarray
+            (x, y, z) position of the entity if it were spawned on a simple
+            flat environment.
+        rel_angle : np.ndarray
+            Axis-angle representation (x, y, z, a) of the entity's
+            orientation if it were spawned on a simple flat terrain.
+            (x, y, z) define the 3D vector that is the rotation axis; a is
+            the rotation angle in unit as configured in the model.
+        """
+        adj_pos, adj_angle = self.get_spawn_position(rel_pos, rel_angle)
+        spawn_site = self.root_element.worldbody.add(
+            "site", pos=adj_pos, axisangle=adj_angle
+        )
+        spawn_site.attach(entity).add(
+            "joint", name="prismatic_support_1", limited=True, range=(0, 1e-10)
+        )
+
+
+class Ball(Thetered):
     """Fly tethered on a spherical threadmill.
 
     Attributes
@@ -369,12 +416,43 @@ class Ball(BaseArena):
         torsional_friction: float = 0.005,
         rolling_friction: float = 0.0001,
     ):
-        raise NotImplementedError
+        self.root_element = mjcf.RootElement()
 
-    def get_spawn_position(
-        self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        raise NotImplementedError
+        chequered = self.root_element.asset.add(
+            "texture",
+            type="2d",
+            builtin="checker",
+            width=50,
+            height=50,
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
+        )
+        grid = self.root_element.asset.add(
+            "material",
+            name="grid",
+            texture=chequered,
+            texrepeat=(3, 3),
+            reflectance=0.1,
+        )
+
+        treadmill_body = self.root_element.worldbody.add(
+            "body", name="treadmill", pos=ball_pos
+        )
+
+        treadmill_body.add(
+            "geom",
+            name="treadmill",
+            type="sphere",
+            size=[radius],
+            mass=mass,
+            friction=[sliding_friction, torsional_friction, rolling_friction],
+            material=grid,
+        )
+
+        treadmill_body.add(
+            "joint", name="treadmill_joint", type="ball", limited="false"
+        )
+        treadmill_body.add("inertial", pos=[0, 0, 0], mass=mass)
 
 
 class OdorArena(BaseArena):
