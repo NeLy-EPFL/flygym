@@ -136,7 +136,7 @@ class MuJoCoParameters:
     render_window_size: Tuple[int, int] = (640, 480)
     render_playspeed: float = 1.0
     render_fps: int = 60
-    render_camera: str = "left"
+    render_camera: str = "Animat/camera_left"
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
@@ -454,7 +454,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
-        print("Correct camera orientation")
         self.correct_camera_orientation(
             self.sim_params.render_camera.replace("Animat/", "")
         )
@@ -595,6 +594,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Get the camera
         camera = self.model.find("camera", camera_name)
+        if camera is None:
+            return 0
         if "head" in camera_name or "front_zoomin" in camera_name:
             # Don't correct the head camera
             return camera
@@ -1004,19 +1005,116 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.physics.reset()
 
-    def set_gravity(self, gravity: List[float]):
+    def set_gravity(self, gravity: List[float], rot_mat: np.ndarray = None):
         """Set the gravity of the environment.
+        The change in the point of view has been extensively tested for the simple cameras
+        (left right top bottom front back) but not for the composed ones
+
+        In any case set slope is the way to go to change the slope of the floor
 
         Parameters
         ----------
         gravity : List[float]
             The gravity vector.
+        rot_mat : np.ndarray, optional
+            The rotation matrix to align the camera with the gravity vector, by default None
         """
+        # Only change the angle of the camera if the new gravity vector and the camera angle are compatible
+        camera_is_compatible = False
+        if (
+            "left" in self.sim_params.render_camera
+            or "right" in self.sim_params.render_camera
+        ):
+            if not gravity[1] > 0:
+                camera_is_compatible = True
+        # elif "top" in self.sim_params.camera_name or "bottom" in self.sim_params.camera_name:
+        elif (
+            "front" in self.sim_params.render_camera
+            or "back" in self.sim_params.render_camera
+        ):
+            if not gravity[1] > 0:
+                camera_is_compatible = True
+
+        if rot_mat is not None and self.sim_params.align_camera_with_gravity:
+            self.camera_rot = rot_mat
+        elif camera_is_compatible:
+            normalised_gravity = (np.array(gravity) / np.linalg.norm(gravity)).reshape(
+                (1, 3)
+            )
+            downward_ref = np.array([0.0, 0.0, -1.0]).reshape((1, 3))
+
+            if (
+                not (normalised_gravity == downward_ref).all()
+                and self.sim_params.align_camera_with_gravity
+            ):
+                # Generate a bunch of vectors to help the optimisation algorithm
+
+                random_vectors = np.tile(np.random.rand(10_000), (3, 1)).T
+                downward_refs = random_vectors + downward_ref
+                gravity_vectors = random_vectors + normalised_gravity
+                downward_refs = downward_refs
+                gravity_vectors = gravity_vectors
+                rot_mult = R.align_vectors(downward_refs, gravity_vectors)[0]
+
+                rot_simple = R.align_vectors(
+                    np.reshape(normalised_gravity, (1, 3)),
+                    downward_ref.reshape((1, 3)),
+                )[0]
+
+                diff_mult = np.linalg.norm(
+                    np.dot(rot_mult.as_matrix(), normalised_gravity.T) - downward_ref.T
+                )
+                diff_simple = np.linalg.norm(
+                    np.dot(rot_simple.as_matrix(), normalised_gravity.T)
+                    - downward_ref.T
+                )
+                if diff_mult < diff_simple:
+                    rot = rot_mult
+                else:
+                    rot = rot_simple
+
+                print(
+                    normalised_gravity,
+                    rot.as_euler("xyz"),
+                    np.dot(rot.as_matrix(), normalised_gravity.T).T,
+                    downward_ref,
+                )
+
+                # check if rotation has effect if not remove it
+                euler_rot = rot.as_euler("xyz")
+                new_euler_rot = np.zeros(3)
+                last_rotated_vector = normalised_gravity
+                for i in range(0, 3):
+                    new_euler_rot[: i + 1] = euler_rot[: i + 1].copy()
+                    # print(euler_rot[: i + 1], new_euler_rot[: i + 1], i)
+
+                    rotated_vector = (
+                        R.from_euler("xyz", new_euler_rot).as_matrix()
+                        @ normalised_gravity.T
+                    ).T
+                    print(
+                        euler_rot,
+                        new_euler_rot,
+                        rotated_vector,
+                        last_rotated_vector,
+                    )
+                    if np.linalg.norm(rotated_vector - last_rotated_vector) < 1e-2:
+                        print("Removing component", i)
+                        euler_rot[i] = 0
+                    last_rotated_vector = rotated_vector
+
+                print(euler_rot)
+                rot = R.from_euler("xyz", euler_rot)
+                rot_mat = rot.as_matrix()
+
+                self.camera_rot = rot_mat.T
+
         self.physics.model.opt.gravity[:] = gravity
 
     def set_slope(self, slope: float, rot_axis="y"):
         """Set the slope of the environment. And modify the camera orientation
         so that gravity is always pointing down.
+        Always use as reference a slope of zeros and not the previous slope.
 
         Parameters
         ----------
@@ -1033,9 +1131,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         elif rot_axis == "z":
             rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
         new_gravity = np.dot(rot_mat, self.sim_params.gravity)
-        self.set_gravity(new_gravity)
+        self.set_gravity(new_gravity, rot_mat)
 
-        self.camera_rot = rot_mat
         return 0
 
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
