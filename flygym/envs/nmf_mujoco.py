@@ -111,6 +111,24 @@ class MuJoCoParameters:
         concerned leg. By default False.
     adhesion_gain : float, optional
         The gain of the adhesion force. By default 40.
+    adhesion_off_duration: float, optional
+        The duration of the adhesion off phase in seconds. By default 0.1.
+        Used in the get_adheion_vector method. When the leg is predicted to swing
+        thw adhesion will be switched off for this duration. Increasing this
+        value will might make the swing longer if it was interrupted by the adhesion)
+    adhesion_off_refractory_duration: float, optional
+        The duration of the adhesion off refractory phase in seconds. By default 0.1.
+        (Used in the get_adheion_vector method. When the adhesion was switched
+        off for adhesion_off_duration, it will not be switched off again for this
+        period of time. This might be able to compensate for noise in the joint
+        angles predicting a swing)
+    draw_gravtiy : bool, optional
+            Whether to draw the gravity vector in the simulation. By default
+            False,
+    align_camera_with_gravity : bool, optional
+        Whether to align the camera with the gravity vector: When adding a
+        slope the fly will appear to climb this slope. By default
+        False.
     """
 
     timestep: float = 0.0001
@@ -140,6 +158,8 @@ class MuJoCoParameters:
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
+    adhesion_off_duration: float = 0.02
+    adhesion_off_refractory_duration: float = 0.05
     draw_adhesion: bool = False
     draw_markers: bool = False
     draw_contacts: bool = False
@@ -147,8 +167,6 @@ class MuJoCoParameters:
     tip_length: float = 10.0  # number of pixels
     decompose_contacts: bool = True
     contact_threshold: float = 0.1
-    adhesion_duration = 0.02
-    adhesion_refractory_duration = 0.05
     draw_gravity: bool = (False,)
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
@@ -246,13 +264,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
     antennae_sensors : Union[None, List[dm_control.mjcf.Element], None]
         If olfaction is enabled, this is a list of the MuJoCo sensors on
         the antenna positions.
-    draw_gravtiy : bool, optional
-            Whether to draw the gravity vector in the simulation. By default
-            False,
-    align_camera_with_gravity : bool, optional
-        Whether to align the camera with the gravity vector: When adding a
-        slope the fly will appear to climb this slope. By default
-        False.
     """
 
     def __init__(
@@ -352,11 +363,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.n_legs = 6
 
-        self.adhesion_duration_steps = int(
-            self.sim_params.adhesion_duration / self.timestep
+        self.adhesion_off_duration_steps = int(
+            self.sim_params.adhesion_off_duration / self.timestep
         )
-        self.adhesion_refractory_duration_steps = int(
-            self.sim_params.adhesion_refractory_duration / self.timestep
+        self.adhesion_off_refractory_duration_steps = int(
+            self.sim_params.adhesion_off_refractory_duration / self.timestep
         )
         self.adhesion_counter = np.zeros(self.n_legs)
         self.adhesion_refractory_counter = np.zeros(self.n_legs)
@@ -618,7 +629,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         camera.euler = transformations.quat_to_euler(new_camera_quat)
 
         # Elevate the camera slightly gives a better view of the arena
-        camera.pos = camera.pos + [0.0, 0.0, 0.5]
+        if not "zoomin" in camera_name:
+            camera.pos = camera.pos + [0.0, 0.0, 0.5]
         if "front" in camera_name:
             camera.pos[2] = camera.pos[2] + 1.0
 
@@ -1228,14 +1240,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ] += 1
         self.adhesion_refractory_counter[
             np.logical_or(
-                self.adhesion_counter > self.adhesion_duration_steps,
+                self.adhesion_counter > self.adhesion_off_duration_steps,
                 self.adhesion_refractory_counter > 0,
             )
         ] += 1
         self.adhesion_refractory_counter[
-            self.adhesion_refractory_counter > self.adhesion_refractory_duration_steps
+            self.adhesion_refractory_counter
+            > self.adhesion_off_refractory_duration_steps
         ] = 0
-        self.adhesion_counter[self.adhesion_counter > self.adhesion_duration_steps] = 0
+        self.adhesion_counter[
+            self.adhesion_counter > self.adhesion_off_duration_steps
+        ] = 0
         return adhesion
 
     def render(self):
@@ -1518,7 +1533,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if np.any(active_adhesion_actuators):
                 # Force is injected only in the normal direction
                 # For now lets assume this is only along z
-                # This might not be true if the contacts
+                # This might not be true if the contacts are more complex
                 contact_forces[
                     2, active_adhesion_actuators
                 ] -= artificial_adhesion_force[active_adhesion]
