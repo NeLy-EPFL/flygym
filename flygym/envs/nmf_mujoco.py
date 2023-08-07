@@ -381,6 +381,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             [c_dir == "sup" for c_dir in adhesion_comparison_dir]
         )
         self.last_refjnt_angvel = np.zeros(self.n_legs)
+        self._last_adhesion = np.zeros(6)
 
         if self.sim_params.draw_adhesion and not self.sim_params.enable_adhesion:
             logging.warning(
@@ -389,7 +390,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.sim_params.draw_adhesion = False
 
         if self.sim_params.draw_adhesion:
-            self._last_adhesion = np.zeros(6)
             self.leg_adhesion_drawing_segments = np.array(
                 [
                     [
@@ -594,7 +594,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Get the camera
         camera = self.model.find("camera", camera_name)
-        if camera is None:
+        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
             return 0
         if "head" in camera_name or "front_zoomin" in camera_name:
             # Don't correct the head camera
@@ -1478,9 +1478,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
-        if self.sim_params.enable_adhesion:
-            self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
-
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
@@ -1501,6 +1498,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             ].copy()
         ).T
         if self.sim_params.enable_adhesion:
+            self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
+
             # Adhesion inputs artificial force that are not "real"
             # We should remove them !
             artificial_adhesion_force = (
