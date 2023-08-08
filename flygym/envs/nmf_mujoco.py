@@ -507,6 +507,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
 
+        self.adhesion_actuator_geomid = np.array(
+            [
+                self.physics.model.geom(
+                    "Animat/" + adhesion_actuator.body + "_collision"
+                ).id
+                for adhesion_actuator in self.adhesion_actuators
+            ]
+        )
         for geom in [geom.name for geom in self.arena_root.find_all("geom")]:
             if "collision" in geom:
                 self.physics.model.geom(
@@ -1517,26 +1525,45 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
             # Adhesion inputs artificial force that are not "real"
             # We should remove them !
-            artificial_adhesion_force = (
-                self._last_adhesion * self.sim_params.adhesion_gain
-            )
-            adhesion_bodies_contact_force = np.sum(
-                contact_forces[:, self.adhesion_bodies_with_contact_sensors], axis=0
+            # First find actuators that had such artificial force
+            adhesion_bodies_contact_force = np.abs(
+                np.sum(
+                    contact_forces[:, self.adhesion_bodies_with_contact_sensors], axis=0
+                )
             )
             active_adhesion = np.logical_and(
-                self._last_adhesion > 0, adhesion_bodies_contact_force > 0
+                self._last_adhesion > 0, adhesion_bodies_contact_force > 0.0
             )
             active_adhesion_actuators = self.adhesion_bodies_with_contact_sensors[
                 active_adhesion
             ]
 
-            if np.any(active_adhesion_actuators):
+            if np.any(active_adhesion):
                 # Force is injected only in the normal direction
-                # For now lets assume this is only along z
-                # This might not be true if the contacts are more complex
-                contact_forces[
-                    2, active_adhesion_actuators
-                ] -= artificial_adhesion_force[active_adhesion]
+                # The normal direction can be found in the mjcontact struct
+                n_corrections = len(active_adhesion)
+                n_corrected = 0
+                active_adhesion_actuator_geomid = self.adhesion_actuator_geomid[
+                    active_adhesion
+                ]
+                for contact in self.physics.data.contact:
+                    id = np.where(active_adhesion_actuator_geomid == contact.geom1)
+                    if len(id[0]) > 0:
+                        normal = contact.frame[:3]
+                        contact_forces[:, active_adhesion_actuators[id]] -= (
+                            self.sim_params.adhesion_gain * normal
+                        ).reshape(3, 1)
+                        n_corrected += 1
+                    id = np.where(active_adhesion_actuator_geomid == contact.geom2)
+                    if len(id[0]) > 0:
+                        normal = -contact.frame[:3]
+                        contact_forces[:, active_adhesion_actuators[id]] -= (
+                            self.sim_params.adhesion_gain * normal
+                        ).reshape(3, 1)
+                        n_corrected += 1
+
+                    if n_corrected >= n_corrections:
+                        break
 
         # if draw contacts same last contact forces and positiions
         if self.sim_params.draw_contacts:
@@ -1658,6 +1685,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """
 
         return self._frames[-1]
+
+    def get_COM(self):
+        """Get the center of mass of the fly.
+        (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
+        Returns
+        -------
+        np.ndarray
+            The center of mass of the fly.
+        """
+        return np.average(
+            self.physics.data.subtree_com, axis=0, weights=self.physics.data.crb[:, 0]
+        )
+
+    def get_energy(self):
+        """Get the energy of the system (kinetic, potential). Need to activate
+        the energy flag in the mujoco xml file.
+        Returns
+        -------
+        np.ndarray
+            The energy of the system (kinetic, potential).
+        """
+        if not self.model.option.flag.energy == "enable":
+            raise ValueError("Energy flag not activated in the mujoco xml file. ")
+        return self.data.energy
 
     def close(self):
         """Close the environment, save data, and release any resources."""
