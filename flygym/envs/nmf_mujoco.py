@@ -343,7 +343,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.last_tarsalseg_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
-
         if self.sim_params.draw_contacts and "cv2" not in sys.modules:
             logging.warning(
                 "Overriding `draw_contacts` to False because OpenCV is required "
@@ -503,10 +502,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 if contact_sensor + "_adhesion" in "Animat/" + adhesion_actuator.name
             ]
         )
-
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
-
         self.adhesion_actuator_geomid = np.array(
             [
                 self.physics.model.geom(
@@ -557,7 +554,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 width=width,
                 height=height,
             )
-        self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+
+            self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -1417,7 +1415,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
                                 r = self.sim_params.tip_length / arrow_length
                             else:
                                 r = 1e-4
-
                             img = cv2.arrowedLine(
                                 img,
                                 pts1,
@@ -1501,6 +1498,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
+        if self.sim_params.enable_adhesion:
+            self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
