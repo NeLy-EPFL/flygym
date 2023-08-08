@@ -167,7 +167,7 @@ class MuJoCoParameters:
     tip_length: float = 10.0  # number of pixels
     decompose_contacts: bool = True
     contact_threshold: float = 0.1
-    draw_gravity: bool = (False,)
+    draw_gravity: bool = False
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
 
