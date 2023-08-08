@@ -92,3 +92,6 @@ class BaseArena(ABC):
             signal.
         """
         return np.zeros((0, 2))
+
+    def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
+        return
