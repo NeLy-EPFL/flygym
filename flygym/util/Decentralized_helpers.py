@@ -75,8 +75,10 @@ def define_swing_stance_starts(
 
             if use_adhesion:
                 adhesion = nmf.get_adhesion_vector()
+            else:
+                adhesion = np.zeros(6)
 
-            action = {"joints": joint_pos, "adhesion": np.zeros(6)}
+            action = {"joints": joint_pos, "adhesion": adhesion}
             obs, info, _, _, _ = nmf.step(action)
             # Get the touch sensor data from physics (sum of the Tarsus bellonging to a leg)
             touch_sensor_data[i, k] = np.sum(
@@ -119,10 +121,15 @@ def define_swing_stance_starts(
         swing_start = k
         if k < len(touch_sensor_data[i]):
             # Find the first time the contact force is above the threshold
-            stance_start = (
-                np.where(touch_sensor_data[i, swing_start:] > eps + 0.5)[0][0]
-                + swing_start
-            )
+            try:
+                stance_start = (
+                    np.where(touch_sensor_data[i, swing_start:] > eps + 0.5)[0][0]
+                    + swing_start
+                )
+            except IndexError:
+                # If could not find a stance starts, set it to 0.03s
+                stance_start_time = 0.03
+                stance_start = int(stance_start_time / nmf.timestep)
             leg_swing_starts[leg] = swing_start
             leg_stance_starts[leg] = stance_start
         else:
