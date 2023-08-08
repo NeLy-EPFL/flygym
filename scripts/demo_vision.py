@@ -28,8 +28,8 @@ class FovCalibrationArena(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.2, 0.3, 0.4),
-            rgb2=(0.3, 0.4, 0.5),
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
         )
         grid = self.root_element.asset.add(
             "material",
@@ -47,6 +47,17 @@ class FovCalibrationArena(BaseArena):
             friction=friction,
         )
         self.friction = friction
+
+        # Add camera
+        # <camera name="camera_top_zoomout" class="nmf" mode="fixed"  ipd="0.068" pos="0 0 100" euler="0 0 0" fovy="20"/>
+        self.root_element.worldbody.add(
+            "camera",
+            name="birdseye_cam",
+            mode="fixed",
+            pos=(0, 0, 300),
+            euler=(0, 0, 0),
+            fovy=10,
+        )
 
         # Add FOV limit markers
         left_points = [(30.3843, -4.1757), (14.2417, 20.0799), (-20.4932, 21.5132)]
@@ -98,7 +109,7 @@ sim_params = MuJoCoParameters(
     render_playspeed=0.1,
     enable_vision=True,
     render_raw_vision=True,
-    render_camera="Animat/camera_top_zoomout",
+    render_camera="birdseye_cam",
 )
 arena = FovCalibrationArena()
 nmf = NeuroMechFlyMuJoCo(
@@ -122,12 +133,23 @@ for i, joint in enumerate(nmf.actuated_joints):
     data_block[i, :] = np.interp(interp_t, measure_t, data[joint])
 
 obs, reward, terminated, truncated, info = nmf.step({"joints": data_block[:, 0]})
-nmf.render()
+for i in trange(100):
+    joint_pos = data_block[:, 0]
+    action = {"joints": joint_pos}
+    obs, reward, terminated, truncated, info = nmf.step(action)
+    nmf.render()
 
 # Visualize static camera views upon initialization
-plt.imshow(nmf._frames[0])
-plt.show()
-plt.imshow(nmf.curr_raw_visual_input[0])
+fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+axs[0, 0].imshow(nmf.physics.render(700, 700, camera_id="Animat/camera_left"))
+axs[0, 0].axis("off")
+axs[0, 1].imshow(nmf.physics.render(700, 700, camera_id="birdseye_cam"))
+axs[0, 1].axis("off")
+axs[1, 0].imshow(nmf.curr_raw_visual_input[0])
+axs[1, 0].axis("off")
+axs[1, 1].imshow(nmf.curr_raw_visual_input[1])
+axs[1, 1].axis("off")
+plt.tight_layout()
 plt.show()
 nmf.close()
 

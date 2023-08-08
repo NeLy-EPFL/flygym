@@ -46,7 +46,7 @@ for i in trange(num_steps):
 nmf.render()
 snapshot_side = nmf.get_last_frame()
 nmf.sim_params.render_camera = "Animat/camera_front"
-nmf.render(force=True)
+nmf.render()
 snapshot_front = nmf.get_last_frame()
 
 """width, height = nmf.sim_params.render_window_size

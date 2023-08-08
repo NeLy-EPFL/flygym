@@ -142,11 +142,30 @@ def get_collision_geoms(config: str = "all") -> List[str]:
 
 # Vision
 # fovx_per_eye = 146.71
-fovy_per_eye = 150  # fovx_per_eye * (2 / np.sqrt(3))
+# fovy_per_eye = fovx_per_eye * (2 / np.sqrt(3))
+fovy_per_eye = 157  # 160 5.5 3.25
 raw_img_height_px = 512
 raw_img_width_px = 450
 retina_side_len_hex = 16
 num_ommatidia_per_eye = 3 * retina_side_len_hex**2 - 3 * retina_side_len_hex + 1
+fisheye_distortion_coefficient = 3.8
+fisheye_zoom = 2.72
+hidden_segments_for_vision = [
+    "LFCoxa",
+    "LEye",
+    "LArista",
+    "LFuniculus",
+    "LPedicel",
+    "RFCoxa",
+    "REye",
+    "RArista",
+    "RFuniculus",
+    "RPedicel",
+    "Head",
+    "Rostrum",
+    "Haustellum",
+    "Thorax",
+]
 
 
 # Leg adhesion
@@ -167,8 +186,8 @@ adhesion_speed_thresholds = np.array(
 # fmt: off
 sensor_positions = {
     # sensor name: (parent, position rel parent, orientation, marker rgba)
-    "LEye_cam": ("LEye", (-0.03, 0.38, 0), (1.57, -0.4676, 0), (0.07, 0.45, 0.35, 1)),
-    "REye_cam": ("REye", (-0.03, -0.38, 0), (-1.57, -0.47, 3.14), (0.07, 0.45, 0.35, 1)),
+    "LEye_cam": ("LEye", (-0.03, 0.38, 0), (1.57, -0.4676, 0.08), (0.07, 0.45, 0.35, 1)),
+    "REye_cam": ("REye", (-0.03, -0.38, 0), (-1.57, -0.47, 3.06), (0.07, 0.45, 0.35, 1)),
     "LMaxillaryPalp_sensor": ("Rostrum", (-0.15, 0.15, -0.15), (0.9, 0.73, 0.08, 1)),
     "RMaxillaryPalp_sensor": ("Rostrum", (-0.15, -0.15, -0.15), (0.9, 0.73, 0.08, 1)),
     "LAntenna_sensor": ("LFuniculus", (0.02, 0.00, -0.10), (0.08, 0.4, 0.9, 1)),
