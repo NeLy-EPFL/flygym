@@ -111,6 +111,24 @@ class MuJoCoParameters:
         concerned leg. By default False.
     adhesion_gain : float, optional
         The gain of the adhesion force. By default 40.
+    adhesion_off_duration: float, optional
+        The duration of the adhesion off phase in seconds. By default 0.1.
+        Used in the get_adheion_vector method. When the leg is predicted to swing
+        thw adhesion will be switched off for this duration. Increasing this
+        value will might make the swing longer if it was interrupted by the adhesion)
+    adhesion_off_refractory_duration: float, optional
+        The duration of the adhesion off refractory phase in seconds. By default 0.1.
+        (Used in the get_adheion_vector method. When the adhesion was switched
+        off for adhesion_off_duration, it will not be switched off again for this
+        period of time. This might be able to compensate for noise in the joint
+        angles predicting a swing)
+    draw_gravtiy : bool, optional
+            Whether to draw the gravity vector in the simulation. By default
+            False,
+    align_camera_with_gravity : bool, optional
+        Whether to align the camera with the gravity vector: When adding a
+        slope the fly will appear to climb this slope. By default
+        False.
     """
 
     timestep: float = 0.0001
@@ -140,14 +158,18 @@ class MuJoCoParameters:
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
+    adhesion_off_duration: float = 0.02
+    adhesion_off_refractory_duration: float = 0.05
     draw_adhesion: bool = False
     draw_markers: bool = False
     draw_contacts: bool = False
-    tip_length: float = 10  # number of pixels
+    force_arrow_scaling: float = 1.0
+    tip_length: float = 10.0  # number of pixels
     decompose_contacts: bool = True
     contact_threshold: float = 0.1
-    adhesion_duration = 0.02
-    adhesion_refractory_duration = 0.05
+    draw_gravity: bool = False
+    gravity_arrow_scaling: float = 1e-4
+    align_camera_with_gravity: bool = False
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -321,6 +343,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.last_tarsalseg_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
+
         if self.sim_params.draw_contacts and "cv2" not in sys.modules:
             logging.warning(
                 "Overriding `draw_contacts` to False because OpenCV is required "
@@ -340,11 +363,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.n_legs = 6
 
-        self.adhesion_duration_steps = int(
-            self.sim_params.adhesion_duration / self.timestep
+        self.adhesion_off_duration_steps = int(
+            self.sim_params.adhesion_off_duration / self.timestep
         )
-        self.adhesion_refractory_duration_steps = int(
-            self.sim_params.adhesion_refractory_duration / self.timestep
+        self.adhesion_off_refractory_duration_steps = int(
+            self.sim_params.adhesion_off_refractory_duration / self.timestep
         )
         self.adhesion_counter = np.zeros(self.n_legs)
         self.adhesion_refractory_counter = np.zeros(self.n_legs)
@@ -369,6 +392,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             [c_dir == "sup" for c_dir in adhesion_comparison_dir]
         )
         self.last_refjnt_angvel = np.zeros(self.n_legs)
+        self._last_adhesion = np.zeros(6)
 
         if self.sim_params.draw_adhesion and not self.sim_params.enable_adhesion:
             logging.warning(
@@ -377,7 +401,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.sim_params.draw_adhesion = False
 
         if self.sim_params.draw_adhesion:
-            self._last_adhesion = np.zeros(6)
             self.leg_adhesion_drawing_segments = np.array(
                 [
                     [
@@ -390,6 +413,24 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
             self.base_rgba = [0.5, 0.5, 0.5, 1.0]
 
+        if self.sim_params.draw_gravity:
+            self.last_fly_pos = spawn_pos
+            self.gravity_rgba = [1 - 213 / 255, 1 - 90 / 255, 1 - 255 / 255, 1.0]
+            cam_name = self.sim_params.render_camera
+            self.arrow_offset = np.zeros(3)
+            if "bottom" in cam_name or "top" in cam_name:
+                self.arrow_offset[0] = -3
+                self.arrow_offset[1] = 2
+            elif "left" in cam_name or "right" in cam_name:
+                self.arrow_offset[2] = 2
+                self.arrow_offset[0] = -3
+            elif "front" in cam_name or "back" in cam_name:
+                self.arrow_offset[2] = 2
+                self.arrow_offset[1] = 3
+
+        if self.sim_params.align_camera_with_gravity:
+            self.camera_rot = np.eye(3)
+
         # Define action and observation spaces
         num_dofs = len(actuated_joints)
         action_bound = np.pi if self.control == "position" else np.inf
@@ -400,7 +441,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Load NMF model
         self.model = mjcf.from_path(data.mujoco_groundwalking_model_path)
-
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes
@@ -424,6 +464,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
+
+        self._correct_camera_orientation(
+            self.sim_params.render_camera.replace("Animat/", "")
+        )
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -449,9 +493,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.adhesion_actuators = self._add_adhesion_actuators(
             self.sim_params.adhesion_gain
         )
+        # Those need to be in the same order as the adhesion sensor
+        # (due to comparison with the last adhesion_signal)
+        adhesion_sensor_indices = []
+        for adhesion_actuator in self.adhesion_actuators:
+            for index, contact_sensor in enumerate(self.contact_sensor_placements):
+                if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
+                    adhesion_sensor_indices.append(index)
+        self.adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
+
         for geom in [geom.name for geom in self.arena_root.find_all("geom")]:
             if "collision" in geom:
                 self.physics.model.geom(
@@ -485,19 +538,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.sim_params.draw_contacts:
             self._last_contact_force = []
             self._last_contact_pos = []
+
+        if self.sim_params.draw_contacts or self.sim_params.draw_gravity:
             width, height = self.sim_params.render_window_size
-            self.contact_camera = dm_control.mujoco.Camera(
+            self.dm_camera = dm_control.mujoco.Camera(
                 self.physics,
                 camera_id=self.sim_params.render_camera,
                 width=width,
                 height=height,
             )
-            self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
-            if self.sim_params.contact_threshold < 1e-4:
-                logging.warning(
-                    "Low threshold values might lead to very long arrow tips "
-                    "(inconsistent with arrow length)."
-                )
+        self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -546,6 +596,43 @@ class NeuroMechFlyMuJoCo(gym.Env):
             return collision_spec
         else:
             raise ValueError(f"Unrecognized collision spec {collision_spec}")
+
+    def _correct_camera_orientation(self, camera_name: str):
+        # Correct the camera orientation by incorporating the spawn rotation
+        # of the arena
+
+        # Get the camera
+        camera = self.model.find("camera", camera_name)
+        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
+            return 0
+        if "head" in camera_name or "front_zoomin" in camera_name:
+            # Don't correct the head camera
+            return camera
+
+        # Add the spawn rotation (keep horizon flat)
+        spawn_quat = np.array(
+            [
+                np.cos(self.spawn_orient[-1] / 2),
+                self.spawn_orient[0] * np.sin(self.spawn_orient[-1] / 2),
+                self.spawn_orient[1] * np.sin(self.spawn_orient[-1] / 2),
+                self.spawn_orient[2] * np.sin(self.spawn_orient[-1] / 2),
+            ]
+        )
+
+        # Change camera euler to quaternion
+        camera_quat = transformations.euler_to_quat(camera.euler)
+        new_camera_quat = transformations.quat_mul(
+            transformations.quat_inv(spawn_quat), camera_quat
+        )
+        camera.euler = transformations.quat_to_euler(new_camera_quat)
+
+        # Elevate the camera slightly gives a better view of the arena
+        if not "zoomin" in camera_name:
+            camera.pos = camera.pos + [0.0, 0.0, 0.5]
+        if "front" in camera_name:
+            camera.pos[2] = camera.pos[2] + 1.0
+
+        return camera
 
     def _set_geom_colors(self):
         for bodypart in config.colors.keys():
@@ -928,15 +1015,134 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.physics.reset()
 
-    def set_gravity(self, gravity: List[float]):
+    def set_gravity(self, gravity: List[float], rot_mat: np.ndarray = None):
         """Set the gravity of the environment.
+        The change in the point of view has been extensively tested for the simple cameras
+        (left right top bottom front back) but not for the composed ones
+
+        In any case set slope is the way to go to change the slope of the floor
 
         Parameters
         ----------
         gravity : List[float]
             The gravity vector.
+        rot_mat : np.ndarray, optional
+            The rotation matrix to align the camera with the gravity vector, by default None
         """
+        # Only change the angle of the camera if the new gravity vector and the camera angle are compatible
+        camera_is_compatible = False
+        if (
+            "left" in self.sim_params.render_camera
+            or "right" in self.sim_params.render_camera
+        ):
+            if not gravity[1] > 0:
+                camera_is_compatible = True
+        # elif "top" in self.sim_params.camera_name or "bottom" in self.sim_params.camera_name:
+        elif (
+            "front" in self.sim_params.render_camera
+            or "back" in self.sim_params.render_camera
+        ):
+            if not gravity[1] > 0:
+                camera_is_compatible = True
+
+        if rot_mat is not None and self.sim_params.align_camera_with_gravity:
+            self.camera_rot = rot_mat
+        elif camera_is_compatible:
+            normalised_gravity = (np.array(gravity) / np.linalg.norm(gravity)).reshape(
+                (1, 3)
+            )
+            downward_ref = np.array([0.0, 0.0, -1.0]).reshape((1, 3))
+
+            if (
+                not (normalised_gravity == downward_ref).all()
+                and self.sim_params.align_camera_with_gravity
+            ):
+                # Generate a bunch of vectors to help the optimisation algorithm
+
+                random_vectors = np.tile(np.random.rand(10_000), (3, 1)).T
+                downward_refs = random_vectors + downward_ref
+                gravity_vectors = random_vectors + normalised_gravity
+                downward_refs = downward_refs
+                gravity_vectors = gravity_vectors
+                rot_mult = R.align_vectors(downward_refs, gravity_vectors)[0]
+
+                rot_simple = R.align_vectors(
+                    np.reshape(normalised_gravity, (1, 3)),
+                    downward_ref.reshape((1, 3)),
+                )[0]
+
+                diff_mult = np.linalg.norm(
+                    np.dot(rot_mult.as_matrix(), normalised_gravity.T) - downward_ref.T
+                )
+                diff_simple = np.linalg.norm(
+                    np.dot(rot_simple.as_matrix(), normalised_gravity.T)
+                    - downward_ref.T
+                )
+                if diff_mult < diff_simple:
+                    rot = rot_mult
+                else:
+                    rot = rot_simple
+
+                logging.info(
+                    f"{normalised_gravity}, "
+                    f"{rot.as_euler('xyz')}, "
+                    f"{np.dot(rot.as_matrix(), normalised_gravity.T).T}, ",
+                    f"{downward_ref}",
+                )
+
+                # check if rotation has effect if not remove it
+                euler_rot = rot.as_euler("xyz")
+                new_euler_rot = np.zeros(3)
+                last_rotated_vector = normalised_gravity
+                for i in range(0, 3):
+                    new_euler_rot[: i + 1] = euler_rot[: i + 1].copy()
+
+                    rotated_vector = (
+                        R.from_euler("xyz", new_euler_rot).as_matrix()
+                        @ normalised_gravity.T
+                    ).T
+                    logging.info(
+                        f"{euler_rot}, "
+                        f"{new_euler_rot}, "
+                        f"{rotated_vector}, "
+                        f"{last_rotated_vector}"
+                    )
+                    if np.linalg.norm(rotated_vector - last_rotated_vector) < 1e-2:
+                        logging.info("Removing component {i}")
+                        euler_rot[i] = 0
+                    last_rotated_vector = rotated_vector
+
+                logging.info(str(euler_rot))
+                rot = R.from_euler("xyz", euler_rot)
+                rot_mat = rot.as_matrix()
+
+                self.camera_rot = rot_mat.T
+
         self.physics.model.opt.gravity[:] = gravity
+
+    def set_slope(self, slope: float, rot_axis="y"):
+        """Set the slope of the environment. And modify the camera orientation
+        so that gravity is always pointing down.
+        Always use as reference a slope of zeros and not the previous slope.
+
+        Parameters
+        ----------
+        slope : float
+            The desired_slope of the environment in degrees.
+        rot_axis : str, optional
+            The axis about which the slope is applied, by default "y".
+        """
+        rot_mat = np.eye(3)
+        if rot_axis == "x":
+            rot_mat = transformations.rotation_x_axis(np.deg2rad(slope))
+        elif rot_axis == "y":
+            rot_mat = transformations.rotation_y_axis(np.deg2rad(slope))
+        elif rot_axis == "z":
+            rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
+        new_gravity = np.dot(rot_mat, self.sim_params.gravity)
+        self.set_gravity(new_gravity, rot_mat)
+
+        return 0
 
     def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
@@ -953,6 +1159,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics.reset()
         if np.any(self.physics.model.opt.gravity[:] - self.sim_params.gravity > 1e-3):
             self.set_gravity(self.sim_params.gravity)
+            if self.sim_params.align_camera_with_gravity:
+                self.camera_rot = np.eye(3)
         self.curr_time = 0
         self._set_init_pose(self.init_pose)
         self._frames = []
@@ -995,8 +1203,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.physics.bind(self.actuators).ctrl = action["joints"]
         if self.sim_params.enable_adhesion:
             self.physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
-            if self.sim_params.draw_adhesion:
-                self._last_adhesion = action["adhesion"]
+            self._last_adhesion = action["adhesion"]
+
         self.physics.step()
         self.curr_time += self.timestep
         observation = self.get_observation()
@@ -1030,14 +1238,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ] += 1
         self.adhesion_refractory_counter[
             np.logical_or(
-                self.adhesion_counter > self.adhesion_dur,
+                self.adhesion_counter > self.adhesion_off_duration_steps,
                 self.adhesion_refractory_counter > 0,
             )
         ] += 1
         self.adhesion_refractory_counter[
-            self.adhesion_refractory_counter > self.adhesion_refractory_dur
+            self.adhesion_refractory_counter
+            > self.adhesion_off_refractory_duration_steps
         ] = 0
-        self.adhesion_counter[self.adhesion_counter > self.adhesion_dur] = 0
+        self.adhesion_counter[
+            self.adhesion_counter > self.adhesion_off_duration_steps
+        ] = 0
         return adhesion
 
     def render(self):
@@ -1053,14 +1264,30 @@ class NeuroMechFlyMuJoCo(gym.Env):
             camera = self.sim_params.render_camera
             if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
+            if self.sim_params.align_camera_with_gravity:
+                self._rotate_camera()
             img = self.physics.render(width=width, height=height, camera_id=camera)
             if self.sim_params.draw_contacts:
                 img = self._draw_contacts(img)
+            if self.sim_params.draw_gravity:
+                img = self._draw_gravity(img)
+
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
             return self._frames
         else:
             raise NotImplementedError
+
+    def _rotate_camera(self):
+        # get camera
+        cam = self.model.find("camera", self.sim_params.render_camera.split("/")[-1])
+        cam = self.physics.bind(cam)
+        # rotate the cam
+        cam_matrix_base = getattr(cam, "xmat").copy()
+        cam_matrix = self.camera_rot @ cam_matrix_base.reshape(3, 3)
+        setattr(cam, "xmat", cam_matrix.flatten())
+
+        return 0
 
     def _draw_adhesion(self):
         """Highlight the tarsal segments of the leg having adhesion"""
@@ -1073,6 +1300,40 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self.leg_adhesion_drawing_segments[self._last_adhesion == 0].flatten()
             ] = self.base_rgba
         return
+
+    def _draw_gravity(self, img: np.ndarray) -> np.ndarray:
+        """Draw gravity as an arrow. The arrow is drown at the top right of the frame."""
+
+        camera_matrix = self.dm_camera.matrix
+
+        if self.sim_params.align_camera_with_gravity:
+            arrow_start = self.last_fly_pos + self.camera_rot @ self.arrow_offset
+        else:
+            arrow_start = self.last_fly_pos + self.arrow_offset
+
+        arrow_end = (
+            arrow_start
+            + self.physics.model.opt.gravity * self.sim_params.gravity_arrow_scaling
+        )
+
+        xyz_global = np.array([arrow_start, arrow_end]).T
+
+        # Camera matrices multiply homogenous [x, y, z, 1] vectors.
+        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
+        corners_homogeneous[:3, :] = xyz_global
+
+        # Project world coordinates into pixel space. See:
+        # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
+        xs, ys, s = camera_matrix @ corners_homogeneous
+
+        # x and y are in the pixel coordinate system.
+        x = np.rint(xs / s).astype(int)
+        y = np.rint(ys / s).astype(int)
+
+        img = img.astype(np.uint8)
+        img = cv2.arrowedLine(img, (x[0], y[0]), (x[1], y[1]), self.gravity_rgba, 10)
+
+        return img
 
     def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
         """Draw contacts as arrow wich length is proportional to the force
@@ -1091,9 +1352,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     self._last_contact_pos[:, contact_indexes], (1, 2)
                 ).squeeze()
 
-                force_arrow_points[:, n_contacts:] += self._last_contact_force[
-                    :, contact_indexes
-                ]
+                force_arrow_points[:, n_contacts:] += (
+                    self._last_contact_force[:, contact_indexes]
+                    * self.sim_params.force_arrow_scaling
+                )
             else:
                 force_arrow_points = np.tile(
                     self._last_contact_pos[:, contact_indexes], (1, 4)
@@ -1101,9 +1363,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 for j in range(3):
                     force_arrow_points[
                         j, (j + 1) * n_contacts : (j + 2) * n_contacts
-                    ] += self._last_contact_force[j, contact_indexes]
+                    ] += (
+                        self._last_contact_force[j, contact_indexes]
+                        * self.sim_params.force_arrow_scaling
+                    )
 
-            camera_matrix = self.contact_camera.matrix
+            camera_matrix = self.dm_camera.matrix
 
             # code sample from dm_control demo notebook
             xyz_global = force_arrow_points
@@ -1115,6 +1380,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             # Project world coordinates into pixel space. See:
             # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
             xs, ys, s = camera_matrix @ corners_homogeneous
+
             # x and y are in the pixel coordinate system.
             x = np.rint(xs / s).astype(int)
             y = np.rint(ys / s).astype(int)
@@ -1129,11 +1395,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
                         pts2 = np.array(
                             [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
                         )
-                        if np.linalg.norm(
-                            force_arrow_points[:, i]
-                            - force_arrow_points[:, i + (j + 1) * n_contacts]
-                        ) > max(1e-4, self.sim_params.contact_threshold):
-                            r = self.sim_params.tip_length / np.linalg.norm(pts2 - pts1)
+                        if (
+                            np.linalg.norm(
+                                force_arrow_points[:, i]
+                                - force_arrow_points[:, i + (j + 1) * n_contacts]
+                            )
+                            > self.sim_params.contact_threshold
+                        ):
+                            arrow_length = np.linalg.norm(pts2 - pts1)
+                            if arrow_length > 1e-2:
+                                r = self.sim_params.tip_length / arrow_length
+                            else:
+                                r = 1e-4
                             img = cv2.arrowedLine(
                                 img,
                                 pts1,
@@ -1219,7 +1492,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         if self.sim_params.enable_adhesion:
             self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
-
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
@@ -1230,12 +1502,41 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
+        if self.sim_params.draw_gravity:
+            self.last_fly_pos = cart_pos
+
         # contact forces from crf_ext (first three componenents are rotational (torque ?))
         contact_forces = (
             self.physics.named.data.cfrc_ext[self.contact_sensor_placements][
                 :, 3:
             ].copy()
         ).T
+        if self.sim_params.enable_adhesion:
+            self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
+
+            # Adhesion inputs artificial force that are not "real"
+            # We should remove them !
+            artificial_adhesion_force = (
+                self._last_adhesion * self.sim_params.adhesion_gain
+            )
+            adhesion_bodies_contact_force = np.sum(
+                contact_forces[:, self.adhesion_bodies_with_contact_sensors], axis=0
+            )
+            active_adhesion = np.logical_and(
+                self._last_adhesion > 0, adhesion_bodies_contact_force > 0
+            )
+            active_adhesion_actuators = self.adhesion_bodies_with_contact_sensors[
+                active_adhesion
+            ]
+
+            if np.any(active_adhesion_actuators):
+                # Force is injected only in the normal direction
+                # For now lets assume this is only along z
+                # This might not be true if the contacts are more complex
+                contact_forces[
+                    2, active_adhesion_actuators
+                ] -= artificial_adhesion_force[active_adhesion]
+
         # if draw contacts same last contact forces and positiions
         if self.sim_params.draw_contacts:
             self._last_contact_force = contact_forces
@@ -1316,7 +1617,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """
         return {}
 
-    def save_video(self, path: Path, stabilization_time=0.005):
+    def save_video(self, path: Path, stabilization_time=0.02):
         """Save rendered video since the beginning or the last ``reset()``,
         whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
@@ -1328,7 +1629,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             Time (in seconds) to wait before starting to render the video.
             This might be wanted because it takes a few frames for the
             position controller to move the joints to the specified angles
-            from the default, all-stretched position. By default 0.005s
+            from the default, all-stretched position. By default 0.02s
         """
         if self.render_mode != "saved":
             logging.warning(
@@ -1336,7 +1637,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 "saved despite `save_video()` call."
             )
 
-        num_stab_frames = int(stabilization_time / self.timestep)
+        num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
