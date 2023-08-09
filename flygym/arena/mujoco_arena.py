@@ -332,7 +332,7 @@ class MixedTerrain(BaseArena):
         return adj_pos, rel_angle
 
 
-class Thetered(BaseArena):
+class Tethered(BaseArena):
     """Fly tethered in the air"""
 
     def __init__(self, *args: List, **kwargs: Dict):
@@ -378,7 +378,7 @@ class Thetered(BaseArena):
         )
 
 
-class Ball(Thetered):
+class Ball(Tethered):
     """Fly tethered on a spherical threadmill.
 
     Attributes
