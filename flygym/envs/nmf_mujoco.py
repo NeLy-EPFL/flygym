@@ -391,7 +391,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             [c_dir == "sup" for c_dir in adhesion_comparison_dir]
         )
         self.last_refjnt_angvel = np.zeros(self.n_legs)
-        self._last_adhesion = np.zeros(6)
+        self._last_adhesion = np.zeros(self.n_legs)
+        self._active_adhesion = np.zeros(self.n_legs)
 
         if self.sim_params.draw_adhesion and not self.sim_params.enable_adhesion:
             logging.warning(
@@ -410,6 +411,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 ]
             )
             self.adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
+            self.active_adhesion_rgba = [0.0, 1.0, 0.0, 0.8]
             self.base_rgba = [0.5, 0.5, 0.5, 1.0]
 
         if self.sim_params.draw_gravity:
@@ -1303,6 +1305,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.physics.named.model.geom_rgba[
                 self.leg_adhesion_drawing_segments[self._last_adhesion == 1].flatten()
             ] = self.adhesion_rgba
+        if np.any(self._active_adhesion):
+            self.physics.named.model.geom_rgba[
+                self.leg_adhesion_drawing_segments[self._active_adhesion].flatten()
+            ] = self.active_adhesion_rgba
         if np.any(self._last_adhesion == 0):
             self.physics.named.model.geom_rgba[
                 self.leg_adhesion_drawing_segments[self._last_adhesion == 0].flatten()
@@ -1522,47 +1528,38 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.sim_params.enable_adhesion:
             self.last_refjnt_angvel = joint_obs[1, self.leglift_ref_jnt_id]
 
-            # Adhesion inputs artificial force that are not "real"
-            # We should remove them !
-            # First find actuators that had such artificial force
-            adhesion_bodies_contact_force = np.abs(
-                np.sum(
-                    contact_forces[:, self.adhesion_bodies_with_contact_sensors], axis=0
+            # Adhesion inputs force in the contact. Lets compute this force
+            # and remove it from the contact forces
+            contactid_normal = {}
+            self._active_adhesion = np.zeros(self.n_legs, dtype=bool)
+            for contact in self.physics.data.contact:
+                id = np.where(self.adhesion_actuator_geomid == contact.geom1)
+                if len(id[0]) > 0 and contact.exclude == 0:
+                    contact_sensor_id = self.adhesion_bodies_with_contact_sensors[id][0]
+                    if contact_sensor_id in contactid_normal:
+                        contactid_normal[contact_sensor_id].append(contact.frame[:3])
+                    else:
+                        contactid_normal[contact_sensor_id] = [contact.frame[:3]]
+                    self._active_adhesion[id] = True
+                id = np.where(self.adhesion_actuator_geomid == contact.geom2)
+                if len(id[0]) > 0 and contact.exclude == 0:
+                    contact_sensor_id = self.adhesion_bodies_with_contact_sensors[id][0]
+                    if contact_sensor_id in contactid_normal:
+                        contactid_normal[contact_sensor_id].append(contact.frame[:3])
+                    else:
+                        contactid_normal[contact_sensor_id] = [contact.frame[:3]]
+                    self._active_adhesion[id] = True
+
+            for contact_sensor_id, normal in contactid_normal.items():
+                adh_actuator_id = (
+                    self.adhesion_bodies_with_contact_sensors == contact_sensor_id
                 )
-            )
-            active_adhesion = np.logical_and(
-                self._last_adhesion > 0, adhesion_bodies_contact_force > 0.0
-            )
-            active_adhesion_actuators = self.adhesion_bodies_with_contact_sensors[
-                active_adhesion
-            ]
-
-            if np.any(active_adhesion):
-                # Force is injected only in the normal direction
-                # The normal direction can be found in the mjcontact struct
-                n_corrections = len(active_adhesion)
-                n_corrected = 0
-                active_adhesion_actuator_geomid = self.adhesion_actuator_geomid[
-                    active_adhesion
-                ]
-                for contact in self.physics.data.contact:
-                    id = np.where(active_adhesion_actuator_geomid == contact.geom1)
-                    if len(id[0]) > 0:
-                        normal = contact.frame[:3]
-                        contact_forces[:, active_adhesion_actuators[id]] -= (
-                            self.sim_params.adhesion_gain * normal
-                        ).reshape(3, 1)
-                        n_corrected += 1
-                    id = np.where(active_adhesion_actuator_geomid == contact.geom2)
-                    if len(id[0]) > 0:
-                        normal = -contact.frame[:3]
-                        contact_forces[:, active_adhesion_actuators[id]] -= (
-                            self.sim_params.adhesion_gain * normal
-                        ).reshape(3, 1)
-                        n_corrected += 1
-
-                    if n_corrected >= n_corrections:
-                        break
+                if self._last_adhesion[adh_actuator_id] > 0:
+                    if len(np.shape(normal)) > 1:
+                        normal = np.mean(normal, axis=0)
+                    contact_forces[:, contact_sensor_id] -= (
+                        self.sim_params.adhesion_gain * normal
+                    )
 
         # if draw contacts same last contact forces and positiions
         if self.sim_params.draw_contacts:
