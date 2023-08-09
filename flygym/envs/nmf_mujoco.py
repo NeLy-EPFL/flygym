@@ -549,7 +549,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             )
         self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
-
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
             parent_name, position, euler_angle, rgba = config.sensor_positions[name]
