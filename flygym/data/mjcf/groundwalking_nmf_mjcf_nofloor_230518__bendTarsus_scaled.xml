@@ -521,7 +521,7 @@
                   <geom name="RFTibia_visual" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="-2.3841858265427618e-08 0 0" quat="1 0 0 0" mesh="mesh_RFTibia_visual"/>
                   <inertial pos="0.023442937061190605 -0.017040228471159935 -0.31677436828613281" mass="2.0688194360187594e-06" fullinertia="4.3500474043375563e-08 4.3300255807843032e-08 1.7329578085641428e-09 9.3347659832026655e-11 -1.4941858114406243e-09 1.8393825588167648e-09"/>
                   <body name="RFTarsus1" pos="3.2097101211547852e-05 0.0013511478900909424 -0.51841160468757153" quat="1 0 0 0">
-                    <camera name="camera_RFTarsus1_zoomin" class="nmf" mode="track" ipd="0.068" pos="-0.5 -2 0" euler="1.57 -0.3 0" fovy="60"/> <!--arctan(0.5/2) 0.245=  -->
+                    <camera name="camera_RFTarsus1_zoomin" class="nmf" mode="track" ipd="0.068" pos="-0.5 -2 0" euler="1.67 -0.3 0" fovy="60"/> <!--arctan(0.5/2) = 0.245 arctan(0.2/2) = 0.1 -->
                     <joint name="joint_RFTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
                     <geom name="RFTarsus1_collision" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="2.3841858265427618e-08 0 -4.7683716530855236e-08" quat="1 0 0 0" mesh="mesh_RFTarsus1_collision" fluidcoef="0 0 0 0 0"/>
                     <geom name="RFTarsus1_visual" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="2.3841858265427618e-08 0 -4.7683716530855236e-08" quat="1 0 0 0" mesh="mesh_RFTarsus1_visual"/>
