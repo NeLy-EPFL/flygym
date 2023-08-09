@@ -21,7 +21,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
+          pip cache purge
           pip install -e ."[mujoco]"
           pip install -e ."[dev]"
       - name: Lint with ruff
