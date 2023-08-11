@@ -320,9 +320,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
             body names. By default "legs".
         """
-        from time import time
-
-        st = time()
         if sim_params is None:
             sim_params = MuJoCoParameters()
         if arena is None:
@@ -343,6 +340,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.last_tarsalseg_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
+
         if self.sim_params.draw_contacts and "cv2" not in sys.modules:
             logging.warning(
                 "Overriding `draw_contacts` to False because OpenCV is required "
@@ -466,9 +464,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
-        self.correct_camera_orientation(
-            self.sim_params.render_camera.replace("Animat/", "")
-        )
+        # self._correct_camera_orientation(
+        #     self.sim_params.render_camera.replace("Animat/", "")
+        # )
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -496,14 +494,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         )
         # Those need to be in the same order as the adhesion sensor
         # (due to comparison with the last adhesion_signal)
-        self.adhesion_bodies_with_contact_sensors = np.array(
-            [
-                i
-                for adhesion_actuator in self.adhesion_actuators
-                for i, contact_sensor in enumerate(self.contact_sensor_placements)
-                if contact_sensor + "_adhesion" in "Animat/" + adhesion_actuator.name
-            ]
-        )
+        adhesion_sensor_indices = []
+        for adhesion_actuator in self.adhesion_actuators:
+            for index, contact_sensor in enumerate(self.contact_sensor_placements):
+                if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
+                    adhesion_sensor_indices.append(index)
+        self.adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
+
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
         self.adhesion_actuator_geomid = np.array(
@@ -556,8 +553,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 width=width,
                 height=height,
             )
-
-            self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+        self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -607,7 +603,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise ValueError(f"Unrecognized collision spec {collision_spec}")
 
-    def correct_camera_orientation(self, camera_name: str):
+    def _correct_camera_orientation(self, camera_name: str):
         # Correct the camera orientation by incorporating the spawn rotation
         # of the arena
 
@@ -1093,11 +1089,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 else:
                     rot = rot_simple
 
-                print(
-                    normalised_gravity,
-                    rot.as_euler("xyz"),
-                    np.dot(rot.as_matrix(), normalised_gravity.T).T,
-                    downward_ref,
+                logging.info(
+                    f"{normalised_gravity}, "
+                    f"{rot.as_euler('xyz')}, "
+                    f"{np.dot(rot.as_matrix(), normalised_gravity.T).T}, ",
+                    f"{downward_ref}",
                 )
 
                 # check if rotation has effect if not remove it
@@ -1106,24 +1102,23 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 last_rotated_vector = normalised_gravity
                 for i in range(0, 3):
                     new_euler_rot[: i + 1] = euler_rot[: i + 1].copy()
-                    # print(euler_rot[: i + 1], new_euler_rot[: i + 1], i)
 
                     rotated_vector = (
                         R.from_euler("xyz", new_euler_rot).as_matrix()
                         @ normalised_gravity.T
                     ).T
-                    print(
-                        euler_rot,
-                        new_euler_rot,
-                        rotated_vector,
-                        last_rotated_vector,
+                    logging.info(
+                        f"{euler_rot}, "
+                        f"{new_euler_rot}, "
+                        f"{rotated_vector}, "
+                        f"{last_rotated_vector}"
                     )
                     if np.linalg.norm(rotated_vector - last_rotated_vector) < 1e-2:
-                        print("Removing component", i)
+                        logging.info("Removing component {i}")
                         euler_rot[i] = 0
                     last_rotated_vector = rotated_vector
 
-                print(euler_rot)
+                logging.info(str(euler_rot))
                 rot = R.from_euler("xyz", euler_rot)
                 rot_mat = rot.as_matrix()
 
@@ -1215,6 +1210,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.sim_params.enable_adhesion:
             self.physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
             self._last_adhesion = action["adhesion"]
+
         self.physics.step()
         self.curr_time += self.timestep
         observation = self.get_observation()
@@ -1275,7 +1271,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
             if self.sim_params.align_camera_with_gravity:
-                self.rotate_camera()
+                self._rotate_camera()
             img = self.physics.render(width=width, height=height, camera_id=camera)
             if self.sim_params.draw_contacts:
                 img = self._draw_contacts(img)
@@ -1288,7 +1284,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise NotImplementedError
 
-    def rotate_camera(self):
+    def _rotate_camera(self):
         # get camera
         cam = self.model.find("camera", self.sim_params.render_camera.split("/")[-1])
         cam = self.physics.bind(cam)
@@ -1641,7 +1637,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """
         return {}
 
-    def save_video(self, path: Path, stabilization_time=0.005):
+    def save_video(self, path: Path, stabilization_time=0.02):
         """Save rendered video since the beginning or the last ``reset()``,
         whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
@@ -1653,7 +1649,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             Time (in seconds) to wait before starting to render the video.
             This might be wanted because it takes a few frames for the
             position controller to move the joints to the specified angles
-            from the default, all-stretched position. By default 0.005s
+            from the default, all-stretched position. By default 0.02s
         """
         if self.render_mode != "saved":
             logging.warning(
@@ -1661,9 +1657,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 "saved despite `save_video()` call."
             )
 
-        num_stab_frames = int(
-            stabilization_time / self.timestep * self.sim_params.render_playspeed
-        )
+        num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
