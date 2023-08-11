@@ -206,8 +206,12 @@ class BlocksTerrain(BaseArena):
                 self.root_element.worldbody.add(
                     "geom",
                     type="box",
-                    size=(block_size / 2, block_size / 2, height / 2),
-                    pos=(x_pos, y_pos, height / 2),
+                    size=(
+                        block_size / 2 + 0.05 * block_size / 2,
+                        block_size / 2 + 0.05 * block_size / 2,
+                        height / 2 + block_size,
+                    ),
+                    pos=(x_pos, y_pos, height / 2 - block_size),
                     rgba=(0.3, 0.3, 0.3, 0.8),
                     friction=friction,
                 )
@@ -276,8 +280,12 @@ class MixedTerrain(BaseArena):
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
-                        size=(block_size / 2, block_size / 2, height / 2),
-                        pos=(x_pos, y_pos, height / 2 - 0.05),
+                        size=(
+                            block_size / 2 + 0.05 * block_size / 2,
+                            block_size / 2 + 0.05 * block_size / 2,
+                            height / 2 + block_size / 2,
+                        ),
+                        pos=(x_pos, y_pos, height / 2 - 0.05 - block_size / 2),
                         rgba=(0.3, 0.3, 0.3, 0.8),
                         friction=friction,
                     )
@@ -319,8 +327,8 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
-                size=(2 / 2, 20 / 2, 3.0),
-                pos=(np.mean(x_range), 0, -3.0),
+                size=(2 / 2, 20 / 2, block_size / 2),
+                pos=(np.mean(x_range), 0, -block_size / 2),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 0.8),
             )
