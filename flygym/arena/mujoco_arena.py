@@ -207,8 +207,8 @@ class BlocksTerrain(BaseArena):
                     "geom",
                     type="box",
                     size=(
-                        block_size / 2 + 0.02 * block_size / 2,
-                        block_size / 2 + 0.02 * block_size / 2,
+                        block_size / 2 + 0.05 * block_size / 2,
+                        block_size / 2 + 0.05 * block_size / 2,
                         height / 2 + block_size,
                     ),
                     pos=(x_pos, y_pos, height / 2 - block_size),
@@ -281,8 +281,8 @@ class MixedTerrain(BaseArena):
                         "geom",
                         type="box",
                         size=(
-                            block_size / 2 + 0.02 * block_size / 2,
-                            block_size / 2 + 0.02 * block_size / 2,
+                            block_size / 2 + 0.05 * block_size / 2,
+                            block_size / 2 + 0.05 * block_size / 2,
                             height / 2 + block_size / 2,
                         ),
                         pos=(x_pos, y_pos, height / 2 - 0.05 - block_size / 2),
