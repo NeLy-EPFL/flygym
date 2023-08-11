@@ -279,6 +279,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
+        camera_correction: bool = True,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -464,9 +465,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
-        # self._correct_camera_orientation(
-        #     self.sim_params.render_camera.replace("Animat/", "")
-        # )
+        if camera_correction:
+            self._correct_camera_orientation(
+                self.sim_params.render_camera.replace("Animat/", "")
+            )
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
