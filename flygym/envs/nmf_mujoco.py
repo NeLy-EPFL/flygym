@@ -465,9 +465,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
-        self._correct_camera_orientation(
-            self.sim_params.render_camera.replace("Animat/", "")
-        )
+        # self._correct_camera_orientation(
+        #     self.sim_params.render_camera.replace("Animat/", "")
+        # )
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)

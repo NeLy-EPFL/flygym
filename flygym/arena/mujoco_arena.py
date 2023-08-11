@@ -495,6 +495,7 @@ class OdorArena(BaseArena):
         peak_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
+        marker_size: float = 0.1,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -545,7 +546,9 @@ class OdorArena(BaseArena):
             marker_body = self.root_element.worldbody.add(
                 "body", name=f"odor_source_marker_{i}", pos=pos, mocap=True
             )
-            marker_body.add("geom", type="capsule", size=(0.1, 0.1), rgba=rgba)
+            marker_body.add(
+                "geom", type="capsule", size=(marker_size, marker_size), rgba=rgba
+            )
 
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
