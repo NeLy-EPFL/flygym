@@ -21,6 +21,8 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
     def __init__(
         self,
         n_stabilisation_steps: int = 5000,
+        decision_dt: float = 0.05,
+        turn_mode = "amp",
         **kwargs,
     ):
         # The underlying normal NMF environment
@@ -29,9 +31,12 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         self.num_dofs = len(self.actuated_joints)
         # Action space - 2 values (alphaL and alphaR)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,))
+
+        self.decision_dt = decision_dt
+        self.num_substeps = int(decision_dt/self.timestep)
         
         # CPG initialization
-        self.cpg = CPG(self.timestep)
+        self.cpg = CPG(timestep=self.timestep, turn_mode=turn_mode)
         self.n_stabilisation_steps = n_stabilisation_steps
         for _ in range(n_stabilisation_steps):
             self.cpg.step()
@@ -65,25 +70,26 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         # Compute joint positions from NN output
         joints_action = self.compute_joints_cpg(action)
 
-        # if self.timer > self.enable_rules_delay:
-        #     # Updating rules' effect and adding them to the action
-        #     joints_action += self.increment_leg_retraction_rule(
-        #         obs["end_effectors"][2::3]
-        #     )
-        #     joints_action += self.increment_stumble_rule(
-        #         obs["contact_forces"][::2, self.leg_tarsus1T_contactsensors]
-        #     )
+        if self.timer > self.enable_rules_delay:
+            # Updating rules' effect and adding them to the action
+            joints_action += self.increment_leg_retraction_rule(
+                obs["end_effectors"][2::3]
+            )
+            joints_action += self.increment_stumble_rule(
+                obs["contact_forces"][::2, self.leg_tarsus1T_contactsensors]
+            )
 
         if self.sim_params.enable_adhesion:
             # Get adhesion signal
             adhesion_signal = self.get_adhesion_vector()
             # If leg in an hole or contacting with the wrong part of the leg
             # remove adhesion
-            # adhesion_signal[
-            #     np.logical_or(self.legs_in_hole, self.highest_proximal_contact_leg)[
-            #         self.last_tarsalseg_to_adh_id
-            #     ]
-            # ] = 0.0
+            adhesion_signal[
+                np.logical_or(self.legs_in_hole, self.highest_proximal_contact_leg)[
+                    self.last_tarsalseg_to_adh_id
+                ]
+            ] = 0.0
+
         else:
             adhesion_signal = np.zeros(6)
 
