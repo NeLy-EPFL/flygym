@@ -143,3 +143,110 @@ phase_biases_ltetrapod_idealized = np.array(
         [1 / 3, 0, -1 / 3, -1 / 3, 1 / 3, 0],
     ]
 )
+
+class CPG:
+    """Central Pattern Generator.
+
+    Attributes
+    ----------
+    phase : np.ndarray
+        Current phase of each oscillator, of size (n_oscillators,).
+    amplitude : np.ndarray
+        Current amplitude of each oscillator, of size (n_oscillators,).
+    frequencies : np.ndarray
+        Target frequency of each oscillator, of size (n_oscillators,).
+    phase_biases : np.ndarray
+        Phase bias matrix describing the target phase relations between the oscillators.
+        Dimensions (n_oscillators,n_oscillators), set to values generating a tripod gait.
+    coupling_weights : np.ndarray
+        Coupling weights matrix between oscillators enforcing phase relations.
+        Dimensions (n_oscillators,n_oscillators).
+    rates : np.ndarray
+        Convergence rates for the amplitudes.
+    targ_ampl : np.ndarray
+        Target amplitude for each oscillator, of size (n_oscillators,).
+        Default value of 1.0, modulated by input to the step function.
+
+    Parameters
+    ----------
+    timestep : float
+        Timestep duration for the integration.
+    n_oscillators : int
+        Number of individual oscillators, by default 6.
+    """
+
+    def __init__(self, timestep, n_oscillators: int = 6):
+        self.n_oscillators = n_oscillators
+        # Random initializaton of oscillator states
+        self.phase = np.random.rand(n_oscillators)
+        a = np.random.randint(1)
+        self.amplitude = np.repeat(a, n_oscillators)  # np.random.rand(n_oscillators)
+        self.timestep = timestep
+        # CPG parameters
+        self.frequencies = 40 * np.ones(n_oscillators)
+        self.phase_biases = (
+            2
+            * np.pi
+            * np.array(
+                [
+                    [0, 0.5, 0, 0.5, 0, 0.5],
+                    [0.5, 0, 0.5, 0, 0.5, 0],
+                    [0, 0.5, 0, 0.5, 0, 0.5],
+                    [0.5, 0, 0.5, 0, 0.5, 0],
+                    [0, 0.5, 0, 0.5, 0, 0.5],
+                    [0.5, 0, 0.5, 0, 0.5, 0],
+                ]
+            )
+        )
+        self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
+        self.rates = 1000 * np.ones(n_oscillators)
+
+    def step(self, amplitude_modulation=[0, 0]):
+        self.targ_ampl = np.repeat(amplitude_modulation + np.array([1, 1]), 3)
+        self.phase, self.amplitude = self.euler_int(
+            self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
+        )
+
+    def euler_int(self, prev_phase, prev_ampl, targ_ampl, timestep):
+        dphas, dampl = self.phase_oscillator(prev_phase, prev_ampl, targ_ampl)
+        phase = (prev_phase + timestep * dphas) % (2 * np.pi)
+        ampl = prev_ampl + timestep * dampl
+        return phase, ampl
+
+    def phase_oscillator(self, phases, amplitudes, targ_ampl):
+        """Phase oscillator model used in Ijspeert et al. 2007"""
+        # NxN matrix with the phases of the oscillators
+        phase_matrix = np.tile(phases, (self.n_oscillators, 1))
+
+        # NxN matrix with the amplitudes of the oscillators
+        amp_matrix = np.tile(amplitudes, (self.n_oscillators, 1))
+
+        freq_contribution = 2 * np.pi * self.frequencies
+
+        #  scaling of the phase differences between oscillators by the amplitude of the oscillators and the coupling weights
+        scaling = np.multiply(amp_matrix, self.coupling_weights)
+
+        # phase matrix and transpose substraction are analogous to the phase differences between oscillators, those should be close to the phase biases
+        phase_shifts_contribution = np.sin(
+            phase_matrix - phase_matrix.T - self.phase_biases
+        )
+
+        # Here we compute the contribution of the phase biases to the derivative of the phases
+        # we mulitply two NxN matrices and then sum over the columns (all j oscillators contributions) to get a vector of size N
+        coupling_contribution = np.sum(
+            np.multiply(scaling, phase_shifts_contribution), axis=1
+        )
+
+        # Here we compute the derivative of the phases given by the equations defined previously.
+        # We are using for that matrix operations to speed up the computation
+        dphases = freq_contribution + coupling_contribution
+        dphases = np.clip(dphases, 0, None)
+
+        damplitudes = np.multiply(self.rates, targ_ampl - amplitudes)
+        # print("targ_ampl ", targ_ampl, " ", damplitudes)
+
+        return dphases, damplitudes
+
+    def reset(self):
+        self.phase = np.random.rand(self.n_oscillators)
+        self.amplitude = np.random.rand(self.n_oscillators)
