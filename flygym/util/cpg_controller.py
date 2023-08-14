@@ -179,11 +179,11 @@ class CPG:
         self.n_oscillators = n_oscillators
         # Random initializaton of oscillator states
         self.phase = np.random.rand(n_oscillators)
-        a = np.random.randint(1)
-        self.amplitude = np.repeat(a, n_oscillators)  # np.random.rand(n_oscillators)
+        self.amplitude = np.repeat(np.random.randint(1), n_oscillators)
         self.timestep = timestep
         # CPG parameters
-        self.frequencies = 40 * np.ones(n_oscillators)
+        self.frequencies = 7 * np.ones(n_oscillators)
+        self.base_freq = 7 * np.ones(n_oscillators)
         self.phase_biases = (
             2
             * np.pi
@@ -199,10 +199,12 @@ class CPG:
             )
         )
         self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
-        self.rates = 1000 * np.ones(n_oscillators)
+        self.rates = 20.0 * np.ones(n_oscillators)
 
-    def step(self, amplitude_modulation=[0, 0]):
-        self.targ_ampl = np.repeat(amplitude_modulation + np.array([1, 1]), 3)
+    def step(self, turn_modulation=[0, 0]):
+        self.targ_ampl = np.repeat(turn_modulation + np.array([1, 1]), 3)
+        #self.frequencies = np.repeat((turn_modulation + np.array([1, 1])), 3) * self.base_freq
+
         self.phase, self.amplitude = self.euler_int(
             self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
         )
