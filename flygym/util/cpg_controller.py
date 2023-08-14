@@ -173,9 +173,12 @@ class CPG:
         Timestep duration for the integration.
     n_oscillators : int
         Number of individual oscillators, by default 6.
+    turn_mode : string
+        Describes what quantities are influenced by the turn modulation. 
+        Can be "amp" (only amplitudes - default), "freq" (only frequencies), or "both".
     """
 
-    def __init__(self, timestep, n_oscillators: int = 6):
+    def __init__(self, timestep, n_oscillators: int = 6, turn_mode="amp"):
         self.n_oscillators = n_oscillators
         # Random initializaton of oscillator states
         self.phase = np.random.rand(n_oscillators)
@@ -200,11 +203,22 @@ class CPG:
         )
         self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
         self.rates = 20.0 * np.ones(n_oscillators)
+        self.turn_mode = turn_mode
 
     def step(self, turn_modulation=[0, 0]):
-        self.targ_ampl = np.repeat(turn_modulation + np.array([1, 1]), 3)
-        #self.frequencies = np.repeat((turn_modulation + np.array([1, 1])), 3) * self.base_freq
+        # Modulate amplitudes
+        if self.turn_mode == "amp" or self.turn_mode == "both":
+            self.targ_ampl = np.repeat(turn_modulation + np.array([1, 1]), 3)
+        else:
+            self.targ_ampl = np.ones(self.n_oscillators)
 
+        # Modulate frequencies
+        if self.turn_mode == "freq" or self.turn_mode == "both":
+            self.frequencies = np.repeat((turn_modulation + np.array([1, 1])), 3) * self.base_freq
+        else:
+            self.frequencies = self.base_freq
+
+        # Integration step
         self.phase, self.amplitude = self.euler_int(
             self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
         )
