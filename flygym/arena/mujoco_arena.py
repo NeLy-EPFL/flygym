@@ -206,8 +206,12 @@ class BlocksTerrain(BaseArena):
                 self.root_element.worldbody.add(
                     "geom",
                     type="box",
-                    size=(block_size / 2, block_size / 2, height / 2),
-                    pos=(x_pos, y_pos, height / 2),
+                    size=(
+                        block_size / 2 + 0.05 * block_size / 2,
+                        block_size / 2 + 0.05 * block_size / 2,
+                        height / 2 + block_size,
+                    ),
+                    pos=(x_pos, y_pos, height / 2 - block_size),
                     rgba=(0.3, 0.3, 0.3, 0.8),
                     friction=friction,
                 )
@@ -276,8 +280,12 @@ class MixedTerrain(BaseArena):
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
-                        size=(block_size / 2, block_size / 2, height / 2),
-                        pos=(x_pos, y_pos, height / 2 - 0.05),
+                        size=(
+                            block_size / 2 + 0.05 * block_size / 2,
+                            block_size / 2 + 0.05 * block_size / 2,
+                            height / 2 + block_size / 2,
+                        ),
+                        pos=(x_pos, y_pos, height / 2 - 0.05 - block_size / 2),
                         rgba=(0.3, 0.3, 0.3, 0.8),
                         friction=friction,
                     )
@@ -319,8 +327,8 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
-                size=(2 / 2, 20 / 2, 3.0),
-                pos=(np.mean(x_range), 0, -3.0),
+                size=(2 / 2, 20 / 2, block_size / 2),
+                pos=(np.mean(x_range), 0, -block_size / 2),
                 friction=friction,
                 rgba=(0.3, 0.3, 0.3, 0.8),
             )
@@ -495,6 +503,7 @@ class OdorArena(BaseArena):
         peak_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
+        marker_size: float = 0.1,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -545,7 +554,9 @@ class OdorArena(BaseArena):
             marker_body = self.root_element.worldbody.add(
                 "body", name=f"odor_source_marker_{i}", pos=pos, mocap=True
             )
-            marker_body.add("geom", type="capsule", size=(0.1, 0.1), rgba=rgba)
+            marker_body.add(
+                "geom", type="capsule", size=(marker_size, marker_size), rgba=rgba
+            )
 
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
