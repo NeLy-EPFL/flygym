@@ -457,9 +457,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
-        self._set_actuator_gains()
-        self._set_geom_friction()
-        self._set_joint_stiffness_and_damping()
+        self._set_actuators_gain()
+        self._set_geoms_friction()
+        self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
         # Add arena and put fly in it
@@ -771,16 +771,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         }
         return action_space, observation_space
 
-    def _set_actuator_gains(self):
+    def _set_actuators_gain(self):
         for actuator in self.actuators:
             actuator.kp = self.sim_params.actuator_kp
 
-    def _set_geom_friction(self):
+    def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
             if "collision" in geom.name:
                 geom.friction = self.sim_params.friction
 
-    def _set_joint_stiffness_and_damping(self):
+    def _set_joints_stiffness_and_damping(self):
         for joint in self.model.find_all("joint"):
             if joint.name in self.actuated_joints:
                 joint.stiffness = self.sim_params.joint_stiffness
