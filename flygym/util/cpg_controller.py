@@ -5,14 +5,15 @@ import matplotlib.pyplot as plt
 CPG_PERIOD = 2 * np.pi
 
 
-def plot_phase_amp_output(phases, amps, outs, labels=None):
+def plot_phase_amp_output(phases, amps, outs, labels=None, timestep=1):
+    time = timestep*np.arange(len(phases))
     fig, axs = plt.subplots(3, 1, figsize=(10, 10))
-    axs[0].plot(phases, label=labels)
+    axs[0].plot(time,phases, label=labels)
     axs[0].set_ylabel("Phase")
-    axs[1].plot(amps, label=labels)
+    axs[1].plot(time,amps, label=labels)
     axs[1].set_ylabel("Amplitude")
     axs[1].legend(loc="lower right")
-    axs[2].plot(outs, label=labels)
+    axs[2].plot(time,outs, label=labels)
     axs[2].set_ylabel("Output")
     axs[2].legend(loc="lower right")
 
@@ -21,6 +22,31 @@ def plot_phase_amp_output(phases, amps, outs, labels=None):
         axs[1].legend(loc="lower right")
         axs[2].legend(loc="lower right")
     plt.tight_layout()
+
+def plot_phase_amp_output_rules(phases, amps, outs, rules, labels=None, rule_labels=None, timestep=1):
+    time = timestep*np.arange(len(phases))
+    fig, axs = plt.subplots(4, 1, figsize=(12, 10))
+    axs[0].plot(time,phases, label=labels)
+    axs[0].set_ylabel("Phase")
+    axs[1].plot(time,amps, label=labels)
+    axs[1].set_ylabel("Amplitude")
+    axs[1].legend(loc="lower right")
+    axs[2].plot(time,outs, label=labels)
+    axs[2].set_ylabel("Output")
+    axs[2].legend(loc="lower right")
+    for i,rule in enumerate(rules):
+        axs[3].plot(time,rule, label=rule_labels[i])
+    axs[3].set_ylabel("Rule active")
+    axs[3].legend(loc="lower right")
+
+    if labels:
+        axs[0].legend(loc="lower right")
+        axs[1].legend(loc="lower right")
+        axs[2].legend(loc="lower right")
+    if rule_labels:
+        axs[3].legend(loc="lower right")
+    plt.tight_layout()
+
 
 
 def advancement_transfer(phases, step_dur, match_leg_to_joints):

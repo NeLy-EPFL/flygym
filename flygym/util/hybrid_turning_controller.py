@@ -18,11 +18,23 @@ import cv2
 
 
 class NMFHybridTurning(NeuroMechFlyMuJoCo):
+    """A wrapper for the NMF class controller with a CPG-rule-based hybrid controller.
+    
+    Parameters
+    ----------
+    n_stabilisation_steps :
+        Initial number of CPG steps to run before applying its output to the simulation, for stabilization.
+    turn_mode : 
+        CPG parameters modulated by the action. Can be "amp", "freq" or "both".
+    epsilon_turn :
+        Minimum difference between the action terms to consider it a turning behaviour and disable 
+        corresponding leg adhesion.  
+    """
     def __init__(
         self,
         n_stabilisation_steps: int = 5000,
-        decision_dt: float = 0.05,
-        turn_mode = "amp",
+        turn_mode: str = "amp",
+        epsilon_turn: float = 0.1,
         **kwargs,
     ):
         # The underlying normal NMF environment
@@ -32,8 +44,7 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         # Action space - 2 values (alphaL and alphaR)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,))
 
-        self.decision_dt = decision_dt
-        self.num_substeps = int(decision_dt/self.timestep)
+        self.eps_turn = epsilon_turn
         
         # CPG initialization
         self.cpg = CPG(timestep=self.timestep, turn_mode=turn_mode)
@@ -49,6 +60,8 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         self._reset_leg_retraction_state()
         self._reset_stumble_state()
         self.enable_rules_delay = 500
+        self.stumble_active = False
+        self.leg_retract_active = False
         self.timer = 0
 
     def reset(self):
@@ -57,6 +70,8 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
             self.cpg.step()
         self._reset_leg_retraction_state()
         self._reset_stumble_state()
+        self.stumble_active = False
+        self.leg_retract_active = False
         self.timer = 0
         return super().reset()
 
@@ -72,12 +87,15 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
 
         if self.timer > self.enable_rules_delay:
             # Updating rules' effect and adding them to the action
-            joints_action += self.increment_leg_retraction_rule(
+            retract_increment = self.increment_leg_retraction_rule(
                 obs["end_effectors"][2::3]
             )
-            joints_action += self.increment_stumble_rule(
+            joints_action += retract_increment
+
+            stum_increment = self.increment_stumble_rule(
                 obs["contact_forces"][::2, self.leg_tarsus1T_contactsensors]
             )
+            joints_action += stum_increment
 
         if self.sim_params.enable_adhesion:
             # Get adhesion signal
@@ -90,13 +108,12 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
                 ]
             ] = 0.0
 
-            # If turning to one side, remove adhesion to fore and hind leg
-            # if action[0]>action[1]:
-            #     adhesion_signal[4] = 0.0
-            #     adhesion_signal[5] = 0.0
-            # elif action[1]>action[0]:
-            #     adhesion_signal[1] = 0.0
-            #     adhesion_signal[2] = 0.0
+            # If turning to one side, remove adhesion to fore and hind leg on that side
+            if abs(action[0]-action[1]) > self.eps_turn:
+                idx_off = [3*np.argmin(action),3*np.argmin(action)+2]
+                print(action, idx_off)
+                adhesion_signal[idx_off] = 0.0
+
 
         else:
             adhesion_signal = np.zeros(6)
@@ -122,6 +139,7 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         return joints_action
     
     def increment_leg_retraction_rule(self, ee_z_pos):
+        active = 0
         # Detect legs in hole, keep only the deepest
         legs_in_hole = ee_z_pos < self.floor_height
         legs_in_hole = np.logical_and(legs_in_hole, ee_z_pos == np.min(ee_z_pos))
@@ -129,19 +147,25 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         for k, tarsal_seg in enumerate(self.last_tarsalseg_names):
             if legs_in_hole[k]:
                 self.legs_in_hole_increment[k] += self.increase_rate
+                active += 1
             else:
                 if self.legs_in_hole_increment[k] > 0:
                     self.legs_in_hole_increment[k] -= self.decrease_rate
 
+        if active>0:
+            self.leg_retract_active = True
+        else:
+            self.leg_retract_active = False
+
         return (self.raise_leg.T * self.legs_in_hole_increment).sum(axis=1)
     
     def increment_stumble_rule(self, tarsus1_contacts):
+        active = 0
         # Compute forces
         tarsus1T_contact_force = np.mean(
             np.abs(tarsus1_contacts),
             axis=(0, -1),
         )
-
         # Keep the highest force
         highest_proximal_contact_leg = np.logical_and(
             tarsus1T_contact_force > self.force_threshold,
@@ -151,9 +175,15 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         for k, tarsal_seg in enumerate(self.last_tarsalseg_names):
             if highest_proximal_contact_leg[k] and not self.legs_in_hole[k]:
                 self.legs_w_proximalcontact_increment[k] += self.increase_rate
+                active += 1
             else:
                 if self.legs_w_proximalcontact_increment[k] > 0:
                     self.legs_w_proximalcontact_increment[k] -= self.decrease_rate
+        
+        if active>0:
+            self.stumble_active = True
+        else:
+            self.stumble_active = False
 
         return (self.raise_leg.T * self.legs_w_proximalcontact_increment).sum(axis=1)
         
@@ -218,7 +248,11 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
             if "groundblock" in name:
                 block_height = geom.pos[2] + geom.size[2]
                 floor_height = min(floor_height, block_height)
-        floor_height -= 0.05  # account for small penetrations of the floor
+        # Deal with case of flat terrain
+        if floor_height == np.inf:
+            floor_height = 0
+        # Adjustment to account for small penetrations of the floor
+        floor_height -= 0.05
 
         self.floor_height = floor_height
     
