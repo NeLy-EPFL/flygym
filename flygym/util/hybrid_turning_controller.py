@@ -90,6 +90,14 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
                 ]
             ] = 0.0
 
+            # If turning to one side, remove adhesion to fore and hind leg
+            # if action[0]>action[1]:
+            #     adhesion_signal[4] = 0.0
+            #     adhesion_signal[5] = 0.0
+            # elif action[1]>action[0]:
+            #     adhesion_signal[1] = 0.0
+            #     adhesion_signal[2] = 0.0
+
         else:
             adhesion_signal = np.zeros(6)
 
