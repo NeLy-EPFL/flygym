@@ -187,20 +187,8 @@ class CPG:
         # CPG parameters
         self.frequencies = 7 * np.ones(n_oscillators)
         self.base_freq = 7 * np.ones(n_oscillators)
-        self.phase_biases = (
-            2
-            * np.pi
-            * np.array(
-                [
-                    [0, 0.5, 0, 0.5, 0, 0.5],
-                    [0.5, 0, 0.5, 0, 0.5, 0],
-                    [0, 0.5, 0, 0.5, 0, 0.5],
-                    [0.5, 0, 0.5, 0, 0.5, 0],
-                    [0, 0.5, 0, 0.5, 0, 0.5],
-                    [0.5, 0, 0.5, 0, 0.5, 0],
-                ]
-            )
-        )
+        self.phase_biases = 2 * np.pi * phase_biases_tripod_idealized
+
         self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
         self.rates = 20.0 * np.ones(n_oscillators)
         self.turn_mode = turn_mode
