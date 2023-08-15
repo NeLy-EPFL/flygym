@@ -457,8 +457,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
-        for actuator in self.actuators:
-            actuator.kp = self.sim_params.actuator_kp
+        self._set_actuators_gain()
+        self._set_geoms_friction()
+        self._set_joints_stiffness_and_damping()
+        self._set_compliant_tarsus()
 
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
@@ -513,25 +515,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 for adhesion_actuator in self.adhesion_actuators
             ]
         )
-        for geom in [geom.name for geom in self.arena_root.find_all("geom")]:
-            if "collision" in geom:
-                self.physics.model.geom(
-                    f"Animat/{geom}"
-                ).friction = self.sim_params.friction
-        for joint in self.actuated_joints:
-            if joint is not None:
-                self.physics.model.joint(
-                    f"Animat/{joint}"
-                ).stiffness = self.sim_params.joint_stiffness
-                self.physics.model.joint(
-                    f"Animat/{joint}"
-                ).damping = self.sim_params.joint_damping
 
         # Set gravity
         self.set_gravity(self.sim_params.gravity)
 
-        # Make tarsi compliant and apply initial pose. MUST BE IN THIS ORDER!
-        self._set_compliant_tarsus()
+        # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
         self._set_init_pose(self.init_pose)
 
         # Set up a few things for rendering
@@ -783,6 +771,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
         }
         return action_space, observation_space
 
+    def _set_actuators_gain(self):
+        for actuator in self.actuators:
+            actuator.kp = self.sim_params.actuator_kp
+
+    def _set_geoms_friction(self):
+        for geom in self.model.find_all("geom"):
+            if "collision" in geom.name:
+                geom.friction = self.sim_params.friction
+
+    def _set_joints_stiffness_and_damping(self):
+        for joint in self.model.find_all("joint"):
+            if joint.name in self.actuated_joints:
+                joint.stiffness = self.sim_params.joint_stiffness
+                joint.damping = self.sim_params.joint_damping
+
     def _define_self_contacts(self, self_collisions_geoms):
         self_contact_pairs = []
         self_contact_pairs_names = []
@@ -1017,11 +1020,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         for side in "LR":
             for pos in "FMH":
                 for tarsus_link in range(2, 5 + 1):
-                    joint = f"joint_{side}{pos}Tarsus{tarsus_link}"
-                    self.physics.model.joint(f"Animat/{joint}").stiffness = stiffness
-                    self.physics.model.joint(f"Animat/{joint}").damping = damping
-
-        self.physics.reset()
+                    joint = self.model.find(
+                        "joint", f"joint_{side}{pos}Tarsus{tarsus_link}"
+                    )
+                    joint.stiffness = stiffness
+                    joint.damping = damping
 
     def set_gravity(self, gravity: List[float], rot_mat: np.ndarray = None):
         """Set the gravity of the environment.
