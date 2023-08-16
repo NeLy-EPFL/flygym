@@ -299,7 +299,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         arena : BaseWorld, optional
             The arena in which the robot is placed. ``FlatTerrain`` will be
             used if not specified.
-        spawn_pos : Tuple[froot_elementloat, float, float], optional
+        spawn_pos : Tuple[float, float, float], optional
             The (x, y, z) position in the arena defining where the fly will
             be spawn, by default (0., 0., 300.).
         spawn_orient : Tuple[float, float, float, float], optional
