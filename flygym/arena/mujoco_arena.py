@@ -207,8 +207,8 @@ class BlocksTerrain(BaseArena):
                     "geom",
                     type="box",
                     size=(
-                        block_size / 2 + 0.05 * block_size / 2,
-                        block_size / 2 + 0.05 * block_size / 2,
+                        block_size / 2 + 0.1 * block_size / 2,
+                        block_size / 2 + 0.1 * block_size / 2,
                         height / 2 + block_size,
                     ),
                     pos=(x_pos, y_pos, height / 2 - block_size),
@@ -263,6 +263,8 @@ class MixedTerrain(BaseArena):
         y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
 
+        self.height_expected_value = np.mean([*height_range])
+
         # Extruding blocks near origin
         for x_range in [(-2, 2), (6, 8), (12, 14)]:
             x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
@@ -281,11 +283,15 @@ class MixedTerrain(BaseArena):
                         "geom",
                         type="box",
                         size=(
-                            block_size / 2 + 0.05 * block_size / 2,
-                            block_size / 2 + 0.05 * block_size / 2,
+                            block_size / 2 + 0.1 * block_size / 2,
+                            block_size / 2 + 0.1 * block_size / 2,
                             height / 2 + block_size / 2,
                         ),
-                        pos=(x_pos, y_pos, height / 2 - 0.05 - block_size / 2),
+                        pos=(
+                            x_pos,
+                            y_pos,
+                            height / 2 - block_size / 2 - self.height_expected_value,
+                        ),
                         rgba=(0.3, 0.3, 0.3, 0.8),
                         friction=friction,
                     )
@@ -336,7 +342,7 @@ class MixedTerrain(BaseArena):
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 0.1])
+        adj_pos = rel_pos + np.array([0, 0, self.height_expected_value])
         return adj_pos, rel_angle
 
 
