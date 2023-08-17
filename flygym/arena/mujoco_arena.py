@@ -209,9 +209,13 @@ class BlocksTerrain(BaseArena):
                     size=(
                         block_size / 2 + 0.1 * block_size / 2,
                         block_size / 2 + 0.1 * block_size / 2,
-                        height / 2 + block_size,
+                        height / 2 + block_size / 2,
                     ),
-                    pos=(x_pos, y_pos, height / 2 - block_size),
+                    pos=(
+                        x_pos,
+                        y_pos,
+                        height / 2 - block_size / 2,
+                    ),
                     rgba=(0.3, 0.3, 0.3, 0.8),
                     friction=friction,
                 )
@@ -290,9 +294,12 @@ class MixedTerrain(BaseArena):
                         pos=(
                             x_pos,
                             y_pos,
-                            height / 2 - block_size / 2 - self.height_expected_value,
+                            height / 2
+                            - block_size / 2
+                            - self.height_expected_value
+                            - 0.1,
                         ),
-                        rgba=(0.3, 0.3, 0.3, 0.8),
+                        rgba=(0.3, 0.3, 0.3, 1.0),
                         friction=friction,
                     )
 
@@ -342,7 +349,7 @@ class MixedTerrain(BaseArena):
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, self.height_expected_value])
+        adj_pos = rel_pos + np.array([0, 0, -1 * self.height_expected_value])
         return adj_pos, rel_angle
 
 
