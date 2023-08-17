@@ -1444,7 +1444,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         next_render_time = (
             self._last_vision_update_time + self._eff_visual_render_interval
         )
-        if self.curr_time < next_render_time:
+        # avoid floating point errors: when too close, update anyway
+        if self.curr_time + 0.5 * self.timestep < next_render_time:
             self._vision_update_mask.append(False)
             return
         self._vision_update_mask.append(True)
