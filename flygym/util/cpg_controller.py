@@ -6,14 +6,14 @@ CPG_PERIOD = 2 * np.pi
 
 
 def plot_phase_amp_output(phases, amps, outs, labels=None, timestep=1):
-    time = timestep*np.arange(len(phases))
+    time = timestep * np.arange(len(phases))
     fig, axs = plt.subplots(3, 1, figsize=(10, 10))
-    axs[0].plot(time,phases, label=labels)
+    axs[0].plot(time, phases, label=labels)
     axs[0].set_ylabel("Phase")
-    axs[1].plot(time,amps, label=labels)
+    axs[1].plot(time, amps, label=labels)
     axs[1].set_ylabel("Amplitude")
     axs[1].legend(loc="lower right")
-    axs[2].plot(time,outs, label=labels)
+    axs[2].plot(time, outs, label=labels)
     axs[2].set_ylabel("Output")
     axs[2].legend(loc="lower right")
 
@@ -23,19 +23,22 @@ def plot_phase_amp_output(phases, amps, outs, labels=None, timestep=1):
         axs[2].legend(loc="lower right")
     plt.tight_layout()
 
-def plot_phase_amp_output_rules(phases, amps, outs, rules, labels=None, rule_labels=None, timestep=1):
-    time = timestep*np.arange(len(phases))
+
+def plot_phase_amp_output_rules(
+    phases, amps, outs, rules, labels=None, rule_labels=None, timestep=1
+):
+    time = timestep * np.arange(len(phases))
     fig, axs = plt.subplots(4, 1, figsize=(12, 10))
-    axs[0].plot(time,phases, label=labels)
+    axs[0].plot(time, phases, label=labels)
     axs[0].set_ylabel("Phase")
-    axs[1].plot(time,amps, label=labels)
+    axs[1].plot(time, amps, label=labels)
     axs[1].set_ylabel("Amplitude")
     axs[1].legend(loc="lower right")
-    axs[2].plot(time,outs, label=labels)
+    axs[2].plot(time, outs, label=labels)
     axs[2].set_ylabel("Output")
     axs[2].legend(loc="lower right")
-    for i,rule in enumerate(rules):
-        axs[3].plot(time,rule, label=rule_labels[i])
+    for i, rule in enumerate(rules):
+        axs[3].plot(time, rule, label=rule_labels[i])
     axs[3].set_ylabel("Rule active")
     axs[3].legend(loc="lower right")
 
@@ -46,7 +49,6 @@ def plot_phase_amp_output_rules(phases, amps, outs, rules, labels=None, rule_lab
     if rule_labels:
         axs[3].legend(loc="lower right")
     plt.tight_layout()
-
 
 
 def advancement_transfer(phases, step_dur, match_leg_to_joints):
@@ -170,6 +172,7 @@ phase_biases_ltetrapod_idealized = np.array(
     ]
 )
 
+
 class CPG:
     """Central Pattern Generator.
 
@@ -200,7 +203,7 @@ class CPG:
     n_oscillators : int
         Number of individual oscillators, by default 6.
     turn_mode : string
-        Describes what quantities are influenced by the turn modulation. 
+        Describes what quantities are influenced by the turn modulation.
         Can be "amp" (only amplitudes - default), "freq" (only frequencies), or "both".
     """
 
@@ -228,7 +231,9 @@ class CPG:
 
         # Modulate frequencies
         if self.turn_mode == "freq" or self.turn_mode == "both":
-            self.frequencies = np.repeat((turn_modulation + np.array([1, 1])), 3) * self.base_freq
+            self.frequencies = (
+                np.repeat((turn_modulation + np.array([1, 1])), 3) * self.base_freq
+            )
         else:
             self.frequencies = self.base_freq
 
