@@ -19,17 +19,18 @@ import cv2
 
 class NMFHybridTurning(NeuroMechFlyMuJoCo):
     """A wrapper for the NMF class controller with a CPG-rule-based hybrid controller.
-    
+
     Parameters
     ----------
     n_stabilisation_steps :
         Initial number of CPG steps to run before applying its output to the simulation, for stabilization.
-    turn_mode : 
+    turn_mode :
         CPG parameters modulated by the action. Can be "amp", "freq" or "both".
     epsilon_turn :
-        Minimum difference between the action terms to consider it a turning behaviour and disable 
-        corresponding leg adhesion.  
+        Minimum difference between the action terms to consider it a turning behaviour and disable
+        corresponding leg adhesion.
     """
+
     def __init__(
         self,
         n_stabilisation_steps: int = 5000,
@@ -45,7 +46,7 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,))
 
         self.eps_turn = epsilon_turn
-        
+
         # CPG initialization
         self.cpg = CPG(timestep=self.timestep, turn_mode=turn_mode)
         """self.n_stabilisation_steps = n_stabilisation_steps
@@ -110,22 +111,18 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
                 ] = 0.0
 
             # If turning to one side, remove adhesion to fore and hind leg on that side
-            if abs(action[0]-action[1]) > self.eps_turn:
-                idx_off = [3*np.argmin(action),3*np.argmin(action)+2]
+            if abs(action[0] - action[1]) > self.eps_turn:
+                idx_off = [3 * np.argmin(action), 3 * np.argmin(action) + 2]
                 print(action, idx_off)
                 adhesion_signal[idx_off] = 0.0
-
 
         else:
             adhesion_signal = np.zeros(6)
 
-        self.timer +=1
+        self.timer += 1
 
         # Step simulation and get observation after it
-        return super().step({
-            "joints": joints_action, 
-            "adhesion": adhesion_signal
-        })
+        return super().step({"joints": joints_action, "adhesion": adhesion_signal})
 
     def compute_joints_cpg(self, action):
         """Turn NN output into joint position."""
@@ -133,13 +130,13 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         indices = self._cpg_state_to_joint_state()
 
         joints_action = self.step_data[self.joint_ids, 0]
-        
-        joints_action += ( self.step_data[self.joint_ids, indices]
-                        - self.step_data[self.joint_ids, 0] 
-                        ) * self.cpg.amplitude[self.match_leg_to_joints]
+
+        joints_action += (
+            self.step_data[self.joint_ids, indices] - self.step_data[self.joint_ids, 0]
+        ) * self.cpg.amplitude[self.match_leg_to_joints]
 
         return joints_action
-    
+
     def increment_leg_retraction_rule(self, ee_z_pos):
         active = 0
         # Detect legs in hole, keep only the deepest
@@ -154,13 +151,13 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
                 if self.legs_in_hole_increment[k] > 0:
                     self.legs_in_hole_increment[k] -= self.decrease_rate
 
-        if active>0:
+        if active > 0:
             self.leg_retract_active = True
         else:
             self.leg_retract_active = False
 
         return (self.raise_leg.T * self.legs_in_hole_increment).sum(axis=1)
-    
+
     def increment_stumble_rule(self, tarsus1_contacts):
         active = 0
         # Compute forces
@@ -181,14 +178,14 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
             else:
                 if self.legs_w_proximalcontact_increment[k] > 0:
                     self.legs_w_proximalcontact_increment[k] -= self.decrease_rate
-        
-        if active>0:
+
+        if active > 0:
             self.stumble_active = True
         else:
             self.stumble_active = False
 
         return (self.raise_leg.T * self.legs_w_proximalcontact_increment).sum(axis=1)
-        
+
     def _load_preprogrammed_stepping(self):
         legs = ["LF", "LM", "LH", "RF", "RM", "RH"]
         n_joints = len(self.actuated_joints)
@@ -222,7 +219,6 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
 
         self.step_data = step_data_block_base.copy()
 
-
     def _cpg_state_to_joint_state(self):
         """From phase define what is the corresponding timepoint in the joint dataset
         In the case of the oscillator, the period is 2pi and the step duration is the period of the step
@@ -237,7 +233,7 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         ).astype(int)
         t_indices = t_indices[self.match_leg_to_joints]
         return t_indices
-    
+
     def _reset_leg_retraction_state(self):
         self.legs_in_hole = [False] * 6
         self.legs_in_hole_increment = np.zeros(6)
@@ -257,7 +253,7 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         floor_height -= 0.05
 
         self.floor_height = floor_height
-    
+
     def _reset_stumble_state(self):
         # Sensors to detect leg with "unatural" (other than tarsus 4 or 5) contacts
         self.leg_tarsus1T_contactsensors = [
@@ -310,5 +306,5 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
             elif "H" in leg:
                 raise_leg[i, joints_in_leg[i][joint_name_to_id["Femur"]]] = -0.01
                 raise_leg[i, joints_in_leg[i][joint_name_to_id["Tibia"]]] = +0.005
-        
+
         self.raise_leg = raise_leg
