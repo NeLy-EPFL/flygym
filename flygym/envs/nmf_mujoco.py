@@ -136,7 +136,7 @@ class MuJoCoParameters:
     joint_damping: float = 0.06
     actuator_kp: float = 18.0
     tarsus_stiffness: float = 2.2
-    tarsus_damping: float = 0.126
+    tarsus_damping: float = 0.05
     friction: float = (1.0, 0.005, 0.0001)
     gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
     contact_solref: Tuple[float, float] = (2e-4, 1e3)
