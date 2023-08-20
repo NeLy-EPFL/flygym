@@ -98,8 +98,8 @@ class GappedTerrain(BaseArena):
         x_range: Tuple[float, float] = (-10, 20),
         y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.2,
-        block_width: float = 1,
+        gap_width: float = 0.3,
+        block_width: float = 1.0,
         gap_depth: float = 2,
     ) -> None:
         self.x_range = x_range
@@ -178,8 +178,8 @@ class BlocksTerrain(BaseArena):
         x_range: Tuple[float, float] = (-10, 20),
         y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        block_size: float = 1,
-        height_range: Tuple[float, float] = (0.3, 0.3),
+        block_size: float = 1.3,
+        height_range: Tuple[float, float] = (0.45, 0.45),
         rand_seed: int = 0,
     ):
         self.x_range = x_range
@@ -255,11 +255,11 @@ class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.2,
-        block_width: float = 1,
+        gap_width: float = 0.3,
+        block_width: float = 1.0,
         gap_depth: float = 2,
-        block_size: float = 1,
-        height_range: Tuple[float, float] = (0.3, 0.3),
+        block_size: float = 1.3,
+        height_range: Tuple[float, float] = (0.45, 0.45),
         rand_seed: int = 0,
     ):
         self.root_element = mjcf.RootElement()
