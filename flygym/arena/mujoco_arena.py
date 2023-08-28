@@ -30,6 +30,7 @@ class FlatTerrain(BaseArena):
         self,
         size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        ground_alpha: float = 0.8,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -48,7 +49,7 @@ class FlatTerrain(BaseArena):
             texture=chequered,
             texrepeat=(10, 10),
             reflectance=0.1,
-            rgba=(1.0, 1.0, 1.0, 0.8),
+            rgba=(1.0, 1.0, 1.0, ground_alpha),
         )
         self.root_element.worldbody.add(
             "geom",
@@ -101,6 +102,7 @@ class GappedTerrain(BaseArena):
         gap_width: float = 0.3,
         block_width: float = 1.0,
         gap_depth: float = 2,
+        ground_alpha: float = 0.8,
     ) -> None:
         self.x_range = x_range
         self.y_range = y_range
@@ -122,7 +124,7 @@ class GappedTerrain(BaseArena):
                 size=box_size,
                 pos=(x_pos, 0, 0),
                 friction=friction,
-                rgba=(0.3, 0.3, 0.3, 0.8),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
             )
 
         # add floor underneath
@@ -132,7 +134,7 @@ class GappedTerrain(BaseArena):
             type="plane",
             name="ground",
             pos=(np.mean(x_range), 0, -gap_depth / 2),
-            rgba=(0.3, 0.3, 0.3, 0.8),
+            rgba=(0.3, 0.3, 0.3, ground_alpha),
             size=ground_size,
         )
 
@@ -180,6 +182,7 @@ class BlocksTerrain(BaseArena):
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         block_size: float = 1.3,
         height_range: Tuple[float, float] = (0.45, 0.45),
+        ground_alpha: float = 0.8,
         rand_seed: int = 0,
     ):
         self.x_range = x_range
@@ -216,7 +219,7 @@ class BlocksTerrain(BaseArena):
                         y_pos,
                         height / 2 - block_size / 2,
                     ),
-                    rgba=(0.3, 0.3, 0.3, 0.8),
+                    rgba=(0.3, 0.3, 0.3, ground_alpha),
                     friction=friction,
                 )
 
@@ -260,6 +263,7 @@ class MixedTerrain(BaseArena):
         gap_depth: float = 2,
         block_size: float = 1.3,
         height_range: Tuple[float, float] = (0.45, 0.45),
+        ground_alpha: float = 0.8,
         rand_seed: int = 0,
     ):
         self.root_element = mjcf.RootElement()
@@ -299,7 +303,7 @@ class MixedTerrain(BaseArena):
                             - self.height_expected_value
                             - 0.1,
                         ),
-                        rgba=(0.3, 0.3, 0.3, 1.0),
+                        rgba=(0.3, 0.3, 0.3, ground_alpha),
                         friction=friction,
                     )
 
@@ -316,7 +320,7 @@ class MixedTerrain(BaseArena):
                     size=box_size,
                     pos=(x_pos, 0, -gap_depth / 2),
                     friction=friction,
-                    rgba=(0.3, 0.3, 0.3, 0.8),
+                    rgba=(0.3, 0.3, 0.3, ground_alpha),
                 )
 
             # add floor underneath
@@ -326,7 +330,7 @@ class MixedTerrain(BaseArena):
                 type="plane",
                 name=f"ground_{x_range[0]}",
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
-                rgba=(0.3, 0.3, 0.3, 0.8),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
                 size=ground_size,
             )
 
@@ -343,7 +347,7 @@ class MixedTerrain(BaseArena):
                 size=(2 / 2, 20 / 2, block_size / 2),
                 pos=(np.mean(x_range), 0, -block_size / 2),
                 friction=friction,
-                rgba=(0.3, 0.3, 0.3, 0.8),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
             )
 
     def get_spawn_position(
