@@ -18,7 +18,11 @@ num_pixels_per_ommatidia = np.unique(ommatidia_id_map, return_counts=True)[1][1:
 
 
 @nb.njit(parallel=True)
-def raw_image_to_hex_pxls(raw_img, num_pixels_per_ommatidia, ommatidia_id_map):
+def raw_image_to_hex_pxls(
+    raw_img,
+    num_pixels_per_ommatidia=num_pixels_per_ommatidia,
+    ommatidia_id_map=ommatidia_id_map,
+):
     """Given a raw image from an eye (one camera), simulate what the fly
     would see.
 
@@ -55,7 +59,7 @@ def raw_image_to_hex_pxls(raw_img, num_pixels_per_ommatidia, ommatidia_id_map):
 
 
 @nb.njit(parallel=True)
-def hex_pxls_to_human_readable(ommatidia_reading, ommatidia_id_map):
+def hex_pxls_to_human_readable(ommatidia_reading, ommatidia_id_map=ommatidia_id_map):
     """Given the intensity readings for all ommatidia in one eye, convert
     them to an (H, W) image with hexagonal blocks that can be visualized as
     a human-readable image.
