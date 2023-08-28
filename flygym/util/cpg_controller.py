@@ -222,36 +222,42 @@ class CPG:
         self.rates = 10.0 * np.ones(n_oscillators)
 
     def step(self, turn_modulation=[0, 0]):
-
         # Reset the frequencies to the base frequency
-        self.frequencies = np.repeat(np.array([1, 1]), 3)*self.base_freq
-        
+        self.frequencies = np.repeat(np.array([1, 1]), 3) * self.base_freq
+
         # Turns with higher modulation than 0.2 amplitude shift only would not look good
         intense_turn = np.where(np.array(turn_modulation) > 0.2)[0]
         if intense_turn.size > 0 and intense_turn.size < 2:
             # If the fly is trying to turn sharp reverse the phase in the opposite side and keep the difference in amplitude
             side = intense_turn[0]
             opp_side = 0 if side == 1 else 1
-            # on the opposite side reverse the phase
-            legs_to_switch = np.arange(3*opp_side, 3*(opp_side+1))
-            self.frequencies[legs_to_switch] = -1*self.base_freq[legs_to_switch]
+            # on the opposite side reverse the phase
+            legs_to_switch = np.arange(3 * opp_side, 3 * (opp_side + 1))
+            self.frequencies[legs_to_switch] = -1 * self.base_freq[legs_to_switch]
             # keep the difference in amplitudes times 0.6 (so that at worst we get a trun modulation of [-0.4, 0.2])
-            intense_turn_mag = np.abs(np.diff(turn_modulation)[0]*0.5)
+            intense_turn_mag = np.abs(np.diff(turn_modulation)[0] * 0.5)
             turn_modulation = np.array([0.2, 0.2])
-            turn_modulation[opp_side] -= intense_turn_mag 
-            
+            turn_modulation[opp_side] -= intense_turn_mag
+
             if np.random.rand() < 0.001 and False:
-                print("intense turn ", side, "\n turn modulation ",
-                    turn_modulation, "\n freq: ",
-                    self.frequencies, "\n mag: ", intense_turn_mag)
+                print(
+                    "intense turn ",
+                    side,
+                    "\n turn modulation ",
+                    turn_modulation,
+                    "\n freq: ",
+                    self.frequencies,
+                    "\n mag: ",
+                    intense_turn_mag,
+                )
 
         elif intense_turn.size > 1:
             # if both amplitudes would be scaled by more than 0.2, scale both by 0.2
             turn_modulation = np.array([0.2, 0.2])
-        
+
         # Modulate amplitudes
         self.targ_ampl = np.repeat(turn_modulation + np.array([1, 1]), 3)
-        
+
         # Integration step
         self.phase, self.amplitude = self.euler_int(
             self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
@@ -290,7 +296,7 @@ class CPG:
         # Here we compute the derivative of the phases given by the equations defined previously.
         # We are using for that matrix operations to speed up the computation
         dphases = freq_contribution + coupling_contribution
-        #dphases = np.clip(dphases, 0, None)
+        # dphases = np.clip(dphases, 0, None)
 
         damplitudes = np.multiply(self.rates, targ_ampl - amplitudes)
         # print("targ_ampl ", targ_ampl, " ", damplitudes)
