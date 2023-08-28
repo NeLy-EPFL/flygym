@@ -3,7 +3,7 @@ import numpy as np
 ######## Initialisation ########
 
 
-def define_swing_stance_starts(
+"""def define_swing_stance_starts(
     nmf, data_block, use_adhesion=False, n_steps_stabil=1000
 ):
     leg_stepping_order = ["LF", "RF", "LH", "RH", "LM", "RM"]
@@ -137,18 +137,19 @@ def define_swing_stance_starts(
             leg_stance_starts[leg] = 0
 
     return leg_swing_starts, leg_stance_starts, position_data, touch_sensor_data
-
-
+"""
 ######## Running variables ########
 
 
-def update_stepping_advancement(stepping_advancement, legs, interp_step_duration):
+def update_stepping_advancement(
+    stepping_advancement, legs, interp_step_duration, increment=1
+):
     # Advance the stepping advancement of each leg that are stepping, reset the advancement of the legs that are done stepping
     for k, leg in enumerate(legs):
         if stepping_advancement[k] >= interp_step_duration - 1:
             stepping_advancement[k] = 0
         elif stepping_advancement[k] > 0:
-            stepping_advancement[k] += 1
+            stepping_advancement[k] += increment
     return stepping_advancement
 
 

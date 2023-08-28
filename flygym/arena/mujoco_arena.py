@@ -98,8 +98,8 @@ class GappedTerrain(BaseArena):
         x_range: Tuple[float, float] = (-10, 20),
         y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.2,
-        block_width: float = 1,
+        gap_width: float = 0.3,
+        block_width: float = 1.0,
         gap_depth: float = 2,
     ) -> None:
         self.x_range = x_range
@@ -178,8 +178,8 @@ class BlocksTerrain(BaseArena):
         x_range: Tuple[float, float] = (-10, 20),
         y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        block_size: float = 1,
-        height_range: Tuple[float, float] = (0.3, 0.3),
+        block_size: float = 1.3,
+        height_range: Tuple[float, float] = (0.45, 0.45),
         rand_seed: int = 0,
     ):
         self.x_range = x_range
@@ -207,11 +207,15 @@ class BlocksTerrain(BaseArena):
                     "geom",
                     type="box",
                     size=(
-                        block_size / 2 + 0.05 * block_size / 2,
-                        block_size / 2 + 0.05 * block_size / 2,
-                        height / 2 + block_size,
+                        block_size / 2 + 0.1 * block_size / 2,
+                        block_size / 2 + 0.1 * block_size / 2,
+                        height / 2 + block_size / 2,
                     ),
-                    pos=(x_pos, y_pos, height / 2 - block_size),
+                    pos=(
+                        x_pos,
+                        y_pos,
+                        height / 2 - block_size / 2,
+                    ),
                     rgba=(0.3, 0.3, 0.3, 0.8),
                     friction=friction,
                 )
@@ -251,17 +255,19 @@ class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.2,
-        block_width: float = 1,
+        gap_width: float = 0.3,
+        block_width: float = 1.0,
         gap_depth: float = 2,
-        block_size: float = 1,
-        height_range: Tuple[float, float] = (0.3, 0.3),
+        block_size: float = 1.3,
+        height_range: Tuple[float, float] = (0.45, 0.45),
         rand_seed: int = 0,
     ):
         self.root_element = mjcf.RootElement()
         self.friction = friction
         y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
+
+        self.height_expected_value = np.mean([*height_range])
 
         # Extruding blocks near origin
         for x_range in [(-2, 2), (6, 8), (12, 14)]:
@@ -281,12 +287,19 @@ class MixedTerrain(BaseArena):
                         "geom",
                         type="box",
                         size=(
-                            block_size / 2 + 0.05 * block_size / 2,
-                            block_size / 2 + 0.05 * block_size / 2,
+                            block_size / 2 + 0.1 * block_size / 2,
+                            block_size / 2 + 0.1 * block_size / 2,
                             height / 2 + block_size / 2,
                         ),
-                        pos=(x_pos, y_pos, height / 2 - 0.05 - block_size / 2),
-                        rgba=(0.3, 0.3, 0.3, 0.8),
+                        pos=(
+                            x_pos,
+                            y_pos,
+                            height / 2
+                            - block_size / 2
+                            - self.height_expected_value
+                            - 0.1,
+                        ),
+                        rgba=(0.3, 0.3, 0.3, 1.0),
                         friction=friction,
                     )
 
@@ -336,7 +349,7 @@ class MixedTerrain(BaseArena):
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        adj_pos = rel_pos + np.array([0, 0, 0.1])
+        adj_pos = rel_pos + np.array([0, 0, -1 * self.height_expected_value])
         return adj_pos, rel_angle
 
 

@@ -5,14 +5,15 @@ import matplotlib.pyplot as plt
 CPG_PERIOD = 2 * np.pi
 
 
-def plot_phase_amp_output(phases, amps, outs, labels=None):
+def plot_phase_amp_output(phases, amps, outs, labels=None, timestep=1):
+    time = timestep * np.arange(len(phases))
     fig, axs = plt.subplots(3, 1, figsize=(10, 10))
-    axs[0].plot(phases, label=labels)
+    axs[0].plot(time, phases, label=labels)
     axs[0].set_ylabel("Phase")
-    axs[1].plot(amps, label=labels)
+    axs[1].plot(time, amps, label=labels)
     axs[1].set_ylabel("Amplitude")
     axs[1].legend(loc="lower right")
-    axs[2].plot(outs, label=labels)
+    axs[2].plot(time, outs, label=labels)
     axs[2].set_ylabel("Output")
     axs[2].legend(loc="lower right")
 
@@ -20,6 +21,33 @@ def plot_phase_amp_output(phases, amps, outs, labels=None):
         axs[0].legend(loc="lower right")
         axs[1].legend(loc="lower right")
         axs[2].legend(loc="lower right")
+    plt.tight_layout()
+
+
+def plot_phase_amp_output_rules(
+    phases, amps, outs, rules, labels=None, rule_labels=None, timestep=1
+):
+    time = timestep * np.arange(len(phases))
+    fig, axs = plt.subplots(4, 1, figsize=(12, 10))
+    axs[0].plot(time, phases, label=labels)
+    axs[0].set_ylabel("Phase")
+    axs[1].plot(time, amps, label=labels)
+    axs[1].set_ylabel("Amplitude")
+    axs[1].legend(loc="lower right")
+    axs[2].plot(time, outs, label=labels)
+    axs[2].set_ylabel("Output")
+    axs[2].legend(loc="lower right")
+    for i, rule in enumerate(rules):
+        axs[3].plot(time, rule, label=rule_labels[i])
+    axs[3].set_ylabel("Rule active")
+    axs[3].legend(loc="lower right")
+
+    if labels:
+        axs[0].legend(loc="lower right")
+        axs[1].legend(loc="lower right")
+        axs[2].legend(loc="lower right")
+    if rule_labels:
+        axs[3].legend(loc="lower right")
     plt.tight_layout()
 
 
@@ -143,3 +171,138 @@ phase_biases_ltetrapod_idealized = np.array(
         [1 / 3, 0, -1 / 3, -1 / 3, 1 / 3, 0],
     ]
 )
+
+
+class CPG:
+    """Central Pattern Generator.
+
+    Attributes
+    ----------
+    phase : np.ndarray
+        Current phase of each oscillator, of size (n_oscillators,).
+    amplitude : np.ndarray
+        Current amplitude of each oscillator, of size (n_oscillators,).
+    frequencies : np.ndarray
+        Target frequency of each oscillator, of size (n_oscillators,).
+    phase_biases : np.ndarray
+        Phase bias matrix describing the target phase relations between the oscillators.
+        Dimensions (n_oscillators,n_oscillators), set to values generating a tripod gait.
+    coupling_weights : np.ndarray
+        Coupling weights matrix between oscillators enforcing phase relations.
+        Dimensions (n_oscillators,n_oscillators).
+    rates : np.ndarray
+        Convergence rates for the amplitudes.
+    targ_ampl : np.ndarray
+        Target amplitude for each oscillator, of size (n_oscillators,).
+        Default value of 1.0, modulated by input to the step function.
+
+    Parameters
+    ----------
+    timestep : float
+        Timestep duration for the integration.
+    n_oscillators : int
+        Number of individual oscillators, by default 6.
+    turn_mode : string
+        Describes what quantities are influenced by the turn modulation.
+        Can be "amp" (only amplitudes - default), "freq" (only frequencies), or "both".
+    """
+
+    def __init__(self, timestep, n_oscillators: int = 6):
+        self.n_oscillators = n_oscillators
+        # Random initializaton of oscillator states
+        self.phase = np.random.rand(n_oscillators)
+        self.amplitude = np.repeat(np.random.randint(1), n_oscillators)
+        self.timestep = timestep
+        # CPG parameters
+        self.frequencies = 12 * np.ones(n_oscillators)
+        self.base_freq = 12 * np.ones(n_oscillators)
+        self.phase_biases = 2 * np.pi * phase_biases_tripod_idealized
+
+        self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
+        self.rates = 10.0 * np.ones(n_oscillators)
+
+    def step(self, turn_modulation=[0, 0]):
+        # Reset the frequencies to the base frequency
+        self.frequencies = np.repeat(np.array([1, 1]), 3) * self.base_freq
+
+        # Turns with higher modulation than 0.2 amplitude shift only would not look good
+        intense_turn = np.where(np.array(turn_modulation) > 0.2)[0]
+        if intense_turn.size > 0 and intense_turn.size < 2:
+            # If the fly is trying to turn sharp reverse the phase in the opposite side and keep the difference in amplitude
+            side = intense_turn[0]
+            opp_side = 0 if side == 1 else 1
+            # on the opposite side reverse the phase
+            legs_to_switch = np.arange(3 * opp_side, 3 * (opp_side + 1))
+            self.frequencies[legs_to_switch] = -1 * self.base_freq[legs_to_switch]
+            # keep the difference in amplitudes times 0.6 (so that at worst we get a trun modulation of [-0.4, 0.2])
+            intense_turn_mag = np.abs(np.diff(turn_modulation)[0] * 0.5)
+            turn_modulation = np.array([0.2, 0.2])
+            turn_modulation[opp_side] -= intense_turn_mag
+
+            if np.random.rand() < 0.001 and False:
+                print(
+                    "intense turn ",
+                    side,
+                    "\n turn modulation ",
+                    turn_modulation,
+                    "\n freq: ",
+                    self.frequencies,
+                    "\n mag: ",
+                    intense_turn_mag,
+                )
+
+        elif intense_turn.size > 1:
+            # if both amplitudes would be scaled by more than 0.2, scale both by 0.2
+            turn_modulation = np.array([0.2, 0.2])
+
+        # Modulate amplitudes
+        self.targ_ampl = np.repeat(turn_modulation + np.array([1, 1]), 3)
+
+        # Integration step
+        self.phase, self.amplitude = self.euler_int(
+            self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
+        )
+
+    def euler_int(self, prev_phase, prev_ampl, targ_ampl, timestep):
+        dphas, dampl = self.phase_oscillator(prev_phase, prev_ampl, targ_ampl)
+        phase = (prev_phase + timestep * dphas) % (2 * np.pi)
+        ampl = prev_ampl + timestep * dampl
+        return phase, ampl
+
+    def phase_oscillator(self, phases, amplitudes, targ_ampl):
+        """Phase oscillator model used in Ijspeert et al. 2007"""
+        # NxN matrix with the phases of the oscillators
+        phase_matrix = np.tile(phases, (self.n_oscillators, 1))
+
+        # NxN matrix with the amplitudes of the oscillators
+        amp_matrix = np.tile(amplitudes, (self.n_oscillators, 1))
+
+        freq_contribution = 2 * np.pi * self.frequencies
+
+        #  scaling of the phase differences between oscillators by the amplitude of the oscillators and the coupling weights
+        scaling = np.multiply(amp_matrix, self.coupling_weights)
+
+        # phase matrix and transpose substraction are analogous to the phase differences between oscillators, those should be close to the phase biases
+        phase_shifts_contribution = np.sin(
+            phase_matrix - phase_matrix.T - self.phase_biases
+        )
+
+        # Here we compute the contribution of the phase biases to the derivative of the phases
+        # we mulitply two NxN matrices and then sum over the columns (all j oscillators contributions) to get a vector of size N
+        coupling_contribution = np.sum(
+            np.multiply(scaling, phase_shifts_contribution), axis=1
+        )
+
+        # Here we compute the derivative of the phases given by the equations defined previously.
+        # We are using for that matrix operations to speed up the computation
+        dphases = freq_contribution + coupling_contribution
+        # dphases = np.clip(dphases, 0, None)
+
+        damplitudes = np.multiply(self.rates, targ_ampl - amplitudes)
+        # print("targ_ampl ", targ_ampl, " ", damplitudes)
+
+        return dphases, damplitudes
+
+    def reset(self):
+        self.phase = np.random.rand(self.n_oscillators)
+        self.amplitude = np.random.rand(self.n_oscillators)
