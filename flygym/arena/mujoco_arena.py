@@ -274,7 +274,7 @@ class MixedTerrain(BaseArena):
         self.height_expected_value = np.mean([*height_range])
 
         # 3 repetitions, each consisting of a block part, 2 gaps, and a flat part
-        for x_range in [(-2, 6), (6, 14), (14, 22)]:
+        for x_range in [(-4, 5), (5, 14), (14, 23)]:
             # block part
             x_centers = np.arange(
                 x_range[0] + block_size / 2, x_range[0] + block_size * 3, block_size
