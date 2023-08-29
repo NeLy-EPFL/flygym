@@ -99,7 +99,7 @@ class GappedTerrain(BaseArena):
         x_range: Tuple[float, float] = (-10, 20),
         y_range: Tuple[float, float] = (-10, 10),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.3,
+        gap_width: float = 0.5,
         block_width: float = 1.0,
         gap_depth: float = 2,
         ground_alpha: float = 0.8,
@@ -258,7 +258,7 @@ class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.3,
+        gap_width: float = 0.5,
         block_width: float = 1.0,
         gap_depth: float = 2,
         block_size: float = 1.3,
@@ -273,9 +273,12 @@ class MixedTerrain(BaseArena):
 
         self.height_expected_value = np.mean([*height_range])
 
-        # Extruding blocks near origin
-        for x_range in [(-2, 2), (6, 8), (12, 14)]:
-            x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
+        # 3 repetitions, each consisting of a block part, 2 gaps, and a flat part
+        for x_range in [(-2, 6), (6, 14), (14, 22)]:
+            # block part
+            x_centers = np.arange(
+                x_range[0] + block_size / 2, x_range[0] + block_size * 3, block_size
+            )
             y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
             for i, x_pos in enumerate(x_centers):
                 for j, y_pos in enumerate(y_centers):
@@ -287,41 +290,60 @@ class MixedTerrain(BaseArena):
                     else:
                         height = 0.1 + rand_state.uniform(*height_range)
 
+                    box_size = (
+                        block_size / 2 + 0.1 * block_size / 2,
+                        block_size / 2 + 0.1 * block_size / 2,
+                        height / 2 + block_size / 2,
+                    )
+                    box_pos = (
+                        x_pos,
+                        y_pos,
+                        height / 2 - block_size / 2 - self.height_expected_value - 0.1,
+                    )
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
-                        size=(
-                            block_size / 2 + 0.1 * block_size / 2,
-                            block_size / 2 + 0.1 * block_size / 2,
-                            height / 2 + block_size / 2,
-                        ),
-                        pos=(
-                            x_pos,
-                            y_pos,
-                            height / 2
-                            - block_size / 2
-                            - self.height_expected_value
-                            - 0.1,
-                        ),
+                        size=box_size,
+                        pos=box_pos,
                         rgba=(0.3, 0.3, 0.3, ground_alpha),
                         friction=friction,
                     )
 
-        # Then gaps
-        for x_range in [(2, 4), (8, 10), (14, 16)]:
-            block_centers = np.arange(
-                x_range[0] + block_width / 2, x_range[1], block_width + gap_width
+            # gap part
+            curr_x_pos = x_range[0] + block_size * 3
+            arena_width = y_range[1] - y_range[0]
+            # first flat bit
+            self.root_element.worldbody.add(
+                "geom",
+                type="box",
+                size=(block_width / 4, arena_width / 2, gap_depth / 2),
+                pos=(curr_x_pos + block_width / 4, 0, -gap_depth / 2),
+                friction=friction,
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
             )
-            box_size = (block_width / 2, (y_range[1] - y_range[0]) / 2, gap_depth / 2)
-            for x_pos in block_centers:
-                self.root_element.worldbody.add(
-                    "geom",
-                    type="box",
-                    size=box_size,
-                    pos=(x_pos, 0, -gap_depth / 2),
-                    friction=friction,
-                    rgba=(0.3, 0.3, 0.3, ground_alpha),
-                )
+            # second flat bit
+            curr_x_pos += block_width / 2 + gap_width
+            self.root_element.worldbody.add(
+                "geom",
+                type="box",
+                size=(block_width / 2, arena_width / 2, gap_depth / 2),
+                pos=(curr_x_pos + block_width / 2, 0, -gap_depth / 2),
+                friction=friction,
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
+
+            # flat part
+            curr_x_pos += block_width + gap_width
+            remaining_space = x_range[1] - curr_x_pos
+            assert remaining_space > 0, "remaining space for flat part is negative"
+            self.root_element.worldbody.add(
+                "geom",
+                type="box",
+                size=(remaining_space / 2, arena_width / 2, gap_depth / 2),
+                pos=(curr_x_pos + remaining_space / 2, 0, -gap_depth / 2),
+                friction=friction,
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
 
             # add floor underneath
             ground_size = ((x_range[1] - x_range[0]) / 2, max(y_range), 1)
@@ -332,22 +354,6 @@ class MixedTerrain(BaseArena):
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
                 rgba=(0.3, 0.3, 0.3, ground_alpha),
                 size=ground_size,
-            )
-
-        # Finally, flat areas
-        for x_range in [
-            (-4, -2),
-            (4, 6),
-            (10, 12),
-            (10, 18),
-        ]:
-            self.root_element.worldbody.add(
-                "geom",
-                type="box",
-                size=(2 / 2, 20 / 2, block_size / 2),
-                pos=(np.mean(x_range), 0, -block_size / 2),
-                friction=friction,
-                rgba=(0.3, 0.3, 0.3, ground_alpha),
             )
 
     def get_spawn_position(
