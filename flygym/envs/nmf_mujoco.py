@@ -170,6 +170,7 @@ class MuJoCoParameters:
     draw_gravity: bool = False
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
+    add_ruler: bool = True
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -462,6 +463,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
+        print("Before")
+        if self.sim_params.add_ruler:
+            print("Adding ruler")
+            self._add_ruler()
+
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
         self.arena_root = arena.root_element
@@ -742,6 +748,73 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     geom.material = "head_material"
                 else:
                     geom.material = "body_material"
+
+    def _add_ruler(self):
+        pos, orient = self.arena.get_spawn_position(self.spawn_pos, self.spawn_orient)
+        pos = np.array(pos)
+        pos[1] -= 5.0
+
+        size = 100.0
+
+        ruler_path = "../flygym/data/background/white-ruler_1-8c.png"
+        gradient=False
+        try:
+            ruler_texture = self.arena.root_element.asset.add(
+                "texture",
+                name=f"ruler_texture",
+                type="cube",
+                rgb1=[1.0, 1.0, 1.0],
+                fileup=ruler_path,
+                filedown=ruler_path,
+                width=size,
+                height=size,
+            )
+        except FileNotFoundError:
+            print("Ruler image not found, use gradient instead")
+            ruler_texture = self.arena.root_element.asset.add(
+                "texture",
+                name=f"ruler_texture",
+                type="cube",
+                builtin="gradient",
+                rgb1=[0.0, 0.0, 0.0],
+                rgb2=[1.0, 1.0, 1.0],
+                width=size,
+                height=size,
+            )
+            gradient = True
+        ruler_material = self.arena.root_element.asset.add(
+            "material",
+            name="ruler_material",
+            texture="ruler_texture",
+        )
+
+        if gradient:
+            self.ruler = self.arena.root_element.worldbody.add(
+                "geom",
+                name="ruler",
+                type="box",
+                pos=pos,
+                size=[10.0, 1.0, 1.0],
+                mass=0.0,
+                contype=0,
+                conaffinity=0,
+                material="ruler_material",
+            )
+        else:
+            print("Add multi ruler")
+            pos[0] -= 5.0
+            for i in range(10):
+                self.ruler = self.arena.root_element.worldbody.add(
+                    "geom",
+                    name=f"ruler_{i}",
+                    type="box",
+                    pos=pos + np.array([i * 2.0, 0.0, 0.0]),
+                    size=[2.0, 1.0, 1.0],
+                    mass=0.0,
+                    contype=0,
+                    conaffinity=0,
+                    material="ruler_material",
+                )
 
     def _define_spaces(self, num_dofs, action_bound, num_contacts):
         action_space = {
