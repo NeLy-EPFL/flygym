@@ -410,7 +410,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 ]
             )
             self.adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
-            self.active_adhesion_rgba = [0.0, 1.0, 0.0, 0.8]
+            self.active_adhesion_rgba = [0.0, 0.0, 1.0, 0.8]
             self.base_rgba = [0.5, 0.5, 0.5, 1.0]
 
         if self.sim_params.draw_gravity:
