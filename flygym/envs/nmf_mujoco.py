@@ -280,6 +280,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
         camera_correction: bool = True,
+        detect_flip: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
 
@@ -338,6 +339,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.control = control
         self.init_pose = init_pose
         self.render_mode = sim_params.render_mode
+        self.detect_flip = detect_flip
         self.last_tarsalseg_names = [
             f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
         ]
@@ -544,6 +546,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 height=height,
             )
         self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+
+        # flip detection
+        self._flip_counter = 0
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -1155,7 +1160,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         return 0
 
-    def reset(self) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, seed=0) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
         Returns
@@ -1223,6 +1228,20 @@ class NeuroMechFlyMuJoCo(gym.Env):
         terminated = self.is_terminated()
         truncated = self.is_truncated()
         info = self.get_info()
+
+        if self.detect_flip:
+            if observation["contact_forces"].sum() < 1:
+                self._flip_counter += 1
+            else:
+                self._flip_counter = 0
+            if (
+                self.curr_time > config.flip_ignore_period
+                and self._flip_counter * self.timestep > config.flip_threshold
+            ):
+                info["flip"] = True
+            else:
+                info["flip"] = False
+
         return observation, reward, terminated, truncated, info
 
     def get_adhesion_vector(self):
