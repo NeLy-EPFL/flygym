@@ -70,7 +70,7 @@ class TurningController(NeuroMechFlyMuJoCo):
         amplitudes = []
         obs_list = []
         for i in range(self.n_stabilisation_steps):
-            self.cpg.step([-0.9, -0.9])
+            self.cpg.step([0.0, 0.0])
             joints_action = self.step_data[self.joint_ids, 0]
             adhesion_signal = np.zeros(6)
             obs, reward, terminated, truncated, info = super().step(
@@ -96,7 +96,7 @@ class TurningController(NeuroMechFlyMuJoCo):
         obs = self.get_observation()
 
         # Scaling of the action to go from [-1,1] -> [-0.5,0.5]
-        action = 0.5 * np.array(action)
+        #action = 0.5 * np.array(action)
 
         # Compute joint positions from NN output
         joints_action = self.compute_joints_cpg(action)
