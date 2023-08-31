@@ -194,3 +194,9 @@ sensor_positions = {
     "RAntenna_sensor": ("RFuniculus", (0.02, 0.00, -0.10), (0.08, 0.4, 0.9, 1)),
 }
 # fmt: on
+
+# Flip detection
+# in the first N seconds of the simulation, don't count flips
+flip_ignore_period = 0.1
+# if there's no contact for this amount of time, the fly has flipped
+flip_threshold = 0.05

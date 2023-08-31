@@ -1,23 +1,15 @@
-import PIL.Image
-
 import numpy as np
 import pkg_resources
 import pickle
-import matplotlib.pyplot as plt
+import logging
+from gymnasium import spaces
 from pathlib import Path
 from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from tqdm import trange
-from flygym.util.config import all_leg_dofs
-from flygym.state import stretched_pose
 
 from flygym.util.cpg_controller import CPG
 
-from gymnasium import spaces
 
-import cv2
-
-
-class NMFHybridTurning(NeuroMechFlyMuJoCo):
+class TurningController(NeuroMechFlyMuJoCo):
     """A wrapper for the NMF class controller with a CPG-rule-based hybrid controller.
 
     Parameters
@@ -37,14 +29,20 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         epsilon_turn: float = 0.1,
         **kwargs,
     ):
+        if "sim_params" not in kwargs:
+            kwargs["sim_params"] = MuJoCoParameters(enable_adhesion=True)
+            logging.warning("Enabling adhesion for turning controller")
+        if "spawn_pos" not in kwargs:
+            kwargs["spawn_pos"] = [0, 0, 0.2]
+            logging.warning(
+                f"Setting spawn pos to {kwargs['sim_params']} for turning controller"
+            )
         # The underlying normal NMF environment
         super().__init__(**kwargs)
         # Number of dofs of the observation space
         self.num_dofs = len(self.actuated_joints)
 
-        self.n_stabilisation_steps = np.round(stabilisation_dur / self.timestep).astype(
-            int
-        )
+        self.n_stabilisation_steps = int(np.round(stabilisation_dur / self.timestep))
 
         # Action space - 2 values (alphaL and alphaR)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,))
@@ -104,43 +102,14 @@ class NMFHybridTurning(NeuroMechFlyMuJoCo):
         joints_action = self.compute_joints_cpg(action)
         leg_in_stance = self.get_legs_in_stance()
 
-        if self.timer > self.enable_rules_delay and False:
-            # Updating rules' effect and adding them to the action
-            retract_increment = self.increment_leg_retraction_rule(
-                obs["end_effectors"][2::3]
-            )
-            joints_action += retract_increment
-
-            stum_increment = self.increment_stumble_rule(
-                obs["contact_forces"][::2, self.leg_tarsus1T_contactsensors]
-            )
-            joints_action += stum_increment
-
+        # Get adhesion signal
         if self.sim_params.enable_adhesion:
-            # Get adhesion signal
             adhesion_signal = leg_in_stance
-            # If leg in an hole or contacting with the wrong part of the leg
-            # remove adhesion
-
-            if False:
-                adhesion_signal[
-                    np.logical_or(self.legs_in_hole, self.highest_proximal_contact_leg)[
-                        self.last_tarsalseg_to_adh_id
-                    ]
-                ] = 0.0
-
-            """# If turning to one side, remove adhesion to fore and hind leg on that side
-            if abs(action[0] - action[1]) > self.eps_turn:
-                idx_off = [3 * np.argmin(action), 3 * np.argmin(action) + 2]
-                #print(action, idx_off)
-                adhesion_signal[idx_off] = 0.0"""
-
         else:
             adhesion_signal = np.zeros(6)
 
-        self.timer += 1
-
         # Step simulation and get observation after it
+        self.timer += 1
         return super().step({"joints": joints_action, "adhesion": adhesion_signal})
 
     def compute_joints_cpg(self, action):
