@@ -940,13 +940,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         lin_vel_sensor = self.model.sensor.add(
             "framelinvel", name="thorax_linvel", objtype="body", objname="Thorax"
         )
-        orient_sensor = self.model.sensor.add(
-            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
+        ang_pos_sensor = self.model.sensor.add(
+            "framequat", name="thorax_quat", objtype="body", objname="Thorax"
         )
         ang_vel_sensor = self.model.sensor.add(
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
-        return [lin_pos_sensor, lin_vel_sensor, orient_sensor, ang_vel_sensor]
+        orient_sensor = self.model.sensor.add(
+            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
+        )
+        return [lin_pos_sensor, lin_vel_sensor, ang_pos_sensor, ang_vel_sensor, orient_sensor
 
     def _add_end_effector_sensors(self):
         end_effector_sensors = []
@@ -1563,8 +1566,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
-        orient_vec = self.physics.bind(self.body_sensors[2]).sensordata
-        orient_vec[2] = 0.0  # ignore z component
+
         # ang_pos = transformations.quat_to_euler(quat)
         # ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
         # ang_pos[0] *= -1  # flip roll??
@@ -1626,11 +1628,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata.copy()
 
+        orient_vec = self.physics.bind(self.body_sensors[4]).sensordata
+
         obs = {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
+            "fly_orient":orient_vec
         }
 
         # olfaction
