@@ -273,12 +273,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orient: Tuple[float, float, float, float] = (0.0, 0.0, np.pi/2),
+        spawn_orient: Tuple[float, float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
-        #camera_correction: bool = True,
+        # camera_correction: bool = True,
         detect_flip: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
@@ -472,14 +472,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         camera_name = self.sim_params.render_camera
         model_camera_name = self.sim_params.render_camera.split("/")[-1]
-        #if camera_correction and "Animat" in camera_name:
+        # if camera_correction and "Animat" in camera_name:
         #    self._correct_camera_orientation(model_camera_name)
         self.cam = self.model.find("camera", model_camera_name)
         self.cam_offset = self.cam.pos
         self.update_camera_pos = False
         if "Animat" in camera_name and not "head" in camera_name:
             self.update_camera_pos = True
-
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -757,7 +756,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     geom.material = "body_material"
 
     def _get_max_floor_height(self, arena):
-        max_floor_height = -1*np.inf
+        max_floor_height = -1 * np.inf
         for geom in arena.root_element.find_all("geom"):
             name = geom.name
             if "floor" in name or "ground" in name or "treadmill" in name:
@@ -1337,7 +1336,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise NotImplementedError
 
-
     def _update_cam_pos(self):
         cam = self.physics.bind(self.cam)
         cam_pos = cam.xpos.copy()
@@ -1567,9 +1565,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
         orient_vec = self.physics.bind(self.body_sensors[2]).sensordata
         orient_vec[2] = 0.0  # ignore z component
-        #ang_pos = transformations.quat_to_euler(quat)
-        #ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
-        #ang_pos[0] *= -1  # flip roll??
+        # ang_pos = transformations.quat_to_euler(quat)
+        # ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
+        # ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, orient_vec, ang_vel])
 
