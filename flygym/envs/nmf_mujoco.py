@@ -193,9 +193,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         The (x, y, z) position in the arena defining where the fly will
         be spawn.
     spawn_orient : Tuple[float, float, float, float], optional
-        The spawn orientation of the fly, in the "axisangle" format
-        (x, y, z, a) where x, y, z define the rotation axis and a
-        defines the angle of rotation.
+        The spawn orientation of the fly, in the "eulerangle" format
+        (rotation around x, y, z) as defined in eulerseq (xml).
     control : str
         The joint controller type. Can be "position", "velocity", or
         "torque".
@@ -274,12 +273,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orient: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 0.1),
+        spawn_orient: Tuple[float, float, float, float] = (0.0, 0.0, np.pi/2),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
-        camera_correction: bool = True,
+        #camera_correction: bool = True,
         detect_flip: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
@@ -464,15 +463,23 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
+        self.floor_height = self._get_max_floor_height(arena)
+
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
-        if camera_correction:
-            self._correct_camera_orientation(
-                self.sim_params.render_camera.replace("Animat/", "")
-            )
+        camera_name = self.sim_params.render_camera
+        model_camera_name = self.sim_params.render_camera.split("/")[-1]
+        #if camera_correction and "Animat" in camera_name:
+        #    self._correct_camera_orientation(model_camera_name)
+        self.cam = self.model.find("camera", model_camera_name)
+        self.cam_offset = self.cam.pos
+        self.update_camera_pos = False
+        if "Animat" in camera_name and not "head" in camera_name:
+            self.update_camera_pos = True
+
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -538,13 +545,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._last_contact_pos = []
 
         if self.sim_params.draw_contacts or self.sim_params.draw_gravity:
-            width, height = self.sim_params.render_window_size
-            self.dm_camera = dm_control.mujoco.Camera(
-                self.physics,
-                camera_id=self.sim_params.render_camera,
-                width=width,
-                height=height,
-            )
+            pass
+        width, height = self.sim_params.render_window_size
+        self.dm_camera = dm_control.mujoco.Camera(
+            self.physics,
+            camera_id=self.sim_params.render_camera,
+            width=width,
+            height=height,
+        )
         self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
         # flip detection
@@ -748,6 +756,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 else:
                     geom.material = "body_material"
 
+    def _get_max_floor_height(self, arena):
+        max_floor_height = -1*np.inf
+        for geom in arena.root_element.find_all("geom"):
+            name = geom.name
+            if "floor" in name or "ground" in name or "treadmill" in name:
+                if geom.type == "box":
+                    block_height = geom.pos[2] + geom.size[2]
+                    max_floor_height = max(max_floor_height, block_height)
+                elif geom.type == "plane":
+                    try:
+                        plane_height = geom.pos[2]
+                    except TypeError:
+                        plane_height = 0.0
+                    max_floor_height = max(max_floor_height, plane_height)
+                elif geom.type == "sphere":
+                    sphere_height = geom.pos[2] + geom.size[0]
+                    max_floor_height = max(max_floor_height, sphere_height)
+        return max_floor_height
+
     def _define_spaces(self, num_dofs, action_bound, num_contacts):
         action_space = {
             "joints": spaces.Box(
@@ -914,13 +941,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         lin_vel_sensor = self.model.sensor.add(
             "framelinvel", name="thorax_linvel", objtype="body", objname="Thorax"
         )
-        ang_pos_sensor = self.model.sensor.add(
-            "framequat", name="thorax_quat", objtype="body", objname="Thorax"
+        orient_sensor = self.model.sensor.add(
+            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
         )
         ang_vel_sensor = self.model.sensor.add(
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
-        return [lin_pos_sensor, lin_vel_sensor, ang_pos_sensor, ang_vel_sensor]
+        return [lin_pos_sensor, lin_vel_sensor, orient_sensor, ang_vel_sensor]
 
     def _add_end_effector_sensors(self):
         end_effector_sensors = []
@@ -1292,6 +1319,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
+            if self.update_camera_pos:
+                self._update_cam_pos()
             if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
             if self.sim_params.align_camera_with_gravity:
@@ -1308,10 +1337,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         else:
             raise NotImplementedError
 
+
+    def _update_cam_pos(self):
+        cam = self.physics.bind(self.cam)
+        cam_pos = cam.xpos.copy()
+        cam_pos[2] = 0.5 + self.cam_offset[2] + self.floor_height
+        cam.xpos = cam_pos
+
     def _rotate_camera(self):
         # get camera
-        cam = self.model.find("camera", self.sim_params.render_camera.split("/")[-1])
-        cam = self.physics.bind(cam)
+        cam = self.physics.bind(self.cam)
         # rotate the cam
         cam_matrix_base = getattr(cam, "xmat").copy()
         cam_matrix = self.camera_rot @ cam_matrix_base.reshape(3, 3)
@@ -1530,12 +1565,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # fly position and orientation
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
-        quat = self.physics.bind(self.body_sensors[2]).sensordata
-        # ang_pos = transformations.quat_to_euler(quat)
-        ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
-        ang_pos[0] *= -1  # flip roll??
+        orient_vec = self.physics.bind(self.body_sensors[2]).sensordata
+        orient_vec[2] = 0.0  # ignore z component
+        #ang_pos = transformations.quat_to_euler(quat)
+        #ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
+        #ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
-        fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
+        fly_pos = np.array([cart_pos, cart_vel, orient_vec, ang_vel])
 
         if self.sim_params.draw_gravity:
             self.last_fly_pos = cart_pos
