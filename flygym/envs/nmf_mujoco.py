@@ -273,7 +273,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orient: Tuple[float, float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_orient: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
@@ -302,10 +302,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         spawn_pos : Tuple[float, float, float], optional
             The (x, y, z) position in the arena defining where the fly will
             be spawn, by default (0., 0., 300.).
-        spawn_orient : Tuple[float, float, float, float], optional
-            The spawn orientation of the fly, in the "axisangle" format
-            (x, y, z, a) where x, y, z define the rotation axis and a
-            defines the angle of rotation, by default (0., 1., 0., 0.1).
+        spawn_orient : Tuple[float, float, float], optional
+            The spawn orientation of the fly, in the "eulerangle" format
+            (x, y, z) where x, y, z define the rotation around x, y and z
+            by default (0.0, 0.0, 0.0) leads to position along the x axis.
         control : str, optional
             The joint controller type. Can be "position", "velocity", or
             "torque", by default "position".
@@ -759,7 +759,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         max_floor_height = -1 * np.inf
         for geom in arena.root_element.find_all("geom"):
             name = geom.name
-            if "floor" in name or "ground" in name or "treadmill" in name:
+            if name is None or (
+                "floor" in name or "ground" in name or "treadmill" in name
+            ):
                 if geom.type == "box":
                     block_height = geom.pos[2] + geom.size[2]
                     max_floor_height = max(max_floor_height, block_height)
@@ -799,7 +801,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
-            "fly_orient": spaces.Box(low=-np.inf, high=np.inf, shape=(3, )),
+            "fly_orient": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
         }
         return action_space, observation_space
 
@@ -950,7 +952,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
         orient_sensor = self.model.sensor.add(
             "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
         )
-        return [lin_pos_sensor, lin_vel_sensor, ang_pos_sensor, ang_vel_sensor, orient_sensor
+        return [
+            lin_pos_sensor,
+            lin_vel_sensor,
+            ang_pos_sensor,
+            ang_vel_sensor,
+            orient_sensor,
+        ]
 
     def _add_end_effector_sensors(self):
         end_effector_sensors = []
@@ -1568,11 +1576,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         cart_pos = self.physics.bind(self.body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self.body_sensors[1]).sensordata
 
+        quat = self.physics.bind(self.body_sensors[2]).sensordata
         # ang_pos = transformations.quat_to_euler(quat)
-        # ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
-        # ang_pos[0] *= -1  # flip roll??
+        ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
+        ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
-        fly_pos = np.array([cart_pos, cart_vel, orient_vec, ang_vel])
+        fly_pos = np.array([cart_pos, cart_vel, ang_vel, ang_vel])
 
         if self.sim_params.draw_gravity:
             self.last_fly_pos = cart_pos
@@ -1629,14 +1638,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata.copy()
 
-        orient_vec = self.physics.bind(self.body_sensors[4]).sensordata
+        orient_vec = self.physics.bind(self.body_sensors[4]).sensordata.copy()
 
         obs = {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
-            "fly_orient":orient_vec
+            "fly_orient": orient_vec,
         }
 
         # olfaction
