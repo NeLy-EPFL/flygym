@@ -273,7 +273,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orient: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        spawn_orient: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
         init_pose: BaseState = stretched_pose,
         floor_collisions: Union[str, List[str]] = "legs",
@@ -305,7 +305,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         spawn_orient : Tuple[float, float, float], optional
             The spawn orientation of the fly, in the "eulerangle" format
             (x, y, z) where x, y, z define the rotation around x, y and z
-            by default (0.0, 0.0, 0.0) leads to position along the x axis.
+            by default (0.0, 0.0, pi/2) leads to position along the x axis.
         control : str, optional
             The joint controller type. Can be "position", "velocity", or
             "torque", by default "position".
@@ -334,7 +334,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.output_dir = output_dir
         self.arena = arena
         self.spawn_pos = spawn_pos
-        self.spawn_orient = spawn_orient
+        # convert to mujoco orientation format [0, 0, 0] would orient along the x axis
+        # but the output fly_orientation from framequat would be [0, 0, pi/2] for spawn_orient = [0, 0, 0]
+        self.spawn_orient = spawn_orient - np.array((0, 0, np.pi / 2))
         self.control = control
         self.init_pose = init_pose
         self.render_mode = sim_params.render_mode
@@ -475,10 +477,16 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # if camera_correction and "Animat" in camera_name:
         #    self._correct_camera_orientation(model_camera_name)
         self.cam = self.model.find("camera", model_camera_name)
-        self.cam_offset = self.cam.pos
-        self.update_camera_pos = False
+
+        self.update_camera = False
         if "Animat" in camera_name and not "head" in camera_name:
-            self.update_camera_pos = True
+            self.update_camera = True
+            self.cam_offset = self.cam.pos
+            # Why would that be xyz and not ZYX ? DOES NOT MAKE SENSE BUT IT WORKS
+            self.base_camera_rot = R.from_euler(
+                "xyz", self.cam.euler + self.spawn_orient
+            ).as_matrix()
+            # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -1330,8 +1338,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
-            if self.update_camera_pos:
+            if self.update_camera:
                 self._update_cam_pos()
+                self._update_cam_rot()
             if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
             if self.sim_params.align_camera_with_gravity:
@@ -1351,8 +1360,34 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def _update_cam_pos(self):
         cam = self.physics.bind(self.cam)
         cam_pos = cam.xpos.copy()
-        cam_pos[2] = 0.5 + self.cam_offset[2] + self.floor_height
+        cam_pos[2] = self.cam_offset[2] + self.floor_height
         cam.xpos = cam_pos
+
+    def _update_cam_rot(self):
+        cam = self.physics.bind(self.cam)
+        cam_name = self.cam.name
+        fly_z_rot_euler = np.array(
+            [self.fly_rot[0], 0.0, 0.0] - self.spawn_orient[::-1] - [np.pi / 2, 0, 0]
+        )
+        # This compensates both for the scipy to mujoco transform (align with y is [0, 0, 0]
+        # in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly orientation is already
+        # taken into account in the base_camera_rot (see below)
+
+        cam_matrix = getattr(cam, "xmat").copy().reshape(3, 3)
+        # camera is always looking along its -z axis
+        if cam_name in ["camera_top", "camera_bottom"]:
+            # if camera is top or bottom always keep rotation around z only
+            cam_matrix = R.from_euler("zyx", fly_z_rot_euler).as_matrix()
+        elif cam_name in ["camera_front", "camera_back", "camera_left", "camera_right"]:
+            # if camera is front, back, left or right apply the rotation around y
+            cam_matrix = R.from_euler("yzx", fly_z_rot_euler).as_matrix()
+
+        if cam_name in ["camera_bottom"]:
+            cam_matrix = cam_matrix.T
+            # z axis is inverted
+
+        cam_matrix = self.base_camera_rot @ cam_matrix
+        cam.xmat = cam_matrix.flatten()
 
     def _rotate_camera(self):
         # get camera
@@ -1578,10 +1613,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         quat = self.physics.bind(self.body_sensors[2]).sensordata
         # ang_pos = transformations.quat_to_euler(quat)
-        ang_pos = R.from_quat(quat).as_euler("xyz")  # explicitly use intrinsic
-        ang_pos[0] *= -1  # flip roll??
+        ang_pos = R.from_quat(quat[[1, 2, 3, 0]]).as_euler(
+            "ZYX"
+        )  # explicitly use extrinsic ZYX
+        # ang_pos[0] *= -1  # flip roll??
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
-        fly_pos = np.array([cart_pos, cart_vel, ang_vel, ang_vel])
+        fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
+
+        if self.update_camera:
+            self.fly_rot = ang_pos
 
         if self.sim_params.draw_gravity:
             self.last_fly_pos = cart_pos
