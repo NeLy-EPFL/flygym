@@ -565,6 +565,16 @@ class OdorArena(BaseArena):
         self.odor_dim = self.peak_odor_intensity.shape[1]
         self.diffuse_func = diffuse_func
 
+        # Add birdeye camera
+        self.root_element.worldbody.add(
+            "camera",
+            name="birdeye_cam",
+            mode="fixed",
+            pos=(self.odor_source[:, 0].max() / 2, 0, 30),
+            euler=(0, 0, 0),
+            fovy=45,
+        )
+
         # Add markers at the odor sources
         if marker_colors is None:
             marker_colors = []
