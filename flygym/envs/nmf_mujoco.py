@@ -129,6 +129,9 @@ class MuJoCoParameters:
         Whether to align the camera with the gravity vector: When adding a
         slope the fly will appear to climb this slope. By default
         False.
+    camera_follows_fly_orientation: bool, optional
+        Whether to align the camera with the fly's orientation. By default
+        False.
     """
 
     timestep: float = 0.0001
@@ -170,6 +173,7 @@ class MuJoCoParameters:
     draw_gravity: bool = False
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
+    camera_follows_fly_orientation: bool = False
 
 
 class NeuroMechFlyMuJoCo(gym.Env):
@@ -478,20 +482,39 @@ class NeuroMechFlyMuJoCo(gym.Env):
         #    self._correct_camera_orientation(model_camera_name)
         self.cam = self.model.find("camera", model_camera_name)
 
-        self.update_camera = False
+        self.update_camera_pos = False
+
         if (
             "Animat" in camera_name
             and not "head" in camera_name
-            and not camera_name
-            in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
         ):
-            self.update_camera = True
+            self.update_camera_pos = True
             self.cam_offset = self.cam.pos
-            # Why would that be xyz and not ZYX ? DOES NOT MAKE SENSE BUT IT WORKS
+        print(camera_name, self.update_camera_pos)
+        if (camera_name in
+                ["Animat/camera_right_front",
+                 "Animat/camera_left_top_zoomout"] and
+                self.sim_params.camera_follows_fly_orientation):
+            self.sim_params.camera_follows_fly_orientation = False
+            logging.warning(
+                "Overriding `camera_follows_fly_orientation` to False because"
+                " it can not be applied to the compound cameras (right front, left top, ect ...)."
+            )
+        elif not self.update_camera_pos and self.sim_params.camera_follows_fly_orientation:
+            self.sim_params.camera_follows_fly_orientation = False
+            logging.warning(
+                "Overriding `camera_follows_fly_orientation` to False because"
+                " it can not be applied to vision cameras or cameras outside of the fly."
+            )
+        elif self.sim_params.camera_follows_fly_orientation:
+            # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
             self.base_camera_rot = R.from_euler(
                 "xyz", self.cam.euler + self.spawn_orient
             ).as_matrix()
             # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
+        elif not self.sim_params.camera_follows_fly_orientation:
+            # change the camera to track (no changes in orientation of the camera)
+            self.cam.mode = "track"
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -1343,8 +1366,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
             camera = self.sim_params.render_camera
-            if self.update_camera:
+            if self.update_camera_pos:
                 self._update_cam_pos()
+            if self.sim_params.camera_follows_fly_orientation:
                 self._update_cam_rot()
             if self.sim_params.draw_adhesion:
                 self._draw_adhesion()
@@ -1625,7 +1649,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ang_vel = self.physics.bind(self.body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
-        if self.update_camera:
+        if self.sim_params.camera_follows_fly_orientation:
             self.fly_rot = ang_pos
 
         if self.sim_params.draw_gravity:
