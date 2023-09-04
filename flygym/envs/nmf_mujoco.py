@@ -484,23 +484,24 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         self.update_camera_pos = False
 
-        if (
-            "Animat" in camera_name
-            and not "head" in camera_name
-        ):
+        if "Animat" in camera_name and not "head" in camera_name:
             self.update_camera_pos = True
             self.cam_offset = self.cam.pos
         print(camera_name, self.update_camera_pos)
-        if (camera_name in
-                ["Animat/camera_right_front",
-                 "Animat/camera_left_top_zoomout"] and
-                self.sim_params.camera_follows_fly_orientation):
+        if (
+            camera_name
+            in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
+            and self.sim_params.camera_follows_fly_orientation
+        ):
             self.sim_params.camera_follows_fly_orientation = False
             logging.warning(
                 "Overriding `camera_follows_fly_orientation` to False because"
                 " it can not be applied to the compound cameras (right front, left top, ect ...)."
             )
-        elif not self.update_camera_pos and self.sim_params.camera_follows_fly_orientation:
+        elif (
+            not self.update_camera_pos
+            and self.sim_params.camera_follows_fly_orientation
+        ):
             self.sim_params.camera_follows_fly_orientation = False
             logging.warning(
                 "Overriding `camera_follows_fly_orientation` to False because"
