@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <mujoco model="Animat">
-  <compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="xyz" convexhull="true" fusestatic="true"/>
+  <compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" convexhull="true" fusestatic="true"/>
   <option timestep="0.0001" gravity="0 0 -9810" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" mpr_iterations="100" collision="predefined">
     <flag multiccd="enable" energy="enable"/> <!--multiccd seems to fix leg penetrating the floor-->
   </option>
@@ -700,15 +700,15 @@
     </body>
     <light name="light_animat_top" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 80" dir="0 0 -1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
     <light name="light_animat_bottom" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 -80" dir="0 0 1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
-    <camera name="camera_back" class="nmf" mode="track" ipd="0.068" pos="-8 0 0" euler="0 -1.57 -1.57"/>
-    <camera name="camera_front" class="nmf" mode="track" ipd="0.068" pos="8 0 0" euler="0 1.57 1.57"/>
-    <camera name="camera_left" class="nmf" mode="track"  ipd="0.068" pos="0 8 0" euler="-1.57 0 3.14"/>
-    <camera name="camera_right" class="nmf" mode="track" ipd="0.068" pos="0 -8 0" euler="1.57 0 0"/>
-    <camera name="camera_top" class="nmf" mode="track"  ipd="0.068" pos="0 0 8" euler="0 0 0"/>
+    <camera name="camera_back" class="nmf" mode="fixed" ipd="0.068" pos="-8 0 1.0" euler="1.57 0.0 -1.57"/>
+    <camera name="camera_front" class="nmf" mode="fixed" ipd="0.068" pos="8 0 1.0" euler="1.57 0.0 1.57"/>
+    <camera name="camera_left" class="nmf" mode="fixed"  ipd="0.068" pos="0 8 1.0" euler="-1.57 3.14 0"/>
+    <camera name="camera_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 1.0" euler="1.57 0 0"/>
+    <camera name="camera_top" class="nmf" mode="fixed"  ipd="0.068" pos="0 0 8" euler="0 0 0"/>
     <camera name="camera_top_zoomout" class="nmf" mode="track"  ipd="0.068" pos="0 0 40" euler="0 0 0"/>
-    <camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
-    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="4 -6 0" euler="1.57 0.588 0"/> <!-- arctan(2/3) = 0.588 -->
-    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 5" euler="-1.011 0 3.14"/> <!-- arctan(5/8) = 0.559  -1.57 + 0.559 = 1.011 -->
+    <camera name="camera_bottom" class="nmf" mode="fixed" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
+    <camera name="camera_right_front" class="nmf" mode="track"  ipd="0.068" pos="4 -6 1.0" euler="1.57 0 0.588"/> <!-- arctan(2/3) = 0.588 -->
+    <camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 5" euler="-2.129 3.14 0"/> <!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
     <camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 3 1" euler="-1.57 0.72 3.14" fovy="30"/>
     <camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 1.57 0" fovy="15"/>
   </worldbody>
