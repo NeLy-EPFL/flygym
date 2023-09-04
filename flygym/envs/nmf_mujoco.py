@@ -581,15 +581,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._last_contact_pos = []
 
         if self.sim_params.draw_contacts or self.sim_params.draw_gravity:
-            pass
-        width, height = self.sim_params.render_window_size
-        self.dm_camera = dm_control.mujoco.Camera(
-            self.physics,
-            camera_id=self.sim_params.render_camera,
-            width=width,
-            height=height,
-        )
-        self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+            width, height = self.sim_params.render_window_size
+            self.dm_camera = dm_control.mujoco.Camera(
+                self.physics,
+                camera_id=self.sim_params.render_camera,
+                width=width,
+                height=height,
+            )
+            self.decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
         # flip detection
         self._flip_counter = 0
