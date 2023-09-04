@@ -479,8 +479,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.cam = self.model.find("camera", model_camera_name)
 
         self.update_camera = False
-        if ("Animat" in camera_name and not "head" in camera_name and
-                not camera_name in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]):
+        if (
+            "Animat" in camera_name
+            and not "head" in camera_name
+            and not camera_name
+            in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
+        ):
             self.update_camera = True
             self.cam_offset = self.cam.pos
             # Why would that be xyz and not ZYX ? DOES NOT MAKE SENSE BUT IT WORKS
