@@ -478,44 +478,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         camera_name = self.sim_params.render_camera
         model_camera_name = self.sim_params.render_camera.split("/")[-1]
-        # if camera_correction and "Animat" in camera_name:
-        #    self._correct_camera_orientation(model_camera_name)
         self.cam = self.model.find("camera", model_camera_name)
-
-        self.update_camera_pos = False
-
-        if "Animat" in camera_name and not "head" in camera_name:
-            self.update_camera_pos = True
-            self.cam_offset = self.cam.pos
-        print(camera_name, self.update_camera_pos)
-        if (
-            camera_name
-            in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
-            and self.sim_params.camera_follows_fly_orientation
-        ):
-            self.sim_params.camera_follows_fly_orientation = False
-            logging.warning(
-                "Overriding `camera_follows_fly_orientation` to False because"
-                " it can not be applied to the compound cameras (right front, left top, ect ...)."
-            )
-        elif (
-            not self.update_camera_pos
-            and self.sim_params.camera_follows_fly_orientation
-        ):
-            self.sim_params.camera_follows_fly_orientation = False
-            logging.warning(
-                "Overriding `camera_follows_fly_orientation` to False because"
-                " it can not be applied to vision cameras or cameras outside of the fly."
-            )
-        elif self.sim_params.camera_follows_fly_orientation:
-            # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
-            self.base_camera_rot = R.from_euler(
-                "xyz", self.cam.euler + self.spawn_orient
-            ).as_matrix()
-            # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
-        elif not self.sim_params.camera_follows_fly_orientation:
-            # change the camera to track (no changes in orientation of the camera)
-            self.cam.mode = "track"
+        self._initialize_custom_camera_handling(camera_name)
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
@@ -840,6 +804,59 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "fly_orient": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
         }
         return action_space, observation_space
+
+    def _initialize_custom_camera_handling(self, camera_name):
+        """
+        This function is called when the camera is initialized. It can be used to
+        customize the camera behavior. I case update_camera_pos is True and the camera is
+        within the animat and not a head camera, the z position will be fixed to avoid oscillations
+        If self.sim_params.camera_follows_fly_orientation is True, the camera will be rotated
+        to follow the fly orientation (i.e the front camera will always be in front of the fly)
+        """
+
+        is_Animat = "Animat" in camera_name
+        is_visualization_camera = "head" in camera_name or "Tarsus" in camera_name
+
+        is_compound_camera = not camera_name in [
+            "Animat/camera_front",
+            "Animat/camera_top",
+            "Animat/camera_bottom",
+            "Animat/camera_back",
+            "Animat/camera_right",
+            "Animat/camera_left",
+        ]
+
+        # always add pos update if it is a head camera
+        if is_Animat and not is_visualization_camera:
+            self.update_camera_pos = True
+            self.cam_offset = self.cam.pos
+            if is_compound_camera and self.sim_params.camera_follows_fly_orientation:
+                self.sim_params.camera_follows_fly_orientation = False
+                logging.warning(
+                    "Overriding `camera_follows_fly_orientation` to False because"
+                    "it is never applied to visualization cameras (head, tarsus, ect ...)"
+                    "or non Animat camera."
+                )
+            elif self.sim_params.camera_follows_fly_orientation:
+                # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
+                self.base_camera_rot = R.from_euler(
+                    "xyz", self.cam.euler + self.spawn_orient
+                ).as_matrix()
+                # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
+            else:
+                # if not camera_follows_fly_orientation need to change the camera mode to track
+                self.cam.mode = "track"
+            return
+        else:
+            self.update_camera_pos = False
+            if self.sim_params.camera_follows_fly_orientation:
+                self.sim_params.camera_follows_fly_orientation = False
+                logging.warning(
+                    "Overriding `camera_follows_fly_orientation` to False because"
+                    "it is never applied to visualization cameras (head, tarsus, ect ...)"
+                    "or non Animat camera."
+                )
+            return
 
     def _set_actuators_gain(self):
         for actuator in self.actuators:
@@ -1401,8 +1418,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # This compensates both for the scipy to mujoco transform (align with y is [0, 0, 0]
         # in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly orientation is already
         # taken into account in the base_camera_rot (see below)
-
-        cam_matrix = getattr(cam, "xmat").copy().reshape(3, 3)
         # camera is always looking along its -z axis
         if cam_name in ["camera_top", "camera_bottom"]:
             # if camera is top or bottom always keep rotation around z only
@@ -1613,7 +1628,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     @property
     def vision_update_mask(self) -> np.ndarray:
-        #return np.array(self._vision_update_mask[1:])
         return np.array(self._vision_update_mask)
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
