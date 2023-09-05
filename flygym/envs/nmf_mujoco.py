@@ -1614,7 +1614,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     @property
     def vision_update_mask(self) -> np.ndarray:
-        #return np.array(self._vision_update_mask[1:])
         return np.array(self._vision_update_mask)
 
     def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:

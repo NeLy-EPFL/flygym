@@ -63,8 +63,6 @@ class TurningController(NeuroMechFlyMuJoCo):
         self.leg_retract_active = False
         self.timer = 0
 
-        self.reset()
-
     def run_stabilisation(self):
         phases = []
         amplitudes = []
