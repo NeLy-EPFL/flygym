@@ -40,7 +40,8 @@ def test_vision_dimensions():
     assert len(obs_list) == num_steps
     assert nmf.vision_update_mask.shape == (num_steps,)
     assert nmf.vision_update_mask.sum() == int(
-        num_steps * sim_params.timestep * sim_params.vision_refresh_rate)
+        num_steps * sim_params.timestep * sim_params.vision_refresh_rate
+    )
     assert obs["raw_vision"].shape == (2, raw_img_height_px, raw_img_width_px, 3)
     assert obs["vision"].shape == (2, num_ommatidia_per_eye, 2)
 
