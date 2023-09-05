@@ -481,41 +481,42 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # if camera_correction and "Animat" in camera_name:
         #    self._correct_camera_orientation(model_camera_name)
         self.cam = self.model.find("camera", model_camera_name)
-
-        self.update_camera_pos = False
-
-        if "Animat" in camera_name and not "head" in camera_name:
-            self.update_camera_pos = True
-            self.cam_offset = self.cam.pos
-        print(camera_name, self.update_camera_pos)
-        if (
-            camera_name
-            in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
-            and self.sim_params.camera_follows_fly_orientation
-        ):
+        if self.cam is None:
+            self.update_camera_pos = False
             self.sim_params.camera_follows_fly_orientation = False
-            logging.warning(
-                "Overriding `camera_follows_fly_orientation` to False because"
-                " it can not be applied to the compound cameras (right front, left top, ect ...)."
-            )
-        elif (
-            not self.update_camera_pos
-            and self.sim_params.camera_follows_fly_orientation
-        ):
-            self.sim_params.camera_follows_fly_orientation = False
-            logging.warning(
-                "Overriding `camera_follows_fly_orientation` to False because"
-                " it can not be applied to vision cameras or cameras outside of the fly."
-            )
-        elif self.sim_params.camera_follows_fly_orientation:
-            # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
-            self.base_camera_rot = R.from_euler(
-                "xyz", self.cam.euler + self.spawn_orient
-            ).as_matrix()
-            # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
-        elif not self.sim_params.camera_follows_fly_orientation:
-            # change the camera to track (no changes in orientation of the camera)
-            self.cam.mode = "track"
+        else:
+            if "Animat" in camera_name and not "head" in camera_name:
+                self.update_camera_pos = True
+                self.cam_offset = self.cam.pos
+            print(camera_name, self.update_camera_pos)
+            if (
+                camera_name
+                in ["Animat/camera_right_front", "Animat/camera_left_top_zoomout"]
+                and self.sim_params.camera_follows_fly_orientation
+            ):
+                self.sim_params.camera_follows_fly_orientation = False
+                logging.warning(
+                    "Overriding `camera_follows_fly_orientation` to False because"
+                    " it can not be applied to the compound cameras (right front, left top, ect ...)."
+                )
+            elif (
+                not self.update_camera_pos
+                and self.sim_params.camera_follows_fly_orientation
+            ):
+                self.sim_params.camera_follows_fly_orientation = False
+                logging.warning(
+                    "Overriding `camera_follows_fly_orientation` to False because"
+                    " it can not be applied to vision cameras or cameras outside of the fly."
+                )
+            elif self.sim_params.camera_follows_fly_orientation:
+                # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
+                self.base_camera_rot = R.from_euler(
+                    "xyz", self.cam.euler + self.spawn_orient
+                ).as_matrix()
+                # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
+            elif not self.sim_params.camera_follows_fly_orientation:
+                # change the camera to track (no changes in orientation of the camera)
+                self.cam.mode = "track"
 
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(floor_collisions)
