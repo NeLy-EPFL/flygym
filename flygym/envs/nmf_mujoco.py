@@ -815,7 +815,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """
 
         is_Animat = "Animat" in camera_name
-        is_visualization_camera = "head" in camera_name or "Tarsus" in camera_name
+        is_visualization_camera = (
+            "head" in camera_name
+            or "Tarsus" in camera_name
+            or "camera_front_zoomin" in camera_name
+        )
 
         is_compound_camera = not camera_name in [
             "Animat/camera_front",
