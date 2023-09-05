@@ -37,17 +37,15 @@ class BaseArena(ABC):
             (x, y, z) position of the entity if it were spawned on a
             simple flat environment.
         rel_angle : np.ndarray
-            Axis-angle representation (x, y, z, a) of the entity's
+            Euler representation (x, y, z) of the entity's
             orientation if it were spawned on a simple flat terrain.
-            (x, y, z) define the 3D vector that is the rotation axis;
-            a is the rotation angle in unit as configured in the model.
 
         Returns
         -------
         np.ndarray
             Adjusted (x, y, z) position of the entity.
         np.ndarray
-            Adjusted axis-angle representation (x, y, z, a).
+            Adjusted euler representation (x, y, z).
         """
         pass
 
@@ -64,14 +62,12 @@ class BaseArena(ABC):
             (x, y, z) position of the entity if it were spawned on a simple
             flat environment.
         rel_angle : np.ndarray
-            Axis-angle representation (x, y, z, a) of the entity's
+            euler angle representation (rot around x, y, z) of the entity's
             orientation if it were spawned on a simple flat terrain.
-            (x, y, z) define the 3D vector that is the rotation axis; a is
-            the rotation angle in unit as configured in the model.
         """
         adj_pos, adj_angle = self.get_spawn_position(rel_pos, rel_angle)
         spawn_site = self.root_element.worldbody.add(
-            "site", pos=adj_pos, axisangle=adj_angle
+            "site", pos=adj_pos, euler=adj_angle
         )
         spawn_site.attach(entity).add("freejoint")
 
