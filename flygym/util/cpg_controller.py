@@ -218,7 +218,7 @@ class CPG:
         self.base_freq = 12 * np.ones(n_oscillators)
         self.phase_biases = 2 * np.pi * phase_biases_tripod_idealized
         self.base_ampl = 1.0 * np.ones(n_oscillators)
-        self.min_ampl = 0.0 * np.ones(n_oscillators)
+        self.min_ampl = 0.2 * np.ones(n_oscillators)
 
         self.coupling_weights = (np.abs(self.phase_biases) > 0).astype(float) * 5.0
         self.rates = 10.0 * np.ones(n_oscillators)
@@ -230,27 +230,34 @@ class CPG:
         # i.e. higher values will lead to higher amplitudes
 
         turn_modulation = np.array(turn_modulation)
-        
-        # Reset the frequencies to the base frequency
-        self.frequencies = (np.repeat(turn_modulation >= 0, 3)-0.5)*2 * self.base_freq
-        # Need to add base amplitude as legs should always be stepping to turn on or off the adhesion
-        self.targ_ampl = np.repeat(np.abs(turn_modulation), 3) * self.base_ampl + self.min_ampl
 
-        #if np.random.rand() < 0.001 and turn_modulation[0] != turn_modulation[1]:
+        # Reset the frequencies to the base frequency
+        self.frequencies = (
+            (np.repeat(turn_modulation >= 0, 3) - 0.5) * 2 * self.base_freq
+        )
+        # Need to add base amplitude as legs should always be stepping to turn on or off the adhesion
+        self.targ_ampl = (
+            np.repeat(np.abs(turn_modulation), 3) * self.base_ampl + self.min_ampl
+        )
+
+        if turn_modulation[0] == 0.0 and turn_modulation[1] == 0.0:
+            self.targ_ampl = np.zeros(6)
+
+        # if np.random.rand() < 0.001 and turn_modulation[0] != turn_modulation[1]:
         #    print(turn_modulation, self.frequencies, self.targ_ampl)
 
         # Integration step
         self.phase, self.amplitude = self.euler_int(
-            self.phase, self.amplitude, self.targ_ampl, timestep=self.timestep
+            self.phase, self.amplitude, timestep=self.timestep
         )
 
-    def euler_int(self, prev_phase, prev_ampl, targ_ampl, timestep):
-        dphas, dampl = self.phase_oscillator(prev_phase, prev_ampl, targ_ampl)
+    def euler_int(self, prev_phase, prev_ampl, timestep):
+        dphas, dampl = self.phase_oscillator(prev_phase, prev_ampl)
         phase = (prev_phase + timestep * dphas) % (2 * np.pi)
         ampl = prev_ampl + timestep * dampl
         return phase, ampl
 
-    def phase_oscillator(self, phases, amplitudes, targ_ampl):
+    def phase_oscillator(self, phases, amplitudes):
         """Phase oscillator model used in Ijspeert et al. 2007"""
         # NxN matrix with the phases of the oscillators
         phase_matrix = np.tile(phases, (self.n_oscillators, 1))
@@ -279,7 +286,7 @@ class CPG:
         dphases = freq_contribution + coupling_contribution
         # dphases = np.clip(dphases, 0, None)
 
-        damplitudes = np.multiply(self.rates, targ_ampl - amplitudes)
+        damplitudes = np.multiply(self.rates, self.targ_ampl - amplitudes)
         # print("targ_ampl ", targ_ampl, " ", damplitudes)
 
         return dphases, damplitudes
