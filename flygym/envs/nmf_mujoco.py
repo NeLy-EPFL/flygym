@@ -1336,6 +1336,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 info["flip"] = True
             else:
                 info["flip"] = False
+            info["flip_counter"] = self._flip_counter
+            info["contact_forces"] = observation["contact_forces"].copy()
 
         return observation, reward, terminated, truncated, info
 
