@@ -186,8 +186,8 @@ adhesion_speed_thresholds = np.array(
 # fmt: off
 sensor_positions = {
     # sensor name: (parent, position rel parent, orientation, marker rgba)
-    "LEye_cam": ("LEye", (-0.03, 0.38, 0), (1.57, -0.4676, 0.08), (0.07, 0.45, 0.35, 1)),
-    "REye_cam": ("REye", (-0.03, -0.38, 0), (-1.57, -0.47, 3.06), (0.07, 0.45, 0.35, 1)),
+    "LEye_cam": ("LEye", (-0.03, 0.38, 0), (1.57, 0.0, -0.4676), (0.07, 0.45, 0.35, 1)),
+    "REye_cam": ("REye", (-0.03, -0.38, 0), (-1.57, 3.14, 0.47), (0.07, 0.45, 0.35, 1)),
     "LMaxillaryPalp_sensor": ("Rostrum", (-0.15, 0.15, -0.15), (0.9, 0.73, 0.08, 1)),
     "RMaxillaryPalp_sensor": ("Rostrum", (-0.15, -0.15, -0.15), (0.9, 0.73, 0.08, 1)),
     "LAntenna_sensor": ("LFuniculus", (0.02, 0.00, -0.10), (0.08, 0.4, 0.9, 1)),
