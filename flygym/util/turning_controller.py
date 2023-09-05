@@ -62,6 +62,9 @@ class TurningController(NeuroMechFlyMuJoCo):
         self.stumble_active = False
         self.leg_retract_active = False
         self.timer = 0
+        
+        for i in range(2000):
+            self.cpg.step([0.0, 0.0])
 
     def run_stabilisation(self):
         phases = []
