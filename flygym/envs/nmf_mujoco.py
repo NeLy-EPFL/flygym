@@ -1384,7 +1384,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         action is required."""
         if self.render_mode == "headless":
             return None
-        if self.curr_time < self._last_render_time + self._eff_render_interval:
+        if self.curr_time < len(self._frames) * self._eff_render_interval:
             return None
         if self.render_mode == "saved":
             width, height = self.sim_params.render_window_size
@@ -1405,7 +1405,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
             self._frames.append(img.copy())
             self._last_render_time = self.curr_time
-            return self._frames
+            return self._frames[-1]
         else:
             raise NotImplementedError
 
