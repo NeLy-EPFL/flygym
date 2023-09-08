@@ -564,11 +564,19 @@ class OdorArena(BaseArena):
         self.diffuse_func = diffuse_func
 
         # Add birdeye camera
-        self.root_element.worldbody.add(
+        self.birdeye_cam = self.root_element.worldbody.add(
             "camera",
             name="birdeye_cam",
             mode="fixed",
             pos=(self.odor_source[:, 0].max() / 2, 0, 35),
+            euler=(0, 0, 0),
+            fovy=45,
+        )
+        self.birdeye_cam_zoom = self.root_element.worldbody.add(
+            "camera",
+            name="birdeye_cam_zoom",
+            mode="fixed",
+            pos=(11, 0, 29),
             euler=(0, 0, 0),
             fovy=45,
         )
