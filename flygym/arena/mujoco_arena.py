@@ -518,7 +518,7 @@ class OdorArena(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (50, 50),
+        size: Tuple[float, float] = (300, 300),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
@@ -534,14 +534,14 @@ class OdorArena(BaseArena):
             builtin="checker",
             width=300,
             height=300,
-            rgb1=(0.3, 0.3, 0.3),
-            rgb2=(0.4, 0.4, 0.4),
+            rgb1=(0.4, 0.4, 0.4),
+            rgb2=(0.5, 0.5, 0.5),
         )
         grid = self.root_element.asset.add(
             "material",
             name="grid",
             texture=chequered,
-            texrepeat=(10, 10),
+            texrepeat=(60, 60),
             reflectance=0.1,
         )
         self.root_element.worldbody.add(
@@ -568,7 +568,7 @@ class OdorArena(BaseArena):
             "camera",
             name="birdeye_cam",
             mode="fixed",
-            pos=(self.odor_source[:, 0].max() / 2, 0, 30),
+            pos=(self.odor_source[:, 0].max() / 2, 0, 35),
             euler=(0, 0, 0),
             fovy=45,
         )
