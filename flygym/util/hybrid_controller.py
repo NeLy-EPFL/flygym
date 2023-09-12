@@ -8,18 +8,20 @@ from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
 
 from flygym.util.cpg_controller import CPG
 
+
 class HybridTurningController(NeuroMechFlyMuJoCo):
     """A wrapper for the NMF class controller with a CPG-rule-based hybrid controller.
 
     Parameters
     ----------
     n_stabilisation_steps :
-        Initial number of CPG steps to run before applying its output to the simulation, for stabilization.
+        Initial number of CPG steps to run before applying its output to the
+        simulation, for stabilization.
     turn_mode :
         CPG parameters modulated by the action. Can be "amp", "freq" or "both".
     epsilon_turn :
-        Minimum difference between the action terms to consider it a turning behaviour and disable
-        corresponding leg adhesion.
+        Minimum difference between the action terms to consider it a turning
+        behaviour and disable corresponding leg adhesion.
     """
 
     def __init__(
@@ -103,19 +105,24 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
         fly_z_pos = obs["fly"][0][2]
         ee_z_pos = obs["end_effectors"][2::3]
         leg_to_thorax_zdistance = fly_z_pos - ee_z_pos
-        leg_retraction_contribution = self.increment_leg_retraction_rule(leg_to_thorax_zdistance)
+        leg_retraction_contribution = self.increment_leg_retraction_rule(
+            leg_to_thorax_zdistance
+        )
 
         fly_orient = obs["fly_orient"]
         contact_forces = obs["contact_forces"]
-        leg_stumble_contribution = self.increment_stumble_rule(fly_orient, contact_forces, leg_in_stance)
+        leg_stumble_contribution = self.increment_stumble_rule(
+            fly_orient, contact_forces, leg_in_stance
+        )
 
         joints_action += leg_retraction_contribution + leg_stumble_contribution
 
         # Get adhesion signal
         if self.sim_params.enable_adhesion:
             adhesion_signal = leg_in_stance
-            rule_active_legs = np.logical_or(self.proximal_contact_leg,
-                                                self.legs_in_hole)[self.last_tarsalseg_to_adh_id]
+            rule_active_legs = np.logical_or(
+                self.proximal_contact_leg, self.legs_in_hole
+            )[self.last_tarsalseg_to_adh_id]
             adhesion_signal[rule_active_legs] = 0.0
         else:
             adhesion_signal = np.zeros(6)
@@ -152,7 +159,8 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
         third_furthest_leg = np.sort(leg_to_thorax_zdistance)[3]
         # print(np.sort(leg_to_thorax_zdistance))
         self.legs_in_hole = np.logical_and(
-            leg_to_thorax_zdistance > third_furthest_leg + self.retraction_distance_margin,
+            leg_to_thorax_zdistance
+            > third_furthest_leg + self.retraction_distance_margin,
             leg_to_thorax_zdistance == np.max(leg_to_thorax_zdistance),
         )
         for k, tarsal_seg in enumerate(self.last_tarsalseg_names):
@@ -198,7 +206,6 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
             )
             self.projected_force[k] = min_scalar_proj_contact_force
 
-
         for k, tarsal_seg in enumerate(self.last_tarsalseg_names):
             if self.proximal_contact_leg[k] and not self.legs_in_hole[k]:
                 self.physics.named.model.geom_rgba[
@@ -210,7 +217,9 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
                     "Animat/" + tarsal_seg[:2] + "Femur_visual"
                 ] = self.base_rgba
                 if self.legs_w_proximalcontact_increment[k] > 0:
-                    self.legs_w_proximalcontact_increment[k] -= self.decrease_rate_stumbling
+                    self.legs_w_proximalcontact_increment[
+                        k
+                    ] -= self.decrease_rate_stumbling
 
         if active > 0:
             self.stumble_active = True
@@ -298,18 +307,17 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
         self.increase_rate_retraction = 1 / 2e-3 * self.timestep
         self.decrease_rate_retraction = 1 / 3e-3 * self.timestep
 
-
     def _reset_stumble_state(self):
         # Sensors to detect leg with "unatural" (other than tarsus 4 or 5) contacts
         self.leg_tarsus12T_contactsensors = [
-        [
-            i
-            for i, cs in enumerate(self.contact_sensor_placements)
-            if tarsal_seg[:2] in cs
-            and ("Tibia" in cs or "Tarsus1" in cs or "Tarsus2" in cs)
+            [
+                i
+                for i, cs in enumerate(self.contact_sensor_placements)
+                if tarsal_seg[:2] in cs
+                and ("Tibia" in cs or "Tarsus1" in cs or "Tarsus2" in cs)
+            ]
+            for tarsal_seg in self.last_tarsalseg_names
         ]
-        for tarsal_seg in self.last_tarsalseg_names
-    ]
         self.stumbling_force_threshold = -1.0
         self.increase_rate_stumbling = 1 / 5e-4 * self.timestep  # 1 step every 500µs
         self.decrease_rate_stumbling = 1 / 2e-3 * self.timestep
@@ -353,4 +361,3 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
                 raise_leg[i, joints_in_leg[i][joint_name_to_id["Tibia"]]] = +0.005
 
         self.raise_leg = raise_leg
-
