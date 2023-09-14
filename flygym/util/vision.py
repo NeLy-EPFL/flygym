@@ -53,7 +53,7 @@ def raw_image_to_hex_pxls(
     for i in nb.prange(hex_id_map_flat.size):
         hex_pxl_id = hex_id_map_flat[i] - 1
         if hex_pxl_id != -1:
-            ch_idx = pale_mask[hex_pxl_id]
+            ch_idx = pale_type_mask[hex_pxl_id]
             vals[hex_pxl_id, ch_idx] += (
                 img_arr_flat[i, ch_idx + 1] / num_pixels_per_ommatidia[hex_pxl_id]
             )
