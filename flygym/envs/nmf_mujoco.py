@@ -157,9 +157,10 @@ class MuJoCoParameters:
     render_mode: str = "saved"
     render_window_size: Tuple[int, int] = (640, 480)
     render_playspeed: float = 1.0
-    render_fps: int = 60
+    render_fps: int = 30
     render_camera: str = "Animat/camera_left"
-    render_with_timestamp: bool = True
+    render_timestamp_text: bool = False
+    render_playspeed_text: bool = True
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
@@ -1406,16 +1407,27 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if self.sim_params.draw_gravity:
                 img = self._draw_gravity(img)
 
-            img = cv2.putText(
-                img,
-                f"{self.curr_time:.2f}s ({self.sim_params.render_playspeed}x)",
-                org=(20, 30),
-                fontFace=cv2.FONT_HERSHEY_DUPLEX,
-                fontScale=0.8,
-                color=(0, 0, 0),
-                lineType=cv2.LINE_AA,
-                thickness=1,
-            )
+            render_playspeed_text = self.sim_params.render_playspeed_text
+            render_time_text = self.sim_params.render_timestamp_text
+            if render_playspeed_text or render_time_text:
+                if render_playspeed_text and render_time_text:
+                    text = (
+                        f"{self.curr_time:.2f}s ({self.sim_params.render_playspeed}x)"
+                    )
+                elif render_playspeed_text:
+                    text = f"{self.sim_params.render_playspeed}x"
+                elif render_time_text:
+                    text = f"{self.curr_time:.2f}s"
+                img = cv2.putText(
+                    img,
+                    text,
+                    org=(20, 30),
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX,
+                    fontScale=0.8,
+                    color=(0, 0, 0),
+                    lineType=cv2.LINE_AA,
+                    thickness=1,
+                )
 
             self._frames.append(img)
             self._last_render_time = self.curr_time
