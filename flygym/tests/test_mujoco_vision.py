@@ -45,7 +45,7 @@ def test_vision_dimensions():
     assert obs["raw_vision"].shape == (2, raw_img_height_px, raw_img_width_px, 3)
     assert obs["vision"].shape == (2, num_ommatidia_per_eye, 2)
 
-    print(temp_base_dir)
+    print((obs["vision"][:, :, 0] > 0).sum(), (obs["vision"][:, :, 1] > 0).sum())
 
     # Test postprocessing
     visualize_visual_input(
