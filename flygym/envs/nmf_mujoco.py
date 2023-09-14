@@ -1605,6 +1605,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
+        self.arena.pre_visual_render_hook(self.physics)
         for side in ["L", "R"]:
             raw_img = self.physics.render(
                 width=config.raw_img_width_px,
@@ -1627,6 +1628,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
+        self.arena.post_visual_render_hook(self.physics)
         self.curr_visual_input = np.array(ommatidia_readouts)
         if self.sim_params.render_raw_vision:
             self.curr_raw_visual_input = np.array(raw_visual_input)
