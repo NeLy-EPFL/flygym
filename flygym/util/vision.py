@@ -1,7 +1,7 @@
 import numpy as np
 import numba as nb
 import matplotlib.pyplot as plt
-from flygym.util.data import ommatidia_id_map_path
+from flygym.util.data import ommatidia_id_map_path, data_path
 from typing import List
 from pathlib import Path
 from matplotlib.animation import FuncAnimation
@@ -15,6 +15,7 @@ ommatidia_id_map = np.load(ommatidia_id_map_path)
 # numbers indicate how many raw pixels each ommatidium contains. This is
 # helpful for calculating the mean per ommatidium.
 num_pixels_per_ommatidia = np.unique(ommatidia_id_map, return_counts=True)[1][1:]
+pale_mask = np.load(data_path / "vision/pale_mask.npy").astype(int)
 
 
 @nb.njit(parallel=True)
@@ -22,6 +23,7 @@ def raw_image_to_hex_pxls(
     raw_img,
     num_pixels_per_ommatidia=num_pixels_per_ommatidia,
     ommatidia_id_map=ommatidia_id_map,
+    pale_type_mask=pale_mask,
 ):
     """Given a raw image from an eye (one camera), simulate what the fly
     would see.
@@ -51,7 +53,7 @@ def raw_image_to_hex_pxls(
     for i in nb.prange(hex_id_map_flat.size):
         hex_pxl_id = hex_id_map_flat[i] - 1
         if hex_pxl_id != -1:
-            ch_idx = hex_pxl_id % 2
+            ch_idx = pale_mask[hex_pxl_id]
             vals[hex_pxl_id, ch_idx] += (
                 img_arr_flat[i, ch_idx + 1] / num_pixels_per_ommatidia[hex_pxl_id]
             )
