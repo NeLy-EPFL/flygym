@@ -199,4 +199,4 @@ sensor_positions = {
 # in the first N seconds of the simulation, don't count flips
 flip_ignore_period = 0.1
 # if there's no contact for this amount of time, the fly has flipped
-flip_threshold = 0.005
+flip_threshold = 0.05
