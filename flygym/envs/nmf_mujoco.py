@@ -1,5 +1,6 @@
 import numpy as np
 import imageio
+import cv2
 import logging
 import sys
 from typing import List, Tuple, Dict, Any, Optional, SupportsFloat, Union
@@ -156,8 +157,10 @@ class MuJoCoParameters:
     render_mode: str = "saved"
     render_window_size: Tuple[int, int] = (640, 480)
     render_playspeed: float = 1.0
-    render_fps: int = 60
+    render_fps: int = 30
     render_camera: str = "Animat/camera_left"
+    render_timestamp_text: bool = False
+    render_playspeed_text: bool = True
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
@@ -1398,12 +1401,35 @@ class NeuroMechFlyMuJoCo(gym.Env):
             if self.sim_params.align_camera_with_gravity:
                 self._rotate_camera()
             img = self.physics.render(width=width, height=height, camera_id=camera)
+            img = img.copy()
             if self.sim_params.draw_contacts:
                 img = self._draw_contacts(img)
             if self.sim_params.draw_gravity:
                 img = self._draw_gravity(img)
 
-            self._frames.append(img.copy())
+            render_playspeed_text = self.sim_params.render_playspeed_text
+            render_time_text = self.sim_params.render_timestamp_text
+            if render_playspeed_text or render_time_text:
+                if render_playspeed_text and render_time_text:
+                    text = (
+                        f"{self.curr_time:.2f}s ({self.sim_params.render_playspeed}x)"
+                    )
+                elif render_playspeed_text:
+                    text = f"{self.sim_params.render_playspeed}x"
+                elif render_time_text:
+                    text = f"{self.curr_time:.2f}s"
+                img = cv2.putText(
+                    img,
+                    text,
+                    org=(20, 30),
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX,
+                    fontScale=0.8,
+                    color=(0, 0, 0),
+                    lineType=cv2.LINE_AA,
+                    thickness=1,
+                )
+
+            self._frames.append(img)
             self._last_render_time = self.curr_time
             return self._frames[-1]
         else:
@@ -1605,6 +1631,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
+        self.arena.pre_visual_render_hook(self.physics)
         for side in ["L", "R"]:
             raw_img = self.physics.render(
                 width=config.raw_img_width_px,
@@ -1627,6 +1654,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
+        self.arena.post_visual_render_hook(self.physics)
         self.curr_visual_input = np.array(ommatidia_readouts)
         if self.sim_params.render_raw_vision:
             self.curr_raw_visual_input = np.array(raw_visual_input)
