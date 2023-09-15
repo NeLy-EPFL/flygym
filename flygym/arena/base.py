@@ -89,5 +89,17 @@ class BaseArena(ABC):
         """
         return np.zeros((0, 2))
 
+    def pre_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
+        """Make necessary changes (eg. hide certain visualization markers)
+        before rendering the visual inputs.
+        """
+        pass
+
+    def post_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
+        """Make necessary changes (eg. show certain visualization markers)
+        after rendering the visual inputs.
+        """
+        pass
+
     def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
         return
