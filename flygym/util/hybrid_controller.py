@@ -78,6 +78,8 @@ class HybridTurningController(NeuroMechFlyMuJoCo):
 
         # CPG initialization
         self.cpg = CPG(timestep=self.timestep)
+        for i in range(2000):
+            self.cpg.step([0.0, 0.0])
 
         # Processing of joint trajectories reference from stepping data
         self._load_preprogrammed_stepping()
