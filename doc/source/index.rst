@@ -23,6 +23,11 @@ FlyGym: Gymnasium environments for NeuroMechFly
 
 .. warning::
    
+   **16 September 2023: This website will undergo significant updates in the coming days.**
+
+
+.. warning::
+   
    This package is still under development. **Only the MuJoCo version is available**. The API is subject to change.
 
 
