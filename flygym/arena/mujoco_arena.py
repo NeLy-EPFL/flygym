@@ -31,6 +31,7 @@ class FlatTerrain(BaseArena):
         size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         ground_alpha: float = 0.8,
+        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -60,6 +61,15 @@ class FlatTerrain(BaseArena):
             friction=friction,
         )
         self.friction = friction
+        if scale_bar_pos:
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.05, 0.5),
+                pos=scale_bar_pos,
+                rgba=(0, 0, 0, 1),
+                euler=(0, np.pi / 2, 0),
+            )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
@@ -103,6 +113,7 @@ class GappedTerrain(BaseArena):
         block_width: float = 1.0,
         gap_depth: float = 2,
         ground_alpha: float = 0.8,
+        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ) -> None:
         self.x_range = x_range
         self.y_range = y_range
@@ -137,6 +148,16 @@ class GappedTerrain(BaseArena):
             rgba=(0.3, 0.3, 0.3, ground_alpha),
             size=ground_size,
         )
+
+        if scale_bar_pos:
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.05, 0.5),
+                pos=scale_bar_pos + np.array([0, 0, self.gap_depth / 2]),
+                rgba=(0, 0, 0, 1),
+                euler=(0, np.pi / 2, 0),
+            )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
@@ -184,6 +205,7 @@ class BlocksTerrain(BaseArena):
         height_range: Tuple[float, float] = (0.45, 0.45),
         ground_alpha: float = 0.8,
         rand_seed: int = 0,
+        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
         self.x_range = x_range
         self.y_range = y_range
@@ -222,6 +244,16 @@ class BlocksTerrain(BaseArena):
                     rgba=(0.3, 0.3, 0.3, ground_alpha),
                     friction=friction,
                 )
+
+        if scale_bar_pos:
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.1, 0.5),
+                pos=scale_bar_pos + np.array([0, 0, 0.1]),
+                rgba=(0, 0, 0, 1),
+                euler=(0, np.pi / 2, 0),
+            )
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
@@ -265,6 +297,7 @@ class MixedTerrain(BaseArena):
         height_range: Tuple[float, float] = (0.45, 0.45),
         ground_alpha: float = 0.8,
         rand_seed: int = 0,
+        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
         self.root_element = mjcf.RootElement()
         self.friction = friction
@@ -354,6 +387,16 @@ class MixedTerrain(BaseArena):
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
                 rgba=(0.3, 0.3, 0.3, ground_alpha),
                 size=ground_size,
+            )
+
+        if scale_bar_pos:
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.05, 0.5),
+                pos=scale_bar_pos,
+                rgba=(0, 0, 0, 1),
+                euler=(0, np.pi / 2, 0),
             )
 
     def get_spawn_position(
