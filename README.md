@@ -1,6 +1,6 @@
 ## FlyGym: Gymnasium environments for NeuroMechFly
 
-[**Documentation**](https://nely-epfl.github.io/flygym/)
+[**Documentation**](https://neuromechfly.org/)
 
 **16 September 2023: Documentation will be updated in the coming days.**
 
