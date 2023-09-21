@@ -1,6 +1,13 @@
 MuJoCo Specifics
 ================
 
+
+.. warning::
+   
+   Information on these pages are being updated. Please refer to `the codebase <https://github.com/NeLy-EPFL/nmf2-paper>`_ accompnaying our `NeuroMechFly 2.0 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ for the code used to generate results in the paper.
+   --- 21 September 2023
+
+
 Tutorials
 ---------
 
