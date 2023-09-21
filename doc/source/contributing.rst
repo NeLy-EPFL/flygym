@@ -1,11 +1,11 @@
-Development
-===========
+Contributing
+============
 
 You can contribute to this package through its `GitHub Repository <https://github.com/NeLy-EPFL/flygym>`_.
 
 Code style
 ----------
-**Code:** We will use the `Black Code Style <https://black.readthedocs.io/en/stable/the_black_code_style/index.html>`_ (version 23.3.0). If you install FlyGym in the dev mode (`pip install -e ."[dev]"`), the Black formatter will be automatically installed. Please run `black . --check` in the root directory to check if your code is formatted correctly, or run `black .` to format all files. The GitHub Actions CI will also check the code style and display a red X if it is not compliant. You can also `integrate Black with your IDE <https://black.readthedocs.io/en/stable/integrations/index.html>`_. Comment lines should also be limited to 88 characters per line.
+**Code:** We will use the `Black Code Style <https://black.readthedocs.io/en/stable/the_black_code_style/index.html>`_ (version 23.3.0). If you install FlyGym in the dev mode (```pip install -e ."[dev]"```), the Black formatter will be automatically installed. Please run ``black . --check`` in the root directory to check if your code is formatted correctly, or run `black .` to format all files. The GitHub Actions CI will also check the code style and display a red X if it is not compliant. You can also `integrate Black with your IDE <https://black.readthedocs.io/en/stable/integrations/index.html>`_. Comment lines should also be limited to 88 characters per line.
 
 **Documentation:** We will use `Numpy Docstring Style <https://numpydoc.readthedocs.io/en/latest/format.html>`_ for docstrings and use a line length limit of 75 characters for docstrings.
 

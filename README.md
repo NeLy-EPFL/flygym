@@ -2,17 +2,19 @@
 
 [**Documentation**](https://neuromechfly.org/) | [**Preprint**](https://www.biorxiv.org/content/10.1101/2023.09.18.556649)
 
+![overview_video](https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true)
+
 This repository contains the FlyGym package presented in our paper "NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult _Drosophila_."
 
 If you use FlyGym or NeuroMechFly in your work, please cite the following papers:
 ```
 @article{WangChen2023,
-	author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem Ozdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
-	title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
-	year = {2023},
-	doi = {10.1101/2023.09.18.556649},
-	URL = {https://www.biorxiv.org/content/early/2023/09/18/2023.09.18.556649},
-	journal = {bioRxiv}
+  author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem \"{O}zdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
+  title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
+  year = {2023},
+  doi = {10.1101/2023.09.18.556649},
+  URL = {https://www.biorxiv.org/content/early/2023/09/18/2023.09.18.556649},
+  journal = {bioRxiv}
 }
 
 @article{LobatoRios2022,
