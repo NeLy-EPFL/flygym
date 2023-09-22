@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="0.1.1",
+    version="0.2.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
     packages=find_packages(),
-    package_data={"flygym": ["data/*"]},
+    package_data={"flygym": ["data/*"], "flygym.mujoco": ["mujoco/config.yaml"]},
     include_package_data=True,
     python_requires=">=3.7",
     classifiers=[
@@ -28,7 +28,7 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco", "dm_control", "numba"],
+        "mujoco": ["mujoco", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
@@ -41,7 +41,6 @@ setup(
             "shapely",
             "rasterio",
             "requests",
-            "opencv-python",
         ],
     },
 )

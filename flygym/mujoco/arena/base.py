@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Optional
 from dm_control import mjcf
 
 
@@ -103,3 +103,71 @@ class BaseArena(ABC):
 
     def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
         return
+
+
+class FlatTerrain(BaseArena):
+    """Flat terrain with no obstacles.
+
+    Attributes
+    ----------
+    arena : mjcf.RootElement
+        The arena object that the terrain is built on.
+
+    Parameters
+    ----------
+    size : Tuple[int, int]
+        The size of the terrain in (x, y) dimensions.
+    friction : Tuple[float, float, float]
+        Sliding, torsional, and rolling friction coefficients, by default
+        (1, 0.005, 0.0001)
+    """
+
+    def __init__(
+        self,
+        size: Tuple[float, float] = (50, 50),
+        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        ground_alpha: float = 0.8,
+        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
+    ):
+        self.root_element = mjcf.RootElement()
+        ground_size = [*size, 1]
+        chequered = self.root_element.asset.add(
+            "texture",
+            type="2d",
+            builtin="checker",
+            width=300,
+            height=300,
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
+        )
+        grid = self.root_element.asset.add(
+            "material",
+            name="grid",
+            texture=chequered,
+            texrepeat=(10, 10),
+            reflectance=0.1,
+            rgba=(1.0, 1.0, 1.0, ground_alpha),
+        )
+        self.root_element.worldbody.add(
+            "geom",
+            type="plane",
+            name="ground",
+            material=grid,
+            size=ground_size,
+            friction=friction,
+        )
+        self.friction = friction
+        if scale_bar_pos:
+            self.root_element.worldbody.add(
+                "geom",
+                type="cylinder",
+                size=(0.05, 0.5),
+                pos=scale_bar_pos,
+                rgba=(0, 0, 0, 1),
+                euler=(0, np.pi / 2, 0),
+            )
+
+    def get_spawn_position(
+        self, rel_pos: np.ndarray, rel_angle: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        return rel_pos, rel_angle

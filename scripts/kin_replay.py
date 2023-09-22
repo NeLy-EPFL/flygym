@@ -3,13 +3,12 @@ Execute an environment where all leg joints of the fly repeat a sinusoidal
 motion. The output will be saved as a video."""
 
 import numpy as np
-import pkg_resources
 import pickle
 from pathlib import Path
 from tqdm import trange
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from flygym.state import stretched_pose
-from flygym.util.config import all_leg_dofs
+from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco.preprogrammed import all_leg_dofs
+from flygym.common import get_data_path
 
 # Initialize simulation
 run_time = 1
@@ -19,12 +18,12 @@ sim_params = MuJoCoParameters(
 )
 nmf = NeuroMechFlyMuJoCo(
     sim_params=sim_params,
-    init_pose=stretched_pose,
+    init_pose="stretch",
     actuated_joints=all_leg_dofs,
 )
 
 # Load recorded data
-data_path = Path(pkg_resources.resource_filename("flygym", "data"))
+data_path = get_data_path("flygym", "data")
 with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
     data = pickle.load(f)
 

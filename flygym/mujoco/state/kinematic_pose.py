@@ -1,24 +1,9 @@
 import numpy as np
 import yaml
 from pathlib import Path
-from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Union, Any, Iterable
+from typing import Dict, Any, Iterable
 
-
-class BaseState(ABC):
-    """Base class for animal state (eg. pose) representations. Behaves
-    like a dictionary."""
-
-    @abstractmethod
-    def __iter__(self):
-        """Returns an iterator over the keys of the state."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __getitem__(self, key: str) -> Any:
-        """Returns the value of a variable in the state given a key."""
-        raise NotImplementedError
-
+from .base import BaseState
 
 class KinematicPose(BaseState):
     def __init__(self, joint_pos: Dict[str, float]) -> None:

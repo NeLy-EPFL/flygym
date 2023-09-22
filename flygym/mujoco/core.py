@@ -29,12 +29,18 @@ try:
 except ImportError:
     pass
 
-import flygym.util.vision as vision
-import flygym.util.config as config
-import flygym.util.data as data
-from flygym.arena import BaseArena
-from flygym.arena.mujoco_arena import FlatTerrain
-from flygym.state import BaseState, stretched_pose
+from flygym.common import get_data_path
+import flygym.mujoco.util as util
+import flygym.mujoco.preprogrammed as preprogrammed
+import flygym.mujoco.state as state
+
+import flygym.mujoco.vision as vision
+
+# import flygym.util.config as config
+# import flygym.util.data as data
+from flygym.mujoco.arena import BaseArena, FlatTerrain
+
+# from flygym.state import BaseState, stretched_pose
 
 
 @dataclass
@@ -272,20 +278,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
         the antenna positions.
     """
 
+    _mujoco_config = util.load_config()
+
     def __init__(
         self,
         sim_params: MuJoCoParameters = None,
-        actuated_joints: List = config.all_leg_dofs,
-        contact_sensor_placements: List = config.all_tarsi_links,
+        actuated_joints: List = preprogrammed.all_leg_dofs,
+        contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orient: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
-        init_pose: BaseState = stretched_pose,
+        init_pose: Union[str, state.KinematicPose] = "stretch",
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
-        # camera_correction: bool = True,
         detect_flip: bool = False,
     ) -> None:
         """Initialize a NeuroMechFlyMuJoCo environment.
@@ -345,6 +352,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for spawn_orient = [0, 0, 0]
         self.spawn_orient = spawn_orient - np.array((0, 0, np.pi / 2))
         self.control = control
+        if isinstance(init_pose, str):
+            init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
         self.init_pose = init_pose
         self.render_mode = sim_params.render_mode
         self.detect_flip = detect_flip
@@ -361,11 +370,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # Parse collisions specs
         if isinstance(floor_collisions, str):
-            self.floor_collisions = config.get_collision_geoms(floor_collisions)
+            self.floor_collisions = preprogrammed.get_collision_geometries(
+                floor_collisions
+            )
         else:
             self.floor_collisions = floor_collisions
         if isinstance(self_collisions, str):
-            self.self_collisions = config.get_collision_geoms(self_collisions)
+            self.self_collisions = preprogrammed.get_collision_geometries(
+                self_collisions
+            )
         else:
             self.self_collisions = self_collisions
 
@@ -450,7 +463,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         )
 
         # Load NMF model
-        self.model = mjcf.from_path(data.mujoco_groundwalking_model_path)
+        self.model = mjcf.from_path(
+            get_data_path("flygym", "data") / self._mujoco_config["paths"]["mjcf_model"]
+        )
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes
@@ -461,6 +476,22 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._vision_update_mask = []
         if self.sim_params.enable_vision:
             self._configure_eyes()
+            data_path = get_data_path("flygym", "data")
+            ommatidia_id_map_path = (
+                data_path / self._mujoco_config["paths"]["ommatidia_id_map"]
+            )
+            pale_type_mask_path = (
+                data_path / self._mujoco_config["paths"]["canonical_pale_type_mask"]
+            )
+            vision_config = self._mujoco_config["vision"]
+            self.retina = vision.Retina(
+                ommatidia_id_map=np.load(ommatidia_id_map_path),
+                pale_type_mask=np.load(pale_type_mask_path).astype(int),
+                distortion_coefficient=vision_config["fisheye_distortion_coefficient"],
+                zoom=vision_config["fisheye_zoom"],
+                nrows=vision_config["raw_img_height_px"],
+                ncols=vision_config["raw_img_width_px"],
+            )
 
         # Define list of actuated joints
         self.actuators = [
@@ -562,16 +593,18 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
-            parent_name, position, euler_angle, rgba = config.sensor_positions[name]
-            parent_body = self.model.find("body", parent_name)
-            sensor_body = parent_body.add("body", name=f"{name}_body", pos=position)
+            sensor_config = self._mujoco_config["vision"]["sensor_positions"][name]
+            parent_body = self.model.find("body", sensor_config["parent"])
+            sensor_body = parent_body.add(
+                "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
+            )
             sensor_body.add(
                 "camera",
                 name=name,
                 dclass="nmf",
                 mode="track",
-                euler=euler_angle,
-                fovy=config.fovy_per_eye,
+                euler=sensor_config["orientation"],
+                fovy=self._mujoco_config["vision"]["fovy_per_eye"],
             )
             if self.sim_params.draw_markers:
                 sensor_body.add(
@@ -579,12 +612,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     name=f"{name}_marker",
                     type="sphere",
                     size=[0.06],
-                    rgba=rgba,
+                    rgba=sensor_config["marker_rgba"],
                 )
 
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = []
-        for segment in config.hidden_segments_for_vision:
+        for segment in self._mujoco_config["vision"]["hidden_segments"]:
             # all body segments have a visual geom - add this first
             visual_geom_name = f"{segment}_visual"
             self._geoms_to_hide.append(visual_geom_name)
@@ -602,11 +635,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 if "collision" in geom.name
             ]
         elif isinstance(collision_spec, str):
-            return config.get_collision_geoms(collision_spec)
+            return preprogrammed.get_collision_geometries(collision_spec)
         elif isinstance(collision_spec, list):
             return collision_spec
         else:
-            raise ValueError(f"Unrecognized collision spec {collision_spec}")
+            raise TypeError(
+                "Collision specs must be a string ('legs', 'legs-no-coxa', 'tarsi', "
+                "'none'), or a list of body segment names."
+            )
 
     def _correct_camera_orientation(self, camera_name: str):
         # Correct the camera orientation by incorporating the spawn rotation
@@ -646,117 +682,35 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return camera
 
     def _set_geom_colors(self):
-        for bodypart in config.colors.keys():
-            if bodypart in ["A12345", "A6"]:
+        for type_, specs in self._mujoco_config["appearance"].items():
+            # Define texture and material
+            if specs["texture"] is not None:
                 self.model.asset.add(
                     "texture",
-                    name=f"{bodypart}_texture",
-                    type="cube",
-                    builtin="gradient",
+                    name=f"{type_}_texture",
+                    builtin=specs["texture"]["builtin"],
                     mark="random",
-                    random=0.3,
-                    markrgb=config.colors[bodypart][2],
-                    rgb1=config.colors[bodypart][0],
-                    rgb2=config.colors[bodypart][1],
-                    width=200,
-                    height=200,
+                    width=specs["texture"]["size"],
+                    height=specs["texture"]["size"],
+                    random=specs["texture"]["random"],
+                    rgb1=specs["texture"]["rgb1"],
+                    rgb2=specs["texture"]["rgb2"],
+                    markrgb=specs["texture"]["markrgb"],
                 )
-                self.model.asset.add(
-                    "material",
-                    name=f"{bodypart}_material",
-                    texture=f"{bodypart}_texture",
-                    specular=0.0,
-                    shininess=0.0,
-                    reflectance=0.0,
-                    texuniform=True,
-                    texrepeat=[1, 1],
-                )
-            elif bodypart in [
-                "thorax",
-                "coxa",
-                "femur",
-                "tibia",
-                "tarsus",
-                "head",
-                "antennas",
-                "proboscis",
-            ]:
-                size = 500
-                random = 0.05
-
-                if bodypart in ["thorax", "head"]:
-                    size = 50
-                    random = 0.3
-                elif bodypart in ["antennas", "proboscis"]:
-                    size = 50
-                    random = 0.1
-
-                self.model.asset.add(
-                    "texture",
-                    name=f"{bodypart}_texture",
-                    type="cube",
-                    builtin="flat",
-                    rgb1=config.colors[bodypart][0],
-                    rgb2=config.colors[bodypart][0],
-                    markrgb=config.colors[bodypart][1],
-                    mark="random",
-                    random=random,
-                    width=size,
-                    height=size,
-                )
-                self.model.asset.add(
-                    "material",
-                    name=f"{bodypart}_material",
-                    texture=f"{bodypart}_texture",
-                    rgba=config.colors[bodypart][2],
-                    specular=0.0,
-                    shininess=0.0,
-                    reflectance=0.0,
-                    texuniform=True,
-                    texrepeat=[1, 1],
-                )
-            else:
-                self.model.asset.add(
-                    "material",
-                    name=f"{bodypart}_material",
-                    specular=0.0,
-                    shininess=0.0,
-                    reflectance=0.0,
-                    rgba=config.colors[bodypart],
-                )
-
-        for geom in self.model.find_all("geom"):
-            if "visual" in geom.name:
-                if geom.name[1:-7] == "Eye":
-                    geom.material = "eyes_material"
-                elif geom.name[2:-7] == "Coxa":
-                    geom.material = "coxa_material"
-                elif geom.name[2:-7] == "Femur":
-                    geom.material = "femur_material"
-                elif geom.name[2:-7] == "Tibia":
-                    geom.material = "tibia_material"
-                elif geom.name[2:-8] == "Tarsus":
-                    geom.material = "tarsus_material"
-                elif geom.name[1:-7] == "Wing":
-                    geom.material = "wings_material"
-                elif geom.name[0:-7] in ["A1A2", "A3", "A4", "A5"]:
-                    geom.material = "A12345_material"
-                elif geom.name[0:-7] == "A6":
-                    geom.material = "A6_material"
-                elif geom.name[0:-7] == "Thorax":
-                    geom.material = "thorax_material"
-                elif geom.name[0:-7] in ["Haustellum", "Rostrum"]:
-                    geom.material = "proboscis_material"
-                elif geom.name[1:-7] == "Arista":
-                    geom.material = "aristas_material"
-                elif geom.name[1:-7] in ["Pedicel", "Funiculus"]:
-                    geom.material = "antennas_material"
-                elif geom.name[1:-7] == "Haltere":
-                    geom.material = "halteres_material"
-                elif geom.name[:-7] == "Head":
-                    geom.material = "head_material"
-                else:
-                    geom.material = "body_material"
+            self.model.asset.add(
+                "material",
+                name=f"{type_}_material",
+                texture=f"{type_}_texture" if specs["texture"] is not None else None,
+                rgba=specs["material"]["rgba"],
+                specular=0.0,
+                shininess=0.0,
+                reflectance=0.0,
+                texuniform=True,
+            )
+            # Apply to geoms
+            for segment in specs["apply_to"]:
+                geom = self.model.find("geom", f"{segment}_visual")
+                geom.material = f"{type_}_material"
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
@@ -1033,17 +987,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return end_effector_sensors
 
     def _add_odor_sensors(self):
-        sensor_names = [
-            "LAntenna_sensor",
-            "RAntenna_sensor",
-            "LMaxillaryPalp_sensor",
-            "RMaxillaryPalp_sensor",
-        ]
         antennae_sensors = []
-        for name in sensor_names:
-            parent_name, position, rgba = config.sensor_positions[name]
-            parent_body = self.model.find("body", parent_name)
-            sensor_body = parent_body.add("body", name=f"{name}_body", pos=position)
+        for name, specs in self._mujoco_config["olfaction"]["sensor_positions"].items():
+            parent_body = self.model.find("body", specs["parent"])
+            sensor_body = parent_body.add(
+                "body", name=f"{name}_body", pos=specs["rel_pos"]
+            )
             sensor = self.model.sensor.add(
                 "framepos",
                 name=f"{name}_pos_sensor",
@@ -1057,15 +1006,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     name=f"{name}_marker",
                     type="sphere",
                     size=[0.06],
-                    rgba=rgba,
+                    rgba=specs["marker_rgba"],
                 )
-            # sensor = self.model.sensor.add(
-            #     "framepos",
-            #     name=f"{name}_pos",
-            #     objtype="body",
-            #     objname=name,
-            # )
-
         return antennae_sensors
 
     def _add_force_sensors(self):
@@ -1332,54 +1274,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self._flip_counter += 1
             else:
                 self._flip_counter = 0
-            if (
-                self.curr_time > config.flip_ignore_period
-                and self._flip_counter * self.timestep > config.flip_threshold
-            ):
-                info["flip"] = True
-            else:
-                info["flip"] = False
+            flip_config = self._mujoco_config["flip_detection"]
+            has_passed_init = self.curr_time > flip_config["ignore_period"]
+            contact_lost_time = self._flip_counter * self.timestep
+            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
+            info["flip"] = has_passed_init and lost_contact_long_enough
             info["flip_counter"] = self._flip_counter
             info["contact_forces"] = observation["contact_forces"].copy()
 
         return observation, reward, terminated, truncated, info
-
-    def get_adhesion_vector(self):
-        adhesion = np.ones(len(self.last_tarsalseg_names))
-        adhesion[
-            np.logical_and(
-                self.adhesion_sup_id,
-                self.last_refjnt_angvel > config.adhesion_speed_thresholds,
-            )
-        ] = 0
-        adhesion[
-            np.logical_and(
-                ~self.adhesion_sup_id,
-                self.last_refjnt_angvel < config.adhesion_speed_thresholds,
-            )
-        ] = 0
-        adhesion[self.adhesion_counter > 0] = 0
-        # During the refractory period, adhesion is ON; by defualt adhesion
-        # is on only switch it off when lifting the leg
-        adhesion[self.adhesion_refractory_counter > 0] = 1
-
-        self.adhesion_counter[
-            np.logical_or(adhesion <= 0, self.adhesion_counter > 0)
-        ] += 1
-        self.adhesion_refractory_counter[
-            np.logical_or(
-                self.adhesion_counter > self.adhesion_off_duration_steps,
-                self.adhesion_refractory_counter > 0,
-            )
-        ] += 1
-        self.adhesion_refractory_counter[
-            self.adhesion_refractory_counter
-            > self.adhesion_off_refractory_duration_steps
-        ] = 0
-        self.adhesion_counter[
-            self.adhesion_counter > self.adhesion_off_duration_steps
-        ] = 0
-        return adhesion
 
     def render(self):
         """Call the ``render`` method to update the renderer. It should be
@@ -1619,6 +1522,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         return img
 
     def _update_vision(self) -> np.ndarray:
+        vision_config = self._mujoco_config["vision"]
         next_render_time = (
             self._last_vision_update_time + self._eff_visual_render_interval
         )
@@ -1634,22 +1538,12 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena.pre_visual_render_hook(self.physics)
         for side in ["L", "R"]:
             raw_img = self.physics.render(
-                width=config.raw_img_width_px,
-                height=config.raw_img_height_px,
+                width=vision_config["raw_img_width_px"],
+                height=vision_config["raw_img_height_px"],
                 camera_id=f"Animat/{side}Eye_cam",
             )
-            fish_img = vision.correct_fisheye(
-                raw_img,
-                config.fisheye_distortion_coefficient,
-                config.fisheye_zoom,
-                config.raw_img_height_px,
-                config.raw_img_width_px,
-            )
-            readouts_per_eye = vision.raw_image_to_hex_pxls(
-                np.ascontiguousarray(fish_img),
-                vision.num_pixels_per_ommatidia,
-                vision.ommatidia_id_map,
-            )
+            fish_img = np.ascontiguousarray(self.retina.correct_fisheye(raw_img))
+            readouts_per_eye = self.retina.raw_image_to_hex_pxls(fish_img)
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
