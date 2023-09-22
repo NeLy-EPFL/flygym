@@ -1,15 +1,11 @@
 import numpy as np
-import scipy.stats
+import tempfile
 import pytest
+from pathlib import Path
 
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from flygym.tests import temp_base_dir
-from flygym.util.config import (
-    raw_img_width_px,
-    raw_img_height_px,
-    num_ommatidia_per_eye,
-)
-from flygym.util.vision import visualize_visual_input
+from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco.util import load_config
+from flygym.mujoco.vision import visualize_visual_input
 
 
 random_state = np.random.RandomState(0)
@@ -19,6 +15,9 @@ random_state = np.random.RandomState(0)
     reason="github actions runner doesn't have a display; render will fail"
 )
 def test_vision_dimensions():
+    # Load config
+    config = load_config()
+
     # Initialize simulation
     num_steps = 100
     sim_params = MuJoCoParameters(
@@ -42,13 +41,17 @@ def test_vision_dimensions():
     assert nmf.vision_update_mask.sum() == int(
         num_steps * sim_params.timestep * sim_params.vision_refresh_rate
     )
-    assert obs["raw_vision"].shape == (2, raw_img_height_px, raw_img_width_px, 3)
-    assert obs["vision"].shape == (2, num_ommatidia_per_eye, 2)
+    height = config["vision"]["raw_img_height_px"]
+    width = config["vision"]["raw_img_width_px"]
+    assert obs["raw_vision"].shape == (2, height, width, 3)
+    assert obs["vision"].shape == (2, config["vision"]["num_ommatidia_per_eye"], 2)
 
     print((obs["vision"][:, :, 0] > 0).sum(), (obs["vision"][:, :, 1] > 0).sum())
 
     # Test postprocessing
+    temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     visualize_visual_input(
+        nmf.retina,
         output_path=temp_base_dir / "vision/eyes.mp4",
         vision_data_li=[x["vision"] for x in obs_list],
         raw_vision_data_li=[x["raw_vision"] for x in obs_list],

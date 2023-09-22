@@ -1,17 +1,19 @@
 import numpy as np
+import tempfile
+from pathlib import Path
 
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo
-from flygym.tests import temp_base_dir
-from flygym.tests.common import plot_mujoco_rollout
+from flygym.mujoco import NeuroMechFlyMuJoCo
+from flygym.mujoco.util import plot_mujoco_rollout
 
 
 random_state = np.random.RandomState(0)
+temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
 
 
 def test_stretched_pose():
-    from flygym.state import stretched_pose
-
-    nmf = NeuroMechFlyMuJoCo(init_pose=stretched_pose)
+    random_state = np.random.RandomState(0)
+    temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    nmf = NeuroMechFlyMuJoCo(init_pose="stretch")
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
@@ -30,9 +32,9 @@ def test_stretched_pose():
 
 
 def test_zero_pose():
-    from flygym.state import zero_pose
-
-    nmf = NeuroMechFlyMuJoCo(init_pose=zero_pose, spawn_pos=(0, 0, 3))
+    random_state = np.random.RandomState(0)
+    temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    nmf = NeuroMechFlyMuJoCo(init_pose="zero", spawn_pos=(0, 0, 3))
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
@@ -50,10 +52,10 @@ def test_zero_pose():
     plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)
 
 
-def test_walking_pose():
-    from flygym.state import walking_pose
-
-    nmf = NeuroMechFlyMuJoCo(init_pose=walking_pose)
+def test_tripod_pose():
+    random_state = np.random.RandomState(0)
+    temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    nmf = NeuroMechFlyMuJoCo(init_pose="tripod")
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
@@ -67,5 +69,5 @@ def test_walking_pose():
         obs_list.append(obs)
     nmf.close()
 
-    out_dir = temp_base_dir / "mujoco_walking_pose"
+    out_dir = temp_base_dir / "mujoco_tripod_pose"
     plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)

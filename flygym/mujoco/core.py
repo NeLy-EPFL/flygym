@@ -288,7 +288,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orient: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
         init_pose: Union[str, state.KinematicPose] = "stretch",
         floor_collisions: Union[str, List[str]] = "legs",
@@ -350,7 +350,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.spawn_pos = spawn_pos
         # convert to mujoco orientation format [0, 0, 0] would orient along the x axis
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for spawn_orient = [0, 0, 0]
-        self.spawn_orient = spawn_orient - np.array((0, 0, np.pi / 2))
+        self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
         self.control = control
         if isinstance(init_pose, str):
             init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
@@ -506,7 +506,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.floor_height = self._get_max_floor_height(arena)
 
         # Add arena and put fly in it
-        arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orient)
+        arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
         self.arena_root = arena.root_element
         self.arena_root.option.timestep = self.timestep
 
@@ -659,10 +659,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # Add the spawn rotation (keep horizon flat)
         spawn_quat = np.array(
             [
-                np.cos(self.spawn_orient[-1] / 2),
-                self.spawn_orient[0] * np.sin(self.spawn_orient[-1] / 2),
-                self.spawn_orient[1] * np.sin(self.spawn_orient[-1] / 2),
-                self.spawn_orient[2] * np.sin(self.spawn_orient[-1] / 2),
+                np.cos(self.spawn_orientation[-1] / 2),
+                self.spawn_orientation[0] * np.sin(self.spawn_orientation[-1] / 2),
+                self.spawn_orientation[1] * np.sin(self.spawn_orientation[-1] / 2),
+                self.spawn_orientation[2] * np.sin(self.spawn_orientation[-1] / 2),
             ]
         )
 
@@ -758,7 +758,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
-            "fly_orient": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
+            "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
         }
         return action_space, observation_space
 
@@ -801,7 +801,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             elif self.sim_params.camera_follows_fly_orientation:
                 # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
                 self.base_camera_rot = R.from_euler(
-                    "xyz", self.cam.euler + self.spawn_orient
+                    "xyz", self.cam.euler + self.spawn_orientation
                 ).as_matrix()
                 # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
             else:
@@ -1348,7 +1348,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         cam = self.physics.bind(self.cam)
         cam_name = self.cam.name
         fly_z_rot_euler = np.array(
-            [self.fly_rot[0], 0.0, 0.0] - self.spawn_orient[::-1] - [np.pi / 2, 0, 0]
+            [self.fly_rot[0], 0.0, 0.0] - self.spawn_orientation[::-1] - [np.pi / 2, 0, 0]
         )
         # This compensates both for the scipy to mujoco transform (align with y is [0, 0, 0]
         # in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly orientation is already
@@ -1650,14 +1650,14 @@ class NeuroMechFlyMuJoCo(gym.Env):
         # end effector position
         ee_pos = self.physics.bind(self.end_effector_sensors).sensordata.copy()
 
-        orient_vec = self.physics.bind(self.body_sensors[4]).sensordata.copy()
+        orientation_vec = self.physics.bind(self.body_sensors[4]).sensordata.copy()
 
         obs = {
             "joints": joint_obs,
             "fly": fly_pos,
             "contact_forces": contact_forces,
             "end_effectors": ee_pos,
-            "fly_orient": orient_vec,
+            "fly_orientation": orientation_vec,
         }
 
         # olfaction

@@ -1,10 +1,8 @@
 import numpy as np
-import scipy.stats
 
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from flygym.tests import temp_base_dir
-from flygym.tests.common import plot_mujoco_rollout
-from flygym.arena.mujoco_arena import OdorArena
+from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco.util import plot_mujoco_rollout
+from flygym.mujoco.arena import OdorArena
 
 
 random_state = np.random.RandomState(0)
