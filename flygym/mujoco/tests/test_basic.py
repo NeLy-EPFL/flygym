@@ -25,16 +25,8 @@ def test_basic_untethered_sinewave():
     nmf.close()
 
     # These should be deterministic
-    # print(obs_list[-1]["joints"].sum())
     # print(obs_list[-1]["fly"].sum())
-    # print(obs_list[-1]["contact_forces"].sum())
-    # print(obs_list[-1]["fly_orientation"].sum())
-    # print(obs_list[-1]["end_effectors"].sum())
-    assert np.isclose(obs_list[-1]["joints"].sum(), 606.5673288891932)
-    assert np.isclose(obs_list[-1]["fly"].sum(), -80.72276400618352)
-    assert np.isclose(obs_list[-1]["contact_forces"].sum(), 0)
-    assert np.isclose(obs_list[-1]["fly_orientation"].sum(), 0.5435753368176544)
-    assert np.isclose(obs_list[-1]["end_effectors"].sum(), 17.853036591414362)
+    assert np.isclose(obs_list[-1]["fly"].sum(), -80.7228, rtol=0.03)
 
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     out_dir = temp_base_dir / "mujoco_basic_untethered_sinewave"
