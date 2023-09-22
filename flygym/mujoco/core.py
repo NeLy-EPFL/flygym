@@ -1348,7 +1348,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
         cam = self.physics.bind(self.cam)
         cam_name = self.cam.name
         fly_z_rot_euler = np.array(
-            [self.fly_rot[0], 0.0, 0.0] - self.spawn_orientation[::-1] - [np.pi / 2, 0, 0]
+            [self.fly_rot[0], 0.0, 0.0]
+            - self.spawn_orientation[::-1]
+            - [np.pi / 2, 0, 0]
         )
         # This compensates both for the scipy to mujoco transform (align with y is [0, 0, 0]
         # in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly orientation is already

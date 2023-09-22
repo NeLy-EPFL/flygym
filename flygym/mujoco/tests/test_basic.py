@@ -24,7 +24,7 @@ def test_basic_untethered_sinewave():
         obs_list.append(obs)
     nmf.close()
 
-    # These should be deterministic 
+    # These should be deterministic
     # print(obs_list[-1]["joints"].sum())
     # print(obs_list[-1]["fly"].sum())
     # print(obs_list[-1]["contact_forces"].sum())

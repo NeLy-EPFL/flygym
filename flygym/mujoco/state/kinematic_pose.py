@@ -5,6 +5,7 @@ from typing import Dict, Any, Iterable
 
 from .base import BaseState
 
+
 class KinematicPose(BaseState):
     def __init__(self, joint_pos: Dict[str, float]) -> None:
         """Pose (joint angles) of an animal.
