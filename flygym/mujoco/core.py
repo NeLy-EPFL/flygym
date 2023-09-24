@@ -1776,6 +1776,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def get_last_frame(self):
         """Get the last rendered frame. Only useful if ``render_mode`` is
         'saved'.
+
         Returns
         -------
         np.ndarray
@@ -1787,6 +1788,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def get_COM(self):
         """Get the center of mass of the fly.
         (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
+
         Returns
         -------
         np.ndarray
@@ -1799,6 +1801,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
     def get_energy(self):
         """Get the energy of the system (kinetic, potential). Need to activate
         the energy flag in the mujoco xml file.
+
         Returns
         -------
         np.ndarray

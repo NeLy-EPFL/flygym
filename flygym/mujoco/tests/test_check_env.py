@@ -1,3 +1,4 @@
+import pytest
 import gymnasium.spaces as spaces
 import gymnasium.utils.env_checker as env_checker
 
@@ -19,6 +20,9 @@ def test_check_env_basic():
     env_checker.check_env(nmf, skip_render_check=True)
 
 
+@pytest.mark.skip(
+    reason="github actions runner doesn't have a display; render will fail"
+)
 def test_check_env_vision():
     sim_params = MuJoCoParameters(enable_vision=True, enable_olfaction=False)
     nmf = NeuroMechFlyMuJoCo(sim_params=sim_params)
