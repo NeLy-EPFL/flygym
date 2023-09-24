@@ -15,7 +15,11 @@ Then, install the package:
 
 .. code-block:: bash
 
-   pip install flygym[mujoco]
+   pip install "flygym[mujoco]"
+
+.. note::
+   
+   The quotation marks around the package name are important if you are using zsh (the default shell on Macs). Without them, ``pip`` will not receive ``flygym[mujoco]`` as a single string.
 
 Please note that the ``pip`` installation does not easily allow the user to modify the source code. If you want to modify the source code, please follow the instructions below for developer installation.
 
