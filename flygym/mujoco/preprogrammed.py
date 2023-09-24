@@ -18,6 +18,13 @@ all_leg_dofs = [
     ]
 ]
 
+leg_dofs_3_per_leg = [
+    f"joint_{side}{pos}{dof}"
+    for side in "LR"
+    for pos in "FMH"
+    for dof in ["Coxa" if pos == "F" else "Coxa_roll", "Femur", "Tibia"]
+]
+
 all_tarsi_links = [
     f"{side}{pos}Tarsus{i}" for side in "LR" for pos in "FMH" for i in range(1, 6)
 ]
