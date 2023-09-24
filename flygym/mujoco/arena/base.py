@@ -89,7 +89,7 @@ class BaseArena(ABC):
             2 antennae + 2 maxillary palps).
         """
         return np.zeros((0, 2))
-    
+
     @property
     def odor_dimensions(self) -> int:
         """The dimension of the odor signal."""

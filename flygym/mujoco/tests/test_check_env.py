@@ -18,6 +18,7 @@ def test_check_env_basic():
     )
     env_checker.check_env(nmf, skip_render_check=True)
 
+
 def test_check_env_vision():
     sim_params = MuJoCoParameters(enable_vision=True, enable_olfaction=False)
     nmf = NeuroMechFlyMuJoCo(sim_params=sim_params)
@@ -30,6 +31,7 @@ def test_check_env_vision():
         }
     )
     env_checker.check_env(nmf, skip_render_check=True)
+
 
 def test_check_env_olfaction():
     sim_params = MuJoCoParameters(enable_vision=False, enable_olfaction=True)
