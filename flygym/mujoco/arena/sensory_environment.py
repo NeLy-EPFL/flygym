@@ -169,3 +169,7 @@ class OdorArena(BaseArena):
         scaling = self.diffuse_func(dist_euc)  # (n, k, w)
         intensity = self._peak_intensity_repeated * scaling  # (n, k, w)
         return intensity.sum(axis=0)  # (k, w)
+
+    @property
+    def odor_dimensions(self) -> int:
+        return self.odor_dim

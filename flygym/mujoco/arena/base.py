@@ -84,10 +84,16 @@ class BaseArena(ABC):
         -------
         np.ndarray
             The odor intensity readings from the environment as a
-            (k, 2) NumPy array where k is the dimension of the odor
-            signal.
+            (k, n) NumPy array where k is the dimension of the odor
+            signal and n is the number of odor sensors (default 4:
+            2 antennae + 2 maxillary palps).
         """
         return np.zeros((0, 2))
+    
+    @property
+    def odor_dimensions(self) -> int:
+        """The dimension of the odor signal."""
+        return 0
 
     def pre_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
         """Make necessary changes (eg. hide certain visualization markers)

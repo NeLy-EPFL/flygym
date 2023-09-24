@@ -454,14 +454,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.sim_params.align_camera_with_gravity:
             self.camera_rot = np.eye(3)
 
-        # Define action and observation spaces
-        num_dofs = len(actuated_joints)
-        action_bound = np.pi if self.control == "position" else np.inf
-        num_contacts = len(self.contact_sensor_placements)
-        self.action_space, self.observation_space = self._define_spaces(
-            num_dofs, action_bound, num_contacts
-        )
-
         # Load NMF model
         self.model = mjcf.from_path(
             get_data_path("flygym", "data") / self._mujoco_config["paths"]["mjcf_model"]
@@ -590,6 +582,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         # flip detection
         self._flip_counter = 0
+
+        # Define action and observation spaces
+        action_bound = np.pi if self.control == "position" else np.inf
+        self.action_space = self._define_action_space(action_bound)
+        self.observation_space = self._define_observation_space()
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -733,16 +730,23 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     max_floor_height = max(max_floor_height, sphere_height)
         return max_floor_height
 
-    def _define_spaces(self, num_dofs, action_bound, num_contacts):
-        action_space = {
+    def _define_action_space(self, action_bound):
+        _action_space = {
             "joints": spaces.Box(
-                low=-action_bound, high=action_bound, shape=(num_dofs,)
-            ),
-            "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
+                low=-action_bound, high=action_bound, shape=(len(self.actuated_joints),)
+            )
         }
-        observation_space = {
+        if self.sim_params.enable_adhesion:
+            # 0: no adhesion, 1: adhesion
+            _action_space["adhesion"] = (spaces.Discrete(n=2, start=0),)
+        return spaces.Dict(_action_space)
+
+    def _define_observation_space(self):
+        _observation_space = {
             # joints: shape (3, num_dofs): (pos, vel, torque) of each DoF
-            "joints": spaces.Box(low=-np.inf, high=np.inf, shape=(3, num_dofs)),
+            "joints": spaces.Box(
+                low=-np.inf, high=np.inf, shape=(3, len(self.actuated_joints))
+            ),
             # fly: shape (4, 3):
             # 0th row: x, y, z position of the fly in arena
             # 1st row: x, y, z velocity of the fly in arena
@@ -754,13 +758,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
             "contact_forces": spaces.Box(
                 low=-np.inf,
                 high=np.inf,
-                shape=(3, num_contacts),
+                shape=(3, len(self.contact_sensor_placements)),
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
             "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
         }
-        return action_space, observation_space
+        if self.sim_params.enable_vision:
+            _observation_space["vision"] = spaces.Box(
+                low=0,
+                high=255,
+                shape=(2, self._mujoco_config["vision"]["num_ommatidia_per_eye"], 2),
+            )
+        if self.sim_params.enable_olfaction:
+            _observation_space["odor_intensity"] = spaces.Box(
+                low=0,
+                high=np.inf,
+                shape=(self.arena.odor_dimensions, len(self.antennae_sensors)),
+            )
+        return spaces.Dict(_observation_space)
 
     def _initialize_custom_camera_handling(self, camera_name):
         """
@@ -1200,7 +1216,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
         return 0
 
-    def reset(self, seed=0) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(
+        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
         Returns
@@ -1212,6 +1230,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             This is an empty dictionary by default but the user can
             override this method to return additional information.
         """
+        super().reset(seed=seed)
         self.physics.reset()
         if np.any(self.physics.model.opt.gravity[:] - self.sim_params.gravity > 1e-3):
             self.set_gravity(self.sim_params.gravity)
@@ -1225,6 +1244,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.curr_raw_visual_input = None
         self.curr_visual_input = None
         self._vision_update_mask = []
+        self._flip_counter = 0
         return self.get_observation(), self.get_info()
 
     def step(
@@ -1655,25 +1675,25 @@ class NeuroMechFlyMuJoCo(gym.Env):
         orientation_vec = self.physics.bind(self.body_sensors[4]).sensordata.copy()
 
         obs = {
-            "joints": joint_obs,
-            "fly": fly_pos,
-            "contact_forces": contact_forces,
-            "end_effectors": ee_pos,
-            "fly_orientation": orientation_vec,
+            "joints": joint_obs.astype(np.float32),
+            "fly": fly_pos.astype(np.float32),
+            "contact_forces": contact_forces.astype(np.float32),
+            "end_effectors": ee_pos.astype(np.float32),
+            "fly_orientation": orientation_vec.astype(np.float32),
         }
 
         # olfaction
         if self.sim_params.enable_olfaction:
             antennae_pos = self.physics.bind(self.antennae_sensors).sensordata
             odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(4, 3))
-            obs["odor_intensity"] = odor_intensity
+            obs["odor_intensity"] = odor_intensity.astype(np.float32)
 
         # vision
         if self.sim_params.enable_vision:
             self._update_vision()
-            obs["vision"] = self.curr_visual_input
+            obs["vision"] = self.curr_visual_input.astype(np.float32)
             if self.sim_params.render_raw_vision:
-                obs["raw_vision"] = self.curr_raw_visual_input
+                obs["raw_vision"] = self.curr_raw_visual_input.astype(np.float32)
 
         return obs
 

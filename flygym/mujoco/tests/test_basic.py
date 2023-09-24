@@ -5,10 +5,10 @@ from pathlib import Path
 from flygym.mujoco import NeuroMechFlyMuJoCo
 from flygym.mujoco.util import plot_mujoco_rollout
 
-random_state = np.random.RandomState(0)
-
 
 def test_basic_untethered_sinewave():
+    random_state = np.random.RandomState(0)
+
     nmf = NeuroMechFlyMuJoCo()
     run_time = 0.01
     freq = 500
