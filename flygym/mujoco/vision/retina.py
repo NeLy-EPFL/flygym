@@ -1,21 +1,99 @@
 import numpy as np
 import numba as nb
-import matplotlib.pyplot as plt
-from typing import List
-from pathlib import Path
-from matplotlib.animation import FuncAnimation
+from typing import Optional
+
+from flygym.common import get_data_path
+from flygym.mujoco.util import load_config
 
 
 class Retina:
+    """
+    This class handles the simulation of the fly's visual input.
+    Calculation in this class is vectorized and parallelized using Numba.
+
+    Attributes
+    ----------
+    ommatidia_id_map : np.ndarray
+        Integer NumPy array of shape (nrows, ncols) where the value
+        indicates the ID of the ommatidium (starting from 1). 0 indicates
+        background (outside the hex lattice).
+    num_pixels_per_ommatidia : np.ndarray
+        Integer NumPy array of shape (max(ommatidia_id_map),) where the
+        value of each element indicates the number of raw pixels covered
+        within each ommatidia.
+    pale_type_mask : np.ndarray
+        Integer NumPy array of shape (max(ommatidia_id_map),) where the
+        value of each element indicates whether the ommatidia is pale-type
+        (1) or yellow-type (0).
+    distortion_coefficient : float
+        A coefficient determining the extent of fisheye effect applied to
+        the raw MuJoCo camera images.
+    zoom : float
+        A coefficient determining the zoom level when the fisheye effect is
+        applied.
+    nrows : int
+        The number of rows in the raw image rendered by the MuJoCo camera.
+    ncols : int
+        The number of columns in the raw image rendered by the MuJoCo
+        camera.
+
+    Parameters
+    ----------
+    ommatidia_id_map : np.ndarray
+        Integer NumPy array of shape (nrows, ncols) where the value
+        indicates the ID of the ommatidium (starting from 1). 0 indicates
+        background (outside the hex lattice). By default, the map indicated
+        in the configuration file is loaded.
+    pale_type_mask : np.ndarray
+        Integer NumPy array of shape (max(ommatidia_id_map),) where the
+        value of each element indicates whether the ommatidia is pale-type
+        (1) or yellow-type (0). By default, the mask indicated in the
+        configuration file is used.
+    distortion_coefficient : float
+        A coefficient determining the extent of fisheye effect applied to
+        the raw MuJoCo camera images. By default, the value indicated in
+        the configuration file is used.
+    zoom : float
+        A coefficient determining the zoom level when the fisheye effect is
+        applied. By default, the value indicated in the configuration file
+        is used.
+    nrows : int
+        The number of rows in the raw image rendered by the MuJoCo camera.
+        By default, the value indicated in the configuration file is used.
+    ncols : int
+        The number of columns in the raw image rendered by the MuJoCo
+        camera. By default, the value used in the configuration file is
+        used.
+    """
+
     def __init__(
         self,
-        ommatidia_id_map: np.ndarray,
-        pale_type_mask: np.ndarray,
-        distortion_coefficient: float,
-        zoom: float,
-        nrows: int,
-        ncols: int,
+        ommatidia_id_map: Optional[np.ndarray] = None,
+        pale_type_mask: Optional[np.ndarray] = None,
+        distortion_coefficient: Optional[float] = None,
+        zoom: Optional[float] = None,
+        nrows: Optional[int] = None,
+        ncols: Optional[int] = None,
     ) -> None:
+        # Load parameters from config file if not supplied
+        config = load_config()
+        data_path = get_data_path("flygym", "data")
+        ommatidia_id_map_path = (data_path / config["paths"]["ommatidia_id_map"])
+        pale_type_mask_path = (data_path / config["paths"]["canonical_pale_type_mask"])
+        vision_config = config["vision"]
+        if ommatidia_id_map is None: 
+            ommatidia_id_map=np.load(ommatidia_id_map_path)
+        if pale_type_mask is None:
+            pale_type_mask=np.load(pale_type_mask_path).astype(int)
+        if distortion_coefficient is None:
+            distortion_coefficient=vision_config["fisheye_distortion_coefficient"]
+        if zoom is None:
+            zoom=vision_config["fisheye_zoom"]
+        if nrows is None:
+            nrows=vision_config["raw_img_height_px"]
+        if ncols is None:
+            ncols=vision_config["raw_img_width_px"]
+
         self.ommatidia_id_map = ommatidia_id_map
         _unique_count = np.unique(ommatidia_id_map, return_counts=True)
         self.num_pixels_per_ommatidia = _unique_count[1][1:]

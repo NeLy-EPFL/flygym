@@ -440,22 +440,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self._vision_update_mask = []
         if self.sim_params.enable_vision:
             self._configure_eyes()
-            data_path = get_data_path("flygym", "data")
-            ommatidia_id_map_path = (
-                data_path / self._mujoco_config["paths"]["ommatidia_id_map"]
-            )
-            pale_type_mask_path = (
-                data_path / self._mujoco_config["paths"]["canonical_pale_type_mask"]
-            )
-            vision_config = self._mujoco_config["vision"]
-            self.retina = vision.Retina(
-                ommatidia_id_map=np.load(ommatidia_id_map_path),
-                pale_type_mask=np.load(pale_type_mask_path).astype(int),
-                distortion_coefficient=vision_config["fisheye_distortion_coefficient"],
-                zoom=vision_config["fisheye_zoom"],
-                nrows=vision_config["raw_img_height_px"],
-                ncols=vision_config["raw_img_width_px"],
-            )
+            self.retina = vision.Retina()
 
         # Define list of actuated joints
         self._actuators = [
