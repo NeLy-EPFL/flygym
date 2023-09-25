@@ -7,11 +7,14 @@ class BaseState(ABC):
     like a dictionary."""
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self, *args, **kwargs):
         """Returns an iterator over the keys of the state."""
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __getitem__(self, key: str) -> Any:
-        """Returns the value of a variable in the state given a key."""
-        raise NotImplementedError
+        """Returns the value of a variable in the state given a key. This
+        is to be used in the style of dictionaries: eg.
+        ``state["RFCoxa_angle"]``.
+        """
+        pass
