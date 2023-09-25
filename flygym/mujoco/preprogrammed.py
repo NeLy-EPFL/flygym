@@ -30,7 +30,19 @@ all_tarsi_links = [
 ]
 
 
-def get_preprogrammed_pose(pose: str):
+def get_preprogrammed_pose(pose: str) -> KinematicPose:
+    """Load the preprogrammed pose given the key. Available poses are found
+    in the data directory: ``flygym/data/pose/pose_{key}.yaml``. Included
+    poses are:
+
+    - "stretch": all legs are fully extended sideways to ensure that the
+      legs are not embeded into the ground upon initialization, which
+      breaks the physics. This is the suggested initial pose.
+    - "tripod": a snapshot of a tethered fly walking in a tripod gait.
+    - "zero": the zero pose of the NeuroMechFly model. Not that the fly
+      should be spawn significantly above the ground to insure that the
+      legs are not extended into the ground upon initialization.
+    """
     data_path = get_data_path("flygym", "data") / "pose" / f"pose_{pose}.yaml"
     if not data_path.is_file():
         raise ValueError(f"Pose {pose} does not exist.")
@@ -38,6 +50,10 @@ def get_preprogrammed_pose(pose: str):
 
 
 def get_collision_geometries(config: str = "all") -> List[str]:
+    """Get the list of collision geometries given the key: "all" (all body
+    segments), "legs-no-coxa" (all leg segments excluding the coxa
+    segments), "tarsi" (all tarsus segments), and "none" (nothing).
+    """
     if config == "legs":
         return [
             f"{side}{pos}{dof}_collision"
