@@ -16,7 +16,7 @@ def test_stretched_pose():
     nmf = NeuroMechFlyMuJoCo(init_pose="stretch")
     run_time = 0.01
     freq = 500
-    phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
+    phase = 2 * np.pi * random_state.rand(len(nmf._actuators))
     amp = 0.9
 
     obs_list = []
@@ -37,7 +37,7 @@ def test_zero_pose():
     nmf = NeuroMechFlyMuJoCo(init_pose="zero", spawn_pos=(0, 0, 3))
     run_time = 0.01
     freq = 500
-    phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
+    phase = 2 * np.pi * random_state.rand(len(nmf._actuators))
     amp = 0.9
 
     obs_list = []
@@ -58,7 +58,7 @@ def test_tripod_pose():
     nmf = NeuroMechFlyMuJoCo(init_pose="tripod")
     run_time = 0.01
     freq = 500
-    phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
+    phase = 2 * np.pi * random_state.rand(len(nmf._actuators))
     amp = 0.9
 
     obs_list = []

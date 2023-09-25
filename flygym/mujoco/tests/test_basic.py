@@ -12,7 +12,7 @@ def test_basic_untethered_sinewave():
     nmf = NeuroMechFlyMuJoCo()
     run_time = 0.01
     freq = 500
-    phase = 2 * np.pi * random_state.rand(len(nmf.actuators))
+    phase = 2 * np.pi * random_state.rand(len(nmf._actuators))
     amp = 0.9
 
     obs_list = []

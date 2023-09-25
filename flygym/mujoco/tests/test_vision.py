@@ -27,12 +27,14 @@ def test_vision_dimensions():
 
     # Run simulation
     obs_list = []
+    info_list = []
     for i in range(num_steps):
         joint_pos = np.zeros(len(nmf.actuated_joints))
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
         # nmf.render()
         obs_list.append(obs)
+        info_list.append(info)
     nmf.close()
 
     # Check dimensionality
@@ -43,7 +45,7 @@ def test_vision_dimensions():
     )
     height = config["vision"]["raw_img_height_px"]
     width = config["vision"]["raw_img_width_px"]
-    assert obs["raw_vision"].shape == (2, height, width, 3)
+    assert info["raw_vision"].shape == (2, height, width, 3)
     assert obs["vision"].shape == (2, config["vision"]["num_ommatidia_per_eye"], 2)
 
     print((obs["vision"][:, :, 0] > 0).sum(), (obs["vision"][:, :, 1] > 0).sum())
@@ -54,7 +56,7 @@ def test_vision_dimensions():
         nmf.retina,
         output_path=temp_base_dir / "vision/eyes.mp4",
         vision_data_li=[x["vision"] for x in obs_list],
-        raw_vision_data_li=[x["raw_vision"] for x in obs_list],
+        raw_vision_data_li=[x["raw_vision"] for x in info_list],
         vision_update_mask=nmf.vision_update_mask,
         vision_refresh_rate=sim_params.vision_refresh_rate,
         playback_speed=0.1,
