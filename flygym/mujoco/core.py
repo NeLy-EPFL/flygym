@@ -29,18 +29,12 @@ try:
 except ImportError:
     pass
 
-from flygym.common import get_data_path
 import flygym.mujoco.util as util
 import flygym.mujoco.preprogrammed as preprogrammed
 import flygym.mujoco.state as state
-
 import flygym.mujoco.vision as vision
-
-# import flygym.util.config as config
-# import flygym.util.data as data
 from flygym.mujoco.arena import BaseArena, FlatTerrain
-
-# from flygym.state import BaseState, stretched_pose
+from flygym.common import get_data_path
 
 
 @dataclass
@@ -50,95 +44,108 @@ class MuJoCoParameters:
     Attributes
     ----------
     timestep : float
-        Simulation timestep in seconds.
-    joint_stiffness : float, optional
+        Simulation timestep in seconds, by default 0.0001.
+    joint_stiffness : float
         Stiffness of actuated joints, by default 0.05.
-    joint_damping : float, optional
+    joint_damping : float
         Damping coefficient of actuated joints, by default 0.06.
-    actuator_kp : float, optional
+    actuator_kp : float
         Position gain of the actuators, by default 18.0.
-    tarsus_stiffness : float, optional
+    tarsus_stiffness : float
         Stiffness of the passive, compliant tarsus joints, by default 2.2.
-    tarsus_damping : float, optional
+    tarsus_damping : float
         Damping coefficient of the passive, compliant tarsus joints, by
         default 0.126.
-    friction : float, optional
+    friction : float
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    gravity : Tuple[float, float, float], optional
+    gravity : Tuple[float, float, float]
         Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
         the gravity is -9.81 * 1000 due to the scaling of the model.
-    contact_solref: Tuple[float, float], optional
-        Contact reference parameter as defined in
-        https://mujoco.readthedocs.io/en/stable/modeling.html#impedance,
-        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts
-        are very stiff (avoid penetration with adhesion
-        stiffness could be decreased if instability is a problem)
-    contact_solimp: Tuple[float, float, float, float, float], optional
-        Contact impedance parameter as defined in
-        https://mujoco.readthedocs.io/en/stable/modeling.html#reference,
-        by default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01, 2.0e+00) contacts
-        are very stiff (avoid penetration with adhesion
-        stiffness could be decreased if instability is a problem)
-    enable_olfaction : bool, optional
+    contact_solref: Tuple[float, float]
+        MuJoCo contact reference parameters (see `MuJoCo documentation 
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
+        2.0e+00). Under the default configuration, contacts are very stiff.
+        This is to avoid penetration of the leg tips into the ground when
+        leg adhesion is enabled. The user might want to decrease the
+        stiffness if the stability becomes an issue.
+    contact_solimp: Tuple[float, float, float, float, float]
+        MuJoCo contact reference parameters (see `MuJoCo documentation 
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
+        2.0e+00). Under the default configuration, contacts are very stiff.
+        This is to avoid penetration of the leg tips into the ground when
+        leg adhesion is enabled. The user might want to decrease the
+        stiffness if the stability becomes an issue.
+    enable_olfaction : bool
         Whether to enable olfaction, by default False.
-    enable_vision : bool, optional
+    enable_vision : bool
         Whether to enable vision, by default False.
-    render_raw_vision : bool, optional
+    render_raw_vision : bool
         If ``enable_vision`` is True, whether to render the raw vision
         (raw pixel values before binning by ommatidia), by default False.
-    render_mode : str, optional
+    render_mode : str
         The rendering mode. Can be "saved" or "headless", by default
         "saved".
-    render_window_size : Tuple[int, int], optional
+    render_window_size : Tuple[int, int]
         Size of the rendered images in pixels, by default (640, 480).
-    render_playspeed : SupportsFloat, optional
-        Play speed of the rendered video, by default 1.0.
-    render_fps : int, optional
+    render_playspeed : float
+        Play speed of the rendered video, by default 0.2.
+    render_fps : int
         FPS of the rendered video when played at ``render_playspeed``, by
-        default 60.
-    render_camera : str, optional
+        default 30.
+    render_camera : str
         The camera that will be used for rendering, by default
-        "Animat/camera_left_top".
-    vision_refresh_rate : int, optional
+        "Animat/camera_left".
+    render_timestamp_text : bool
+        If True, text indicating the current simulation time will be added
+        to the rendered video.
+    render_playspeed_text : bool
+        If True, text indicating the play speed will be added to the
+        rendered video.
+    vision_refresh_rate : int
         The rate at which the vision sensor is updated, in Hz, by default
         500.
-    draw_contacts : bool, optional
-        Whether to draw contacts in the simulation. By default False.
-    decompose_contacts : bool, optional
-        Whether to decompose the contact forces into normal and tangential
-    contact_threshold : float, optional
-        The threshold for contact detection. By default 0.1.
-    tip_length : float, optional
-        The length of the contact force arrows in pixels. By default 10.
-    enable_adhesion : bool, optional
+    enable_adhesion : bool
         Whether to enable adhesion. By default False.
-    draw_adhesion : bool, optional
+    draw_adhesion : bool
         Whether to signal that adhesion is on by changing the color of the
         concerned leg. By default False.
-    adhesion_gain : float, optional
-        The gain of the adhesion force. By default 40.
-    adhesion_off_duration: float, optional
-        The duration of the adhesion off phase in seconds. By default 0.1.
-        Used in the get_adheion_vector method. When the leg is predicted to swing
-        thw adhesion will be switched off for this duration. Increasing this
-        value will might make the swing longer if it was interrupted by the adhesion)
-    adhesion_off_refractory_duration: float, optional
-        The duration of the adhesion off refractory phase in seconds. By default 0.1.
-        (Used in the get_adheion_vector method. When the adhesion was switched
-        off for adhesion_off_duration, it will not be switched off again for this
-        period of time. This might be able to compensate for noise in the joint
-        angles predicting a swing)
-    draw_gravtiy : bool, optional
-            Whether to draw the gravity vector in the simulation. By default
-            False,
-    align_camera_with_gravity : bool, optional
-        Whether to align the camera with the gravity vector: When adding a
-        slope the fly will appear to climb this slope. By default
+    adhesion_gain : float
+        The gain of the adhesion force. By default 20.
+    draw_sensor_markers : bool
+        If True, colored spheres will be added to the model to indicate the
+        positions of the cameras (for vision) and odor sensors. By default
         False.
-    camera_follows_fly_orientation: bool, optional
-        Whether to align the camera with the fly's orientation. By default
+    draw_contacts : bool
+        If True, arrows will be drawn to indicate contact forces between
+        the legs and the ground. By default Fasle.
+    decompose_contacts : bool
+        If True, the arrows visualizing contact forces will be decomposed
+        into x-y-z components. By default True.
+    force_arrow_scaling : float
+        Scaling factor determining the length of arrows visualizing contact
+        forces. By default 1.0.
+    tip_length : float
+        Size of the arrows indicating the contact forces in pixels. By
+        default 10.
+    contact_threshold : float
+        The threshold for contact detection in mN (forces below this
+        magnitude will be ignored). By default 0.1.
+    draw_gravtiy : bool
+        If True, an arrow will be drawn indicating the direction of
+        gravity. This is useful during climbing simulations. By default
         False.
+    gravity_arrow_scaling : float
+        Scaling factor determining the size of the arrow indicating
+        gravity. By default 0.0001.
+    align_camera_with_gravity : bool
+        If True, the camera will be rotated such that gravity points down.
+        This is usful during climbing simulations. By default False.
+    camera_follows_fly_orientation: bool
+        If True, the camera will be rotated so that it aligns with the fly's
+        orientation. By default False.
     """
 
     timestep: float = 0.0001
@@ -162,7 +169,7 @@ class MuJoCoParameters:
     render_raw_vision: bool = False
     render_mode: str = "saved"
     render_window_size: Tuple[int, int] = (640, 480)
-    render_playspeed: float = 1.0
+    render_playspeed: float = 0.2
     render_fps: int = 30
     render_camera: str = "Animat/camera_left"
     render_timestamp_text: bool = False
@@ -170,14 +177,12 @@ class MuJoCoParameters:
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
     adhesion_gain: float = 20
-    adhesion_off_duration: float = 0.02
-    adhesion_off_refractory_duration: float = 0.05
     draw_adhesion: bool = False
-    draw_markers: bool = False
+    draw_sensor_markers: bool = False
     draw_contacts: bool = False
+    decompose_contacts: bool = True
     force_arrow_scaling: float = 1.0
     tip_length: float = 10.0  # number of pixels
-    decompose_contacts: bool = True
     contact_threshold: float = 0.1
     draw_gravity: bool = False
     gravity_arrow_scaling: float = 1e-4
@@ -383,15 +388,6 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self.self_collisions = self_collisions
 
         self.n_legs = 6
-
-        self.adhesion_off_duration_steps = int(
-            self.sim_params.adhesion_off_duration / self.timestep
-        )
-        self.adhesion_off_refractory_duration_steps = int(
-            self.sim_params.adhesion_off_refractory_duration / self.timestep
-        )
-        self.adhesion_counter = np.zeros(self.n_legs)
-        self.adhesion_refractory_counter = np.zeros(self.n_legs)
 
         # Order is based on the self.last_tarsalseg_names
         leglift_reference_joint = [
@@ -603,7 +599,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 euler=sensor_config["orientation"],
                 fovy=self._mujoco_config["vision"]["fovy_per_eye"],
             )
-            if self.sim_params.draw_markers:
+            if self.sim_params.draw_sensor_markers:
                 sensor_body.add(
                     "geom",
                     name=f"{name}_marker",
@@ -1016,7 +1012,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 objname=f"{name}_body",
             )
             antennae_sensors.append(sensor)
-            if self.sim_params.draw_markers:
+            if self.sim_params.draw_sensor_markers:
                 sensor_body.add(
                     "geom",
                     name=f"{name}_marker",
