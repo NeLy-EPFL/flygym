@@ -43,7 +43,7 @@ def visualize_visual_input(
         simulation. By default 500.
     playback_speed : float, optional
         Speed, as a multiple of the 1x speed, at which the video should be
-        rendred, by default 0.1
+        rendred, by default 0.1.
     """
     vision_data_key_frames = np.array(vision_data_li)[vision_update_mask, :, :, :]
     raw_vision_key_frames = np.array(raw_vision_data_li)[vision_update_mask, :, :, :]

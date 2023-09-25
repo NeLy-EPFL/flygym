@@ -104,6 +104,21 @@ class Retina:
         self.ncols = ncols
 
     def raw_image_to_hex_pxls(self, raw_img: np.ndarray) -> np.ndarray:
+        """Given a raw image from an eye (one camera), simulate what the
+        fly would see.
+
+        Parameters
+        ----------
+        raw_img : np.ndarray
+            RGB image with the shape (H, W, 3) returned by the camera.
+
+        Returns
+        -------
+        np.ndarray
+            Our simulation of what the fly might see through its compound
+            eyes. It is a (N, 2) array where the first dimension is for the
+            N ommatidia, and the third dimension is for the two channels.
+        """
         return self._raw_image_to_hex_pxls(
             raw_img,
             self.ommatidia_id_map,
@@ -112,11 +127,54 @@ class Retina:
         )
 
     def hex_pxls_to_human_readable(self, ommatidia_reading: np.ndarray) -> np.ndarray:
+        """Given the intensity readings for all ommatidia in one eye,
+        convert them to an (nrows, ncols) image with hexagonal blocks that
+        can be visualized as a human-readable image.
+
+        Parameters
+        ----------
+        ommatidia_reading : np.ndarray
+            Our simulation of what the fly might see through its compound
+            eyes. It is a (N, 2) array where the first dimension is for the
+            N ommatidia, and the third dimension is for the two channels.
+
+        Returns
+        -------
+        np.ndarray
+            An (nrows, ncols) grayscale image with hexagonal blocks that
+            can be visualized as a human-readable image.
+        """
         return self._hex_pxls_to_human_readable(
             ommatidia_reading, self.ommatidia_id_map
         )
 
     def correct_fisheye(self, img: np.ndarray) -> np.ndarray:
+        """
+        The raw imaged rendered by the MuJoCo camera is rectilinear. This
+        distorts the image and overrepresents the periphery of the field of
+        view (the same angle near the periphery is reflected by a greater
+        angle in the rendered image). This method applies a fisheye effect
+        to make the same angle represented roughly equally anywhere within
+        the field of view.
+
+        Notes
+        -----
+        This implementation is based on https://github.com/Gil-Mor/iFish,
+        MIT License.
+
+        Parameters
+        ----------
+        img: np.ndarray
+            The raw MuJoCo camera rendering as a NumPy array of shape
+            (nrows, ncols, 3).
+        
+        Returns
+        -------
+        np.ndarray
+            The corrected camera rendering as a NumPy array of shape
+            (nrows, ncols, 3).
+
+        """
         return self._correct_fisheye(
             img, self.nrows, self.ncols, self.zoom, self.distortion_coefficient
         )
