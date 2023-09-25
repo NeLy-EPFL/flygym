@@ -3,16 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gymnasium.core import ObsType
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 from flygym.common import get_data_path
 
 
-def load_config():
+def load_config() -> Dict[str, Any]:
+    """Load the YAML configuration file as a dictionary."""
     with open(get_data_path("flygym.mujoco", "config.yaml"), "r") as f:
         return yaml.safe_load(f)
 
 
-def plot_mujoco_rollout(obs_list: List[ObsType], timestep: float, out_dir: Path):
+def plot_mujoco_rollout(
+    obs_list: List[ObsType], timestep: float, out_dir: Path
+) -> None:
+    """Plot the fly position and joint angle time series of a simulation
+    and save the image to file. This function is used for debugging."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Plot joint observations
