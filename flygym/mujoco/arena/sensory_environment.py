@@ -11,18 +11,14 @@ class OdorArena(BaseArena):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
-        The arena object that the terrain is built on.
-    num_sensors : int = 4
-        2x antennae + 2x max. palps
-
-    Parameters
-    ----------
-    size : Tuple[float, float]
-        The size of the terrain in (x, y) dimensions.
+    root_element : mjcf.RootElement
+        The root MJCF element of the arena.
     friction : Tuple[float, float, float]
-        Sliding, torsional, and rolling friction coefficients, by default
-        (1, 0.005, 0.0001)
+        The sliding, torsional, and rolling friction coefficients of the
+        ground, by default (1, 0.005, 0.0001)
+    num_sensors : int
+        The number of odor sensors, by default 4: 2 antennae + 2 maxillary
+        palps.
     odor_source : np.ndarray
         The position of the odor source in (x, y, z) coordinates. The shape
         of the array is (n_sources, 3).
@@ -30,23 +26,60 @@ class OdorArena(BaseArena):
         The peak intensity of the odor source. The shape of the array is
         (n_sources, n_dimensions). Note that the odor intensity can be
         multidimensional.
+    num_odor_sources : int
+        Number of odor sources.
+    odor_dimensions : int
+        Dimension of the odor space.
     diffuse_func : Callable
         The function that, given a distance from the odor source, returns
         the relative intensity of the odor. By default, this is a inverse
         square relationship.
+    birdeye_cam : dm_control.mujoco.Camera
+        MuJoCo camera that gives a birdeye view of the arena.
+    birdeye_cam_zoom : dm_control.mujoco.Camera
+         MuJoCo camera that gives a birdeye view of the arena, zoomed in
+         toward the fly.
+    
+    Parameters
+    ----------
+    size : Tuple[float, float], optional
+        The size of the arena in mm, by default (50, 50).
+    friction : Tuple[float, float, float], optional
+        The sliding, torsional, and rolling friction coefficients of the
+        ground, by default (1, 0.005, 0.0001).
+    num_sensors : int, optional
+        The number of odor sensors, by default 4: 2 antennae + 2 maxillary
+        palps.
+    odor_source : np.ndarray, optional
+        The position of the odor source in (x, y, z) coordinates. The shape
+        of the array is (n_sources, 3).
+    peak_intensity : np.ndarray, optional
+        The peak intensity of the odor source. The shape of the array is
+        (n_sources, n_dimensions). Note that the odor intensity can be
+        multidimensional.
+    diffuse_func : Callable, optional
+        The function that, given a distance from the odor source, returns
+        the relative intensity of the odor. By default, this is a inverse
+        square relationship.
+    marker_colors : List[Tuple[float, float, float, float]], optional
+        A list of n_sources RGBA values (each as a tuple) indicating the
+        colors of the markers indicating the positions of the odor sources.
+        The RGBA values should be given in the range [0, 1]. By default,
+        the matplotlib color cycle is used.
+    marker_size : float, optional
+        The size of the odor source markers, by default 0.25.
     """
-
-    num_sensors = 4
 
     def __init__(
         self,
         size: Tuple[float, float] = (300, 300),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        num_sensors: int = 4,
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
-        marker_size: float = 0.1,
+        marker_size: float = 0.25,
     ):
         self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
@@ -75,6 +108,7 @@ class OdorArena(BaseArena):
             friction=friction,
         )
         self.friction = friction
+        self.num_sensors = num_sensors
         self.odor_source = np.array(odor_source)
         self.peak_odor_intensity = np.array(peak_intensity)
         self.num_odor_sources = self.odor_source.shape[0]
@@ -82,7 +116,6 @@ class OdorArena(BaseArena):
             raise ValueError(
                 "Number of odor source locations and peak intensities must match."
             )
-        self.odor_dim = self.peak_odor_intensity.shape[1]
         self.diffuse_func = diffuse_func
 
         # Add birdeye camera
@@ -122,7 +155,9 @@ class OdorArena(BaseArena):
 
         # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
-        _odor_source_repeated = np.repeat(_odor_source_repeated, self.odor_dim, axis=1)
+        _odor_source_repeated = np.repeat(
+            _odor_source_repeated, self.odor_dimensions, axis=1
+        )
         _odor_source_repeated = np.repeat(
             _odor_source_repeated, self.num_sensors, axis=2
         )
@@ -172,4 +207,4 @@ class OdorArena(BaseArena):
 
     @property
     def odor_dimensions(self) -> int:
-        return self.odor_dim
+        return self.peak_odor_intensity.shape[1]

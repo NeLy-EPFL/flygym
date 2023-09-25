@@ -5,19 +5,24 @@ from dm_control import mjcf
 
 
 class BaseArena(ABC):
-    """Base class for all arenas."""
+    """Base class for all arenas.
+    
+    Attributes
+    ----------
+    arena : Any
+        The arena object that the terrain is built on. Exactly what it
+        is depends on the physics simulator.
+    friction : Tuple [float]
+        Default sliding, torsional, and rolling friction coefficients of
+        surfaces. This is provided for the user's convinience but can be
+        overriden for either all or some surfaces.
+    """
 
     friction = (100.0, 0.005, 0.0001)
 
     @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
         """Create a new terrain object.
-
-        Attributes
-        ----------
-        arena : Any
-            The arena object that the terrain is built on. Exactly what it
-            is depends on the physics simulator.
         """
         self.root_element = mjcf.RootElement()
 
@@ -31,36 +36,43 @@ class BaseArena(ABC):
         terrain (eg. with obstacles) where the entity's spawn position
         needs to be shifted accordingly.
 
+        For example, if the arena has flat terrain, this method can simply
+        return ``rel_pos``, ``rel_angle`` unchanged (as is the case by
+        default). If there is are featues on the ground that are 0.1 mm in
+        height, then this method should return ``rel_pos + [0, 0, 0.1],
+        rel_angle``.
+
         Parameters
         ----------
         rel_pos : np.ndarray
-            (x, y, z) position of the entity if it were spawned on a
-            simple flat environment.
+            (x, y, z) position of the entity in mm as supplied by the user
+            (before any transformation).
         rel_angle : np.ndarray
-            Euler representation (x, y, z) of the entity's
-            orientation if it were spawned on a simple flat terrain.
+            Euler angle (rotation along x, y, z in radian) of the fly's
+            orientation as supplied by the user (before any
+            transformation).
 
         Returns
         -------
         np.ndarray
             Adjusted (x, y, z) position of the entity.
         np.ndarray
-            Adjusted euler representation (x, y, z).
+            Adjusted euler angle (rotation along x, y, z in raidan) of the
+            fly's oreintation.
         """
         pass
 
     def spawn_entity(
         self, entity: Any, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> None:
-        """Add an entity (eg. the fly) to the arena.
+        """Add the fly to the arena.
 
         Parameters
         ----------
         entity : mjcf.RootElement
-            The entity to be added to the arena.
+            The entity to be added to the arena (this should be the fly).
         rel_pos : np.ndarray
-            (x, y, z) position of the entity if it were spawned on a simple
-            flat environment.
+            (x, y, z) position of the entity.
         rel_angle : np.ndarray
             euler angle representation (rot around x, y, z) of the entity's
             orientation if it were spawned on a simple flat terrain.
@@ -71,39 +83,51 @@ class BaseArena(ABC):
         )
         spawn_site.attach(entity).add("freejoint")
 
-    def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:
+    def get_olfaction(self, sensor_pos: np.ndarray) -> np.ndarray:
         """Get the odor intensity readings from the environment.
 
         Parameters
         ----------
-        antennae_pos : np.ndarray
+        sensor_pos : np.ndarray
             The Cartesian coordinates of the antennae of the fly as a
-            (2, 3) NumPy array.
+            (n, 3) NumPy array where n is the number of sensors (usually
+            n=4: 2 antennae + 2 maxillary palps), and the second dimension
+            gives the corrdinates in (x, y, z).
 
         Returns
         -------
         np.ndarray
-            The odor intensity readings from the environment as a
-            (k, n) NumPy array where k is the dimension of the odor
-            signal and n is the number of odor sensors (default 4:
-            2 antennae + 2 maxillary palps).
+            The odor intensity readings from the environment as a (k, n)
+            NumPy array where k is the dimension of the odor signal and n
+            is the number of odor sensors (usally n=4: 2 antennae + 2
+            maxillary palps).
         """
         return np.zeros((0, 2))
 
     @property
     def odor_dimensions(self) -> int:
-        """The dimension of the odor signal."""
+        """The dimension of the odor signal. This can be used to emulate
+        multiple monomolecular chemical concentrations or multiple
+        composite ordor intensities.
+        
+        Returns
+        -------
+        int
+            The dimension of the odor space.
+        """
         return 0
 
     def pre_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. hide certain visualization markers)
-        before rendering the visual inputs.
+        """Make necessary changes (eg. make certain visualization markers
+        transparent) before rendering the visual inputs. By default, this
+        does nothing.
         """
         pass
 
     def post_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. show certain visualization markers)
-        after rendering the visual inputs.
+        """Make necessary changes (eg. make certain visualization markers
+        opaque) after rendering the visual inputs. By default, this does
+        nothing.
         """
         pass
 
@@ -116,23 +140,30 @@ class FlatTerrain(BaseArena):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
-        The arena object that the terrain is built on.
-
+    root_element : mjcf.RootElement
+        The root MJCF element of the arena.
+    friction : Tuple[float, float, float]
+        The sliding, torsional, and rolling friction coefficients of the
+        ground, by default (1, 0.005, 0.0001).
+    
     Parameters
     ----------
-    size : Tuple[int, int]
-        The size of the terrain in (x, y) dimensions.
+    size : Tuple[float, float], optional
+        The size of the arena in mm, by default (50, 50).
     friction : Tuple[float, float, float]
-        Sliding, torsional, and rolling friction coefficients, by default
-        (1, 0.005, 0.0001)
+        The sliding, torsional, and rolling friction coefficients of the
+        ground, by default (1, 0.005, 0.0001).
+    ground_alpha : float
+        Opacity of the ground, by default 1 (fully opaque).
+    scale_bar_pos : Tuple[float, float, float], optional
+        If supplied, a 1 mm scale bar will be placed at this location.
     """
 
     def __init__(
         self,
         size: Tuple[float, float] = (50, 50),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        ground_alpha: float = 0.8,
+        ground_alpha: float = 1.0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
         self.root_element = mjcf.RootElement()

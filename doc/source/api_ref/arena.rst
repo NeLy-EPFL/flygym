@@ -5,11 +5,16 @@ Arena are the physical environments that the simulated fly is placed in. They ca
 
 This page provides the API reference for the ``BaseArena`` abstract class as well as the preprogrammed arenas.
 
+Base arena
+----------
 .. autoclass:: flygym.mujoco.arena.BaseArena
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
+
+Preprogrammed complex terrain arenas
+------------------------------------
 
 .. autoclass:: flygym.mujoco.arena.FlatTerrain
     :members:
@@ -34,6 +39,9 @@ This page provides the API reference for the ``BaseArena`` abstract class as wel
     :undoc-members:
     :show-inheritance:
     :inherited-members:
+
+Preprogrammed arenas with sensory features
+------------------------------------------
 
 .. autoclass:: flygym.mujoco.arena.OdorArena
     :members:
