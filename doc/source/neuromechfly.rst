@@ -1,27 +1,13 @@
 The NeuroMechFly Model
 ======================
 
-NeuroMechFly is a morphologically accurate model of the adult fruit fly *Drosophila melanogaster*. It is based on a micro-CT scan of the animal. See the `NeuroMechFly paper`_ for more details.
+NeuroMechFly is a morphologically accurate model of the adult fruit fly *Drosophila melanogaster* based on a micro-CT scan of the animal. It was originally described in our `NeuroMechFly paper <https://doi.org/10.1038/s41592-022-01466-7>`_ and updated in our `NeuroMechFly 2.0 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_. Please refer to these publications for more details.
 
 .. figure :: _static/neuromechfly.png
    :width: 700
    :alt: NeuroMechFly
 
    Figure from the NeuroMechFly paper (Lobato-Rios et al, 2022): a, An adult female fly encased in resin for X-ray microtomography. b, Cross-section of the resulting X-ray scan. Cuticle, muscles, nervous tissues and internal organs are visible. c, Thresholded data separating the foreground (white) from the background (black). d, 3D polygon mesh of the exoskeleton and wings. e, Articulated body parts after separation from one another. f, Body parts after reassembly into a natural resting pose and overlaid with a rigged skeleton in dark red. g, Fly model after the addition of texture.
-
-
-.. _coords:
-
-Coordinate System
------------------
-
-The model uses the following coordinate system: the ground plane is the x-y plane. z points upward. By default, the fly is mounted facing the positive x direction. In the initial configuration, rotation along the y axis is the *pitch*. Rotation along the x axis is the *roll*. Rotation along the z axis is the *yaw*.
-
-.. figure :: _static/coords.png
-   :width: 300
-   :alt: Aircraft principal axes
-
-   Source: https://commons.wikimedia.org/wiki/File:Yaw_Axis_Corrected.svg
 
 
 .. _body:
@@ -37,7 +23,7 @@ The biomechanical model consists of a set of rigid body parts. The body parts re
 
    Source: Chyb, S., & Gompel, N. (2013). *Atlas of Drosophila Morphology*. doi:10.1016/c2009-0-61936-x
 
-A "joint" links two body parts (see :ref:`joints`). Note that in physics simulation, "joint" refers to a single degree of freedom (DoF). Therefore, if a (biological) joint has multiple DoFs (such as the thorax-coxa joint), the (biological) joint is implemented as multiple joint links. As a result, the same (biological) body segment is simulated with multiple body segments to allow for the "virtual" links between different DoFs on the same joint. Any unlabelled link is a *pitch* DoF. Any link with a suffix of ``_roll`` is a *roll* DoF. Any link with a suffix of ``_yaw`` is a *yaw* DoF (see :ref:`coords`). 
+A "joint" links two body parts (see :ref:`joints`). Note that in physics simulation, "joint" refers to a single degree of freedom (DoF). Therefore, if a (biological) joint has multiple DoFs (such as the thorax-coxa joint), the (biological) joint is implemented as multiple joint links. As a result, the same (biological) body segment is simulated with multiple body segments to allow for the "virtual" links between different DoFs on the same joint. Any unlabelled link is a *pitch* DoF. Any link with a suffix of ``_roll`` is a *roll* DoF. Any link with a suffix of ``_yaw`` is a *yaw* DoF. 
 
 The following is the complete list of body parts defined in the model. In general, ``L`` and ``R`` indicate the left and right side. ``F``, ``M``, ``H`` indicate the fore-, mid-, and hindlegs. ``An`` indicate the ``n``-th segement of the abdomen. For example, ``RHFemur`` means the femur of the right hindleg; ``LFTarsus1`` means the first tarsus link of the left foreleg, and ``A1A2`` means the fused first and second segments of the abdomen. ::
 
@@ -104,11 +90,11 @@ The following is a complete list of body parts. See the :ref:`body` section for 
     'joint_RMTarsus2', 'joint_RMTarsus3', 'joint_RMTarsus4', 
     'joint_RMTarsus5']
 
-.. figure :: _static/dofs.png
-   :width: 400
+.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/biomechanics.png?raw=true
+   :width: 600
    :alt: NeuroMechFly's leg DoFs
 
-   Figure from the NeuroMechFly paper (Lobato-Rios et al, 2022): Zero pose of NeuroMechFly from (A) front and (B) side views. Each leg is composed of 11 hinge joints. Joints with more than one DoF were modeled as a union of multiple hinge joints. The left foreleg observed from the (C) side and (D) front views. Rotational axes of joints are shown in light green. The global coordinate system’s x, y, and z axes are red, green, and blue, respectively.
+   Zero pose of NeuroMechFly 2.0, including a front view (top left), a side view (top right), and a zoomed-in view of the left antennae (bottom left). The leg DoFs are also shown (bottom middle, bottom right). The global coordinate system’s x, y, and z axes are red, green, and blue, respectively. Figure adapted from Lobato-Rios et al (2022) and Wang-Chen et al (2023)
 
 For the modeling of locomotion, the leg DoFs are the most critical. In *Drosophila*, there are 7 *actuated* DoFs per leg: thorax-coxa pitch (``joint_XXCoxa``), thorax-coxa roll (``joint_XXCoxa_roll``), thorax-coxa yaw (``joint_XXCoxa_yaw``), coxa-femur pitch (``joint_XXFemur``), coxa-femur roll (``joint_XXFemur_roll``), femur-tibia pitch (``joint_XXTibia``), and tibia-tarsus pitch (``joint_XXTarsus1``). The links between tarsus segments can also move passively but are not actively actuated. To get started, one might consider using a subset of all leg DoFs: for example, the NeuroMechFly paper used 3 DoFs per leg for its optimization work: thorax-coxa pitch for the forelegs, the thorax-coxa roll for the mid- and hindlegs, coxa-femur pitch for all legs, and femur-tibia pitch for all legs.
 
@@ -116,21 +102,18 @@ For the modeling of locomotion, the leg DoFs are the most critical. In *Drosophi
 
     FlyGym provides hardcoded shorthands for these useful lists of links::
 
-        >>> import flygym.util.config as config
+        >>> import flygym.mujoco
 
         # all actuatable leg DoFs:
-        >>> config.all_leg_dofs
+        >>> flygym.mujoco.preprogrammed.all_leg_dofs
         ['joint_LFCoxa', 'joint_LFCoxa_roll', 'joint_LFCoxa_yaw', 'joint_LFFemur', 'joint_LFFemur_roll', 'joint_LFTibia', 'joint_LFTarsus1', 'joint_LMCoxa', 'joint_LMCoxa_roll', 'joint_LMCoxa_yaw', 'joint_LMFemur', 'joint_LMFemur_roll', 'joint_LMTibia', 'joint_LMTarsus1', 'joint_LHCoxa', 'joint_LHCoxa_roll', 'joint_LHCoxa_yaw', 'joint_LHFemur', 'joint_LHFemur_roll', 'joint_LHTibia', 'joint_LHTarsus1', 'joint_RFCoxa', 'joint_RFCoxa_roll', 'joint_RFCoxa_yaw', 'joint_RFFemur', 'joint_RFFemur_roll', 'joint_RFTibia', 'joint_RFTarsus1', 'joint_RMCoxa', 'joint_RMCoxa_roll', 'joint_RMCoxa_yaw', 'joint_RMFemur', 'joint_RMFemur_roll', 'joint_RMTibia', 'joint_RMTarsus1', 'joint_RHCoxa', 'joint_RHCoxa_roll', 'joint_RHCoxa_yaw', 'joint_RHFemur', 'joint_RHFemur_roll', 'joint_RHTibia', 'joint_RHTarsus1']
 
         # 3 DoFs per leg:
-        >>> config.leg_dofs_3_per_leg
+        >>> flygym.mujoco.preprogrammed.leg_dofs_3_per_leg
         ['joint_LFCoxa', 'joint_LFFemur', 'joint_LFTibia', 'joint_LMCoxa_roll', 'joint_LMFemur', 'joint_LMTibia', 'joint_LHCoxa_roll', 'joint_LHFemur', 'joint_LHTibia', 'joint_RFCoxa', 'joint_RFFemur', 'joint_RFTibia', 'joint_RMCoxa_roll', 'joint_RMFemur', 'joint_RMTibia', 'joint_RHCoxa_roll', 'joint_RHFemur', 'joint_RHTibia']
 
 
 References
 ----------
 - Lobato-Rios, V., Ramalingasetty, S. T., Özdil, P. G., Arreguit, J., Ijspeert, A. J., & Ramdya, P. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*, 19(5), 620-627. https://doi.org/10.1038/s41592-022-01466-7
-
-
-
-.. _NeuroMechFly paper: https://doi.org/10.1038/s41592-022-01466-7
+- Wang-Chen, S., Stimpfling, V. A., Özdil, P. G., Genoud, L., Hurtak, F., & Ramdya, P. (2023). NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult *Drosophila*. Preprint on bioRxiv. https://doi.org/10.1101/2023.09.18.556649

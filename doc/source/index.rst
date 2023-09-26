@@ -13,9 +13,8 @@ FlyGym: Simulating embodied sensorimotor control with NeuroMechFly 2.0
 
    neuromechfly
    installation
-   environments/index
-   arena/index
-   state
+   tutorials/index
+   api_ref/index
    changelog
    contributing
 
