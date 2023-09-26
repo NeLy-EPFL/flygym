@@ -1,6 +1,7 @@
 import numpy as np
 import tempfile
 import pytest
+import logging
 from pathlib import Path
 
 from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
@@ -52,6 +53,7 @@ def test_vision_dimensions():
 
     # Test postprocessing
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    logging.info(f"temp_base_dir: {temp_base_dir}")
     visualize_visual_input(
         nmf.retina,
         output_path=temp_base_dir / "vision/eyes.mp4",

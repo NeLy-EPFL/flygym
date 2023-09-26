@@ -1,5 +1,6 @@
 import numpy as np
 import tempfile
+import logging
 from pathlib import Path
 
 from flygym.mujoco import NeuroMechFlyMuJoCo
@@ -29,6 +30,7 @@ def test_basic_untethered_sinewave():
     assert np.isclose(obs_list[-1]["fly"].sum(), -80.7228, rtol=0.03)
 
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    logging.info(f"temp_base_dir: {temp_base_dir}")
     out_dir = temp_base_dir / "mujoco_basic_untethered_sinewave"
     # nmf.save_video(out_dir / "video.mp4")
     plot_mujoco_rollout(obs_list, nmf.timestep, out_dir / "plot.png")

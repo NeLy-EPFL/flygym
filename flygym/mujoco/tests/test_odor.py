@@ -1,11 +1,7 @@
 import numpy as np
 
 from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from flygym.mujoco.util import plot_mujoco_rollout
 from flygym.mujoco.arena import OdorArena
-
-
-random_state = np.random.RandomState(0)
 
 
 def test_odor_dimensions():

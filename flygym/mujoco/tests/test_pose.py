@@ -1,18 +1,17 @@
 import numpy as np
 import tempfile
+import logging
 from pathlib import Path
 
 from flygym.mujoco import NeuroMechFlyMuJoCo
 from flygym.mujoco.util import plot_mujoco_rollout
 
 
-random_state = np.random.RandomState(0)
-temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
-
-
 def test_stretched_pose():
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    logging.info(f"temp_base_dir: {temp_base_dir}")
+    
     nmf = NeuroMechFlyMuJoCo(init_pose="stretch")
     run_time = 0.01
     freq = 500
@@ -34,6 +33,8 @@ def test_stretched_pose():
 def test_zero_pose():
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    logging.info(f"temp_base_dir: {temp_base_dir}")
+
     nmf = NeuroMechFlyMuJoCo(init_pose="zero", spawn_pos=(0, 0, 3))
     run_time = 0.01
     freq = 500
@@ -55,6 +56,8 @@ def test_zero_pose():
 def test_tripod_pose():
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
+    logging.info(f"temp_base_dir: {temp_base_dir}")
+
     nmf = NeuroMechFlyMuJoCo(init_pose="tripod")
     run_time = 0.01
     freq = 500
