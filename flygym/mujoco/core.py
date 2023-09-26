@@ -112,8 +112,8 @@ class MuJoCoParameters:
     draw_adhesion : bool
         Whether to signal that adhesion is on by changing the color of the
         concerned leg. By default False.
-    adhesion_gain : float
-        The gain of the adhesion force. By default 20.
+    adhesion_force : float
+        The magnitude of the adhesion force. By default 20.
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors. By default
@@ -176,7 +176,7 @@ class MuJoCoParameters:
     render_playspeed_text: bool = True
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
-    adhesion_gain: float = 20
+    adhesion_force: float = 20
     draw_adhesion: bool = False
     draw_sensor_markers: bool = False
     draw_contacts: bool = False
@@ -216,6 +216,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         Which initial pose to start the simulation from.
     render_mode : str
         The rendering mode. Can be "saved" or "headless".
+    actuated_joints : List[str]
+            List of names of actuated joints.
+    contact_sensor_placements : List[str]
+        List of body segments where contact sensors are placed. By
+        default all tarsus segments.
     detect_flip : bool
         If True, the simulation will indicate whether the fly has flipped
         in the ``info`` returned by ``.step(...)``. Flip detection is
@@ -273,9 +278,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ----------
         sim_params : flygym.mujoco.MuJoCoParameters
             Parameters of the MuJoCo simulation.
-        actuated_joints : List[str]
-            List of names of actuated joints.
-        contact_sensor_placements : List[str]
+        actuated_joints : List[str], optional
+            List of names of actuated joints. By default all active leg
+            DoFs.
+        contact_sensor_placements : List[str], optional
             List of body segments where contact sensors are placed. By
             default all tarsus segments.
         output_dir : Path, optional
@@ -322,7 +328,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             arena = FlatTerrain()
         self.sim_params = deepcopy(sim_params)
         self.actuated_joints = actuated_joints
-        self._contact_sensor_placements = contact_sensor_placements
+        self.contact_sensor_placements = contact_sensor_placements
         self.timestep = sim_params.timestep
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -330,7 +336,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self.arena = arena
         self.spawn_pos = spawn_pos
         # convert to mujoco orientation format [0, 0, 0] would orient along the x axis
-        # but the output fly_orientation from framequat would be [0, 0, pi/2] for spawn_orient = [0, 0, 0]
+        # but the output fly_orientation from framequat would be [0, 0, pi/2] for
+        # spawn_orient = [0, 0, 0]
         self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
         self.control = control
         if isinstance(init_pose, str):
@@ -482,17 +489,17 @@ class NeuroMechFlyMuJoCo(gym.Env):
             self._add_odor_sensors() if sim_params.enable_olfaction else None
         )
         self._add_force_sensors()
-        self._contact_sensor_placements = [
-            f"Animat/{body}" for body in self._contact_sensor_placements
+        self.contact_sensor_placements = [
+            f"Animat/{body}" for body in self.contact_sensor_placements
         ]
         self._adhesion_actuators = self._add_adhesion_actuators(
-            self.sim_params.adhesion_gain
+            self.sim_params.adhesion_force
         )
         # Those need to be in the same order as the adhesion sensor
         # (due to comparison with the last adhesion_signal)
         adhesion_sensor_indices = []
         for adhesion_actuator in self._adhesion_actuators:
-            for index, contact_sensor in enumerate(self._contact_sensor_placements):
+            for index, contact_sensor in enumerate(self.contact_sensor_placements):
                 if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
@@ -700,25 +707,15 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _define_observation_space(self):
         _observation_space = {
-            # joints: shape (3, num_dofs): (pos, vel, torque) of each DoF
             "joints": spaces.Box(
                 low=-np.inf, high=np.inf, shape=(3, len(self.actuated_joints))
             ),
-            # fly: shape (4, 3):
-            # 0th row: x, y, z position of the fly in arena
-            # 1st row: x, y, z velocity of the fly in arena
-            # 2nd row: orientation of fly around x, y, z axes
-            # 3rd row: rate of change of fly orientation
             "fly": spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
-            # contact forces: readings of the touch contact sensors, one
-            # placed for each of the ``contact_sensor_placements``
             "contact_forces": spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(3, len(self._contact_sensor_placements)),
+                low=-np.inf, high=np.inf, shape=(len(self.contact_sensor_placements), 3)
             ),
             # x, y, z positions of the end effectors (tarsus-5 segments)
-            "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(3 * 6,)),
+            "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(6, 3)),
             "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
         }
         if self.sim_params.enable_vision:
@@ -737,11 +734,13 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def _initialize_custom_camera_handling(self, camera_name):
         """
-        This function is called when the camera is initialized. It can be used to
-        customize the camera behavior. I case update_camera_pos is True and the camera is
-        within the animat and not a head camera, the z position will be fixed to avoid oscillations
-        If self.sim_params.camera_follows_fly_orientation is True, the camera will be rotated
-        to follow the fly orientation (i.e the front camera will always be in front of the fly)
+        This function is called when the camera is initialized. It can be
+        used to customize the camera behavior. I case update_camera_pos is
+        True and the camera is within the animat and not a head camera, the
+        z position will be fixed to avoid oscillations. If
+        self.sim_params.camera_follows_fly_orientation is True, the camera
+        will be rotated to follow the fly orientation (i.e the front camera
+        will always be in front of the fly).
         """
 
         is_Animat = "Animat" in camera_name
@@ -768,7 +767,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self.sim_params.camera_follows_fly_orientation = False
                 logging.warning(
                     "Overriding `camera_follows_fly_orientation` to False because"
-                    "it is never applied to visualization cameras (head, tarsus, ect ...)"
+                    "it is never applied to visualization cameras (head, tarsus, ect)"
                     "or non Animat camera."
                 )
             elif self.sim_params.camera_follows_fly_orientation:
@@ -776,9 +775,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self.base_camera_rot = R.from_euler(
                     "xyz", self._cam.euler + self.spawn_orientation
                 ).as_matrix()
-                # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING TRACKED CAMERA
+                # THIS SOMEHOW REPLICATES THE CAMERA XMAT OBTAINED BY MUJOCO WHE USING
+                # TRACKED CAMERA
             else:
-                # if not camera_follows_fly_orientation need to change the camera mode to track
+                # if not camera_follows_fly_orientation need to change the camera mode
+                # to track
                 self._cam.mode = "track"
             return
         else:
@@ -787,7 +788,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                 self.sim_params.camera_follows_fly_orientation = False
                 logging.warning(
                     "Overriding `camera_follows_fly_orientation` to False because"
-                    "it is never applied to visualization cameras (head, tarsus, ect ...)"
+                    "it is never applied to visualization cameras (head, tarsus, ect)"
                     "or non Animat camera."
                 )
             return
@@ -992,7 +993,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         All force sensors
         """
         force_sensors = []
-        for tracked_geom in self._contact_sensor_placements:
+        for tracked_geom in self.contact_sensor_placements:
             body = self.model.find("body", tracked_geom)
             site = body.add(
                 "site",
@@ -1059,7 +1060,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
             The rotation matrix to align the camera with the gravity vector
              by default None.
         """
-        # Only change the angle of the camera if the new gravity vector and the camera angle are compatible
+        # Only change the angle of the camera if the new gravity vector and the camera
+        # angle are compatible
         camera_is_compatible = False
         if (
             "left" in self.sim_params.render_camera
@@ -1067,7 +1069,8 @@ class NeuroMechFlyMuJoCo(gym.Env):
         ):
             if not gravity[1] > 0:
                 camera_is_compatible = True
-        # elif "top" in self.sim_params.camera_name or "bottom" in self.sim_params.camera_name:
+        # elif "top" in self.sim_params.camera_name or "bottom" in
+        # self.sim_params.camera_name:
         elif (
             "front" in self.sim_params.render_camera
             or "back" in self.sim_params.render_camera
@@ -1280,7 +1283,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
         action is required.
-        
+
         Returns
         -------
         np.ndarray
@@ -1350,9 +1353,9 @@ class NeuroMechFlyMuJoCo(gym.Env):
             - self.spawn_orientation[::-1]
             - [np.pi / 2, 0, 0]
         )
-        # This compensates both for the scipy to mujoco transform (align with y is [0, 0, 0]
-        # in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly orientation is already
-        # taken into account in the base_camera_rot (see below)
+        # This compensates both for the scipy to mujoco transform (align with y is
+        # [0, 0, 0] in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly
+        # orientation is already taken into account in the base_camera_rot (see below)
         # camera is always looking along its -z axis
         if cam_name in ["camera_top", "camera_bottom"]:
             # if camera is top or bottom always keep rotation around z only
@@ -1432,7 +1435,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Draw contacts as arrow wich length is proportional to the force
         magnitude. The arrow is drown at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
-        contact_forces = np.linalg.norm(self._last_contact_force, axis=0)
+        contact_forces = np.linalg.norm(self._last_contact_force, axis=1)
         contact_indexes = np.nonzero(
             contact_forces > self.sim_params.contact_threshold
         )[0]
@@ -1457,7 +1460,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     force_arrow_points[
                         j, (j + 1) * n_contacts : (j + 2) * n_contacts
                     ] += (
-                        self._last_contact_force[j, contact_indexes]
+                        self._last_contact_force[contact_indexes, j]
                         * self.sim_params.force_arrow_scaling
                     )
 
@@ -1606,12 +1609,10 @@ class NeuroMechFlyMuJoCo(gym.Env):
         if self.sim_params.draw_gravity:
             self._last_fly_pos = cart_pos
 
-        # contact forces from crf_ext (first three componenents are rotational (torque ?))
-        contact_forces = (
-            self.physics.named.data.cfrc_ext[self._contact_sensor_placements][
-                :, 3:
-            ].copy()
-        ).T
+        # contact forces from crf_ext (first three componenents are rotational)
+        contact_forces = self.physics.named.data.cfrc_ext[
+            self.contact_sensor_placements
+        ][:, 3:].copy()
         if self.sim_params.enable_adhesion:
             self._last_refjnt_angvel = joint_obs[1, self._leglift_ref_jnt_id]
 
@@ -1649,18 +1650,19 @@ class NeuroMechFlyMuJoCo(gym.Env):
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
                     contact_forces[:, contact_sensor_id] -= (
-                        self.sim_params.adhesion_gain * normal
+                        self.sim_params.adhesion_force * normal
                     )
 
         # if draw contacts same last contact forces and positiions
         if self.sim_params.draw_contacts:
             self._last_contact_force = contact_forces
             self._last_contact_pos = (
-                self.physics.named.data.xpos[self._contact_sensor_placements].copy().T
+                self.physics.named.data.xpos[self.contact_sensor_placements].copy().T
             )
 
         # end effector position
         ee_pos = self.physics.bind(self._end_effector_sensors).sensordata.copy()
+        ee_pos = ee_pos.reshape((self.n_legs, 3))
 
         orientation_vec = self.physics.bind(self._body_sensors[4]).sensordata.copy()
 
