@@ -78,21 +78,21 @@ class Retina:
         # Load parameters from config file if not supplied
         config = load_config()
         data_path = get_data_path("flygym", "data")
-        ommatidia_id_map_path = (data_path / config["paths"]["ommatidia_id_map"])
-        pale_type_mask_path = (data_path / config["paths"]["canonical_pale_type_mask"])
+        ommatidia_id_map_path = data_path / config["paths"]["ommatidia_id_map"]
+        pale_type_mask_path = data_path / config["paths"]["canonical_pale_type_mask"]
         vision_config = config["vision"]
-        if ommatidia_id_map is None: 
-            ommatidia_id_map=np.load(ommatidia_id_map_path)
+        if ommatidia_id_map is None:
+            ommatidia_id_map = np.load(ommatidia_id_map_path)
         if pale_type_mask is None:
-            pale_type_mask=np.load(pale_type_mask_path).astype(int)
+            pale_type_mask = np.load(pale_type_mask_path).astype(int)
         if distortion_coefficient is None:
-            distortion_coefficient=vision_config["fisheye_distortion_coefficient"]
+            distortion_coefficient = vision_config["fisheye_distortion_coefficient"]
         if zoom is None:
-            zoom=vision_config["fisheye_zoom"]
+            zoom = vision_config["fisheye_zoom"]
         if nrows is None:
-            nrows=vision_config["raw_img_height_px"]
+            nrows = vision_config["raw_img_height_px"]
         if ncols is None:
-            ncols=vision_config["raw_img_width_px"]
+            ncols = vision_config["raw_img_width_px"]
 
         self.ommatidia_id_map = ommatidia_id_map
         _unique_count = np.unique(ommatidia_id_map, return_counts=True)
@@ -167,7 +167,7 @@ class Retina:
         img: np.ndarray
             The raw MuJoCo camera rendering as a NumPy array of shape
             (nrows, ncols, 3).
-        
+
         Returns
         -------
         np.ndarray

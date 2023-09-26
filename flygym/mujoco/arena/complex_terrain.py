@@ -27,7 +27,7 @@ class GappedTerrain(BaseArena):
         Width of each block (piece of floor), by default 1
     gap_depth : float
         Height of the gaps, by default 2
-    
+
     Parameters
     ----------
     x_range : Tuple[float, float], optional

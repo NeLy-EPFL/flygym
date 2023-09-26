@@ -11,7 +11,7 @@ def test_stretched_pose():
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
-    
+
     nmf = NeuroMechFlyMuJoCo(init_pose="stretch")
     run_time = 0.01
     freq = 500

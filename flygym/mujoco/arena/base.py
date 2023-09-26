@@ -6,7 +6,7 @@ from dm_control import mjcf
 
 class BaseArena(ABC):
     """Base class for all arenas.
-    
+
     Attributes
     ----------
     arena : Any
@@ -22,8 +22,7 @@ class BaseArena(ABC):
 
     @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
-        """Create a new terrain object.
-        """
+        """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
 
     @abstractmethod
@@ -113,7 +112,7 @@ class BaseArena(ABC):
         """The dimension of the odor signal. This can be used to emulate
         multiple monomolecular chemical concentrations or multiple
         composite ordor intensities.
-        
+
         Returns
         -------
         int
@@ -139,7 +138,7 @@ class BaseArena(ABC):
         """Advance the arena by one step. This is useful for interactive
         environments (eg. moving object). Typically, this method is called
         from the core simulation class (eg. ``NeuroMechFlyMuJoCo``).
-        
+
         Parameters
         ----------
         dt : float
@@ -170,7 +169,7 @@ class FlatTerrain(BaseArena):
     friction : Tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
-    
+
     Parameters
     ----------
     size : Tuple[float, float], optional

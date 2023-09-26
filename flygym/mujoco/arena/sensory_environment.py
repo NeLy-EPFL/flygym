@@ -39,7 +39,7 @@ class OdorArena(BaseArena):
     birdeye_cam_zoom : dm_control.mujoco.Camera
          MuJoCo camera that gives a birdeye view of the arena, zoomed in
          toward the fly.
-    
+
     Parameters
     ----------
     size : Tuple[float, float], optional
