@@ -13,38 +13,18 @@ Base arena
     :show-inheritance:
     :inherited-members:
 
+.. autoclass:: flygym.mujoco.arena.FlatTerrain
+
 Preprogrammed complex terrain arenas
 ------------------------------------
 
-.. autoclass:: flygym.mujoco.arena.FlatTerrain
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-
 .. autoclass:: flygym.mujoco.arena.GappedTerrain
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
 
 .. autoclass:: flygym.mujoco.arena.BlocksTerrain
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
 
 .. autoclass:: flygym.mujoco.arena.MixedTerrain
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
 
 Preprogrammed arenas with sensory features
 ------------------------------------------
 
 .. autoclass:: flygym.mujoco.arena.OdorArena
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
