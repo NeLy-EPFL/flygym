@@ -64,7 +64,9 @@ def visualize_visual_input(
     def update(frame):
         for i, side in enumerate(["Left", "Right"]):
             axs[0, i].cla()
-            axs[0, i].imshow(raw_vision_key_frames[frame, i, :, :, :])
+            raw_img = raw_vision_key_frames[frame, i, :, :, :]
+            raw_img = np.clip(raw_img, 0, 255).astype(np.uint8)
+            axs[0, i].imshow(raw_img)
             axs[0, i].axis("off")
             axs[0, i].set_title(f"{side} eye")
 

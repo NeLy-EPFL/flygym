@@ -193,17 +193,18 @@ class Retina:
             if hex_pxl_id != -1:
                 ch_idx = pale_type_mask[hex_pxl_id]
                 vals[hex_pxl_id, ch_idx] += img_arr_flat[i, ch_idx + 1] / hex_pxl_size
-        return vals
+        return vals / 255
 
     @staticmethod
     @nb.njit(parallel=True)
     def _hex_pxls_to_human_readable(ommatidia_reading, ommatidia_id_map):
+        ommatidia_reading_scaled = ommatidia_reading * 255
         processed_image_flat = np.zeros(ommatidia_id_map.size, dtype=np.uint8) + 255
         hex_id_map_flat = ommatidia_id_map.flatten().astype(np.int16)
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             if hex_pxl_id != -1:
-                hex_pxl_val = ommatidia_reading[hex_pxl_id, :].max()
+                hex_pxl_val = ommatidia_reading_scaled[hex_pxl_id, :].max()
                 processed_image_flat[i] = hex_pxl_val
         return processed_image_flat.reshape(ommatidia_id_map.shape)
 
