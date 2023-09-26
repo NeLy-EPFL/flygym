@@ -1,1 +1,2 @@
 recursive-include flygym/data *
+include flygym/mujoco/config.yaml

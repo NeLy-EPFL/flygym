@@ -1,5 +1,4 @@
 import numpy as np
-import pkg_resources
 import pickle
 import matplotlib.pyplot as plt
 from dm_control import mjcf
@@ -7,11 +6,11 @@ from typing import Tuple
 from tqdm import trange
 from pathlib import Path
 
-from flygym.arena import BaseArena
-from flygym.envs.nmf_mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
-from flygym.state import stretched_pose
-from flygym.util.config import all_leg_dofs
-from flygym.util.vision import visualize_visual_input
+from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco.arena import BaseArena
+from flygym.mujoco.preprogrammed import all_leg_dofs
+from flygym.mujoco.vision import visualize_visual_input
+from flygym.common import get_data_path
 
 
 class FovCalibrationArena(BaseArena):
@@ -115,12 +114,12 @@ arena = FovCalibrationArena()
 nmf = NeuroMechFlyMuJoCo(
     sim_params=sim_params,
     arena=arena,
-    init_pose=stretched_pose,
+    init_pose="stretch",
     actuated_joints=all_leg_dofs,
 )
 
 # Load recorded data
-data_path = Path(pkg_resources.resource_filename("flygym", "data"))
+data_path = get_data_path("flygym", "data")
 with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
     data = pickle.load(f)
 
@@ -145,9 +144,9 @@ axs[0, 0].imshow(nmf.physics.render(700, 700, camera_id="Animat/camera_left"))
 axs[0, 0].axis("off")
 axs[0, 1].imshow(nmf.physics.render(700, 700, camera_id="birdseye_cam"))
 axs[0, 1].axis("off")
-axs[1, 0].imshow(nmf.curr_raw_visual_input[0])
+axs[1, 0].imshow(nmf._curr_raw_visual_input[0])
 axs[1, 0].axis("off")
-axs[1, 1].imshow(nmf.curr_raw_visual_input[1])
+axs[1, 1].imshow(nmf._curr_raw_visual_input[1])
 axs[1, 1].axis("off")
 plt.tight_layout()
 plt.show()
@@ -165,7 +164,7 @@ arena = FovCalibrationArena()
 nmf = NeuroMechFlyMuJoCo(
     sim_params=sim_params,
     arena=arena,
-    init_pose=stretched_pose,
+    init_pose="stretch",
     actuated_joints=all_leg_dofs,
 )
 obs_list = []
@@ -179,6 +178,7 @@ nmf.close()
 nmf.save_video(Path("vision_arena.mp4"))
 
 visualize_visual_input(
+    nmf.retina,
     output_path=Path("eyes.mp4"),
     vision_data_li=[x["vision"] for x in obs_list],
     raw_vision_data_li=[x["raw_vision"] for x in obs_list],
