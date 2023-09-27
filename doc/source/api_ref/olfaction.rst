@@ -6,8 +6,10 @@ Olfaction is simulated by calculating odor intensities at the locations of the a
 To enable this calculation, the ``BaseArena`` has the following methods. The user does not have to specifically implement them if odor is not enabled.
 
 .. automethod:: flygym.mujoco.arena.BaseArena.get_olfaction
+    :noindex:
 
 .. autoattribute:: flygym.mujoco.arena.BaseArena.odor_dimensions
+    :noindex:
 
 A useful implementation to refer to is the built-in ``OdorArena``:
 
@@ -16,4 +18,4 @@ A useful implementation to refer to is the built-in ``OdorArena``:
    :undoc-members:
    :show-inheritance:
    :inherited-members:
-   :no-index:
+   :noindex:
