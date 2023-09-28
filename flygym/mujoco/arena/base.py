@@ -137,7 +137,7 @@ class BaseArena(ABC):
     def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
         """Advance the arena by one step. This is useful for interactive
         environments (eg. moving object). Typically, this method is called
-        from the core simulation class (eg. ``NeuroMechFlyMuJoCo``).
+        from the core simulation class (eg. ``NeuroMechFly``).
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class BaseArena(ABC):
         physics : mjcf.Physics
             The physics object of the simulation. This is typically
             provided by the core simulation class (eg.
-            ``NeuroMechFlyMuJoCo.physics``) when the core simulation calls
+            ``NeuroMechFly.physics``) when the core simulation calls
             this method.
         *args
             User defined arguments and keyword arguments.

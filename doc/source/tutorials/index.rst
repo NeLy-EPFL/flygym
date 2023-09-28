@@ -7,7 +7,7 @@ Tutorials
 .. toctree::
    :maxdepth: 2
 
-   gym_basics
+   gym_basics_and_kinematic_replay
    cpg_controller
    feedback_controller
    hybrid_controller

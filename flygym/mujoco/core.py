@@ -2,6 +2,7 @@ import numpy as np
 import imageio
 import cv2
 import logging
+import warnings
 import sys
 from typing import List, Tuple, Dict, Any, Optional, Union
 from pathlib import Path
@@ -38,7 +39,7 @@ from flygym.common import get_data_path
 
 
 @dataclass
-class MuJoCoParameters:
+class Parameters:
     """Parameters of the MuJoCo simulation.
 
     Attributes
@@ -190,12 +191,12 @@ class MuJoCoParameters:
     camera_follows_fly_orientation: bool = False
 
 
-class NeuroMechFlyMuJoCo(gym.Env):
+class NeuroMechFly(gym.Env):
     """A NeuroMechFly environment using MuJoCo as the physics engine.
 
     Attributes
     ----------
-    sim_params : flygym.mujoco.MuJoCoParameters
+    sim_params : flygym.mujoco.Parameters
         Parameters of the MuJoCo simulation.
     timestep: float
         Simulation timestep in seconds.
@@ -259,7 +260,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
 
     def __init__(
         self,
-        sim_params: MuJoCoParameters = None,
+        sim_params: Parameters = None,
         actuated_joints: List = preprogrammed.all_leg_dofs,
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
@@ -272,11 +273,11 @@ class NeuroMechFlyMuJoCo(gym.Env):
         self_collisions: Union[str, List[str]] = "legs",
         detect_flip: bool = False,
     ) -> None:
-        """Initialize a NeuroMechFlyMuJoCo environment.
+        """Initialize a NeuroMechFly environment.
 
         Parameters
         ----------
-        sim_params : flygym.mujoco.MuJoCoParameters
+        sim_params : flygym.mujoco.Parameters
             Parameters of the MuJoCo simulation.
         actuated_joints : List[str], optional
             List of names of actuated joints. By default all active leg
@@ -323,7 +324,7 @@ class NeuroMechFlyMuJoCo(gym.Env):
             standing reliably on the ground yet. By default False.
         """
         if sim_params is None:
-            sim_params = MuJoCoParameters()
+            sim_params = Parameters()
         if arena is None:
             arena = FlatTerrain()
         self.sim_params = deepcopy(sim_params)
@@ -1796,3 +1797,21 @@ class NeuroMechFlyMuJoCo(gym.Env):
         """Close the environment, save data, and release any resources."""
         if self.render_mode == "saved" and self.output_dir is not None:
             self.save_video(self.output_dir / "video.mp4")
+
+
+class MuJoCoParameters(Parameters):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "Deprecation warning: The `MuJoCoParameters` class has been renamed "
+            "`Parameters`. `MuJoCoParameters` will be removed in future versions."
+        )
+        super().__init__(*args, **kwargs)
+
+
+class NeuroMechFlyMuJoCo(NeuroMechFly):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "Deprecation warning: The `NeuroMechFlyMuJoCo` class has been renamed "
+            "`NeuroMechFly`. `NeuroMechFlyMuJoCo` will be removed in future versions."
+        )
+        super().__init__(*args, **kwargs)
