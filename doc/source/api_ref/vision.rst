@@ -1,7 +1,7 @@
 Vision
 ======
 
-This page documents the implementation of the visual input received by the simulated fly. Note that in the typical use case, the user should **not** have to access most of the functions described here. Instead, the visual inputs are given as a part of the *observation* returned by ``NeuroMechFlyMuJoCo`` each time step. Nonetheless, the full API reference is provided here for greater transparency.
+This page documents the implementation of the visual input received by the simulated fly. Note that in the typical use case, the user should **not** have to access most of the functions described here. Instead, the visual inputs are given as a part of the *observation* returned by ``NeuroMechFly`` each time step. Nonetheless, the full API reference is provided here for greater transparency.
 
 Retina simulation
 -----------------

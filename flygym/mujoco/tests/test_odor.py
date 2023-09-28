@@ -1,6 +1,6 @@
 import numpy as np
 
-from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco import NeuroMechFly, Parameters
 from flygym.mujoco.arena import OdorArena
 
 
@@ -13,8 +13,8 @@ def test_odor_dimensions():
     # Initialize simulation
     num_steps = 100
     arena = OdorArena(odor_source=odor_source, peak_intensity=peak_intensity)
-    sim_params = MuJoCoParameters(enable_olfaction=True)
-    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params, arena=arena)
+    sim_params = Parameters(enable_olfaction=True)
+    nmf = NeuroMechFly(sim_params=sim_params, arena=arena)
 
     # Run simulation
     obs_list = []
