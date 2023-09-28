@@ -9,6 +9,13 @@ Code of conduct & licensing
 Please respect the `Contributor Covenant Code of Conduct <https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.txt>`_. FlyGym is made open souce under `Apache License 2.0 <https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE>`_. By contributing to this package (including any issue, pull request, and discussion), you agree that your content will be shared under the same licence.
 
 
+Branches
+--------
+- ``main``: The latest stable code. Every time this branch is updated (except documentation-only updates to the neuromechfly.org website), a new version should be pushed to PyPI.
+- ``develop``: The latest development code. This branch is used for development and testing. Code should not be merged into this branch until all tests and style checks are passing. Contribution from developers outside the core dev team (Sibo and Alfred) should have their PRs reviewed by a core dev team member. When a new version is released, the ``develop`` branch is merged into the ``main`` branch.
+- **Other branches** are for develop new features or fixing bugs. Please make your on fork for development (see the "Contributing to the codebase" section below).
+
+
 Code style
 ----------
 **Code:** We use the `Black Code Style <https://black.readthedocs.io/en/stable/the_black_code_style/index.html>`_ (version 23.3.0). If you install FlyGym in the dev mode (``pip install -e ."[dev]"``), the Black formatter will be automatically installed. Please run ``black . --check`` in the root directory to check if your code is formatted correctly, or run ``black .`` to format all files. When you push your code, GitHub will check the code style and display a red X if it is not compliant — this prevents you from merging your code into the main branch. You can also `integrate Black with your IDE <https://black.readthedocs.io/en/stable/integrations/index.html>`_. Comment lines should also be limited to 88 characters per line.
@@ -59,4 +66,4 @@ Contributing to the codebase
 8. If the reviewer requests changes, repeat steps 3-5 and Re-request review.
 9. Once the reviewer signs off they will squash + merge the PR into the ``develop`` branch.
 
-   - New feautures will be available on the main branch when a new release of SLEAP is released.
+   - New feautures will be available on the main branch when a new release of FlyGym is released.
