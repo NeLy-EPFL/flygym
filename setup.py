@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="0.2.1",
+    version="0.2.2",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
@@ -43,4 +43,6 @@ setup(
             "requests",
         ],
     },
+    url="https://neuromechfly.org/",
+    long_description=open("README.md").read(),
 )
