@@ -36,7 +36,7 @@ def visualize_visual_input(
         the RGB image.
     vision_update_mask : np.ndarray
         Mask indicating which simulation steps have vision updates. This
-        should be taken from ``NeuroMechFlyMuJoCo.vision_update_mask``.
+        should be taken from ``NeuroMechFly.vision_update_mask``.
     vision_refresh_rate : float, optional
         The refresh rate of visual inputs in Hz. This should be consistent
         with ``MuJoCoParameters.vision_refresh_rate`` that is given to the

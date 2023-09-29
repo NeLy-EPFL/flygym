@@ -65,19 +65,20 @@ The overall steps for interacting with a Gym environment are:
 
 This process can be shown in the following code snippet:
 
-.. code:: python
+.. code-block:: ipython3
+    :linenos:
+    
+    env = MyEnvironement(...)
+    obs, info = env.reset()
 
-   env = MyEnvironement(...)
-   obs, info = env.reset()
+    for step in range(1000):    # let's simulate 1000 steps max
+        action = ...    # your controller decides what to do based on obs
+        obs, reward, terminated, truncated, info = env.step(action)
+        env.render()
+        if terminated or truncated:
+            break
 
-   for step in range(1000):    # let's simulate 1000 steps max
-       action = ...    # your controller decides what to do based on obs
-       obs, reward, terminated, truncated, info = env.step(action)
-       env.render()
-       if terminated or truncated:
-           break
-
-   env.close()
+    env.close()
 
 Note that the action can be selected by any means defined by the user
 (eg. preprogrammed rules, algorithmic models, artificial neural
@@ -91,10 +92,9 @@ The action and observation spaces
 The **action** is a dictionary with the following keys and values:
 
 -  **“joints”**: The control signal for the actuated DoFs (eg. if
-   ``NeuroMechFlyMuJoCo.control == "position"``, then this is the target
-   joint angle). This is a NumPy array of shape (\|actuated_joints\|,).
-   The order of the DoFs is the same as
-   ``NeuroMechFlyMuJoCo.actuated_joints``.
+   ``NeuroMechFly.control == "position"``, then this is the target joint
+   angle). This is a NumPy array of shape (\|actuated_joints\|,). The
+   order of the DoFs is the same as ``NeuroMechFly.actuated_joints``.
 -  **“adhesion”** (if ``sim_params.enable_adhesion`` is True): The
    on/off signal of leg adhesion as a NumPy array of shape (6,), one for
    each leg. The order of the legs is: LF, LM, LH, RF, RM, RH (L/R =
@@ -105,15 +105,15 @@ The **observation** is a dictionary with the following keys and values:
 -  **“joints”**: The joint states as a NumPy array of shape (3,
    \|actuated_joints\|). The three rows are the angle, angular velocity,
    and force at each DoF. The order of the DoFs is the same as
-   ``NeuroMechFlyMuJoCo.actuated_joints``
+   ``NeuroMechFly.actuated_joints``
 -  **“fly”**: The fly state as a NumPy array of shape (4, 3). 0th row:
    x, y, z position of the fly in arena. 1st row: x, y, z velocity of
    the fly in arena. 2nd row: orientation of fly around x, y, z axes.
    3rd row: rate of change of fly orientation.
 -  **“contact_forces”**: Readings of the touch contact sensors, one
    placed for each of the body segments specified in
-   ``NeuroMechFlyMuJoCo.contact_sensor_placements``. This is a NumPy
-   array of shape (\|contact_sensor_placements\|, 3)
+   ``NeuroMechFly.contact_sensor_placements``. This is a NumPy array of
+   shape (\|contact_sensor_placements\|, 3)
 -  **“end_effectors”**: The positions of the end effectors (most distal
    tarsus link) of the legs as a NumPy array of shape (6, 3). The order
    of the legs is: LF, LM, LH, RF, RM, RH (L/R = left/right, F/M/H =
@@ -141,15 +141,15 @@ indicating whether the simulation has ended due to a condition under the
 MDP formulation (eg. task success/failure). The ``step()`` method also
 returns a ``truncated`` flag indicating whether the simulation has ended
 due to a condition outside the MDP formulation (eg. timeout). The
-provided ``NeuroMechFlyMuJoCo`` environment always returns False for
-both ``terminated`` and ``truncated``. The user can modify this behavior
-by extending the ``NeuroMechFlyMuJoCo`` class.
+provided ``NeuroMechFly`` environment always returns False for both
+``terminated`` and ``truncated``. The user can modify this behavior by
+extending the ``NeuroMechFly`` class.
 
 Additionally, the ``step()`` method returns an ``info`` dictionary that
 contains arbitrary auxillary information. The user can add any
-information to this dictionary by extending the ``NeuroMechFlyMuJoCo``
-class. The provided ``NeuroMechFlyMuJoCo`` contains the following keys
-and values in the **``info`` dictionary**:
+information to this dictionary by extending the ``NeuroMechFly`` class.
+The provided ``NeuroMechFly`` contains the following keys and values in
+the **``info`` dictionary**:
 
 -  **“raw_vision”** (if ``sim_params.enable_vision`` and
    ``sim_params.render_raw_vision`` are both True): The eye camera
@@ -192,7 +192,7 @@ Let’s define some simulation parameters:
     :linenos:
 
     run_time = 1
-    sim_params = flygym.mujoco.MuJoCoParameters(
+    sim_params = flygym.mujoco.Parameters(
         timestep=1e-4, render_mode="saved", render_playspeed=0.2, draw_contacts=True
     )
     actuated_joints = flygym.mujoco.preprogrammed.all_leg_dofs
@@ -253,14 +253,13 @@ We can visualize the time series of DoF angles:
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/kin_replay_joint_dof_time_series.png?raw=true
 
-
 Now we can create a NeuroMechFly simulation instance and play out the
 recorded kinematics in the MDP loop:
 
 .. code-block:: ipython3
     :linenos:
 
-    nmf = flygym.mujoco.NeuroMechFlyMuJoCo(
+    nmf = flygym.mujoco.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
         actuated_joints=actuated_joints,
@@ -277,7 +276,7 @@ recorded kinematics in the MDP loop:
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:16<00:00, 613.79it/s]
+    100%|██████████| 10000/10000 [00:16<00:00, 608.34it/s]
 
 
 To save the rendered video:
@@ -316,12 +315,12 @@ consistent with our expectation:
 
 The basic NeuroMechFly simulation always returns 0 as the reward. It
 always returns False for the ``terminated`` and ``truncated`` flags. The
-``info`` is also empty. The user can extend the ``NeuroMechFlyMuJoCo``
-class to modify these behaviors.
+``info`` is also empty. The user can extend the ``NeuroMechFly`` class
+to modify these behaviors.
 
 .. code-block:: ipython3
     :linenos:
-
+    
     print(f"reward: {reward}")
     print(f"terminated: {terminated}")
     print(f"truncated: {truncated}")

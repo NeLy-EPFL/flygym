@@ -1,1 +1,1 @@
-from .core import MuJoCoParameters, NeuroMechFlyMuJoCo
+from .core import Parameters, NeuroMechFly
