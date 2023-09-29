@@ -1,0 +1,1 @@
+Please see the [contributing guide](https://neuromechfly.org/contributing.html) on our website.

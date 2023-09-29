@@ -3,14 +3,14 @@ import tempfile
 import logging
 from pathlib import Path
 
-from flygym.mujoco import NeuroMechFlyMuJoCo
+from flygym.mujoco import NeuroMechFly
 from flygym.mujoco.util import plot_mujoco_rollout
 
 
 def test_basic_untethered_sinewave():
     random_state = np.random.RandomState(0)
 
-    nmf = NeuroMechFlyMuJoCo()
+    nmf = NeuroMechFly()
     run_time = 0.01
     freq = 500
     phase = 2 * np.pi * random_state.rand(len(nmf._actuators))

@@ -4,7 +4,7 @@ import pytest
 import logging
 from pathlib import Path
 
-from flygym.mujoco import NeuroMechFlyMuJoCo, MuJoCoParameters
+from flygym.mujoco import NeuroMechFly, Parameters
 from flygym.mujoco.util import load_config
 from flygym.mujoco.vision import visualize_visual_input
 
@@ -21,10 +21,10 @@ def test_vision_dimensions():
 
     # Initialize simulation
     num_steps = 100
-    sim_params = MuJoCoParameters(
+    sim_params = Parameters(
         enable_olfaction=True, enable_vision=True, render_raw_vision=True
     )
-    nmf = NeuroMechFlyMuJoCo(sim_params=sim_params)
+    nmf = NeuroMechFly(sim_params=sim_params)
 
     # Run simulation
     obs_list = []
