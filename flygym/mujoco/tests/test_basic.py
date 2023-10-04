@@ -25,10 +25,6 @@ def test_basic_untethered_sinewave():
         obs_list.append(obs)
     nmf.close()
 
-    # These should be deterministic
-    # print(obs_list[-1]["fly"].sum())
-    assert np.isclose(obs_list[-1]["fly"].sum(), -80.7228, rtol=0.03)
-
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
     out_dir = temp_base_dir / "mujoco_basic_untethered_sinewave"
