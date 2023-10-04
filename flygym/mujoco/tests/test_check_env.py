@@ -13,7 +13,7 @@ def test_check_env_basic():
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
-            "joints": spaces.Box(low=-1, high=1, shape=(len(nmf.actuated_joints),)),
+            "joints": spaces.Box(low=-0.1, high=0.1, shape=(len(nmf.actuated_joints),)),
             "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
         }
     )
@@ -30,7 +30,7 @@ def test_check_env_vision():
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
-            "joints": spaces.Box(low=-1, high=1, shape=(len(nmf.actuated_joints),)),
+            "joints": spaces.Box(low=-0.1, high=0.1, shape=(len(nmf.actuated_joints),)),
             "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
         }
     )
@@ -45,7 +45,7 @@ def test_check_env_olfaction():
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
-            "joints": spaces.Box(low=-1, high=1, shape=(len(nmf.actuated_joints),)),
+            "joints": spaces.Box(low=-0.1, high=0.1, shape=(len(nmf.actuated_joints),)),
             "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
         }
     )
