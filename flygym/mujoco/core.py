@@ -152,7 +152,7 @@ class Parameters:
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
-    actuator_kp: float = 18.0
+    actuator_kp: float = 30.0
     tarsus_stiffness: float = 2.2
     tarsus_damping: float = 0.05
     friction: float = (1.0, 0.005, 0.0001)
@@ -177,7 +177,7 @@ class Parameters:
     render_playspeed_text: bool = True
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
-    adhesion_force: float = 20
+    adhesion_force: float = 40
     draw_adhesion: bool = False
     draw_sensor_markers: bool = False
     draw_contacts: bool = False
@@ -703,7 +703,7 @@ class NeuroMechFly(gym.Env):
         }
         if self.sim_params.enable_adhesion:
             # 0: no adhesion, 1: adhesion
-            _action_space["adhesion"] = (spaces.Discrete(n=2, start=0),)
+            _action_space["adhesion"] = spaces.Discrete(n=2, start=0)
         return spaces.Dict(_action_space)
 
     def _define_observation_space(self):
@@ -1650,7 +1650,7 @@ class NeuroMechFly(gym.Env):
                 if self._last_adhesion[adh_actuator_id] > 0:
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
-                    contact_forces[:, contact_sensor_id] -= (
+                    contact_forces[contact_sensor_id, :] -= (
                         self.sim_params.adhesion_force * normal
                     )
 
