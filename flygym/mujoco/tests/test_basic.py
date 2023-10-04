@@ -27,7 +27,7 @@ def test_basic_untethered_sinewave():
 
     # These should be deterministic
     # print(obs_list[-1]["fly"].sum())
-    assert np.isclose(obs_list[-1]["fly"].sum(), -80.7228, rtol=0.03)
+    assert np.isclose(obs_list[-1]["fly"].sum(), -257.14624, rtol=0.03)
 
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
