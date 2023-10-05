@@ -672,6 +672,7 @@ off (during swing):
     
     
     def get_adhesion_onoff(theta):
+        theta = theta % (2 * np.pi)
         return ~((theta > swing_start) & (theta < swing_end)).squeeze()
 
 Two illustrate this binary signal (low = off, during swing; high = on,
