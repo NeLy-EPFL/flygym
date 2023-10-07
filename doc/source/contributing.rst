@@ -66,4 +66,4 @@ Contributing to the codebase
 8. If the reviewer requests changes, repeat steps 3-5 and Re-request review.
 9. Once the reviewer signs off they will squash + merge the PR into the ``develop`` branch.
 
-   - New feautures will be available on the main branch when a new release of FlyGym is released.
+   - New feautures will be available on the main branch when a new version is released.
