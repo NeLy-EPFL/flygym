@@ -373,26 +373,6 @@ class NeuroMechFly(gym.Env):
 
         self.n_legs = 6
 
-        # Order is based on the self.last_tarsalseg_names
-        leglift_reference_joint = [
-            "Tibia",
-            "Femur_roll",
-            "Femur_roll",
-            "Tibia",
-            "Femur_roll",
-            "Femur_roll",
-        ]
-        self._leglift_ref_jnt_id = [
-            self.actuated_joints.index("joint_" + tarsus_joint[:2] + joint)
-            for tarsus_joint, joint in zip(
-                self._last_tarsalseg_names, leglift_reference_joint
-            )
-        ]
-        adhesion_comparison_dir = ["inf", "inf", "inf", "inf", "sup", "sup"]
-        self._adhesion_sup_id = np.array(
-            [c_dir == "sup" for c_dir in adhesion_comparison_dir]
-        )
-        self._last_refjnt_angvel = np.zeros(self.n_legs)
         self._last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
@@ -1591,8 +1571,6 @@ class NeuroMechFly(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
-        if self.sim_params.enable_adhesion:
-            self._last_refjnt_angvel = joint_obs[1, self._leglift_ref_jnt_id]
         # fly position and orientation
         cart_pos = self.physics.bind(self._body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self._body_sensors[1]).sensordata
@@ -1617,8 +1595,6 @@ class NeuroMechFly(gym.Env):
             self.contact_sensor_placements
         ][:, 3:].copy()
         if self.sim_params.enable_adhesion:
-            self._last_refjnt_angvel = joint_obs[1, self._leglift_ref_jnt_id]
-
             # Adhesion inputs force in the contact. Lets compute this force
             # and remove it from the contact forces
             contactid_normal = {}
