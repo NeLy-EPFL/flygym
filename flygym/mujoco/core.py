@@ -691,8 +691,10 @@ class NeuroMechFly(gym.Env):
                         plane_height = 0.0
                     max_floor_height = max(max_floor_height, plane_height)
                 elif geom.type == "sphere":
-                    sphere_height = geom.pos[2] + geom.size[0]
+                    sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
+        if np.isinf(max_floor_height):
+            max_floor_height = self.spawn_pos[2]
         return max_floor_height
 
     def _define_action_space(self, action_bound):
