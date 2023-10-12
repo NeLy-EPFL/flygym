@@ -9,7 +9,7 @@ Tutorials
 
    gym_basics_and_kinematic_replay
    cpg_controller
-   feedback_controller
+   rule_based_controller
    hybrid_controller
    turning
    vision
