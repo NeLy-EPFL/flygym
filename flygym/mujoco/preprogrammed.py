@@ -25,6 +25,15 @@ leg_dofs_3_per_leg = [
     for dof in ["Coxa" if pos == "F" else "Coxa_roll", "Femur", "Tibia"]
 ]
 
+#test for the wings
+leg_dofs_3_per_leg_and_wings = all_leg_dofs + [
+    f"joint_{side}Wing_{dof}"
+    for side in "LR"
+    for dof in [
+        "roll",
+    ]
+]
+
 all_tarsi_links = [
     f"{side}{pos}Tarsus{i}" for side in "LR" for pos in "FMH" for i in range(1, 6)
 ]

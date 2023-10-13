@@ -488,7 +488,9 @@
       </body>
       <body name="LWing_roll" pos="-0.54395866394042969 0.36983280815184116 0.18139433860778809" quat="0.7071067657322373 0 0 0.70710679664085752">
         <inertial pos="2.3841858265427618e-08 0 1.9073486612342094e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+        <joint name="joint_LWing_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
         <body name="LWing_yaw" pos="-1.3322676295501878e-15 -2.9802322387695312e-08 2.384185791015625e-07" quat="0.98901586642260175 -0.14780939065008811 -1.143317297257293e-18 7.6501157495448676e-18">
+          <joint name="joint_LWing_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
           <inertial pos="0 -8.9406970715799616e-09 1.1175871605928478e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
           <body name="LWing" pos="-5.5511151231257827e-17 -6.9706836969274377e-08 2.2800082399854205e-07" quat="1 6.0639315691974794e-19 -1.2301927814936334e-42 -2.0287049209832048e-24">
             <geom name="LWing_visual" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 -5.6624418931505716e-08 1.6391279444860629e-08" quat="1 0 0 -1.4551916978336921e-15" mesh="mesh_LWing_visual"/>
@@ -689,7 +691,9 @@
       </body>
       <body name="RWing_roll" pos="-0.5439588725566864 -0.369832968339324 0.18139410018920898" quat="0.7071067657322373 0 0 -0.70710679664085752">
         <inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+        <joint name="joint_RWing_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
         <body name="RWing_yaw" pos="-1.27675647831893e-15 2.9802322387695312e-08 0" quat="0.98901586642260175 0.14780939065008811 -1.143317297257293e-18 -7.6501157495448676e-18">
+          <joint name="joint_RWing_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
           <inertial pos="0 0 -1.9371510617816057e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
           <body name="RWing" pos="0 0 0" quat="1 -6.0639315691974794e-19 -1.2301927814936334e-42 2.0287049209832048e-24">
             <geom name="RWing_visual" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 -1.9371510617816057e-08" quat="1 0 0 1.4551916978336921e-15" mesh="mesh_RWing_visual"/>
@@ -884,6 +888,12 @@
     <position name="actuator_position_joint_RHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_RHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RHTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_RHTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RHTarsus1"/>
+    <position name="actuator_position_joint_RWing_roll" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RWing_roll" kp="2.0"/>
+    <velocity name="actuator_velocity_joint_RWing_roll" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RWing_roll" kv="0.0"/>
+    <motor name="actuator_torque_joint_RWing_roll" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RWing_roll"/>
+    <position name="actuator_position_joint_RWing_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RWing_yaw" kp="2.0"/>
+    <velocity name="actuator_velocity_joint_RWing_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_RWing_yaw" kv="0.0"/>
+    <motor name="actuator_torque_joint_RWing_yaw" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_RWing_yaw"/>
     <position name="actuator_position_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LHCoxa" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHCoxa" kv="0.0"/>
     <motor name="actuator_torque_joint_LHCoxa" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHCoxa"/>
@@ -905,6 +915,12 @@
     <position name="actuator_position_joint_LHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus1" kp="2.0"/>
     <velocity name="actuator_velocity_joint_LHTarsus1" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LHTarsus1" kv="0.0"/>
     <motor name="actuator_torque_joint_LHTarsus1" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LHTarsus1"/>
+    <position name="actuator_position_joint_LWing_roll" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LWing_roll" kp="2.0"/>
+    <velocity name="actuator_velocity_joint_LWing_roll" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LWing_roll" kv="0.0"/>
+    <motor name="actuator_torque_joint_LWing_roll" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LWing_roll"/>
+    <position name="actuator_position_joint_LWing_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LWing_yaw" kp="2.0"/>
+    <velocity name="actuator_velocity_joint_LWing_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_LWing_yaw" kv="0.0"/>
+    <motor name="actuator_torque_joint_LWing_yaw" class="nmf" forcelimited="true" forcerange="-inf inf" joint="joint_LWing_yaw"/>
   </actuator>
   <sensor>
   </sensor>
