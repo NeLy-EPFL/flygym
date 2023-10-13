@@ -1746,8 +1746,14 @@ class NeuroMechFly(gym.Env):
         """
         if self.render_mode != "saved":
             logging.warning(
-                'Render mode is not "saved"; no video will be '
-                "saved despite `save_video()` call."
+                'Render mode is not "saved"; no video will be saved despite '
+                "`save_video()` call."
+            )
+        elif len(self._frames) == 0:
+            logging.warning(
+                "No frames have been rendered yet; no video will be saved despite "
+                "`save_video()` call. Be sure to call `.render()` in your simulation "
+                "loop."
             )
 
         num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
