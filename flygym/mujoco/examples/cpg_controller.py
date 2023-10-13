@@ -104,9 +104,9 @@ class CPGNetwork:
             self.curr_magnitudes = init_magnitudes
 
 
-def run_simulation(nmf, cpg_network, preprogrammed_steps):
+def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
     obs, info = nmf.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
+    for i in trange(int(run_time / nmf.sim_params.timestep)):
         cpg_network.step()
         joints_angles = []
         adhesion_onoff = []
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     nmf = NeuroMechFly(sim_params=sim_params, init_pose="stretch", control="position")
 
     # Run simulation
-    run_simulation(nmf, cpg_network, preprogrammed_steps)
+    run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time)
 
     # Save video
     nmf.save_video("./outputs/cpg_controller.mp4")
