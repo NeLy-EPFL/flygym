@@ -126,7 +126,7 @@ class PreprogrammedSteps:
         """
         swing_start, swing_end = self.swing_period[leg]
         return not (swing_start < phase % (2 * np.pi) < swing_end)
-    
+
     @property
     def default_pose(self):
         """Default pose of the fly (all legs in neutral position) given as
