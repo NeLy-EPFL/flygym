@@ -42,6 +42,7 @@ setup(
             "rasterio",
             "requests",
         ],
+        "tutorials": ["networkx"],
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md").read(),
