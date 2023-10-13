@@ -172,16 +172,20 @@ def construct_rules_graph():
     return rules_graph
 
 
-def run_simulation(nmf, controller, preprogrammed_steps):
+def run_rule_based_simulation(nmf, controller, run_time):
     obs, info = nmf.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
+    for i in trange(int(run_time / nmf.sim_params.timestep)):
         controller.step()
         joint_angles = []
         adhesion_onoff = []
         for leg, phase in zip(controller.legs, controller.leg_phases):
-            joint_angles_arr = preprogrammed_steps.get_joint_angles(leg, phase)
+            joint_angles_arr = controller.preprogrammed_steps.get_joint_angles(
+                leg, phase
+            )
             joint_angles.append(joint_angles_arr.flatten())
-            adhesion_onoff.append(preprogrammed_steps.get_adhesion_onoff(leg, phase))
+            adhesion_onoff.append(
+                controller.preprogrammed_steps.get_adhesion_onoff(leg, phase)
+            )
         action = {
             "joints": np.concatenate(joint_angles),
             "adhesion": np.array(adhesion_onoff),
@@ -229,7 +233,7 @@ if __name__ == "__main__":
     )
 
     # Run simulation
-    run_simulation(nmf, controller, preprogrammed_steps)
+    run_rule_based_simulation(nmf, controller, run_time)
 
     # Save video
     nmf.save_video("./outputs/rule_based_controller.mp4")
