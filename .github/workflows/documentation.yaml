@@ -15,6 +15,7 @@ jobs:
           #pip install sphinx sphinx_rtd_theme furo numpydoc
           pip install -e ."[mujoco]"
           pip install -e ."[dev]"
+          pip install -e ."[tutorials]"
       - name: Sphinx build
         run: |
           sphinx-build doc/source _build

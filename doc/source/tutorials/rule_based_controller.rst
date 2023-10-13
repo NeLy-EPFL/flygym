@@ -5,6 +5,15 @@ Rule-based controller
 achieved through local coordination rules in absence of a centralized
 mechanism like the CPG.
 
+.. note:: 
+    Additional dependencies are required to follow this tutorial. In
+    addition to the standard installation, please also run:
+    
+    .. code:: bash
+
+       pip install -e "flygym[tutorials]"
+    
+
 Previously, we have covered how a centralized network of oscillators
 (CPGs) can give rise to locomotion. An more decentralized mechanism for
 insect locomotion has been proposed as an alternative: locomotion can
