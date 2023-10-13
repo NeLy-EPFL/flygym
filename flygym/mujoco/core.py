@@ -1540,6 +1540,18 @@ class NeuroMechFly(gym.Env):
             self._curr_raw_visual_input = np.array(raw_visual_input)
         self._last_vision_update_time = self.curr_time
 
+    def change_segment_color(self, segment, color):
+        """Change the color of a segment of the fly.
+
+        Parameters
+        ----------
+        segment : str
+            The name of the segment to change the color of.
+        color : Tuple[float, float, float, float]
+            Target color as RGBA values normalized to [0, 1].
+        """
+        self.physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
+
     @property
     def vision_update_mask(self) -> np.ndarray:
         """
