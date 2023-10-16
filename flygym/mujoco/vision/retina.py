@@ -97,6 +97,7 @@ class Retina:
         self.ommatidia_id_map = ommatidia_id_map
         _unique_count = np.unique(ommatidia_id_map, return_counts=True)
         self.num_pixels_per_ommatidia = _unique_count[1][1:]
+        self.num_ommatidia_per_eye = len(self.num_pixels_per_ommatidia)
         self.pale_type_mask = pale_type_mask
         self.distortion_coefficient = distortion_coefficient
         self.zoom = zoom
