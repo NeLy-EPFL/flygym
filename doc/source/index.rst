@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-FlyGym: Simulating embodied sensorimotor control with NeuroMechFly 2.0
-======================================================================
+Simulating embodied sensorimotor control with NeuroMechFly 2.0
+==============================================================
 
 
 .. toctree::

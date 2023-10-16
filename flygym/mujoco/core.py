@@ -152,7 +152,7 @@ class Parameters:
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
-    actuator_kp: float = 18.0
+    actuator_kp: float = 30.0
     tarsus_stiffness: float = 2.2
     tarsus_damping: float = 0.05
     friction: float = (1.0, 0.005, 0.0001)
@@ -177,7 +177,7 @@ class Parameters:
     render_playspeed_text: bool = True
     vision_refresh_rate: int = 500
     enable_adhesion: bool = False
-    adhesion_force: float = 20
+    adhesion_force: float = 40
     draw_adhesion: bool = False
     draw_sensor_markers: bool = False
     draw_contacts: bool = False
@@ -373,26 +373,6 @@ class NeuroMechFly(gym.Env):
 
         self.n_legs = 6
 
-        # Order is based on the self.last_tarsalseg_names
-        leglift_reference_joint = [
-            "Tibia",
-            "Femur_roll",
-            "Femur_roll",
-            "Tibia",
-            "Femur_roll",
-            "Femur_roll",
-        ]
-        self._leglift_ref_jnt_id = [
-            self.actuated_joints.index("joint_" + tarsus_joint[:2] + joint)
-            for tarsus_joint, joint in zip(
-                self._last_tarsalseg_names, leglift_reference_joint
-            )
-        ]
-        adhesion_comparison_dir = ["inf", "inf", "inf", "inf", "sup", "sup"]
-        self._adhesion_sup_id = np.array(
-            [c_dir == "sup" for c_dir in adhesion_comparison_dir]
-        )
-        self._last_refjnt_angvel = np.zeros(self.n_legs)
         self._last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
@@ -553,6 +533,12 @@ class NeuroMechFly(gym.Env):
         self.action_space = self._define_action_space(action_bound)
         self.observation_space = self._define_observation_space()
 
+        # Add metadata as specified by Gym
+        self.metadata = {
+            "render_modes": ["saved", "headless"],
+            "render_fps": sim_params.render_fps,
+        }
+
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
             sensor_config = self._mujoco_config["vision"]["sensor_positions"][name]
@@ -691,8 +677,10 @@ class NeuroMechFly(gym.Env):
                         plane_height = 0.0
                     max_floor_height = max(max_floor_height, plane_height)
                 elif geom.type == "sphere":
-                    sphere_height = geom.pos[2] + geom.size[0]
+                    sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
+        if np.isinf(max_floor_height):
+            max_floor_height = self.spawn_pos[2]
         return max_floor_height
 
     def _define_action_space(self, action_bound):
@@ -703,7 +691,7 @@ class NeuroMechFly(gym.Env):
         }
         if self.sim_params.enable_adhesion:
             # 0: no adhesion, 1: adhesion
-            _action_space["adhesion"] = (spaces.Discrete(n=2, start=0),)
+            _action_space["adhesion"] = spaces.Discrete(n=2, start=0)
         return spaces.Dict(_action_space)
 
     def _define_observation_space(self):
@@ -1558,6 +1546,18 @@ class NeuroMechFly(gym.Env):
             self._curr_raw_visual_input = np.array(raw_visual_input)
         self._last_vision_update_time = self.curr_time
 
+    def change_segment_color(self, segment, color):
+        """Change the color of a segment of the fly.
+
+        Parameters
+        ----------
+        segment : str
+            The name of the segment to change the color of.
+        color : Tuple[float, float, float, float]
+            Target color as RGBA values normalized to [0, 1].
+        """
+        self.physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
+
     @property
     def vision_update_mask(self) -> np.ndarray:
         """
@@ -1589,8 +1589,6 @@ class NeuroMechFly(gym.Env):
             joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
         joint_obs[2, :] *= 1e-9  # convert to N
 
-        if self.sim_params.enable_adhesion:
-            self._last_refjnt_angvel = joint_obs[1, self._leglift_ref_jnt_id]
         # fly position and orientation
         cart_pos = self.physics.bind(self._body_sensors[0]).sensordata
         cart_vel = self.physics.bind(self._body_sensors[1]).sensordata
@@ -1615,8 +1613,6 @@ class NeuroMechFly(gym.Env):
             self.contact_sensor_placements
         ][:, 3:].copy()
         if self.sim_params.enable_adhesion:
-            self._last_refjnt_angvel = joint_obs[1, self._leglift_ref_jnt_id]
-
             # Adhesion inputs force in the contact. Lets compute this force
             # and remove it from the contact forces
             contactid_normal = {}
@@ -1650,7 +1646,7 @@ class NeuroMechFly(gym.Env):
                 if self._last_adhesion[adh_actuator_id] > 0:
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
-                    contact_forces[:, contact_sensor_id] -= (
+                    contact_forces[contact_sensor_id, :] -= (
                         self.sim_params.adhesion_force * normal
                     )
 
@@ -1756,8 +1752,14 @@ class NeuroMechFly(gym.Env):
         """
         if self.render_mode != "saved":
             logging.warning(
-                'Render mode is not "saved"; no video will be '
-                "saved despite `save_video()` call."
+                'Render mode is not "saved"; no video will be saved despite '
+                "`save_video()` call."
+            )
+        elif len(self._frames) == 0:
+            logging.warning(
+                "No frames have been rendered yet; no video will be saved despite "
+                "`save_video()` call. Be sure to call `.render()` in your simulation "
+                "loop."
             )
 
         num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
