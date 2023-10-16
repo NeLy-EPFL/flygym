@@ -1,8 +1,9 @@
 import numpy as np
 from tqdm import trange
+from gymnasium import spaces
+from gymnasium.utils.env_checker import check_env
 
 from flygym.mujoco import Parameters, NeuroMechFly
-from flygym.mujoco.arena import MixedTerrain
 from flygym.mujoco.examples.common import PreprogrammedSteps
 from flygym.mujoco.examples.cpg_controller import CPGNetwork
 
@@ -43,6 +44,8 @@ class HybridTurningNMF(NeuroMechFly):
         stumbling_force_threshold=-1,
         correction_vectors=_default_correction_vectors,
         correction_rates=_default_correction_rates,
+        amplitude_range=(-0.5, 1.5),
+        draw_corrections=False,
         seed=0,
         **kwargs,
     ):
@@ -61,6 +64,11 @@ class HybridTurningNMF(NeuroMechFly):
         self.stumbling_force_threshold = stumbling_force_threshold
         self.correction_vectors = correction_vectors
         self.correction_rates = correction_rates
+        self.amplitude_range = amplitude_range
+        self.draw_corrections = draw_corrections
+
+        # Define action and observation spaces
+        self.action_space = spaces.Box(*amplitude_range, shape=(2,))
 
         # Initialize CPG network
         self.cpg_network = CPGNetwork(
@@ -98,7 +106,68 @@ class HybridTurningNMF(NeuroMechFly):
             )
         return stumbling_sensors
 
-    def reset(self, seed=None, init_phases=None, init_magnitudes=None):
+    def _retraction_rule_find_leg(self, obs):
+        """Returns the index of the leg that needs to be retracted, or None
+        if none applies."""
+        end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
+        end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
+        end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
+        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
+            leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
+        else:
+            leg_to_correct_retraction = None
+        return leg_to_correct_retraction
+
+    def _stumbling_rule_check_condition(self, obs, leg):
+        """Return True if the leg is stumbling, False otherwise."""
+        # update stumbling correction amounts
+        contact_forces = obs["contact_forces"][self.stumbling_sensors[leg], :]
+        fly_orientation = obs["fly_orientation"]
+        # force projection should be negative if against fly orientation
+        force_proj = np.dot(contact_forces, fly_orientation)
+        return (force_proj < self.stumbling_force_threshold).any()
+
+    def _get_net_correction(self, retraction_correction, stumbling_correction):
+        """Retraction correction has priority."""
+        if retraction_correction > 0:
+            return retraction_correction
+        return stumbling_correction
+
+    def _update_correction_amount(
+        self, condition, curr_amount, correction_rates, viz_segment
+    ):
+        """Update correction amount and color code leg segment.
+        
+        Parameters
+        ----------
+        condition : bool
+            Whether the correction condition is met.
+        curr_amount : float
+            Current correction amount.
+        correction_rates : Tuple[float, float]
+            Correction rates for increment and decrement.
+        viz_segment : str
+            Name of the segment to color code. If None, no color coding is
+            done.
+        
+        Returns
+        -------
+        float
+            Updated correction amount.
+        """
+        if condition:  # lift leg
+            increment = correction_rates[0] * self.timestep
+            new_amount = curr_amount + increment
+            color = (0, 1, 0, 1)
+        else:  # condition no longer met, lower leg
+            decrement = correction_rates[1] * self.timestep
+            new_amount = max(0, curr_amount - decrement)
+            color = (1, 0, 0, 1)
+        if viz_segment is not None:
+            self.change_segment_color(viz_segment, color)
+        return new_amount
+
+    def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
         obs, info = super().reset(seed=seed)
         self.cpg_network.random_state = np.random.RandomState(seed)
         self.cpg_network.reset(init_phases, init_magnitudes)
@@ -107,6 +176,14 @@ class HybridTurningNMF(NeuroMechFly):
         return obs, info
 
     def step(self, action):
+        """Step the simulation forward one timestep.
+        
+        Parameters
+        ----------
+        action : np.ndarray
+            Array of shape (2,) containing descending signal encoding
+            turning.
+        """
         # update CPG parameters
         amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).flatten()
         freqs = self.intrinsic_freqs.copy()
@@ -118,52 +195,32 @@ class HybridTurningNMF(NeuroMechFly):
         # get current observation
         obs = super().get_observation()
 
-        # retraction rule: is any leg stuck in a hole and needs to be retracted?
-        end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
-        end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
-        end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
-        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
-            leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
-        else:
-            leg_to_correct_retraction = None
+        # Retraction rule: is any leg stuck in a gap and needs to be retracted?
+        leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
 
         self.cpg_network.step()
+        
         joints_angles = []
         adhesion_onoff = []
         for i, leg in enumerate(self.preprogrammed_steps.legs):
             # update retraction correction amounts
-            if i == leg_to_correct_retraction:  # lift leg
-                increment = self.correction_rates["retraction"][0] * self.timestep
-                self.retraction_correction[i] += increment
-                self.change_segment_color(f"{leg}Tibia", (1, 0, 0, 1))
-            else:  # condition no longer met, lower leg
-                decrement = self.correction_rates["retraction"][1] * self.timestep
-                self.retraction_correction[i] = max(
-                    0, self.retraction_correction[i] - decrement
-                )
-                self.change_segment_color(f"{leg}Tibia", (0.5, 0.5, 0.5, 1))
-
+            self.retraction_correction[i] = self._update_correction_amount(
+                condition=(i == leg_to_correct_retraction),
+                curr_amount=self.retraction_correction[i],
+                correction_rates=self.correction_rates["retraction"],
+                viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
+            )
             # update stumbling correction amounts
-            contact_forces = obs["contact_forces"][self.stumbling_sensors[leg], :]
-            fly_orientation = obs["fly_orientation"]
-            # force projection should be negative if against fly orientation
-            force_proj = np.dot(contact_forces, fly_orientation)
-            if (force_proj < self.stumbling_force_threshold).any():
-                increment = self.correction_rates["stumbling"][0] * self.timestep
-                self.stumbling_correction[i] += increment
-                self.change_segment_color(f"{leg}Femur", (1, 0, 0, 1))
-            else:
-                decrement = self.correction_rates["stumbling"][1] * self.timestep
-                self.stumbling_correction[i] = max(
-                    0, self.stumbling_correction[i] - decrement
-                )
-                self.change_segment_color(f"{leg}Femur", (0.5, 0.5, 0.5, 1))
-
-            # retraction correction has priority
-            if self.retraction_correction[i] > 0:
-                net_correction = self.retraction_correction[i]
-            else:
-                net_correction = self.stumbling_correction[i]
+            self.stumbling_correction[i] = self._update_correction_amount(
+                condition=self._stumbling_rule_check_condition(obs, leg),
+                curr_amount=self.stumbling_correction[i],
+                correction_rates=self.correction_rates["stumbling"],
+                viz_segment=f"{leg}Femur" if self.draw_corrections else None,
+            )
+            # get net correction amount
+            net_correction = self._get_net_correction(
+                self.retraction_correction[i], self.stumbling_correction[i]
+            )
 
             # get target angles from CPGs and apply correction
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
@@ -188,7 +245,7 @@ class HybridTurningNMF(NeuroMechFly):
 
 
 if __name__ == "__main__":
-    run_time = 1.5
+    run_time = 2
     timestep = 1e-4
     contact_sensor_placements = [
         f"{leg}{segment}"
@@ -199,34 +256,29 @@ if __name__ == "__main__":
     sim_params = Parameters(
         timestep=1e-4,
         render_mode="saved",
+        render_camera="Animat/camera_top",
         render_playspeed=0.1,
         enable_adhesion=True,
         draw_adhesion=True,
         actuator_kp=20,
     )
-    from flygym.mujoco.arena.tethered import Tethered
+
     nmf = HybridTurningNMF(
         sim_params=sim_params,
-        # arena=Tethered(),
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(0, 0, 0.2),
     )
-    phase_hist = []
+    check_env(nmf)
+
     obs, info = nmf.reset()
     for i in trange(int(run_time / nmf.sim_params.timestep)):
         curr_time = i * nmf.sim_params.timestep
-        if curr_time < 0.1:
-            action = np.array([1, 1])
-        elif curr_time < 0.8:
-            action = np.array([0.2, 1])
-        elif curr_time < 1.5:
-            action = np.array([-0.5, 1])
+        if curr_time < 1:
+            action = np.array([1.2, 0.2])
+        else:
+            action = np.array([0.2, 1.2])
 
         obs, reward, terminated, truncated, info = nmf.step(action)
         nmf.render()
-        phase_hist.append(nmf.cpg_network.curr_phases.copy())
-    phase_hist = np.array(phase_hist)
 
     nmf.save_video("./outputs/hybrid_turning.mp4")
-
-    ...
