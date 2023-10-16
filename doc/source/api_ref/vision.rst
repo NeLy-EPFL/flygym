@@ -26,3 +26,5 @@ Visualization tool
 We have also provided a utility function to generate a video of the visual input during a simulation:
 
 .. autofunction:: flygym.mujoco.vision.visualize_visual_input
+.. autofunction:: flygym.mujoco.vision.add_insets
+.. autofunction:: flygym.mujoco.vision.save_video_with_vision_insets
