@@ -99,7 +99,7 @@ class PreprogrammedSteps:
             array is (7, n) if ``phase`` is a 1D array of n elements, or
             (7,) if ``phase`` is a scalar.
         """
-        if isinstance(phase, float) or phase.shape == ():
+        if isinstance(phase, float) or isinstance(phase, int) or phase.shape == ():
             phase = np.array([phase])
         psi_func = self._psi_funcs[leg]
         offset = psi_func(phase) - self.neutral_pos[leg]
