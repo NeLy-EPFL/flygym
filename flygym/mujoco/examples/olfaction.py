@@ -8,8 +8,8 @@ from flygym.mujoco.examples.turning_controller import HybridTurningNMF
 
 
 run_time = 5
-attractive_gain=500
-aversive_gain=80
+attractive_gain = 500
+aversive_gain = 80
 odor_source = np.array([[24, 0, 1.5], [8, -4, 1.5], [16, 4, 1.5]])
 peak_intensity = np.array([[1, 0], [0, 1], [0, 1]])
 marker_colors = [[255, 127, 14], [31, 119, 180], [31, 119, 180]]
@@ -77,12 +77,12 @@ for i in trange(num_decision_steps):
     effective_bias = aversive_bias - attractive_bias
     effective_bias_norm = np.tanh(effective_bias**2) * np.sign(effective_bias)
     assert np.sign(effective_bias_norm) == np.sign(effective_bias)
-    
+
     control_signal = np.ones((2,))
     side_to_modulate = int(effective_bias_norm > 0)
     modulation_amount = np.abs(effective_bias_norm) * 0.8
     control_signal[side_to_modulate] -= modulation_amount
-    
+
     for j in range(physics_steps_per_decision_step):
         obs, _, _, _, _ = sim.step(control_signal)
         rendered_img = sim.render()
