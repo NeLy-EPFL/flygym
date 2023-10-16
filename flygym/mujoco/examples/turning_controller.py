@@ -137,7 +137,7 @@ class HybridTurningNMF(NeuroMechFly):
         self, condition, curr_amount, correction_rates, viz_segment
     ):
         """Update correction amount and color code leg segment.
-        
+
         Parameters
         ----------
         condition : bool
@@ -149,7 +149,7 @@ class HybridTurningNMF(NeuroMechFly):
         viz_segment : str
             Name of the segment to color code. If None, no color coding is
             done.
-        
+
         Returns
         -------
         float
@@ -177,7 +177,7 @@ class HybridTurningNMF(NeuroMechFly):
 
     def step(self, action):
         """Step the simulation forward one timestep.
-        
+
         Parameters
         ----------
         action : np.ndarray
@@ -199,7 +199,7 @@ class HybridTurningNMF(NeuroMechFly):
         leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
 
         self.cpg_network.step()
-        
+
         joints_angles = []
         adhesion_onoff = []
         for i, leg in enumerate(self.preprogrammed_steps.legs):
