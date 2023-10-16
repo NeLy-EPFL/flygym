@@ -1,16 +1,13 @@
 import numpy as np
 import dm_control.mjcf as mjcf
+from gymnasium import spaces
 from tqdm import trange
 from gymnasium.utils.env_checker import check_env
-from typing import Tuple
 
 from flygym.mujoco import Parameters
 from flygym.mujoco.arena import BaseArena
 from flygym.mujoco.examples.turning_controller import HybridTurningNMF
-from flygym.mujoco.util import load_config
-
-
-config = load_config()
+from flygym.mujoco.vision.visualize import save_video_with_vision_insets
 
 
 class MovingObjArena(BaseArena):
@@ -43,12 +40,12 @@ class MovingObjArena(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (300, 300),
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        obj_radius: float = 1,
-        init_ball_pos: Tuple[float, float] = (5, 0),
-        move_speed: float = 8,
-        move_direction: str = "right",
+        size=(300, 300),
+        friction=(1, 0.005, 0.0001),
+        obj_radius=1,
+        init_ball_pos=(5, 0),
+        move_speed=9,
+        move_direction="right",
     ):
         self.init_ball_pos = (*init_ball_pos, obj_radius)
         self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
@@ -130,9 +127,7 @@ class MovingObjArena(BaseArena):
             fovy=45,
         )
 
-    def get_spawn_position(
-        self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def get_spawn_position(self, rel_pos, rel_angle):
         return rel_pos, rel_angle
 
     def step(self, dt, physics):
@@ -164,6 +159,8 @@ class VisualTaxis(HybridTurningNMF):
             mask = self.retina.ommatidia_id_map == i + 1
             self.coms[i, :] = np.argwhere(mask).mean(axis=0)
 
+        self.observation_space = spaces.Box(0, 1, shape=(6,))
+
     def step(self, control_signal):
         for _ in range(self.num_substeps):
             raw_obs, _, _, _, _ = super().step(control_signal)
@@ -185,10 +182,11 @@ class VisualTaxis(HybridTurningNMF):
         features[:, 0] /= self.retina.nrows  # normalize y_center
         features[:, 1] /= self.retina.ncols  # normalize x_center
         features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-        return features.flatten()
+        return features.flatten().astype("float32")
 
-    def reset(self, seed=0):
+    def reset(self, seed=0, **kwargs):
         raw_obs, _ = super().reset(seed=seed)
+        self.visual_inputs_hist = []
         return self._process_visual_observation(raw_obs), {}
 
 
@@ -211,18 +209,18 @@ if __name__ == "__main__":
     sim_params = Parameters(
         render_camera="birdeye_cam",
         render_playspeed=0.5,
-        render_window_size=(800, 600),
+        render_window_size=(800, 608),
         enable_adhesion=True,
         enable_vision=True,
     )
-    sim = VisualTaxis(
+    nmf = VisualTaxis(
         obj_threshold=obj_threshold,
         decision_interval=decision_interval,
         sim_params=sim_params,
         arena=arena,
         contact_sensor_placements=contact_sensor_placements,
     )
-
+    check_env(nmf)
 
     num_substeps = int(decision_interval / sim_params.timestep)
 
@@ -231,7 +229,7 @@ if __name__ == "__main__":
     control_signal_hist = []
     raw_visual_hist = []
 
-    obs, _ = sim.reset()
+    obs, _ = nmf.reset()
     for i in trange(70):
         left_deviation = 1 - obs[1]
         right_deviation = obs[4]
@@ -247,13 +245,15 @@ if __name__ == "__main__":
                 calc_ipsilateral_speed(right_deviation, right_found),
             ]
         )
-        # print(left_deviation, right_deviation, left_found, right_found)
-        # print(control_signal)
 
-        obs, _, _, _, _ = sim.step(control_signal)
+        obs, _, _, _, _ = nmf.step(control_signal)
         obs_hist.append(obs)
-        raw_visual_hist.append(sim._curr_visual_input.copy())
+        raw_visual_hist.append(nmf._curr_visual_input.copy())
         deviations_hist.append([left_deviation, right_deviation])
         control_signal_hist.append(control_signal)
 
-    sim.save_video("./outputs/vision.mp4")
+    nmf.save_video("./outputs/object_following.mp4")
+
+    save_video_with_vision_insets(
+        nmf, "./outputs/object_following_with_retina_images.mp4", nmf.visual_inputs_hist
+    )
