@@ -533,6 +533,12 @@ class NeuroMechFly(gym.Env):
         self.action_space = self._define_action_space(action_bound)
         self.observation_space = self._define_observation_space()
 
+        # Add metadata as specified by Gym
+        self.metadata = {
+            "render_modes": ["saved", "headless"],
+            "render_fps": sim_params.render_fps,
+        }
+
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
             sensor_config = self._mujoco_config["vision"]["sensor_positions"][name]
