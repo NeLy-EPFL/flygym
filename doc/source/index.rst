@@ -61,7 +61,7 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
       title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
       year = {2023},
       doi = {10.1101/2023.09.18.556649},
-      URL = {https://www.biorxiv.org/content/early/2023/09/18/2023.09.18.556649},
+      URL = {https://www.biorxiv.org/content/10.1101/2023.09.18.556649},
       journal = {bioRxiv}
    }
 
