@@ -11,7 +11,7 @@ mechanism like the CPG.
     
     .. code:: bash
 
-       pip install -e "flygym[tutorials]"
+       pip install networkx
     
 
 Previously, we have covered how a centralized network of oscillators
