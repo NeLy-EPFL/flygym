@@ -43,7 +43,7 @@ class OdorArena(BaseArena):
     Parameters
     ----------
     size : Tuple[float, float], optional
-        The size of the arena in mm, by default (50, 50).
+        The size of the arena in mm, by default (300, 300).
     friction : Tuple[float, float, float], optional
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).

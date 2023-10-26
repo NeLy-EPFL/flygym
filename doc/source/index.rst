@@ -25,11 +25,6 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
    :width: 400
    :alt: Overview video
 
-.. note::
-   
-   FlyGym is still in beta; the API is subject to change.
-   We will add further examples and documentation in the coming weeks. Stay tuned!
-   --- 21 September 2023
 
 FlyGym is the Python library for NeuroMechFly 2.0, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly 2.0 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
 
@@ -56,15 +51,8 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
 
 .. code-block:: bibtex
    
-   @article{WangChen2023,
-      author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem \"{O}zdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
-      title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
-      year = {2023},
-      doi = {10.1101/2023.09.18.556649},
-      URL = {https://www.biorxiv.org/content/10.1101/2023.09.18.556649},
-      journal = {bioRxiv}
-   }
-
+   % Original NeuroMechFly: Original biomechanical model, kinematic replay, CPG-based
+   % neural controller, PyBullet version, DoF analysis, perturbation tests
    @article{LobatoRios2022,
       doi = {10.1038/s41592-022-01466-7},
       url = {https://doi.org/10.1038/s41592-022-01466-7},
@@ -76,4 +64,16 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
       author = {Victor Lobato-Rios and Shravan Tata Ramalingasetty and Pembe Gizem \"{O}zdil and Jonathan Arreguit and Auke Jan Ijspeert and Pavan Ramdya},
       title = {{NeuroMechFly}, a neuromechanical model of adult {Drosophila} melanogaster},
       journal = {Nature Methods}
+   }
+   
+   % NeuroMechFly 2.0: This library, MuJoCo version, leg adhesion, rule-based controller,
+   % hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision,
+   % olfaction, RL-based navigation, Gym environment, updated biomechanical model
+   @article{WangChen2023,
+      author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem \"{O}zdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
+      title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
+      year = {2023},
+      doi = {10.1101/2023.09.18.556649},
+      URL = {https://www.biorxiv.org/content/10.1101/2023.09.18.556649},
+      journal = {bioRxiv}
    }
