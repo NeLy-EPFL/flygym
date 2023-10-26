@@ -28,7 +28,7 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco>=2.3.0<3.0.0", "dm_control", "numba", "opencv-python"],
+        "mujoco": ["mujoco>=2.3.0,<3.0.0", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
