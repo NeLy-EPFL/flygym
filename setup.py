@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="0.2.3",
+    version="0.2.4",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
@@ -28,7 +28,7 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco", "dm_control", "numba", "opencv-python"],
+        "mujoco": ["mujoco==2.3.7", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
@@ -42,7 +42,6 @@ setup(
             "rasterio",
             "requests",
         ],
-        "tutorials": ["networkx"],
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md").read(),
