@@ -2,6 +2,11 @@ Installation
 ============
 
 
+.. note:: 
+
+   Check special instructions at the bottom of this page if you want to run FlyGym on a machine without a display (eg. server).
+
+
 Installation via PyPI 
 ---------------------
 The easiest way to install FlyGym is via PyPI. Before you start, you might want to create a Python virtual environment with virtualenv or Conda. For example, with Conda:
@@ -71,3 +76,25 @@ Finally, developers should also intstall the ``dev`` dependencies for testing an
 .. code-block:: bash
 
    pip install -e ."[dev]"
+
+
+Special notes for rendering on machines without a display
+---------------------------------------------------------
+
+If you are using a machine without a display (e.g. a server), you will need to change the renderer to EGL (see `this link <https://pytorch.org/rl/reference/generated/knowledge_base/MUJOCO_INSTALLATION.html#prerequisite-for-rendering-all-mujoco-versions>`_ for details). This requires setting the following environment variables before running FlyGym:
+
+.. code-block:: bash
+
+   export MUJOCO_GL=egl
+   export PYOPENGL_PLATFORM=egl
+
+
+If you want to change this setting by default, you can add the two lines above to the end of your ``.bashrc`` file.
+
+
+If you are using a Conda environment, you can change the environment variables as follows (replacing ``my-env-name`` accordingly), and then re-activate the environment:
+
+.. code-block:: bash
+
+   conda activate my-env-name
+   conda env config vars set MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
