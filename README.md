@@ -1,5 +1,7 @@
 ## Simulating embodied sensorimotor control with NeuroMechFly 2.0
 
+![](https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_large.jpg?raw=true)
+
 [**Documentation**](https://neuromechfly.org/) | [**Preprint**](https://www.biorxiv.org/content/10.1101/2023.09.18.556649) | [**Discussion Board**](https://github.com/NeLy-EPFL/flygym/discussions)
 
 ![Python: 3.7–3.11](https://img.shields.io/badge/python-3.7%E2%80%933.11-blue)
