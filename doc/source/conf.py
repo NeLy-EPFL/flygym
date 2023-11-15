@@ -30,7 +30,7 @@ author = "Neuroengineering Laboratory, EPFL"
 extensions = [
     "sphinx.ext.autodoc",
     "numpydoc",
-    'sphinxcontrib.googleanalytics',
+    "sphinxcontrib.googleanalytics",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
