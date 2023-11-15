@@ -82,3 +82,6 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
       URL = {https://www.biorxiv.org/content/10.1101/2023.09.18.556649},
       journal = {bioRxiv}
    }
+
+.. note:: 
+   **Privacy policy:** This site uses Google Analytics to collect data about your interactions with our website. This includes information such as your IP address, browsing behavior, and device type. We use this data to improve our website and understand user preferences. Google Analytics uses Cookies, which are small text files stored on your device. See `How Google uses information from sites or apps that use our services <https://policies.google.com/technologies/partner-sites>`_. To opt-out, you can use a `browser extension <https://tools.google.com/dlpage/gaoptout>`_ to deactivate Google Analytics.
