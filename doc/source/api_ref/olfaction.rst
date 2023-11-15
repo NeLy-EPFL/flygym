@@ -1,9 +1,9 @@
 Olfaction
 =========
 
-Olfaction is simulated by calculating odor intensities at the locations of the antennae and the maxillary palps. This is accomplished by adding position sensors to the relevant body segments and calculating distance of these sensors from the odor sources. The intensities are then emulated through a difussion relationship.
+Olfaction is the sense of smell. Olfactory experience is simulated by calculating odor intensities at the locations of the antennae and maxillary palps. More precisely, this is accomplished by adding position sensors to the relevant body segments and calculating the distance between these sensors and the odor sources. Intensities are then emulated through a diffusion relationship.
 
-To enable this calculation, the ``BaseArena`` has the following methods. The user does not have to specifically implement them if odor is not enabled.
+To enable this calculation, the ``BaseArena`` has the following methods. The user does not have to specifically implement them if an odor is not enabled.
 
 .. automethod:: flygym.mujoco.arena.BaseArena.get_olfaction
     :noindex:

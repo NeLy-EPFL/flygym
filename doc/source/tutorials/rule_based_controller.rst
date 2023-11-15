@@ -1,9 +1,9 @@
 Rule-based controller
 =====================
 
-**Summary:** In this tutorial, we will introduce how locomotion can be
-achieved through local coordination rules in absence of a centralized
-mechanism like the CPG.
+**Summary:** In this tutorial, we will show how locomotion can be
+achieved using local coordination rules in the absence of centralized
+mechanisms like coupled CPGs.
 
 .. note:: 
     Additional dependencies are required to follow this tutorial. In
@@ -14,28 +14,26 @@ mechanism like the CPG.
        pip install networkx
     
 
-Previously, we have covered how a centralized network of oscillators
-(CPGs) can give rise to locomotion. An more decentralized mechanism for
+Previously, we covered how a centralized network of coupled oscillators
+(CPGs) can give rise to locomotion. A more decentralized mechanism for
 insect locomotion has been proposed as an alternative: locomotion can
 emerge from the application of sensory feedback-based rules that dictate
 for each leg when to lift, swing, or remain in stance phase (see Walknet
 described in `Cruse et al,
 1998 <https://doi.org/10.1016/S0893-6080(98)00067-7>`__ and reviewed in
 `Schilling et al, 2013 <https://doi.org/10.1007/s00422-013-0563-5>`__).
-Similar to CPGs, this control approach has also been applied to robots
+This control approach has been applied to robotic locomotor control
 (`Schneider et al,
 2012 <https://doi.org/10.1007/978-3-642-27482-4_24>`__).
 
 In this tutorial, we will implement a controller based on the first
-three rules of Walknet, namely: 1. The swing (“return stroke” as
-described in Walknet literature) of a leg inhibits the swing of the
-rostral neighbor leg 2. The start of the stance phase (“power stroke” as
-described in Walknet literature) of a leg excites the swing of the
-rostral contralateral neighbor legs. 3. The completion of the stance
-phase (“caudal position” as described in Walknet literature) excites the
-swing of the caudal and contralateral neighbor legs.
+three rules of Walknet, namely:
 
-This can be summarized in this figure:
+1. The swing (“return stroke” as described in the Walknet paper) of a leg inhibits the swing of its rostral neighboring leg.
+2. The start of the stance phase (“power stroke” as described in the Walknet paper) of a leg excites the swing of the rostral contralateral neighboring legs.
+3. The completion of the stance phase (“caudal position” as described in the Walknet paper) excites the swing of the caudal and contralateral neighboring legs.
+
+These rules are summarized in this figure:
 
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
@@ -125,11 +123,11 @@ Implementing the rules
 Next, we implement the first three rules from Walknet. To encode the
 graph representing the local coordination rules (the first figure of
 this tutorial), we will construct a ``MultiDiGraph`` using the Python
-graph library NetworkX. This is a convinient way to manipulate a
+graph library `NetworkX <https://networkx.org/>`_. This is a convenient way to manipulate a
 directed graph with multiple edges between the same nodes (in our case,
-each representing a rule). Note that this graph representation is not
+each node represents a leg and each edge represents a coupling rule). Note that this graph representation is not
 strictly necessary; the user can alternatively implement the same logic
-using lots of lists and dictionaries in pure Python.
+using lots of lists and dictionaries in native Python.
 
 .. code-block:: ipython3
     :linenos:
@@ -187,7 +185,7 @@ section.
         ]
 
 Using ``rules_graph`` and the function ``filter_edges``, let’s visualize
-connections in each of the three rules. The ipsilateral and
+connections for each of the three rules. The ipsilateral and
 contralateral connections of the same rule can have different weights,
 so let’s visualize them separately:
 
@@ -329,7 +327,7 @@ and the current phases of the legs:
                        self.weights["rule1"] if is_swinging else 0
                    )
 
-Rule 2 and rule 3 are based on “early” and “late” stance periods (power
+Rules 2 and 3 are based on “early” and “late” stance periods (power
 stroke). We will scale their weights by γ, a ratio indicating how far
 the leg is into the stance phase. Let’s define a helper method that
 calculates γ:
@@ -544,13 +542,13 @@ phases and stepping likelihood scores over time:
 Plugging the controller into the simulation
 -------------------------------------------
 
-By now, we have: - implemented the ``RuleBasedSteppingCoordinator`` that
-controls the stepping of the legs - (re)implemented
-``PreprogrammedSteps`` which controls the kinematics of each individual
-step given the stepping state
+By now, we have:
 
-The final step is to put everything together and plug the control
-signals (joint positions) into the physics simulation:
+- implemented the ``RuleBasedSteppingCoordinator`` that controls the stepping of the legs
+- (re)implemented ``PreprogrammedSteps`` which controls the kinematics of each individual step given the stepping state
+
+The final task is to put everything together and plug the control
+signals (joint positions) into the NeuroMechFly physics simulation:
 
 .. code-block:: ipython3
     :linenos:

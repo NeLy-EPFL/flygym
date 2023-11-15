@@ -195,7 +195,7 @@ class HybridTurningNMF(NeuroMechFly):
         # get current observation
         obs = super().get_observation()
 
-        # Retraction rule: is any leg stuck in a gap and needs to be retracted?
+        # Retraction rule: is any leg stuck in a gap and needing to be retracted?
         leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
 
         self.cpg_network.step()

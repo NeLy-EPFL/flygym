@@ -6,8 +6,7 @@ controllers at different levels of abstraction by implementing Gym
 environments encoding variable amounts of preprogrammed computation. As
 an example, we will refactor the code we wrote in the `hybrid controller
 tutorial <https://neuromechfly.org/tutorials/hybrid_controller.html#building-a-hybrid-controller>`__
-and implement turning by modulating the amplitude and frequency of CPGs
-asymmetrically.
+and implement turning by asymmetrically modulating the amplitude and frequencies of CPGs.
 
 Gym environments and MDP
 ------------------------
@@ -17,7 +16,7 @@ implements the `Gym interface <https://gymnasium.farama.org/>`__: it has
 an action space (input given by the user), an observation space (output
 returned to the user), a ``.step(...)`` method, a ``.reset(...)``
 method, and a ``.render(...)`` method. The action and observation spaces
-of ``NeuroMechFly`` are the following:
+of ``NeuroMechFly`` are as follows:
 
 -  Action space:
 
@@ -44,7 +43,7 @@ of ``NeuroMechFly`` are the following:
 The FlyGym package is designed to be expandable: the user can implement
 their own Gym environments with different action and observation spaces
 and implement different logics (eg. preprogrammed premotor computation
-and sensory processing). This is demonstrated in the figure below:
+and sensory processing). This is illustrated in the figure below:
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
    :width: 600
@@ -54,13 +53,13 @@ implemented <https://neuromechfly.org/tutorials/hybrid_controller.html#building-
 the underlying CPG network and the correction mechanisms can be
 considered the user-defined premotor computation (purple). The whole
 controller can be considered the box indicating the Markov Decision
-Process (MDP). Here, we will add a 2D descending representation encoding
-turning so that the action and observation spaces of our MDP “box” are
-the following:
+Process (MDP). Here, we will add a 2D descending signal that encodes
+turning. The action and observation spaces of our MDP “box” are
+as follows:
 
 -  Action space: a 2-dimensional real vector describing the velocity on
-   each side. Although in principle the range of the amplitude is
-   unrestricted, its absolute value shouldn’t go much beyond 1 because
+   each side of the body. Although in principle the range of the amplitude is
+   unrestricted, its absolute value shouldn’t go far beyond 1 because
    otherwise the steps become very unrealistic.
 -  Observation space: same as above (no sensory processing logic
    indicated in cyan)
@@ -68,11 +67,10 @@ the following:
 Approach for turning
 --------------------
 
-We will use a 2-dimensional descending representation
+We will use a 2-dimensional representation of descending signals
 :math:`[\delta_L, \delta_R] \in \mathbb{R}^2` to modulate the amplitude
-and direction of the CPGs on each side. Precisely, we will modulate the
-intrinsic amplitude :math:`R'` and intrinsic frequency :math:`\nu'` on
-each side by:
+and direction of leg CPGs on each side of the body. Specifically, we will modulate the
+intrinsic amplitude :math:`R'` and intrinsic frequency :math:`\nu'` on each side by:
 
 .. math::
 
@@ -87,27 +85,27 @@ each side by:
    -\nu_i  & \text{otherwise}
    \end{cases}
 
-In other words, the maginuted of the descending signal controls the
-amplitude of stepping (as a fraction of the originally recorded step
+In other words, the magnitude of the descending signal controls the
+amplitude of stepping (as a gain applied to the originally recorded step
 size); the sign of the descending signal controls the direction of
 stepping. Of course, this is a very simplified model of turning. Perhaps
-the most unrealisitc aspect of it is that it assumes the step size to
-linearly span from 0 to 1x the recorded “normal” step size. This is
-something that the user can improve.
+the most unrealistic aspect of it is that it assumes that the step size
+spans linearly from 0 to 1x the recorded “real” step size. This is an
+area for future improvement.
 
 Implementing the ``HybridTurningController`` class
 --------------------------------------------------
 
-A key idea of the Gym interface is that it allows the user to
+A key idea of the Gym interface is that it allows users to
 encapsulate the control logic in a Gym environment (a MDP), and expose
 only the input and output (action and observation) to the controller.
 This is achieved using `class
 inheritance <https://www.w3schools.com/python/python_inheritance.asp>`__
-in Python: briefly, it allows a new class (subclass or child class) to
+in Python. Briefly, it allows a new class (subclass or child class) to
 inherit attributes and methods from an existing class (base class or
 parent class), enabling code reuse and the creation of hierarchical
 relationships between classes. Refer to the tutorial linked above to
-familiarize yourself with the concept.
+familiarize yourself with this concept.
 
 All Gym environments inherit from the ``gymnasium.Env`` class. You can
 refer to `the API reference of this
@@ -220,13 +218,13 @@ We can save the arguments as class attributes:
 Next, we need to override the action space of ``NeuroMechFly``. This is
 done by defining a new Gym space object. Gym provides an `interface for
 various space types <https://gymnasium.farama.org/api/spaces/>`__. An
-non-exhaustive list includes ``Box`` for a possibly-boundex box in
+non-exhaustive list includes ``Box`` for a possibly-bounded box in
 :math:`\mathbb{R}^n`, ``Discrete`` for a finite set of options, ``Text``
 for text, and various `composite
 spaces <https://gymnasium.farama.org/api/spaces/composite/>`__ such as
 ``Dict``, ``Tuple``, ``Sequence``, ``Graph``. Here, we will define the
 descending space as a ``Box`` space. We won’t change the observation
-space definitation since we will return ``NeuroMechFly``\ ’s observation
+space definition since we will return ``NeuroMechFly``\ ’s observation
 as is:
 
 .. code:: python
@@ -259,8 +257,8 @@ tutorial <https://neuromechfly.org/tutorials/cpg_controller.html>`__:
 
            ...
 
-We will then initialize variables tracking the retraction and stumbling
-correction amounts as we did in the `hybrid controller tutorial <https://neuromechfly.org/tutorials/hybrid_controller.html>`__:
+We will then initialize variables tracking the amount of retraction and stumbling
+correction as we did in the `hybrid controller tutorial <https://neuromechfly.org/tutorials/hybrid_controller.html>`__:
 
 .. code:: python
 
@@ -358,7 +356,7 @@ method of the parent ``NeuroMechFly`` class:
            
            ...
 
-Next, we check whether the condition is met for the retraction on any
+Next, we check whether the condition is met for the retraction of any
 leg. To do this, we define a helper method:
 
 .. code:: python
@@ -381,7 +379,7 @@ leg. To do this, we define a helper method:
 
            ...
 
-           # Retraction rule: is any leg stuck in a gap and needs to be retracted?
+           # Retraction rule: is any leg stuck in a gap and needing to be retracted?
            leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
 
            ...
@@ -549,7 +547,7 @@ In fact, we can use Gymnasium’s ``env_checker`` utility to check if our
 ``env_checker`` will reset our environment a few times with random
 parameters and step it with random actions. It will then check if the
 observations are as specified in the observation space definition. If no
-exception is raised, we are good.
+exception is raised, we are in good shape.
 
 .. code-block:: ipython3
     :linenos:
