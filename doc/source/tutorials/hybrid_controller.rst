@@ -3,24 +3,22 @@ Overcome complex terrain with a hybrid controller
 
 **Summary**: In this tutorial, we will illustrate how the CPG-based and
 rule-based controllers fail to produce robust locomotion over complex
-terrain. We will also build a CPG + sensory feedback hybrid controller
-to drive more robust walking.
+terrains. We will then build a combined CPG and sensory feedback-based hybrid controller
+that overcomes these deficits and generates more robust walking.
 
 In the `Controlling locomotion with
 CPGs <https://neuromechfly.org/tutorials/cpg_controller.html>`__ and
 `Rule-based
 controller <https://neuromechfly.org/tutorials/rule_based_controller.html>`__
 tutorials, we have demonstrated how different control strategies can
-lead to effective walking over simple, flat terrain. However, animals
-locomote over complex surfaces. To overcome these complex terrain,
-animals likely use a combination of CPGs and sensory feedback to produce
-agile, adaptive body kinematics. To enable the exploration of how
-sensory feedback can facilitate motor control over rugged surfaces, we
-have developed three rugged terrain types that complement our baseline
+lead to effective walking over simple, flat terrain. However, in the real world animals
+locomote over complex surfaces. To achieve this, animals likely use a combination of CPGs and sensory feedback to produce agile, adaptive body kinematics. To explore how
+sensory feedback can facilitate locomotion over rugged surfaces, we
+have developed three rugged terrain types which complement our baseline
 smooth terrain: one with gaps perpendicular to the initial heading of
 the fly, one with blocks of variable height, and one that is a mixture
 of these two. Using these new terrain types, we will now demonstrate how
-one can examine the efficacy of different bioinspired control
+one can examine the efficacy of different bioinspired locomotor control
 strategies.
 
 Defining the arena
@@ -28,7 +26,7 @@ Defining the arena
 
 The environment that the fly is situated in is defined by the Arena
 class. So far, we have been using the default terrain: ``FlatTerrain``.
-Some other arenas are also included in FlyGym package, inlcuding
+Some other arenas are also included in FlyGym package, including
 ``GappedTerrain``, ``BlocksTerrain``, and ``MixedTerrain``. In future
 tutorials, we will introduce more arenas with sensory (visual,
 olfactory) features. The user can define custom arenas by inheriting
@@ -54,9 +52,9 @@ Let’s start by defining a couple of terrains:
         else:
             raise ValueError(f"Unknown arena type: {arena_type}")
 
-Let’s put a fly in each of these terrains, run 0.01 seconds of
-simulation so the fly can stabilize on the floor, and visualize a
-snapshot to see how the fly looks like over these terrain types:
+Let’s put a fly into each of these terrains, run 0.01 seconds of the
+simulation so the fly can stabilize on the floor, and visualize how the 
+fly looks in these different terrain types:
 
 .. code-block:: ipython3
     :linenos:
@@ -110,9 +108,9 @@ snapshot to see how the fly looks like over these terrain types:
 Basic CPG-based and rule-based controllers
 ------------------------------------------
 
-Does the CPG-based and rule-based controller work over complex terrain?
-Let’s run 0.5 seconds of simulation using each of the controllers on
-each of the terrain types:
+Do the CPG-based and rule-based controllers work well over complex terrain?
+Let’s run the simulation for 0.5 seconds using each of these controllers on
+each of the different terrain types:
 
 .. code-block:: ipython3
     :linenos:
@@ -220,16 +218,16 @@ each of the terrain types:
     Final x position: 2.3158 mm
 
 
-Though we have only tested n=1 initial condition (spawn position,
-controller) per case, we can already see hints that the basic CPG-based
-and rule-based controllers might not be so robust over complex terrain.
-In fact, if we run n=20 initial conditions for 1 second each, we get
-something like this as reported in the NeuroMechFly 2.0 paper:
+Though we have only tested one initial condition (spawn position,
+controller) per case, we can already begin to observe that the CPG-based
+and rule-based controllers may not be very robust over complex terrain.
+In fact, if we run 20 initial conditions for 1 second each, we get a result
+like the one reported in the NeuroMechFly 2.0 paper (Wang-Chen et al., 2023):
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_rule_based_comparison.png?raw=true
    :width: 800
 
-We can check some of the failed examples:
+We can look more closely at some examples of failed locomotion:
 
 *CPG-based controller over gapped terrain:*
 
@@ -251,23 +249,16 @@ feedback, we can build a more robust controller.
 Building a hybrid controller
 ----------------------------
 
-Now, we will build a hybrid controller integrating feedforward
-oscillators with feedback-based correction mechanisms in case any leg
-gets stuck. As described in the NeuroMechFly 2.0 paper, we will detect
-the following conditions: 1. **Retraction:** In principle, with the
-tripod gait, there should always be three legs that are on the ground.
-Therefore, if any leg is extended further than the third most extended
-leg in the z direction, this leg might be stuck in a hole. In this case,
-this leg will be lifted further to recover it from the stuck position.
-1. **Stumbling:** In principle, only the tip of the tarsus of each leg
-should collide with the ground. Therefore, when the tibia and upper part
-of the tarsus (tarsus 1–2) collide with the ground, resulting in an
-above-threshold force against the direction of the fly’s heading, we
-consider that the fly is stumbling. We lift the stumbling leg further to
-prevent it from getting stuck.
+Now, we will build a hybrid controller that integrates both feedforward
+oscillators as well as feedback-based mechanisms that reposition the legs
+if they get stuck. As described in the NeuroMechFly 2.0 paper, we will detect
+the following conditions:
+
+1. **Retraction:** In principle, with the tripod gait, there should always be three legs on the ground. Therefore, if any leg is extended farther than the third most extended leg in the z-direction, this leg may be stuck in a hole. This rule will  lift the leg to recover it from a stuck position.
+2. **Stumbling:** In principle, only the tip of the tarsus of each leg should contact with the ground. Therefore, we will consider the fly as stumbling if the tibia or upper tarsal segments (1 and 2) collide with the ground resulting in a supra-threshold force against the direction of the fly’s heading. To correct for stumbling we will lift the stumbling leg.
 
 To implement these rules, we will create a variable for each rule that
-keeps track of the extent the leg should be lifted:
+keeps track of the extent to which a given leg should be lifted:
 
 .. code-block:: ipython3
     :linenos:
@@ -275,8 +266,8 @@ keeps track of the extent the leg should be lifted:
     retraction_correction = np.zeros(6)
     stumbling_correction = np.zeros(6)
 
-We will also define vector representing how each DoF should be adjusted
-to implement the leg lift. We will call this :math:`\vec{v}_\text{leg}`.
+We will also define a vector representing how each DoF should be adjusted
+to implement leg lifting. We will call this :math:`\vec{v}_\text{leg}`.
 
 .. code-block:: ipython3
     :linenos:
@@ -289,12 +280,12 @@ to implement the leg lift. We will call this :math:`\vec{v}_\text{leg}`.
         "H": np.array([0, 0, 0, -0.01, 0, 0.005, 0]),
     }
 
-That is, when the leg should be lifted further, we will increment the
+That is, when the leg should be lifted, we will increment the
 joint angles on this leg by :math:`\vec{v}_\text{leg}` scaled by a
 factor defining the extent of correction. When the condition is no
 longer met, we will reduce the correction term until it reaches zero
-(ie. when there is no adjustment) so that the target angles as predicted
-by the CPGs are directly applied to the simulator.
+(ie. with no adjustment) so that the target angles applied to the simulator
+are those suggested by the corresponding CPGs.
 
 Next, we need to define the factor defining the extent of correction.
 Recall that we will progressively lift the leg when an adjustment is
@@ -311,17 +302,17 @@ necessary. Therefore, let’s also define the rate of adjustment
         "stumbling": (2000, 500),
     }
 
-Concretely, we will initialize the correction amount :math:`c` to 0.
+Concretely, we will initialize the amount of correction :math:`c` to 0.
 This variable is unitless. For every :math:`t` amount of time that the
 condition is met, we increment :math:`c` by :math:`k_\text{inc}t` where
-:math:`k_\text{inc}` is appropriate correction rate. Similarly, for
+:math:`k_\text{inc}` is the appropriate correction rate. Similarly, for
 every :math:`t` amount of time that the condition is no longer met, we
 will decrement :math:`c` by :math:`k_\text{dec}t` until it reaches 0. We
 will therefore adjust the leg joint angles by adding
 :math:`c\vec{v}_\text{leg}` to it.
 
 We should also define a threshold for the stumbling force. Note that a
-negative number indicates a force against the direction that the fly is
+negative number indicates a force against the direction in which the fly is
 facing:
 
 .. code-block:: ipython3
@@ -330,8 +321,8 @@ facing:
     stumbling_force_threshold = -1
 
 Next, we will define the underlying CPG network as we did in the
-`tuotorial on the CPG
-controller <https://neuromechfly.org/tutorials/cpg_controller.html>`__:
+`tutorial on CPG-based
+control <https://neuromechfly.org/tutorials/cpg_controller.html>`__:
 
 .. code-block:: ipython3
     :linenos:
@@ -341,7 +332,7 @@ controller <https://neuromechfly.org/tutorials/cpg_controller.html>`__:
     
     # Define leg raise correction vectors
     correction_vectors = {
-        # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Fimur_roll, Tibia, Tarsus1)
+        # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Femur_roll, Tibia, Tarsus1)
         "F": np.array([0, 0, 0, -0.02, 0, 0.016, 0]),
         "M": np.array([-0.015, 0, 0, 0.004, 0, 0.01, -0.008]),
         "H": np.array([0, 0, 0, -0.01, 0, 0.005, 0]),
@@ -383,7 +374,7 @@ Similarly, let’s define the preprogrammed steps:
     preprogrammed_steps = PreprogrammedSteps()
 
 … and the NeuroMechFly simulation over mixed terrain. We will enable
-contact detection at all tibia and tarsus segments for the stumbling
+contact detection for all tibial and tarsal segments to achieve stumbling
 detection:
 
 .. code-block:: ipython3
@@ -413,7 +404,7 @@ detection:
     )
 
 Let’s build a dictionary containing the indices of the contact sensors
-on each leg that are used for stumbling detection:
+on each leg. These will be used to detect stumbling:
 
 .. code-block:: ipython3
     :linenos:
@@ -427,7 +418,7 @@ on each leg that are used for stumbling detection:
             stumbling_sensors[leg].append(i)
     stumbling_sensors = {k: np.array(v) for k, v in stumbling_sensors.items()}
 
-As a sanity check, let’s make sure that the number of stumbling sensors
+As a sanity check, let’s make sure that the number of stumble sensors
 per leg is as expected:
 
 .. code-block:: ipython3
@@ -439,9 +430,7 @@ per leg is as expected:
             "segments for stumbling detection."
         )
 
-We are now ready to write the main simulation loop. This is a bit
-complicated. We will first implement and execute the whole loop before
-explaining its components:
+We are now ready to write the main simulation loop. We will implement and execute the entire loop before explaining its constituent components:
 
 .. code-block:: ipython3
     :linenos:
@@ -517,17 +506,17 @@ explaining its components:
     100%|██████████| 10000/10000 [00:23<00:00, 432.09it/s]
 
 
-Within each simulation step, we first check whether the retraction rule
-is met. Again, this depends one whether any leg is extended further than
-the third most extended leg in the z direction by a margin of 0.05 mm.
-This margin is important because the contact calculation in the physics
-simulator is not perfect, and sometimes the leg penetrates into the
+At each simulation time step, we first check whether the retraction rule
+is met. This depends on whether any leg is extended further than
+the third most extended leg in the z-direction by a margin of 0.05 mm.
+This margin is important because contact calculations in the physics
+simulator are imperfect sometimes causing the leg to penetrate the
 floor by a small amount. If two legs meet this condition, only the most
 extended leg is corrected:
 
 .. code:: python
 
-       # retraction rule: is any leg stuck in a hole and needs to be retracted?
+       # retraction rule: does a leg need to be retracted from a hole?
        end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
        end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
        end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
@@ -536,13 +525,13 @@ extended leg is corrected:
        else:
            leg_to_correct_retraction = None
 
-Then, have an inner loop that iterates over all legs. Here, the joint
-angles and the adhesion on/off signal are calculated. We first update
-the correction amount :math:`c` for the retraction rule:
+Then, have an inner loop that iterates over all legs. The joint
+angles and adhesion on/off signals are calculated here. We first update
+the amount of correction :math:`c` for the retraction rule:
 
 .. code:: python
 
-           # update retraction correction amounts
+           # update amount of retraction correction
            if i == leg_to_correct_retraction:  # lift leg
                increment = correction_rates["retraction"][0] * nmf.timestep
                retraction_correction[i] += increment
@@ -557,7 +546,7 @@ rule:
 
 .. code:: python
 
-           # update stumbling correction amounts
+           # update amount of stumbling correction
            contact_forces = obs["contact_forces"][stumbling_sensors[leg], :]
            fly_orientation = obs["fly_orientation"]
            # force projection should be negative if against fly orientation
@@ -571,19 +560,19 @@ rule:
                stumbling_correction[i] = max(0, stumbling_correction[i] - decrement)
                nmf.change_segment_color(f"{leg}Femur", (0.5, 0.5, 0.5, 1))
 
-In case both rules are active for the same leg, we only apply the
+In the case that both rules are active for the same leg, we will only apply the
 retraction correction:
 
 .. code:: python
 
-           # retraction correction has priority
+           # retraction correction is prioritized
            if retraction_correction[i] > 0:
                net_correction = retraction_correction[i]
            else:
                net_correction = stumbling_correction[i]
 
-Now, let’s get the naive joint angles based on the CPG phase and the
-preprogrammed step. Then, we apply the lifting correction:
+Let’s first get the initial joint angles based purely on the CPG phase and
+preprogrammed step. Then, we will apply the lifting correction:
 
 .. code:: python
 
@@ -594,7 +583,7 @@ preprogrammed step. Then, we apply the lifting correction:
            my_joints_angles += net_correction * correction_vectors[leg[1]]
            joints_angles.append(my_joints_angles)
 
-Finally, we can get the adhesion on/off signal based on the leg phase as
+Finally, we can obtain the adhesion on/off signal based on the leg phase as
 well:
 
 .. code:: python
@@ -605,9 +594,9 @@ well:
            )
            adhesion_onoff.append(my_adhesion_onoff)
 
-We now have all we need to construct the action and feed it into the
-NeuroMechFly simulation. Don’t forget to call ``.render()`` too so the
-video can be recorded correctly.
+We now have all we need to feed the action into the
+NeuroMechFly simulation. Don’t forget to call ``.render()`` to record the
+video correctly.
 
 .. code:: python
 
@@ -618,7 +607,7 @@ video can be recorded correctly.
        obs, reward, terminated, truncated, info = nmf.step(action)
        nmf.render()
 
-Let’s visualize the result:
+Let’s visualize the results:
 
 .. code-block:: ipython3
     :linenos:
@@ -630,24 +619,18 @@ Let’s visualize the result:
    <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/hybrid_controller_mixed_terrain.mp4" controls="controls" style="max-width: 400px;"></video>
 
 
-From a sample size of 1, this looks better than the CPG-only and
-rules-only controllers. Indeed, we ran n=20 simulations for each
-controller over each terrain type with different initial conditions and
-obtained the following results, indicating that the hybrid controller
-integrating oscillator states with sensory feedback outperforms the
-other basic controllers (see the NeuroMechFly 2.0 paper for details):
+Even based on this single example, this hybrid controller looks better than the CPG-based or
+rule-based controller. Indeed, we obtained the following results by running 20 simulations for each
+controller over each terrain type with different initial conditions. These show that a hybrid 
+controller outperforms the other two controllers (see the NeuroMechFly 2.0 paper for details):
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_rule_based_hybrid_comparison.png?raw=true
    :width: 800
 
-This hybrid controller is still quite restricted and heavily hand-tuned.
-Nonetheless, these results demonstrate how rugged terrain can expose
-failure modes of controllers that otherwise work well on flat terrain,
-and how one can use NeuroMechFly to benchmark different control
-strategies that go beyond the classical dichotomy of CPGs vs. sensory
-feedback-based control.
+These results demonstrate how rugged terrain can expose failure modes for controllers 
+that otherwise work well on flat terrain, and how you can use NeuroMechFly to benchmark 
+different control strategies that go beyond the classical dichotomy of CPG-based versus rule-based control.
 
 In the next tutorial, we will refactor our hybrid controller code into a
-Python class that implements the Gym interface. This will show how one
-can build controller models at different levels of abstraction with
-variable amounts of preprogrammed computation.
+Python class that implements the Gym interface. This will allow us to show how to
+build control models with different degrees of abstraction and preprogrammed computations.

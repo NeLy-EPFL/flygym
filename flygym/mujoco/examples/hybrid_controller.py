@@ -42,7 +42,7 @@ def run_hybrid_simulation(
 
     obs, info = nmf.reset()
     for _ in trange(int(run_time / nmf.sim_params.timestep)):
-        # retraction rule: is any leg stuck in a hole and needs to be retracted?
+        # retraction rule: does a leg need to be retracted from a hole?
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
@@ -55,7 +55,7 @@ def run_hybrid_simulation(
         joints_angles = []
         adhesion_onoff = []
         for i, leg in enumerate(preprogrammed_steps.legs):
-            # update retraction correction amounts
+            # update amount of retraction correction
             if i == leg_to_correct_retraction:  # lift leg
                 increment = correction_rates["retraction"][0] * nmf.timestep
                 retraction_correction[i] += increment
@@ -65,7 +65,7 @@ def run_hybrid_simulation(
                 retraction_correction[i] = max(0, retraction_correction[i] - decrement)
                 nmf.change_segment_color(f"{leg}Tibia", (0.5, 0.5, 0.5, 1))
 
-            # update stumbling correction amounts
+            # update amount of stumbling correction
             contact_forces = obs["contact_forces"][stumbling_sensors[leg], :]
             fly_orientation = obs["fly_orientation"]
             # force projection should be negative if against fly orientation
@@ -79,7 +79,7 @@ def run_hybrid_simulation(
                 stumbling_correction[i] = max(0, stumbling_correction[i] - decrement)
                 nmf.change_segment_color(f"{leg}Femur", (0.5, 0.5, 0.5, 1))
 
-            # retraction correction has priority
+            # retraction correction is prioritized
             if retraction_correction[i] > 0:
                 net_correction = retraction_correction[i]
             else:

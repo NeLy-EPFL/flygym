@@ -4,7 +4,7 @@ Installation
 
 .. note:: 
 
-   Check special instructions at the bottom of this page if you want to run FlyGym on a machine without a display (eg. server).
+   Check special instructions at the bottom of this page if you want to run FlyGym on a machine without a display (eg. a server).
 
 
 Installation via PyPI 
@@ -69,9 +69,9 @@ Next, install the FlyGym package:
 
    pip install -e ."[mujoco]"
 
-Note that the ``-e`` causes the package to be installed in editable mode. This means that you can modify the source code and the changes will be reflected in the installed package. This is useful if you want to modify modify the FlyGym package itself in your work — in which case we ask you to consider sharing your developments with us via a pull request to make it available to the community. Please refer to `the contribution guide <https://neuromechfly.org/contributing.html>`_ for more information.
+Note that the ``-e`` causes the package to be installed in editable mode. This means that you can modify the source code and the changes will be reflected in the installed package. This is useful if you want to modify modify the FlyGym package itself in your work — in which case we ask you to consider sharing your developments with us via a pull request (PR) to make it available to the community. Please refer to `the contribution guide <https://neuromechfly.org/contributing.html>`_ for more information.
 
-Finally, developers should also intstall the ``dev`` dependencies for testing and documentation:
+Finally, developers should also install the ``dev`` dependencies for testing and documentation:
 
 .. code-block:: bash
 

@@ -3,8 +3,8 @@ Interacting with NeuroMechFly
 
 **Summary:** In this tutorial, we will introduce the basic concepts of
 interacting with the simulated fly in a Markov Decision Process using
-the Gym interface. As a demonstration, we will kinematically replay the
-experimentally recorded walking behavior in the simulator.
+the Gym interface. As a demonstration, we will replay
+experimentally recorded leg kinematics during walking in the simulator.
 
 Markov Decision Process (MDP) and the Gym API
 ---------------------------------------------
@@ -63,7 +63,7 @@ The overall steps for interacting with a Gym environment are:
 
 4. Close the environment and analyze the results
 
-This process can be shown in the following code snippet:
+This process is illustrated in the following code snippet:
 
 .. code-block:: ipython3
     :linenos:
@@ -126,11 +126,11 @@ The **observation** is a dictionary with the following keys and values:
    dimension is the side (left, right in that order); the second
    dimension specifies the ommatidium, and the last column is for the
    spectral channel (yellow-type, pale-type in that order). Each
-   ommatidia only has one channel with nonzero reading. The intensities
+   ommatidium only has one channel with nonzero reading. The intensities
    are given on a [0, 1] scale.
 -  **“odor_intensity”** (if ``sim_params.enable_olfaction`` is True):
    The odor intensities sensed by the odor sensors (by default 2
-   antennae + 2 maxillary palps). This is a NumPy array of shape
+   antennae and 2 maxillary palps). This is a NumPy array of shape
    (odor_space_dimension, num_sensors).
 
 ``terminated``, ``truncated``, and the ``info`` dictionary
@@ -146,7 +146,7 @@ provided ``NeuroMechFly`` environment always returns False for both
 extending the ``NeuroMechFly`` class.
 
 Additionally, the ``step()`` method returns an ``info`` dictionary that
-contains arbitrary auxillary information. The user can add any
+contains arbitrary auxilliary information. The user can add any
 information to this dictionary by extending the ``NeuroMechFly`` class.
 The provided ``NeuroMechFly`` contains the following keys and values in
 the **``info`` dictionary**:
@@ -162,14 +162,14 @@ Example: Kinematic replay of experimentally recorded behavior
 -------------------------------------------------------------
 
 We now move on to an example where we kinematically replay some
-experimentally recorded walking behaviors. Precisely, we record a
-tethered fly walking on an air-suspended spherical treadmill using 7
-zoomed-in cameras from different angles. We then estimate the positions
-of joint keypoints in 3D using DeepFly3D (Günel et al, 2019) and use
-inverse kinematics to calculate the angle at each DoF. Then, we will use
-a PD controller to actuate the DoFs on the simulated fly at with these
-exact angles to see if the fly can walk on flat terrain untethered, as
-shown in the original NeuroMechFly paper (Lobato-Rios et al, 2022).
+experimentally recorded walking behaviors. Specifically, we recorded a
+tethered fly walking on an air-suspended spherical treadmill using seven
+zoomed-in cameras from different angles. We then estimated the 3D positions
+of keypoints on the joints using DeepFly3D (Günel et al., Elife 2019) and used
+inverse kinematics to calculate the angle at each DoF. With these we will use
+a PD controller to actuate the DoFs of the simulated fly using these
+exact angles to see if the fly can walk untethered on flat terrain, as
+shown in the original NeuroMechFly paper (Lobato-Rios et al., Nature Methods 2022).
 
 We start with the necessary imports:
 
@@ -197,7 +197,7 @@ Let’s define some simulation parameters:
     )
     actuated_joints = flygym.mujoco.preprogrammed.all_leg_dofs
 
-We can now load the recorded kinematics that is included with the FlyGym
+We can now load recorded kinematics that are included with the FlyGym
 package:
 
 .. code-block:: ipython3
@@ -295,7 +295,7 @@ To save the rendered video:
    </video>
 
 We can inspect the observation at the last step to see if they are
-consistent with our expectation:
+consistent with our expectations:
 
 .. code-block:: ipython3
     :linenos:

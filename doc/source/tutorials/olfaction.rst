@@ -5,10 +5,10 @@ Olfaction
 odor-guided taxis.
 
 In the `previous
-tutorial <https://neuromechfly.org/tutorials/vision.html>`__, we have
-covered how one might simulate the visual experience of the fly using
-NeuroMechFly. In addition to vision, we also made it possible for our
-model to detect odors emmited by objects in the simulation environment.
+tutorial <https://neuromechfly.org/tutorials/vision.html>`__, we
+covered how one can simulate the visual experience of the fly simulation. 
+In addition to vision, we also made it possible for our
+model to detect odors emitted by objects in the simulation environment.
 The olfactory system in *Drosophila* consists of specialized olfactory
 sensory neurons (OSNs) located in the antennae and maxillary palps.
 These detect specific odorant molecules and convey this information to
@@ -29,14 +29,14 @@ in the antennal lobe.
    :width: 600
 
 
-The odor arena
+Odor arena
 --------------
 
-To demonstrate odor sensing, let’s create an environment with an
-attractive odor source of two aversive odor sources. The dimension of
+To demonstrate odor sensing, let’s create an environment with one
+attractive odor source and two aversive odor sources. The dimension of
 this odor space is 2 (attractive, aversive) despite the number of odor
 sources being 3. The odor sources share a peak intensity of 1. We will
-color the attractive odor source orange and the aversive ones blue.
+color the attractive odor source orange and the aversive odor sources blue.
 
 .. code-block:: ipython3
    :linenos:
@@ -78,8 +78,8 @@ Its implementation is beyond the scope of this tutorial but can be found
         marker_size=0.3,
     )
 
-Let’s put a fly in it. As before, we will run a few iterations so it
-stablizes on the ground.
+Let’s place our fly in the arena. As before, we will run a few iterations to allow it
+to stand on the ground in a stable manner.
 
 .. code-block:: ipython3
    :linenos:
@@ -129,7 +129,7 @@ Controller for odor taxis
 -------------------------
 
 Let’s design a simple hand-tuned controller for odor-guided taxis. We
-start by calculating the left-right asymmetry of the intensity :math:`I`
+start by calculating the left-right asymmetry of the odor intensity :math:`I`
 for each odor :math:`o`:
 
 .. math::
@@ -146,8 +146,8 @@ will have different signs in their gains.
 
    s = \sum_{o} \gamma_o \Delta I_o
 
-We transform :math:`s` nonlinearly to avoid turns that are too drastic
-when the asymmetry is subtle and to to crop it to the range [0, 1). This
+We transform :math:`s` nonlinearly to avoid overly drastic turns
+when the asymmetry is subtle and to crop it within the range [0, 1). This
 gives us a turning bias :math:`b`:
 
 .. math::
