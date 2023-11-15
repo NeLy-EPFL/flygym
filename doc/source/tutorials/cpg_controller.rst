@@ -6,29 +6,29 @@ Pattern Generators (CPGs) and build a CPG-based model to control walking
 of the simulated fly.
 
 Central Pattern Generators (CPGs) are neural circuits that generate
-rhythmic output without receiving rhythmic input (see review by
+rhythmic output without receiving rhythmic input (see review of CPGs in insects by
 `Mantziaris et al, 2020 <https://doi.org/10.1002/dneu.22738>`__). CPGs
-have been identified in various species, playing a crucial role in
-facilitating locomotion. Their principles have also been adopted in the
+have been identified in various species as playing a crucial role in
+locomotion. Their principles have also been adopted in the
 realm of robotic motor control (see review by `Ijspeert,
 2008 <https://doi.org/10.1016/j.neunet.2008.03.014>`__). It is
 hypothesized that CPGs play a more important role in animals whose
-locomotion is more ballistic (e.g., cockroaches running at 1 m/s!) and
-therefore cannot process decentralized limb sensory signals in time to
-adjust their movements.
+locomotion is fast and therefore cannot process decentralized 
+limb sensory signals in time to adjust their movements (ie., 
+like cockroaches running at ~1 m/s!).
 
-In this tutorial, we will start by implementing the oscillator network.
+In this tutorial, we will start by implementing an oscillator network.
 Then, we will use this network to control the stepping of the legs by
 mapping the phases of the oscillators to the phases of preprogrammed leg
 stepping kinematics. Next, we will plug this oscillator-based controller
-into NeuroMechFly to drive locomotion in the physics simulaiton.
-Finally, we will add leg adhesion to the simulation.
+into NeuroMechFly to drive locomotion in the physics simulation.
+Finally, we will add leg adhesion to the locomotor simulation.
 
 The CPG network
 ---------------
 
 Basic CPGs can be implemented as feedforward networks of oscillators—in
-other words, the network behave the same way regardless of sensory
+other words, the network behaves without taking into account sensory
 feedback. Similar to the formulation from `Ijspeert et al
 (2007) <https://doi.org/10.1126/science.1138353>`__, the oscillator
 network can be described by the following ordinary differential
@@ -159,7 +159,7 @@ ODE, but you can use any higher-order methods or libraries.
             else:
                 self.curr_magnitudes = init_magnitudes
 
-To demonstrate this network, let’s simulate a network of 3 oscillators
+To demonstrate this network, let’s simulate a network of three oscillators
 connected as follows:
 
 .. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg.png
@@ -167,7 +167,7 @@ connected as follows:
 
 For the sake of illustration, let’s make them oscillate at an intrinsic
 frequency of 1 and intrinsic amplitudes of 1.0, 1.1, 1.2. They are
-coupled at a weight of 1 and the phase differences are 120 degrees. We
+coupled with a weight of 1 and phase differences of 120 degrees. We
 will initialize the phases and magnitudes randomly.
 
 .. code-block:: ipython3
@@ -212,10 +212,10 @@ will initialize the phases and magnitudes randomly.
         phase_hist[i, :] = network.curr_phases
         magnitude_hist[i, :] = network.curr_magnitudes
 
-We can visualize the phases of the oscillators (wrapped to
+We can visualize the phases (wrapped to
 :math:`[0, 2\pi]`) and the magnitudes of the oscillators over time. We
 observe that, after a brief period of synchronization, the oscillators
-converge two a state where they oscillate 1/3 of a cycle apart at their
+converge to a state where they oscillate 1/3 of a cycle apart at their
 intrinsic frequencies and amplitudes.
 
 .. code-block:: ipython3
@@ -248,8 +248,8 @@ Controlling leg stepping with CPGs
 
 The state variables :math:`\theta` and :math:`r` can be used to drive
 locomotion at various levels of abstraction. This is a design choice
-that the modeler should make in consideration of the scientific question
-at hand. For example, in `Lobato-Rios et al
+that the modeler should make depending on the scientific question being considered. 
+For example, in `Lobato-Rios et al
 (2022) <https://doi.org/10.1038/s41592-022-01466-7>`__, the CPG states
 are used to calculate motor neuron activity
 :math:`M_i = r_i (1 + \sin(\theta_i))`, which is in turn used to drive a
@@ -257,12 +257,12 @@ muscle model. By contrast, `Ijspeert et al
 (2007) <https://doi.org/10.1126/science.1138353>`__ uses a more abstract
 control strategy — the CPG states directly control the target joint
 *position* (ie. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
-target position is then given to a `proportional-derivative (PD)
+target position is then provided to a `proportional-derivative (PD)
 controller <https://www.matthewpeterkelly.com/tutorials/pdControl/index.html>`__
-to actuate the joint.
+which actuates the joint.
 
 Here, we will use an even higher-level control approach where each
-oscillator controls the stepping of a whole leg (as opposed to a joint).
+oscillator controls the stepping of an entire leg (as opposed to a joint).
 The phase of the CPG represents the phase of the step (ie. how far into
 the step the leg is), while the magnitude of the CPG represents the
 magnitude of the step (ie. how large the step is). We will use
@@ -272,10 +272,10 @@ experimental behavior recordings and modify its magnitude (modulated by
 :math:`r`) and speed (modulated by :math:`\theta`) so that the stepping
 of the six legs is coordinated by the CPG network.
 
-We will set up the coupling parameters for “tripod gait” locomotion: at
+We will set the coupling parameters for locomotion using a “tripod gait”: at
 each point in time, the fore and hind legs on one side and the mid leg
-on the other side are in stance, forming a stable tripod-shaped
-struture; the other three legs are in swing. This is visualized in the
+on the other side of the body are in stance, forming a stable tripod-shaped
+structure; the other three legs are in swing. This is illustrated in the
 figure below (left, figure adapted from `Emanuel et al,
 2020 <https://doi.org/10.3389/fphys.2020.00135>`__). The tripod gait can
 be implemented using a CPG network shown on the right. We observe that
@@ -357,7 +357,7 @@ Now, let’s load the behavior kinematics data:
     with open(single_steps_path, "rb") as f:
         single_steps_data = pickle.load(f)
 
-This gives us a dictionary containing joint angle time sereis for each
+This gives us a dictionary containing joint angle time series for each
 joint. We will check if they all have the same length. The steps should
 be periodic, so we will also check if the first and last angles in the
 time series are the same:
@@ -505,20 +505,18 @@ from 0 to 1:
 .. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_amp_modulated.png
    :width: 700
 
-We have now built the individual aspects of the controller: - On the
-level of inter-leg coordination, the CPG network controls the phase
-:math:`\theta` of each leg of the maginude :math:`r` of its steps. - On
-the level of per-leg kinematics, we find the corresponding joint states
-at the phase :math:`\theta` based on experimentally recorded data,
-scaled by the amplitude :math:`r`.
+We have now built the individual elements of the controller:
 
-In the next section, we will piece these components together and plug it
+- On the level of inter-leg coordination, the CPG network controls the phase :math:`\theta` of each leg of the magnitude :math:`r` of its steps.
+- On the level of per-leg kinematics, we find the corresponding joint states at the phase :math:`\theta` based on experimentally recorded data, scaled by the amplitude :math:`r`.
+
+In the next section, we will piece these components together and plug them
 into the physics simulation.
 
 Plugging the controller into the simulation
 -------------------------------------------
 
-We will now put everything together and control the simulated fly with
+We will now put everything together and control the simulated fly using
 the controller that we have designed. The following content assumes that
 you have read the tutorial `“Interacting with
 NeuroMechFly” <https://neuromechfly.org/tutorials/gym_basics_and_kinematic_replay.html>`__.
@@ -612,19 +610,19 @@ Leg adhesion
 Insects, including flies, have evolved highly specialized adhesive
 structures to facilitate locomotion over complex 3D terrain. Substantial
 normal forces (10–100 times body weight) and frictional forces emerge
-from interactions between the substrate and the adhesive pad. These
+from interactions between the adhesive pads and underlying substrates. These
 allow insects to navigate 3D terrain with ease. Because we cannot fully
-represent the physics underlying real, biological adhesion, we added
+represent the physics underlying real, biological adhesion, we added a
 more abstract leg adhesion to our model by injecting an additional
 normal force to the pretarsus of each leg when it is in contact with a
-surface. This adhesive force increases the normal force toward the
+substrate. This adhesive force increases the normal force toward the
 object and the frictional force.
 
 Despite the huge forces generated by adhesive pads, insects can still
 lift their legs, seemingly with out effort. The mechanisms for lifting
-off is not well understood for *Drosophila*. Therefore, we abstracted
+off are not well understood in *Drosophila*. Therefore, we abstracted
 the mechanisms used by other insects for lifting by turning adhesion
-forces on during stance and off during swing. In the preprogrammed
+forces on during stance and off during swing phases. In the preprogrammed
 stepping data, we have also indicated the start (in seconds) of the
 swing and stance periods:
 
@@ -675,7 +673,7 @@ off (during swing):
         theta = theta % (2 * np.pi)
         return ~((theta > swing_start) & (theta < swing_end)).squeeze()
 
-Two illustrate this binary signal (low = off, during swing; high = on,
+To illustrate this binary signal (low = off, during swing; high = on,
 during stance):
 
 .. code-block:: ipython3
@@ -702,7 +700,7 @@ during stance):
    :width: 400
 
 We can rerun the NeuroMechFly simulation with adhesion enabled. The
-parts of the code that has been changed are indicated with comments.
+parts of the code that have been changed are indicated with comments.
 
 .. code-block:: ipython3
     :linenos:
@@ -757,12 +755,12 @@ parts of the code that has been changed are indicated with comments.
    <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller_with_adhesion.mp4" controls="controls" style="max-width: 730px;"></video>
 
 
-In summary, we have (1) implemented a Python class for CPG networks, (2)
+In summary, in this tutorial we have (1) implemented a Python class for CPG networks, (2)
 used it to modulate the stepping of legs using experimentally recorded
 data, (3) plugged this controller into the NeuroMechFly embodiment, and
 (4) added leg adhesion to the simulation. Note that the controller we
 built here is feedforward — that is, mechanosensory feedback is not used
 by the controller (except the position feedback in the PD controller for
 individual joints). In the next tutorial, we will build a rule-based
-controller where leg coordination is accomplished with feedback in a
+controller where leg coordination is accomplished using sensory feedback in a
 more distributed manner.

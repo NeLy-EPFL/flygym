@@ -6,14 +6,14 @@ You can contribute to this package through its `GitHub Repository <https://githu
 
 Code of conduct & licensing
 ---------------------------
-Please respect the `Contributor Covenant Code of Conduct <https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.txt>`_. FlyGym is made open souce under `Apache License 2.0 <https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE>`_. By contributing to this package (including any issue, pull request, and discussion), you agree that your content will be shared under the same licence.
+Please respect the `Contributor Covenant Code of Conduct <https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.txt>`_. FlyGym is made open source under `Apache License 2.0 <https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE>`_. By contributing to this package (including any issue, pull request, and discussion), you agree that your content will be shared under the same license.
 
 
 Branches
 --------
 - ``main``: The latest stable code. Every time this branch is updated (except documentation-only updates to the neuromechfly.org website), a new version should be pushed to PyPI.
-- ``develop``: The latest development code. This branch is used for development and testing. Code should not be merged into this branch until all tests and style checks are passing. Contribution from developers outside the core dev team (Sibo and Alfred) should have their PRs reviewed by a core dev team member. When a new version is released, the ``develop`` branch is merged into the ``main`` branch.
-- **Other branches** are for develop new features or fixing bugs. Please make your on fork for development (see the "Contributing to the codebase" section below).
+- ``develop``: The latest development code. This branch is used for development and testing. Code should not be merged into this branch until all tests and style checks are passing. Contribution from developers outside the core dev team (Sibo Wang-Chen and Victor Alfred Stimpfling) should have their PRs reviewed by a core dev team member. When a new version is released, the ``develop`` branch is merged into the ``main`` branch.
+- **Other branches** are for develop new features or fixing bugs. Please make your own fork for development (see the "Contributing to the codebase" section below).
 
 
 Code style
@@ -48,7 +48,7 @@ Contributing to the codebase
 3. Make some changes/additions to the source code that tackle the issue(s).
 4. Write `tests <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/mujoco/tests>`_.
 
-   - Can either write tests before creating a draft PR, or submit draft PR (to get code coverage statistics via codecov) and then write tests to narrow down error prone lines.
+   - You can either write tests before creating a draft pull request (PR), or submit draft PR (to get code coverage statistics via codecov) and then write tests to narrow down error prone lines.
    - Test(s) should aim to hit every point in the proposed change(s) - cover edge cases to best of your ability.
    - Try to hit code coverage points.
    - Add files, commit, and push to origin.
@@ -63,7 +63,7 @@ Contributing to the codebase
    - IMPORTANT: Only convert to a finalized PR when you believe your changes are ready to be merged.
    - Optionally assign a reviewer on the right of the screen - otherwise a member of the developer team will self-assign themselves.
 
-8. If the reviewer requests changes, repeat steps 3-5 and Re-request review.
+8. If the reviewer requests changes, repeat steps 3-5 and re-request review.
 9. Once the reviewer signs off they will squash + merge the PR into the ``develop`` branch.
 
-   - New feautures will be available on the main branch when a new version is released.
+   - New features will be available on the main branch when a new version is released.
