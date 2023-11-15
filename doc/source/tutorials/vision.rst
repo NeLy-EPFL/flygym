@@ -3,12 +3,12 @@ Vision
 
 **Summary:** In this tutorial, we will build a simple model to control
 the fly to follow a moving sphere. By doing so, we will also demonstrate
-how one might create a custom arena.
+how one can create a custom arena.
 
 Animals typically navigate over rugged terrain to reach attractive
 objects (eg. potential mates, food sources) and to avoid repulsive
 features (eg. pheromones from predators) and obstacles. Animals use a
-hierarchical chontroller to achieve these goals: processing higher-order
+hierarchical controller to achieve these goals: processing higher-order
 sensory signals, using them to select the next action, and translating
 these decisions into descending commands that drive lower-level motor
 systems. We aimed to simulate this sensorimotor hierarchy by adding
@@ -18,14 +18,14 @@ Retina simulation
 -----------------
 
 A fly’s compound eye consists of ∼700–750 individual units called
-ommatidia arranged in a hexagonal patter (see the left panel of the
+ommatidia arranged in a hexagonal pattern (see the left panel of the
 figure below from the `droso4schools
 project <https://droso4schools.wordpress.com/l4-enzymes/#5>`__; see also
 `this article <https://azretina.sites.arizona.edu/node/789>`__ from the
 Arizona Retina Project). To emulate this, we attached a color camera to
 each of our model’s compound eyes (top right panel). We then transformed
 each camera image into 721 bins, representing ommatidia. Based on
-previous studies, we assumed a 270° combined azimuth for the fly’s field
+previous studies, we assume a 270° combined azimuth for the fly’s field
 of view, with a ∼17° binocular overlap. Visual sensitivity has evolved
 to highlight ethologically relevant color spectra at different locations
 in the environment. Here, as an initial step toward enabling this
@@ -86,8 +86,8 @@ repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples
         user_camera_settings=((13, -18, 9), (np.deg2rad(65), 0, 0), 45),
     )
 
-Let’s put the fly in it and simulate a 500 steps so the fly can stand
-stably on the floor:
+Let’s put the fly in it and simulate 500 timesteps so the fly can stand
+on the floor in a stable manner:
 
 .. code-block:: ipython3
     :linenos:
@@ -304,7 +304,7 @@ We start by defining some attributes in its ``__init__`` method:
 Next, we define a ``root_element`` attribute. The simulated world is
 represented as a tree of objects, each attached to a parent. For
 example, the eyes of the fly are attached to the head, which is in turn
-attached to the throax — the base of the NeuroMechFly model. Note that
+attached to the thorax — the base of the NeuroMechFly model. Note that
 this tree is merely a representation of objects and their relation to
 each other; there does not necessarily have to be a visual or anatomical
 link between the parent and child objects. For example, the base of the
@@ -373,8 +373,8 @@ angles. This concludes the definition of our ``__init__`` method.
            )
 
 Next, let’s define a ``get_spawn_position`` class. This is applies an
-offset to the user-entered fly spawn position. For example, if there is
-a stage in your arena that is 1mm high, and you want to place the fly on
+offset to the user-defined fly spawn position. For example, if there is
+a stage in your arena that is 1 mm high, and you want to place the fly on
 this stage, then you might want to apply a transformation to the
 user-specified relative spawn position and return
 ``rel_pos + np.array([0, 0, 1])`` as the effective spawn position. In
@@ -416,7 +416,7 @@ Visual feature preprocessing
 
 We will preprocess the visual feature by computing the x-y position of
 the object on the retina along with its size relative to the whole
-retinal image. We do this by applying binary thresholding the the image
+retinal image. We do this by applying binary thresholding to the image
 and calculating its size and center of mass. This is a good example to
 once again showcase the benefit of encapsulating preprogrammed logic
 into the Markov Decision Process (implemented as a Gym environment). If
@@ -443,7 +443,7 @@ the threshold used in the binary thresholding step. Any pixel darker
 than this number will be considered part of the black sphere. We will
 also define a decision interval :math:`\tau`: the turning signal is
 recomputed every :math:`\tau` seconds. We will compute the center of
-mass (COM) of every ommatidia so that later when we need to compute the
+mass (COM) of all ommatidia so that later when we need to compute the
 COM of the object (a masked subset of pixels), we can simply take the
 average of the COMs of the selected pixels. Finally, we will override
 the definition of the observation space with a 6-dimensional one (x, y
@@ -569,7 +569,7 @@ our arena and Gym environment:
     )
 
 As before, let’s check if this environment complies with the Gym
-interface. Despite a few warning on design choices, no error should be
+interface. Despite a few warnings on design choices, no errors should be
 raised.
 
 .. code-block:: ipython3
@@ -650,7 +650,7 @@ To inspect the recorded video:
 
 
 We can use the ``save_video_with_vision_insets`` utility function to
-regenerate this video, but with insets at the bottom showing the visual
+regenerate this video, but with insets at the bottom illustrating the visual
 experience of the fly:
 
 .. code-block:: ipython3
