@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     package_data={"flygym": ["data/*"], "flygym.mujoco": ["mujoco/config.yaml"]},
     include_package_data=True,
-    python_requires=">=3.7",
+    python_requires=">=3.8,<3.12",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
@@ -28,7 +28,7 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco>=2.3.0,<3.0.0", "dm_control", "numba", "opencv-python"],
+        "mujoco": ["mujoco>=3.0.0", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
