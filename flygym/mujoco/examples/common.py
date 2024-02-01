@@ -31,6 +31,9 @@ class PreprogrammedSteps:
     path : str or Path, optional
         Path to the preprogrammed steps data. If None, the default
         preprogrammed steps data will be loaded.
+    neutral_pos_indexes : List[float]
+        Indexes of the neutral position in the preprogrammed step. The
+        indexes are normalized to [0, 2π].
     """
 
     legs = [f"{side}{pos}" for side in "LR" for pos in "FMH"]
@@ -44,7 +47,7 @@ class PreprogrammedSteps:
         "Tarsus1",
     ]
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, neutral_pos_indexes=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]):
         if path is None:
             path = get_data_path("flygym", "data") / "behavior/single_steps.pkl"
         with open(path, "rb") as f:
@@ -64,7 +67,7 @@ class PreprogrammedSteps:
             )
 
         self.neutral_pos = {
-            leg: self._psi_funcs[leg](0)[:, np.newaxis] for leg in self.legs
+            leg: self._psi_funcs[leg](neutral_pos_indexes[i])[:, np.newaxis] for i, leg in enumerate(self.legs)
         }
 
         swing_stance_time_dict = single_steps_data["swing_stance_time"]

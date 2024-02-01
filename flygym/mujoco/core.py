@@ -265,6 +265,7 @@ class NeuroMechFly(gym.Env):
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
+        xml: str = "mjcf_model",
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
@@ -416,7 +417,7 @@ class NeuroMechFly(gym.Env):
 
         # Load NMF model
         self.model = mjcf.from_path(
-            get_data_path("flygym", "data") / self._mujoco_config["paths"]["mjcf_model"]
+            get_data_path("flygym", "data") / self._mujoco_config["paths"][xml]
         )
         self._set_geom_colors()
 
