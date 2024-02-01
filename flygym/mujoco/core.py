@@ -1236,8 +1236,11 @@ class NeuroMechFly(gym.Env):
             Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
             Any additional information that is not part of the observation.
-            This is an empty dictionary by default but the user can
-            override this method to return additional information.
+            This is an empty dictionary by default (except when vision is
+            enabled; in this case a "vison_updated" boolean variable
+            indicates whether the visual input to the fly was refreshed at
+            this step) but the user can override this method to return
+            additional information.
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
@@ -1252,6 +1255,10 @@ class NeuroMechFly(gym.Env):
         terminated = self.is_terminated()
         truncated = self.is_truncated()
         info = self.get_info()
+        if self.sim_params.enable_vision:
+            vision_updated_this_step = self.curr_time == self._last_vision_update_time
+            self._vision_update_mask.append(vision_updated_this_step)
+            info["vision_updated"] = vision_updated_this_step
 
         if self.detect_flip:
             if observation["contact_forces"].sum() < 1:
@@ -1513,16 +1520,19 @@ class NeuroMechFly(gym.Env):
                     )
         return img
 
-    def _update_vision(self) -> np.ndarray:
+    def _update_vision(self) -> None:
+        """Check if the visual input needs to be updated (because the
+        vision update freq does not necessarily match the physics
+        simulation timestep). If needed, update the visual input of the fly
+        and buffer it to ``self._curr_raw_visual_input)``.
+        """
         vision_config = self._mujoco_config["vision"]
         next_render_time = (
             self._last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
         if self.curr_time + 0.5 * self.timestep < next_render_time:
-            self._vision_update_mask.append(False)
             return
-        self._vision_update_mask.append(True)
         raw_visual_input = []
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
