@@ -1236,8 +1236,11 @@ class NeuroMechFly(gym.Env):
             Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
             Any additional information that is not part of the observation.
-            This is an empty dictionary by default but the user can
-            override this method to return additional information.
+            This is an empty dictionary by default (except when vision is
+            enabled; in this case a "vison_updated" boolean variable
+            indicates whether the visual input to the fly was refreshed at
+            this step) but the user can override this method to return
+            additional information.
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
