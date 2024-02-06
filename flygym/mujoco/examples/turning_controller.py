@@ -170,6 +170,8 @@ class HybridTurningNMF(NeuroMechFly):
     def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
         obs, info = super().reset(seed=seed)
         self.cpg_network.random_state = np.random.RandomState(seed)
+        self.cpg_network.intrinsic_amps = self.intrinsic_amps
+        self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
         self.cpg_network.reset(init_phases, init_magnitudes)
         self.retraction_correction = np.zeros(6)
         self.stumbling_correction = np.zeros(6)
