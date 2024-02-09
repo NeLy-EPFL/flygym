@@ -47,7 +47,9 @@ class PreprogrammedSteps:
         "Tarsus1",
     ]
 
-    def __init__(self, path=None, neutral_pos_indexes=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]):
+    def __init__(
+        self, path=None, neutral_pos_indexes=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]
+    ):
         if path is None:
             path = get_data_path("flygym", "data") / "behavior/single_steps_new.pkl"
         with open(path, "rb") as f:
@@ -67,7 +69,8 @@ class PreprogrammedSteps:
             )
 
         self.neutral_pos = {
-            leg: self._psi_funcs[leg](neutral_pos_indexes[i])[:, np.newaxis] for i, leg in enumerate(self.legs)
+            leg: self._psi_funcs[leg](neutral_pos_indexes[i])[:, np.newaxis]
+            for i, leg in enumerate(self.legs)
         }
 
         swing_stance_time_dict = single_steps_data["swing_stance_time"]

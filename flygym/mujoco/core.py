@@ -1642,7 +1642,7 @@ class NeuroMechFly(gym.Env):
                 id = np.where(self._adhesion_actuator_geomid == contact.geom2)
                 if len(id[0]) > 0 and contact.exclude == 0:
                     contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id][
-                        0 
+                        0
                     ]
                     if contact_sensor_id in contactid_normal:
                         contactid_normal[contact_sensor_id].append(contact.frame[:3])
