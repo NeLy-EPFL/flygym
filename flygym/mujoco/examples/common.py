@@ -47,9 +47,9 @@ class PreprogrammedSteps:
         "Tarsus1",
     ]
 
-    def __init__(self, path=None, neutral_pos_indexes=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]):
+    def __init__(self, path=None, neutral_pos_indexes=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]):
         if path is None:
-            path = get_data_path("flygym", "data") / "behavior/single_steps.pkl"
+            path = get_data_path("flygym", "data") / "behavior/single_steps_new.pkl"
         with open(path, "rb") as f:
             single_steps_data = pickle.load(f)
         self._length = len(single_steps_data["joint_LFCoxa"])

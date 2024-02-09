@@ -152,9 +152,9 @@ class Parameters:
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
-    actuator_kp: float = 30.0
-    tarsus_stiffness: float = 2.2
-    tarsus_damping: float = 0.05
+    actuator_kp: float = 50.0
+    tarsus_stiffness: float = 10.0
+    tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
     gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
     contact_solref: Tuple[float, float] = (2e-4, 1e3)
@@ -1642,7 +1642,7 @@ class NeuroMechFly(gym.Env):
                 id = np.where(self._adhesion_actuator_geomid == contact.geom2)
                 if len(id[0]) > 0 and contact.exclude == 0:
                     contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id][
-                        0
+                        0 
                     ]
                     if contact_sensor_id in contactid_normal:
                         contactid_normal[contact_sensor_id].append(contact.frame[:3])
