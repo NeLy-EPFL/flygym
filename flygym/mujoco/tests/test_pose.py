@@ -6,9 +6,6 @@ from pathlib import Path
 from flygym.mujoco import NeuroMechFly
 from flygym.mujoco.util import plot_mujoco_rollout
 
-from flygym.mujoco.arena import Tethered
-
-
 def test_stretched_pose():
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
