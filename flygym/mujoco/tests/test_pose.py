@@ -15,7 +15,7 @@ def test_stretched_pose():
     nmf = NeuroMechFly(init_pose="stretch", spawn_pos=(0, 0, 0.0001))
     run_time = 0.01
     freq = 100
-    amp = np.pi
+    amp = np.pi / 2
 
     obs, _ = nmf.reset()
     fly_init_pos = obs["joints"][0]
@@ -42,7 +42,7 @@ def test_zero_pose():
     nmf = NeuroMechFly(init_pose="zero", spawn_pos=(0, 0, 3))
     run_time = 0.01
     freq = 100
-    amp = np.pi
+    amp = np.pi / 2
 
     obs, _ = nmf.reset()
     fly_init_pos = obs["joints"][0]
@@ -67,7 +67,7 @@ def test_tripod_pose():
     nmf = NeuroMechFly(init_pose="tripod")
     run_time = 0.01
     freq = 100
-    amp = np.pi
+    amp = np.pi / 2
 
     obs, _ = nmf.reset()
     fly_init_pos = obs["joints"][0]
