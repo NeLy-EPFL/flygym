@@ -12,16 +12,18 @@ def test_basic_untethered_sinewave():
 
     nmf = NeuroMechFly()
     run_time = 0.01
-    freq = 500
-    phase = 2 * np.pi * random_state.rand(len(nmf._actuators))
-    amp = 0.9
+    freq = 100
+    amp = np.pi
+
+    obs, _ = nmf.reset()
+    fly_init_pos = obs["joints"][0]
 
     obs_list = []
     while nmf.curr_time <= run_time:
-        joint_pos = amp * np.sin(freq * nmf.curr_time + phase)
+        joint_pos = fly_init_pos  + amp * np.sin(freq * nmf.curr_time)
+        action = {"joints": joint_pos}
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
-        # nmf.render()
         obs_list.append(obs)
     nmf.close()
 
