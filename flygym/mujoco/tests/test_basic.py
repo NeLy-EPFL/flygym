@@ -13,7 +13,7 @@ def test_basic_untethered_sinewave():
     nmf = NeuroMechFly()
     run_time = 0.01
     freq = 100
-    amp = np.pi
+    amp = np.pi / 2
 
     obs, _ = nmf.reset()
     fly_init_pos = obs["joints"][0]
