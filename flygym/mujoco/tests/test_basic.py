@@ -20,8 +20,7 @@ def test_basic_untethered_sinewave():
 
     obs_list = []
     while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos  + amp * np.sin(freq * nmf.curr_time)
-        action = {"joints": joint_pos}
+        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
         obs_list.append(obs)
