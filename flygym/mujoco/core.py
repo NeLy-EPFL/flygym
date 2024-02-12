@@ -150,8 +150,8 @@ class Parameters:
     """
 
     timestep: float = 0.0001
-    joint_stiffness: float = 0.05
-    joint_damping: float = 0.06
+    joint_stiffness: float = 10.0
+    joint_damping: float = 10.0
     actuator_kp: float = 50.0
     tarsus_stiffness: float = 10.0
     tarsus_damping: float = 10.0
