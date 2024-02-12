@@ -24,7 +24,7 @@ def test_stretched_pose():
 
     obs_list = []
     while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos  + amp * np.sin(freq * nmf.curr_time)
+        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
         obs_list.append(obs)
@@ -36,7 +36,7 @@ def test_stretched_pose():
 
 def test_zero_pose():
     # The fly is spawn from high up so it will not collide with the floor
-    # Contact with the floor with straight leg zeros pose is streneous on the physics
+    # Contact with the floor with straight leg zeros pose is streneous on the physics
     random_state = np.random.RandomState(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
@@ -51,7 +51,7 @@ def test_zero_pose():
 
     obs_list = []
     while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos  + amp * np.sin(freq * nmf.curr_time)
+        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
         obs_list.append(obs)
@@ -76,8 +76,7 @@ def test_tripod_pose():
 
     obs_list = []
     while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos  + amp * np.sin(freq * nmf.curr_time)
-        action = {"joints": joint_pos}
+        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = nmf.step(action)
         obs_list.append(obs)
