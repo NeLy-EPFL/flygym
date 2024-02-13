@@ -35,8 +35,16 @@ def add_insets(retina, viz_frame, visual_input, panel_height=150):
     )
     final_frame[: viz_frame.shape[0], :, :] = viz_frame
 
-    img_l = retina.hex_pxls_to_human_readable(visual_input[0, :, :]).astype(np.uint8)
-    img_r = retina.hex_pxls_to_human_readable(visual_input[1, :, :]).astype(np.uint8)
+    img_l = (
+        retina.hex_pxls_to_human_readable(visual_input[0, :, :], color_8bit=True)
+        .astype(np.uint8)
+        .max(axis=-1)
+    )
+    img_r = (
+        retina.hex_pxls_to_human_readable(visual_input[1, :, :], color_8bit=True)
+        .astype(np.uint8)
+        .max(axis=-1)
+    )
     vision_inset_size = np.array(
         [panel_height, panel_height * (img_l.shape[1] / img_l.shape[0])]
     ).astype(np.uint16)
@@ -56,9 +64,9 @@ def add_insets(retina, viz_frame, visual_input, panel_height=150):
     vision_inset[:, : vision_inset_size[1], :] = img_l
     vision_inset[:, vision_inset_size[1] + 10 :, :] = img_r
     col_start = int((viz_frame.shape[1] - vision_inset.shape[1]) / 2)
-    final_frame[
-        -panel_height:, col_start : col_start + vision_inset.shape[1], :
-    ] = vision_inset
+    final_frame[-panel_height:, col_start : col_start + vision_inset.shape[1], :] = (
+        vision_inset
+    )
 
     cv2.putText(
         final_frame,
@@ -179,8 +187,14 @@ def visualize_visual_input(
     readable_processed_images = []
     for i in range(num_frames):
         frame_data = vision_data_key_frames[i, :, :]
-        left_img = retina.hex_pxls_to_human_readable(frame_data[0, :, :])
-        right_img = retina.hex_pxls_to_human_readable(frame_data[1, :, :])
+        left_img = retina.hex_pxls_to_human_readable(
+            frame_data[0, :, :], color_8bit=True
+        )
+        left_img = left_img.max(axis=-1)
+        right_img = retina.hex_pxls_to_human_readable(
+            frame_data[1, :, :], color_8bit=True
+        )
+        right_img = right_img.max(axis=-1)
         readable_processed_images.append([left_img, right_img])
     readable_processed_images = np.array(readable_processed_images)
 
