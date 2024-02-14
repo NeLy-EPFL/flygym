@@ -94,7 +94,7 @@ class Retina:
         if ncols is None:
             ncols = vision_config["raw_img_width_px"]
 
-        self.ommatidia_id_map = ommatidia_id_map
+        self.ommatidia_id_map = ommatidia_id_map.astype(np.int16)
         _unique_count = np.unique(ommatidia_id_map, return_counts=True)
         self.num_pixels_per_ommatidia = _unique_count[1][1:]
         self.num_ommatidia_per_eye = len(self.num_pixels_per_ommatidia)
@@ -127,7 +127,9 @@ class Retina:
             self.pale_type_mask,
         )
 
-    def hex_pxls_to_human_readable(self, ommatidia_reading: np.ndarray) -> np.ndarray:
+    def hex_pxls_to_human_readable(
+        self, ommatidia_reading: np.ndarray, color_8bit=False
+    ) -> np.ndarray:
         """Given the intensity readings for all ommatidia in one eye,
         convert them to an (nrows, ncols) image with hexagonal blocks that
         can be visualized as a human-readable image.
@@ -136,17 +138,45 @@ class Retina:
         ----------
         ommatidia_reading : np.ndarray
             Our simulation of what the fly might see through its compound
-            eyes. It is a (N, 2) array where the first dimension is for the
-            N ommatidia, and the third dimension is for the two channels.
+            eyes. It is a (N,) or (N, ...) array where the first dimension
+            is for the number of ommatidia.
+        color_8bit : bool
+            If True, the returned image will be in 8-bit color. This speeds
+            up rendering. Otherwise, the image will be in the same data
+            type as the input ``ommatidia_reading``.
 
         Returns
         -------
         np.ndarray
-            An (nrows, ncols) grayscale image with hexagonal blocks that
-            can be visualized as a human-readable image.
+            An (nrows, ncols, ...) image with hexagonal blocks that can be
+            visualized as a human-readable image. The shape after the 0th
+            dimension matches that of the input ``ommatidia_reading``.
         """
-        return self._hex_pxls_to_human_readable(
-            ommatidia_reading, self.ommatidia_id_map
+        # Flatten dimensions after ommatidia
+        input_shape = ommatidia_reading.shape
+        if input_shape[0] != self.num_ommatidia_per_eye:
+            raise ValueError(
+                "The 0th dimension of the ommatidia reading must match the number of "
+                "ommatidia in the eye."
+            )
+        ommatidia_reading = ommatidia_reading.reshape(self.num_ommatidia_per_eye, -1)
+
+        # Use 8-bit color if requested (this speeds up rendering)
+        dtype = np.uint8 if color_8bit else ommatidia_reading.dtype
+        processed_image_flat = np.zeros(
+            (self.ommatidia_id_map.size, *ommatidia_reading.shape[1:]), dtype=dtype
+        )
+        if color_8bit:
+            processed_image_flat += 255
+            ommatidia_reading *= 255
+
+        # Run JIT'ed resampling function
+        self._hex_pxls_to_human_readable(
+            ommatidia_reading, self.ommatidia_id_map, processed_image_flat
+        )
+
+        return processed_image_flat.reshape(
+            (*self.ommatidia_id_map.shape, *input_shape[1:])
         )
 
     def correct_fisheye(self, img: np.ndarray) -> np.ndarray:
@@ -198,21 +228,20 @@ class Retina:
 
     @staticmethod
     @nb.njit(parallel=True)
-    def _hex_pxls_to_human_readable(ommatidia_reading, ommatidia_id_map):
-        ommatidia_reading_scaled = ommatidia_reading * 255
-        processed_image_flat = np.zeros(ommatidia_id_map.size, dtype=np.uint8) + 255
-        hex_id_map_flat = ommatidia_id_map.flatten().astype(np.int16)
+    def _hex_pxls_to_human_readable(
+        ommatidia_reading, ommatidia_id_map, processed_image_flat
+    ):
+        hex_id_map_flat = ommatidia_id_map.flatten()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             if hex_pxl_id != -1:
-                hex_pxl_val = ommatidia_reading_scaled[hex_pxl_id, :].max()
-                processed_image_flat[i] = hex_pxl_val
-        return processed_image_flat.reshape(ommatidia_id_map.shape)
+                processed_image_flat[i, :] = ommatidia_reading[hex_pxl_id, :]
 
     @staticmethod
     @nb.njit(parallel=True)
     def _correct_fisheye(img, nrows, ncols, zoom, distortion_coefficient):
-        """Based on https://github.com/Gil-Mor/iFish, MIT License."""
+        """Based on https://github.com/Gil-Mor/iFish, MIT License, but
+        accelerated with Numba."""
         dst_img = np.zeros((nrows, ncols, 3), dtype="uint8")
 
         # easier to calculate if we traverse x, y in dst image
