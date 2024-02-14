@@ -171,8 +171,8 @@ class VisualTaxis(HybridTurningNMF):
             if render_res is not None:
                 # record visual inputs too because they will be played in the video
                 self.visual_inputs_hist.append(raw_obs["vision"].copy())
-        vision_input_mean = np.median(vision_inputs, axis=0)
-        visual_features = self._process_visual_observation(vision_input_mean)
+        median_vision_input = np.median(vision_inputs, axis=0)
+        visual_features = self._process_visual_observation(median_vision_input)
         return visual_features, 0, False, False, {}
 
     def _process_visual_observation(self, vision_input):
@@ -198,12 +198,12 @@ def calc_ipsilateral_speed(deviation, is_found):
     if not is_found:
         return 1.0
     else:
-        return np.clip(1 - deviation * 3, 0.2, 1.0)
+        return np.clip(1 - deviation * 3, 0.4, 1.2)
 
 
 if __name__ == "__main__":
-    obj_threshold = 0.15
-    decision_interval = 0.05
+    obj_threshold = 0.2
+    decision_interval = 0.025
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
@@ -223,6 +223,7 @@ if __name__ == "__main__":
         sim_params=sim_params,
         arena=arena,
         contact_sensor_placements=contact_sensor_placements,
+        intrinsic_freqs=np.ones(6) * 9,
     )
     check_env(nmf)
 
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     raw_visual_hist = []
 
     obs, _ = nmf.reset()
-    for i in trange(70):
+    for i in trange(140):
         left_deviation = 1 - obs[1]
         right_deviation = obs[4]
         left_found = obs[2] > 0.01
