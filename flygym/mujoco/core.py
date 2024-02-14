@@ -265,7 +265,7 @@ class NeuroMechFly(gym.Env):
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
-        xml: str = "mjcf_model",
+        xml_variant: Union[str, Path] = "seqik",
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
@@ -292,6 +292,15 @@ class NeuroMechFly(gym.Env):
         arena : flygym.mujoco.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
+        xml_variant: str or Path, optional
+            The variant of the fly model to use. Multiple variants exist
+            because when replaying experimentally recorded behavior, the
+            ordering of DoF angles in multi-DoF joints depends on how they
+            are configured in the upstream inverse kinematics program. Two
+            variants are provided: "seqik" (default) and "deepfly3d" (for
+            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+            The ordering of DoFs can be seen from the XML files under
+            ``flygym/data/mjcf/``.
         spawn_pos : Tuple[float, float, float], optional
             The (x, y, z) position in the arena defining where the fly
             will be spawn, in mm. By default (0, 0, 0.5).
@@ -416,9 +425,12 @@ class NeuroMechFly(gym.Env):
             self._camera_rot = np.eye(3)
 
         # Load NMF model
-        self.model = mjcf.from_path(
-            get_data_path("flygym", "data") / self._mujoco_config["paths"][xml]
-        )
+        if isinstance(xml_variant, str):
+            xml_variant = (
+                get_data_path("flygym", "data")
+                / self._mujoco_config["paths"]["mjcf"][xml_variant]
+            )
+        self.model = mjcf.from_path(xml_variant)
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes

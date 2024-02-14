@@ -44,7 +44,7 @@ class MovingObjArena(BaseArena):
         friction=(1, 0.005, 0.0001),
         obj_radius=1,
         init_ball_pos=(5, 0),
-        move_speed=9,
+        move_speed=10,
         move_direction="right",
     ):
         self.init_ball_pos = (*init_ball_pos, obj_radius)
@@ -162,18 +162,22 @@ class VisualTaxis(HybridTurningNMF):
         self.observation_space = spaces.Box(0, 1, shape=(6,))
 
     def step(self, control_signal):
+        vision_inputs = []
         for _ in range(self.num_substeps):
-            raw_obs, _, _, _, _ = super().step(control_signal)
+            raw_obs, _, _, _, info = super().step(control_signal)
+            if info["vision_updated"]:
+                vision_inputs.append(raw_obs["vision"])
             render_res = super().render()
             if render_res is not None:
                 # record visual inputs too because they will be played in the video
                 self.visual_inputs_hist.append(raw_obs["vision"].copy())
-        visual_features = self._process_visual_observation(raw_obs)
+        vision_input_mean = np.median(vision_inputs, axis=0)
+        visual_features = self._process_visual_observation(vision_input_mean)
         return visual_features, 0, False, False, {}
 
-    def _process_visual_observation(self, raw_obs):
+    def _process_visual_observation(self, vision_input):
         features = np.zeros((2, 3))
-        for i, ommatidia_readings in enumerate(raw_obs["vision"]):
+        for i, ommatidia_readings in enumerate(vision_input):
             is_obj = ommatidia_readings.max(axis=1) < self.obj_threshold
             is_obj_coords = self.coms[is_obj]
             if is_obj_coords.shape[0] > 0:
@@ -187,7 +191,7 @@ class VisualTaxis(HybridTurningNMF):
     def reset(self, seed=0, **kwargs):
         raw_obs, _ = super().reset(seed=seed)
         self.visual_inputs_hist = []
-        return self._process_visual_observation(raw_obs), {}
+        return self._process_visual_observation(raw_obs["vision"]), {}
 
 
 def calc_ipsilateral_speed(deviation, is_found):

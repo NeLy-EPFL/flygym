@@ -194,8 +194,9 @@ flip_detection:
   min_flip_duration: 0.05  # ignore possible flips shorter than this
 
 paths:
-  mjcf_model: mjcf/groundwalking_nmf_mjcf_nofloor_230518__bendTarsus_scaled.xml
-  mjcf_ikpy_model: mjcf/groundwalking_nmf_mjcf_nofloor_240125_bendTarsus_scaled_ikpyreferenceframe.xml
+  mjcf:
+    deepfly3d: mjcf/neuromechfly_untethered_deepfly3d.xml
+    seqik: mjcf/neuromechfly_untethered_seqik.xml
   ommatidia_id_map: vision/ommatidia_id_map.npy
   canonical_pale_type_mask: "vision/pale_mask.npy"
 
