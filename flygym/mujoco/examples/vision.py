@@ -33,9 +33,14 @@ class MovingObjArena(BaseArena):
         Initial position of the object, by default (0, 2, 1).
     move_direction : str
         Which way the ball moves toward first. Can be "left", "right", or
-        "random".
+        "random". By default "right".
     move_speed : float
-        Speed of the moving object.
+        Speed of the moving object. By default 10.
+    lateral_magnitude : float
+        Magnitude of the lateral movement of the object as a multiplier of
+        forward velocity. For example, when ``lateral_magnitude`` is 1, the
+        object moves at a heading (1, 1) when its movement is the most
+        lateral. By default 2.
     """
 
     def __init__(
@@ -46,6 +51,7 @@ class MovingObjArena(BaseArena):
         init_ball_pos=(5, 0),
         move_speed=10,
         move_direction="right",
+        lateral_magnitude=2,
     ):
         self.init_ball_pos = (*init_ball_pos, obj_radius)
         self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
@@ -53,6 +59,7 @@ class MovingObjArena(BaseArena):
         self.move_speed = move_speed
         self.curr_time = 0
         self.move_direction = move_direction
+        self.lateral_magnitude = lateral_magnitude
         if move_direction == "left":
             self.y_mult = 1
         elif move_direction == "right":
@@ -131,7 +138,9 @@ class MovingObjArena(BaseArena):
         return rel_pos, rel_angle
 
     def step(self, dt, physics):
-        heading_vec = np.array([1, 2 * np.cos(self.curr_time * 3) * self.y_mult])
+        heading_vec = np.array(
+            [1, self.lateral_magnitude * np.cos(self.curr_time * 3) * self.y_mult]
+        )
         heading_vec /= np.linalg.norm(heading_vec)
         self.ball_pos[:2] += self.move_speed * heading_vec * dt
         physics.bind(self.object_body).mocap_pos = self.ball_pos
