@@ -50,10 +50,6 @@ class BaseArena(ABC):
             Euler angle (rotation along x, y, z in radian) of the fly's
             orientation as supplied by the user (before any
             transformation).
-        *args
-            User defined arguments and keyword arguments.
-        **kwargs
-            User defined arguments and keyword arguments.
 
         Returns
         -------
