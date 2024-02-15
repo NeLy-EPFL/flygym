@@ -40,7 +40,7 @@ class HybridTurningNMF(NeuroMechFly):
         convergence_coefs=np.ones(6) * 20,
         init_phases=None,
         init_magnitudes=None,
-        stumble_segments=["Tibia", "Tarsus1", "Tarsus2"],
+        stumble_segments=("Tibia", "Tarsus1", "Tarsus2"),
         stumbling_force_threshold=-1,
         correction_vectors=_default_correction_vectors,
         correction_rates=_default_correction_rates,
