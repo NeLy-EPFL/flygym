@@ -262,12 +262,7 @@ class Retina:
                 src_col = int(((src_col_norm + 1) * ncols) / 2)
 
                 # if new pixel is in bounds copy from source pixel to destination pixel
-                if (
-                    0 <= src_row
-                    and src_row < nrows
-                    and 0 <= src_col
-                    and src_col < ncols
-                ):
+                if 0 <= src_row < nrows and 0 <= src_col < ncols:
                     dst_img[dst_row][dst_col] = img[src_row][src_col]
 
         return dst_img
