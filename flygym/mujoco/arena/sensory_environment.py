@@ -81,7 +81,8 @@ class OdorArena(BaseArena):
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
         marker_size: float = 0.25,
     ):
-        self.root_element = mjcf.RootElement()
+        super().__init__()
+
         ground_size = [*size, 1]
         chequered = self.root_element.asset.add(
             "texture",

@@ -20,7 +20,6 @@ class BaseArena(ABC):
 
     friction = (100.0, 0.005, 0.0001)
 
-    @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
         """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
@@ -186,7 +185,8 @@ class FlatTerrain(BaseArena):
         ground_alpha: float = 1.0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
-        self.root_element = mjcf.RootElement()
+        super().__init__()
+
         ground_size = [*size, 1]
         chequered = self.root_element.asset.add(
             "texture",
