@@ -101,7 +101,7 @@ the CPGs tutorial:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")

@@ -228,7 +228,7 @@ intrinsic frequencies and amplitudes.
     t = np.arange(num_steps) * network.timestep
     axs[0].plot(t, phase_hist % (2 * np.pi), linewidth=1)
     axs[0].set_yticks([0, np.pi, 2 * np.pi])
-    axs[0].set_yticklabels(["0", "$\pi$", "$2\pi$"])
+    axs[0].set_yticklabels(["0", r"$\pi$", r"$2\pi$"])
     axs[0].set_ylabel("Phase")
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
@@ -332,7 +332,7 @@ the time series of the state variables:
     t = np.arange(num_steps) * network.timestep
     axs[0].plot(t, phase_hist % (2 * np.pi), linewidth=1)
     axs[0].set_yticks([0, np.pi, 2 * np.pi])
-    axs[0].set_yticklabels(["0", "$\pi$", "$2\pi$"])
+    axs[0].set_yticklabels(["0", r"$\pi$", r"$2\pi$"])
     axs[0].set_ylabel("Phase")
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
@@ -437,7 +437,7 @@ visualize three stepping cycles for each leg:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -489,7 +489,7 @@ from 0 to 1:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -689,7 +689,7 @@ during stance):
     ax.set_yticks(-np.arange(6) * 1.5 + 0.5)
     ax.set_yticklabels(legs)
     ax.set_xticks(np.arange(5) * np.pi / 2)
-    ax.set_xticklabels(["0", "$\pi/2$", "$\pi$", "3$\pi$/2", "$2\pi$"])
+    ax.set_xticklabels(["0", r"$\pi/2$", r"$\pi$", r"3$\pi$/2", r"$2\pi$"])
     ax.set_xlabel("Phase")
     ax.set_ylabel("Adhesion on/off")
     fig.savefig("./outputs/adhesion_signal.png")
