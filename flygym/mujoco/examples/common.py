@@ -22,7 +22,7 @@ class PreprogrammedSteps:
         Neutral position of DoFs for each leg. Keys are leg names; values
         are joint angles in the order of ``self.dofs_per_leg``.
     swing_period : Dict[str, np.ndarray]
-        The start and end of the liftedswing phase for each leg. Keys are
+        The start and end of the lifted swing phase for each leg. Keys are
         leg names; values are arrays of shape (2,) with the start and end
         of the swing normalized to [0, 2π].
 

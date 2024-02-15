@@ -20,10 +20,10 @@ class Retina:
     num_pixels_per_ommatidia : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
         value of each element indicates the number of raw pixels covered
-        within each ommatidia.
+        within each ommatidium.
     pale_type_mask : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidia is pale-type
+        value of each element indicates whether the ommatidium is pale-type
         (1) or yellow-type (0).
     distortion_coefficient : float
         A coefficient determining the extent of fisheye effect applied to
@@ -46,7 +46,7 @@ class Retina:
         in the configuration file is loaded.
     pale_type_mask : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidia is pale-type
+        value of each element indicates whether the ommatidium is pale-type
         (1) or yellow-type (0). By default, the mask indicated in the
         configuration file is used.
     distortion_coefficient : float

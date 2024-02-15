@@ -21,7 +21,7 @@ _tripod_phase_biases = np.pi * np.array(
 _tripod_coupling_weights = (_tripod_phase_biases > 0) * 10
 
 _default_correction_vectors = {
-    # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Fimur_roll, Tibia, Tarsus1)
+    # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Femur_roll, Tibia, Tarsus1)
     "F": np.array([0, 0, 0, -0.02, 0, 0.016, 0]),
     "M": np.array([-0.015, 0, 0, 0.004, 0, 0.01, -0.008]),
     "H": np.array([0, 0, 0, -0.01, 0, 0.005, 0]),
