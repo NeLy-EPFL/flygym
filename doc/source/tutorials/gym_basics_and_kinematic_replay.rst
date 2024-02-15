@@ -31,7 +31,7 @@ computation into the MDP.
 | encapsulated as a MDP task. A user-defined controller interfaces with |
 | the task through actions (red) and observations (blue). The user can  |
 | extend the MDP task by adding preprogrammed processing routines for   |
-| sensory inputs (purple) and motor outputs (light blue), to modify the |
+| motor outputs (purple) and sensory inputs (light blue), to modify the |
 | action and observation spaces handled by the controller.*             |
 +-----------------------------------------------------------------------+
 
@@ -68,7 +68,7 @@ This process is illustrated in the following code snippet:
 .. code-block:: ipython3
     :linenos:
     
-    env = MyEnvironement(...)
+    env = MyEnvironment(...)
     obs, info = env.reset()
 
     for step in range(1000):    # let's simulate 1000 steps max
@@ -146,7 +146,7 @@ provided ``NeuroMechFly`` environment always returns False for both
 extending the ``NeuroMechFly`` class.
 
 Additionally, the ``step()`` method returns an ``info`` dictionary that
-contains arbitrary auxilliary information. The user can add any
+contains arbitrary auxiliary information. The user can add any
 information to this dictionary by extending the ``NeuroMechFly`` class.
 The provided ``NeuroMechFly`` contains the following keys and values in
 the **``info`` dictionary**:
