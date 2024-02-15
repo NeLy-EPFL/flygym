@@ -8,7 +8,7 @@ from flygym.mujoco.util import plot_mujoco_rollout
 
 
 def test_stretched_pose():
-    random_state = np.random.RandomState(0)
+    np.random.seed(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
@@ -35,7 +35,7 @@ def test_stretched_pose():
 def test_zero_pose():
     # The fly is spawn from high up, so it will not collide with the floor
     # Contact with the floor with straight leg zeros pose is strenuous on the physics
-    random_state = np.random.RandomState(0)
+    np.random.seed(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
@@ -60,7 +60,7 @@ def test_zero_pose():
 
 
 def test_tripod_pose():
-    random_state = np.random.RandomState(0)
+    np.random.seed(0)
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
