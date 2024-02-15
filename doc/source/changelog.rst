@@ -1,6 +1,7 @@
 Change Log
 ==========
 
+* **0.2.5:** Modify model file to make it compatible with MuJoCo 3.1.1. Disable Python 3.7 support accordingly.
 * **0.2.4:** Set MuJoCo version to 2.3.7. Documentation updates.
 * **0.2.3:** Various bug fixes. Improved placement of the spherical treadmill in the tethered environment.
 * **0.2.2:** Changed default joint kp and adhesion forces to those used in the controller comparison task. Various minor bug fixes. Documentation updates.

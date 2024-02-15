@@ -152,9 +152,9 @@ class Parameters:
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
-    actuator_kp: float = 30.0
-    tarsus_stiffness: float = 2.2
-    tarsus_damping: float = 0.05
+    actuator_kp: float = 50.0
+    tarsus_stiffness: float = 10.0
+    tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
     gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
     contact_solref: Tuple[float, float] = (2e-4, 1e3)
@@ -265,6 +265,7 @@ class NeuroMechFly(gym.Env):
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
+        xml_variant: Union[str, Path] = "seqik",
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
@@ -291,6 +292,15 @@ class NeuroMechFly(gym.Env):
         arena : flygym.mujoco.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
+        xml_variant: str or Path, optional
+            The variant of the fly model to use. Multiple variants exist
+            because when replaying experimentally recorded behavior, the
+            ordering of DoF angles in multi-DoF joints depends on how they
+            are configured in the upstream inverse kinematics program. Two
+            variants are provided: "seqik" (default) and "deepfly3d" (for
+            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+            The ordering of DoFs can be seen from the XML files under
+            ``flygym/data/mjcf/``.
         spawn_pos : Tuple[float, float, float], optional
             The (x, y, z) position in the arena defining where the fly
             will be spawn, in mm. By default (0, 0, 0.5).
@@ -415,9 +425,12 @@ class NeuroMechFly(gym.Env):
             self._camera_rot = np.eye(3)
 
         # Load NMF model
-        self.model = mjcf.from_path(
-            get_data_path("flygym", "data") / self._mujoco_config["paths"]["mjcf_model"]
-        )
+        if isinstance(xml_variant, str):
+            xml_variant = (
+                get_data_path("flygym", "data")
+                / self._mujoco_config["paths"]["mjcf"][xml_variant]
+            )
+        self.model = mjcf.from_path(xml_variant)
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes
@@ -1236,8 +1249,11 @@ class NeuroMechFly(gym.Env):
             Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
             Any additional information that is not part of the observation.
-            This is an empty dictionary by default but the user can
-            override this method to return additional information.
+            This is an empty dictionary by default (except when vision is
+            enabled; in this case a "vison_updated" boolean variable
+            indicates whether the visual input to the fly was refreshed at
+            this step) but the user can override this method to return
+            additional information.
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
@@ -1252,6 +1268,10 @@ class NeuroMechFly(gym.Env):
         terminated = self.is_terminated()
         truncated = self.is_truncated()
         info = self.get_info()
+        if self.sim_params.enable_vision:
+            vision_updated_this_step = self.curr_time == self._last_vision_update_time
+            self._vision_update_mask.append(vision_updated_this_step)
+            info["vision_updated"] = vision_updated_this_step
 
         if self.detect_flip:
             if observation["contact_forces"].sum() < 1:
@@ -1513,16 +1533,19 @@ class NeuroMechFly(gym.Env):
                     )
         return img
 
-    def _update_vision(self) -> np.ndarray:
+    def _update_vision(self) -> None:
+        """Check if the visual input needs to be updated (because the
+        vision update freq does not necessarily match the physics
+        simulation timestep). If needed, update the visual input of the fly
+        and buffer it to ``self._curr_raw_visual_input)``.
+        """
         vision_config = self._mujoco_config["vision"]
         next_render_time = (
             self._last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
         if self.curr_time + 0.5 * self.timestep < next_render_time:
-            self._vision_update_mask.append(False)
             return
-        self._vision_update_mask.append(True)
         raw_visual_input = []
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:

@@ -3,14 +3,14 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="0.2.4",
+    version="0.2.5",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
     packages=find_packages(),
     package_data={"flygym": ["data/*"], "flygym.mujoco": ["mujoco/config.yaml"]},
     include_package_data=True,
-    python_requires=">=3.7",
+    python_requires=">=3.8,<3.12",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
@@ -28,10 +28,11 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "mujoco": ["mujoco>=2.3.0,<3.0.0", "dm_control", "numba", "opencv-python"],
+        "mujoco": ["mujoco>=2.1.2", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
+            "sphinxcontrib.googleanalytics",
             "furo",
             "numpydoc",
             "pytest",
