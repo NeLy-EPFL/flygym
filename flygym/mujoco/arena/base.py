@@ -32,7 +32,7 @@ class BaseArena(ABC):
         """Given a relative entity spawn position and orientation (as if it
         was a simple flat terrain), return the adjusted position and
         orientation. This is useful for environments that have complex
-        terrain (eg. with obstacles) where the entity's spawn position
+        terrain (e.g. with obstacles) where the entity's spawn position
         needs to be shifted accordingly.
 
         For example, if the arena has flat terrain, this method can simply
@@ -121,14 +121,14 @@ class BaseArena(ABC):
         return 0
 
     def pre_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. make certain visualization markers
+        """Make necessary changes (e.g. make certain visualization markers
         transparent) before rendering the visual inputs. By default, this
         does nothing.
         """
         pass
 
     def post_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. make certain visualization markers
+        """Make necessary changes (e.g. make certain visualization markers
         opaque) after rendering the visual inputs. By default, this does
         nothing.
         """
@@ -136,8 +136,8 @@ class BaseArena(ABC):
 
     def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
         """Advance the arena by one step. This is useful for interactive
-        environments (eg. moving object). Typically, this method is called
-        from the core simulation class (eg. ``NeuroMechFly``).
+        environments (e.g. moving object). Typically, this method is called
+        from the core simulation class (e.g. ``NeuroMechFly``).
 
         Parameters
         ----------
@@ -148,7 +148,7 @@ class BaseArena(ABC):
             every time the simulation steps).
         physics : mjcf.Physics
             The physics object of the simulation. This is typically
-            provided by the core simulation class (eg.
+            provided by the core simulation class (e.g.
             ``NeuroMechFly.physics``) when the core simulation calls
             this method.
         *args

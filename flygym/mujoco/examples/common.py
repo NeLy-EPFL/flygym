@@ -13,7 +13,7 @@ class PreprogrammedSteps:
     Attributes
     ----------
     legs : List[str]
-        List of leg names (eg. LF for left front leg).
+        List of leg names (e.g. LF for left front leg).
     dofs_per_leg : List[str]
         List of names for degrees of freedom for each leg.
     duration : float

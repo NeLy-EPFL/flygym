@@ -1246,11 +1246,11 @@ class NeuroMechFly(gym.Env):
             The reward as defined by the environment.
         bool
             Whether the episode has terminated due to factors that are
-            defined within the Markov Decision Process (eg. task
+            defined within the Markov Decision Process (e.g. task
             completion/failure, etc.).
         bool
             Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (eg. time limit, etc.).
+            Markov Decision Process (e.g. time limit, etc.).
         Dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default (except when vision is
@@ -1724,7 +1724,7 @@ class NeuroMechFly(gym.Env):
 
     def is_terminated(self):
         """Whether the episode has terminated due to factors that are
-        defined within the Markov Decision Process (eg. task completion/
+        defined within the Markov Decision Process (e.g. task completion/
         failure, etc.). This method always returns False unless extended by
         the user.
 
@@ -1737,7 +1737,7 @@ class NeuroMechFly(gym.Env):
 
     def is_truncated(self):
         """Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (eg. time limit, etc). This method
+            Markov Decision Process (e.g. time limit, etc). This method
             always returns False unless extended by the user.
 
         Returns

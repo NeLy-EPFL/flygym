@@ -125,7 +125,7 @@ def save_video_with_vision_insets(
         raise ValueError(
             "Length of `visual_input_hist` must match the number of "
             "frames in the `NeuroMechFly` object. Save the visual input "
-            "every time a frame is rendered, ie. when `.render()` returns "
+            "every time a frame is rendered, i.e. when `.render()` returns "
             "a non-`None` value."
         )
 

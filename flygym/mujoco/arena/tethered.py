@@ -27,7 +27,7 @@ class Tethered(BaseArena):
     def spawn_entity(
         self, entity: Any, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> None:
-        """Add an entity (eg. the fly) to the arena.
+        """Add an entity (e.g. the fly) to the arena.
 
         Parameters
         ----------
