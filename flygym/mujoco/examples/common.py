@@ -49,7 +49,7 @@ class PreprogrammedSteps:
     ]
 
     def __init__(
-        self, path=None, neutral_pose_phases=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]
+        self, path=None, neutral_pose_phases=(np.pi, np.pi, np.pi, np.pi, np.pi, np.pi)
     ):
         if path is None:
             path = (
@@ -150,7 +150,7 @@ def plot_time_series_multi_legs(
     time_series_block,
     timestep,
     spacing=10,
-    legs=["LF", "LM", "LH", "RF", "RM", "RH"],
+    legs=("LF", "LM", "LH", "RF", "RM", "RH"),
     ax=None,
 ):
     """Plot a time series of scores for multiple legs.
