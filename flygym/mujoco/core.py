@@ -1763,13 +1763,13 @@ class NeuroMechFly(gym.Env):
                 info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
         return info
 
-    def save_video(self, path: Path, stabilization_time=0.02):
+    def save_video(self, path: Union[str, Path], stabilization_time=0.02):
         """Save rendered video since the beginning or the last ``reset()``,
         whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
         Parameters
         ----------
-        path : Path
+        path : str or Path
             Path to which the video should be saved.
         stabilization_time : float, optional
             Time (in seconds) to wait before starting to render the video.
