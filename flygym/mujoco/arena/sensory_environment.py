@@ -22,7 +22,7 @@ class OdorArena(BaseArena):
     odor_source : np.ndarray
         The position of the odor source in (x, y, z) coordinates. The shape
         of the array is (n_sources, 3).
-    peak_intensity : np.ndarray
+    peak_odor_intensity : np.ndarray
         The peak intensity of the odor source. The shape of the array is
         (n_sources, n_dimensions). Note that the odor intensity can be
         multidimensional.

@@ -54,7 +54,7 @@ class Ball(Tethered):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
+    root_element : mjcf.RootElement
         The arena object that the terrain is built on.
 
     Parameters

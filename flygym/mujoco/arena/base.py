@@ -9,7 +9,7 @@ class BaseArena(ABC):
 
     Attributes
     ----------
-    arena : Any
+    root_element : Any
         The arena object that the terrain is built on. Exactly what it
         is depends on the physics simulator.
     friction : Tuple [float]

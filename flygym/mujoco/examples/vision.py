@@ -29,13 +29,13 @@ class MovingObjArena(BaseArena):
         (1, 0.005, 0.0001)
     obj_radius : float
         Radius of the spherical floating object in mm.
-    obj_spawn_pos : Tuple[float,float,float]
-        Initial position of the object, by default (0, 2, 1).
+    init_ball_pos : Tuple[float,float]
+        Initial position of the object, by default (5, 0).
+    move_speed : float
+        Speed of the moving object. By default 10.
     move_direction : str
         Which way the ball moves toward first. Can be "left", "right", or
         "random". By default "right".
-    move_speed : float
-        Speed of the moving object. By default 10.
     lateral_magnitude : float
         Magnitude of the lateral movement of the object as a multiplier of
         forward velocity. For example, when ``lateral_magnitude`` is 1, the
