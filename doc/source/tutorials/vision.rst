@@ -494,7 +494,7 @@ Next, let’s implement the visual preprocessing logic discussed above:
            features[:, 0] /= self.retina.nrows  # normalize y_center
            features[:, 1] /= self.retina.ncols  # normalize x_center
            features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-           return features.flatten()
+           return features.ravel()
 
 In the ``step`` method, we will replace the raw observation with the
 output of the ``_process_visual_observation`` method. We will also

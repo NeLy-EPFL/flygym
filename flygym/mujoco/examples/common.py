@@ -143,7 +143,7 @@ class PreprogrammedSteps:
         action space of ``NeuroMechFly`` like the following:
         ``NeuroMechFly.step(action={"joints": preprogrammed_steps.default_pose})``.
         """
-        return np.concatenate([self.neutral_pos[leg] for leg in self.legs]).flatten()
+        return np.concatenate([self.neutral_pos[leg] for leg in self.legs]).ravel()
 
 
 def plot_time_series_multi_legs(
