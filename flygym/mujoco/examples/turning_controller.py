@@ -92,7 +92,7 @@ class HybridTurningNMF(NeuroMechFly):
     def _find_stumbling_sensor_indices(self):
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
         for i, sensor_name in enumerate(self.contact_sensor_placements):
-            leg = sensor_name.split("/")[1][:2]  # sensor_name: eg. "Animat/LFTarsus1"
+            leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
             segment = sensor_name.split("/")[1][2:]
             if segment in self.stumble_segments:
                 stumbling_sensors[leg].append(i)

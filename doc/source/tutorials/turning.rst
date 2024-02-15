@@ -42,7 +42,7 @@ of ``NeuroMechFly`` are as follows:
 
 The FlyGym package is designed to be expandable: the user can implement
 their own Gym environments with different action and observation spaces
-and implement different logics (eg. preprogrammed premotor computation
+and implement different logics (e.g. preprogrammed premotor computation
 and sensory processing). This is illustrated in the figure below:
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
@@ -278,7 +278,7 @@ did before. This time, we define it as a method of our new class:
        def _find_stumbling_sensor_indices(self):
            stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
            for i, sensor_name in enumerate(self.contact_sensor_placements):
-               leg = sensor_name.split("/")[1][:2]  # sensor_name: eg. "Animat/LFTarsus1"
+               leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
                segment = sensor_name.split("/")[1][2:]
                if segment in self.stumble_segments:
                    stumbling_sensors[leg].append(i)
