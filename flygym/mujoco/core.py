@@ -438,7 +438,7 @@ class NeuroMechFly(gym.Env):
         self._curr_raw_visual_input = None
         self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.sim_params.vision_refresh_rate
-        self._vision_update_mask = []
+        self._vision_update_mask: List[bool] = []
         if self.sim_params.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
