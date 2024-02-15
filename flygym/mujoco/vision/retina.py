@@ -217,7 +217,7 @@ class Retina:
     ):
         vals = np.zeros((len(num_pixels_per_ommatidia), 2))
         img_arr_flat = raw_img.reshape((-1, 3))
-        hex_id_map_flat = ommatidia_id_map.flatten()
+        hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
@@ -231,7 +231,7 @@ class Retina:
     def _hex_pxls_to_human_readable(
         ommatidia_reading, ommatidia_id_map, processed_image_flat
     ):
-        hex_id_map_flat = ommatidia_id_map.flatten()
+        hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             if hex_pxl_id != -1:

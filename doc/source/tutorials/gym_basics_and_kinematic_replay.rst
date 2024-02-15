@@ -234,7 +234,7 @@ We can visualize the time series of DoF angles:
         for side in ["Left", "Right"]
     ]
     for i, leg in enumerate(legs):
-        ax = axs.flatten()[i]
+        ax = axs.ravel()[i]
         leg_code = f"{leg.split()[0][0]}{leg.split()[1][0]}".upper()
         for j, dof in enumerate(actuated_joints):
             if dof.split("_")[1][:2] != leg_code:

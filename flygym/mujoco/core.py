@@ -1398,15 +1398,15 @@ class NeuroMechFly(gym.Env):
         """Highlight the tarsal segments of the leg having adhesion"""
         if np.any(self._last_adhesion == 1):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].flatten()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._active_adhesion].flatten()
+                self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
             ] = self._active_adhesion_rgba
         if np.any(self._last_adhesion == 0):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].flatten()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
             ] = self._base_rgba
         return
 

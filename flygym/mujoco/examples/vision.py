@@ -195,7 +195,7 @@ class VisualTaxis(HybridTurningNMF):
         features[:, 0] /= self.retina.nrows  # normalize y_center
         features[:, 1] /= self.retina.ncols  # normalize x_center
         features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-        return features.flatten().astype("float32")
+        return features.ravel().astype("float32")
 
     def reset(self, seed=0, **kwargs):
         raw_obs, _ = super().reset(seed=seed)

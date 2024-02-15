@@ -337,7 +337,7 @@ as formulated above:
                turning.
            """
            # update CPG parameters
-           amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).flatten()
+           amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
            freqs = self.intrinsic_freqs.copy()
            freqs[:3] *= 1 if action[0] > 0 else -1
            freqs[3:] *= 1 if action[1] > 0 else -1
