@@ -39,7 +39,6 @@ if __name__ == "__main__":
     simulation_time = 4900
     dt = 0.7
     arena_size = (120, 80)
-    # arena_size = (120, 120)
     inflow_pos = (5, 40)
     inflow_radius = 1
     inflow_scaler = 0.2

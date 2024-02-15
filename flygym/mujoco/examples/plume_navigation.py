@@ -21,7 +21,7 @@ class OdorPlumeArena(BaseArena):
     def __init__(
         self,
         plume_data_path: Optional[Path] = None,
-        dimension_scale_factor: float = 0.25,
+        dimension_scale_factor: float = 0.5,
         plume_simulation_fps: float = 100,
         intensity_scale_factor: float = 1.0,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
@@ -40,6 +40,7 @@ class OdorPlumeArena(BaseArena):
             raise NotImplementedError("TODO: download from some URL automatically")
         self.plume_data = np.load(plume_data_path)
         self.plume_grid = self.plume_data["plume"].copy()
+        print(self.plume_grid.shape, self.dimension_scale_factor)
         self.arena_size = (
             np.array(self.plume_grid.shape[1:])[::-1] * self.dimension_scale_factor
         )
@@ -64,22 +65,28 @@ class OdorPlumeArena(BaseArena):
         )
 
         # Add birdeye camera
-        # cam_fovy = 45
-        # cam_height = 1.1 * (self.arena_size[1] / 2) / np.tan(np.deg2rad(cam_fovy / 2))
+        # cam_fovy = 30
+        # cam_pitch = np.deg2rad(60)
+        # cam_height = 1.1 * (self.arena_size[1] / 2) * np.tan(cam_pitch)
+        # print(cam_height)
         # self.birdeye_cam = self.root_element.worldbody.add(
         #     "camera",
         #     name="birdeye_cam",
         #     mode="fixed",
         #     pos=(self.arena_size[0] / 2, self.arena_size[1] / 2 - 40, cam_height),
-        #     euler=(0.2, 0, 0),
-        #     fovy=60,  # cam_fovy,
+        #     euler=(cam_pitch, 0, 0),
+        #     fovy=cam_fovy,
         # )
         self.birdeye_cam = self.root_element.worldbody.add(
             "camera",
             name="birdeye_cam",
             mode="fixed",
-            pos=(self.arena_size[0] / 2, -10, 80),
-            euler=(np.deg2rad(30), 0, 0),
+            pos=(
+                0.50 * self.arena_size[0],
+                0.15 * self.arena_size[1],
+                1.00 * self.arena_size[1],
+            ),
+            euler=(np.deg2rad(15), 0, 0),
             fovy=60,
         )
 
@@ -139,7 +146,8 @@ class OdorPlumeArena(BaseArena):
 
     def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:
         """
-        Returns the olfactory input for the given antennae positions
+        Returns the olfactory input for the given antennae positions. If
+        the fly is outside the plume simulation grid, returns np.nan.
         """
         frame_num = int(self.curr_time * self.plume_simulation_fps)
         assert self.num_sensors == antennae_pos.shape[0]
@@ -148,7 +156,15 @@ class OdorPlumeArena(BaseArena):
             x_mm, y_mm, _ = antennae_pos[i_sensor, :]
             x_idx = int(x_mm / self.dimension_scale_factor)
             y_idx = int(y_mm / self.dimension_scale_factor)
-            intensities[0, i_sensor] = self.plume_grid[frame_num, y_idx, x_idx]
+            if (
+                x_idx < 0
+                or y_idx < 0
+                or x_idx >= self.plume_grid.shape[2]
+                or y_idx >= self.plume_grid.shape[1]
+            ):
+                intensities[0, i_sensor] = np.nan
+            else:
+                intensities[0, i_sensor] = self.plume_grid[frame_num, y_idx, x_idx]
         return intensities * self.intensity_scale_factor
 
     @property
@@ -220,7 +236,9 @@ class PlumeNavigationController(HybridTurningNMF):
         res = np.clip(res - plume_img * 255, 0, 255).astype(np.uint8)
 
         # Add intensity indicator
-        obs = self.get_observation()
+        # odor_intensity = self.get_observation()["odor_intensity"]
+        # if np.isnan(odor_intensity).any():
+        #     return res
         mean_intensity = obs["odor_intensity"].mean()
         mean_intensity_relative = np.clip(
             mean_intensity / self._intensity_display_vmax, 0, 1
@@ -234,6 +252,12 @@ class PlumeNavigationController(HybridTurningNMF):
         # Replace recorded image with modified one
         self._frames[-1] = res
         return res
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = super().step(action)
+        if np.isnan(obs["odor_intensity"]).any():
+            truncated = True
+        return obs, reward, terminated, truncated, info
 
 
 @njit(parallel=True)
@@ -272,7 +296,7 @@ if __name__ == "__main__":
     sim = PlumeNavigationController(
         sim_params=sim_params,
         arena=arena,
-        spawn_pos=(arena.arena_size[1] - 30, arena.arena_size[1] / 2 + 10, 0.2),
+        spawn_pos=(arena.arena_size[0] * 0.75, arena.arena_size[1] / 2, 0.2),
         spawn_orientation=(0, 0, -pi / 2),
         contact_sensor_placements=contact_sensor_placements,
     )
@@ -286,7 +310,9 @@ if __name__ == "__main__":
     odor_history = []
     obs, _ = sim.reset()
     for i in trange(int(run_time / sim_params.timestep)):
-        obs, _, _, _, _ = sim.step(np.array([1, 1]))
+        obs, reward, terminated, truncated, info = sim.step(np.array([1, 1]))
+        if terminated or truncated:
+            break
         rendered_img = sim.render()
         if rendered_img is not None:
             import cv2
