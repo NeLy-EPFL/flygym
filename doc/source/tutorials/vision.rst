@@ -158,7 +158,7 @@ observation:
     Data type: float32
 
 
-This gives us a (2, 722, 2) array representing the light intensities
+This gives us a (2, 721, 2) array representing the light intensities
 sensed by the ommatidia. The values are normalized to [0, 1]. The first
 dimension is for the two eyes (left and right in that order). The second
 dimension is for the 721 ommatidia per eye. The third dimension is for

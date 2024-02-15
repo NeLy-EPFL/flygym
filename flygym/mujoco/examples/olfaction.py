@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # Odor source: array of shape (num_odor_sources, 3) - xyz coords of odor sources
     odor_source = np.array([[24, 0, 1.5], [8, -4, 1.5], [16, 4, 1.5]])
 
-    # Peak intensities: array of shape (num_odor_sources, odor_dimesions)
+    # Peak intensities: array of shape (num_odor_sources, odor_dimensions)
     # For each odor source, if the intensity is (x, 0) then the odor is in the 1st
     # dimension (in this case attractive). If it's (0, x) then it's in the 2nd dimension
     # (in this case aversive)
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     marker_colors = [[255, 127, 14], [31, 119, 180], [31, 119, 180]]
     marker_colors = np.array([[*np.array(color) / 255, 1] for color in marker_colors])
 
-    odor_dimesions = len(peak_intensity[0])
+    odor_dimensions = len(peak_intensity[0])
 
     arena = OdorArena(
         odor_source=odor_source,
