@@ -50,7 +50,7 @@ class Tethered(BaseArena):
 
 
 class Ball(Tethered):
-    """Fly tethered on a spherical threadmill.
+    """Fly tethered on a spherical treadmill.
 
     Attributes
     ----------

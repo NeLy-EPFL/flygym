@@ -32,7 +32,7 @@ class OdorArena(BaseArena):
         Dimension of the odor space.
     diffuse_func : Callable
         The function that, given a distance from the odor source, returns
-        the relative intensity of the odor. By default, this is a inverse
+        the relative intensity of the odor. By default, this is an inverse
         square relationship.
     birdeye_cam : dm_control.mujoco.Camera
         MuJoCo camera that gives a birdeye view of the arena.
@@ -59,7 +59,7 @@ class OdorArena(BaseArena):
         multidimensional.
     diffuse_func : Callable, optional
         The function that, given a distance from the odor source, returns
-        the relative intensity of the odor. By default, this is a inverse
+        the relative intensity of the odor. By default, this is an inverse
         square relationship.
     marker_colors : List[Tuple[float, float, float, float]], optional
         A list of n_sources RGBA values (each as a tuple) indicating the
@@ -153,7 +153,7 @@ class OdorArena(BaseArena):
                 "geom", type="capsule", size=(marker_size, marker_size), rgba=rgba
             )
 
-        # Reshape odor source and peak intensity arrays to simplify future claculations
+        # Reshape odor source and peak intensity arrays to simplify future calculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(
             _odor_source_repeated, self.odor_dimensions, axis=1
@@ -185,14 +185,14 @@ class OdorArena(BaseArena):
         Input - odor source position: [n, 3]
         Input - sensor positions: [w, 3]
         Input - peak intensity: [n, k]
-        Input - difusion function: f(dist)
+        Input - diffusion function: f(dist)
 
         Reshape sources to S = [n, k*, w*, 3] (* means repeated)
         Reshape sensor position to A = [n*, k*, w, 3] (* means repeated)
-        Subtract, getting an Delta = [n, k, w, 3] array of rel difference
-        Calculate Euclidean disctance: D = [n, k, w]
+        Subtract, getting a Delta = [n, k, w, 3] array of rel difference
+        Calculate Euclidean distance: D = [n, k, w]
 
-        Apply pre-integrated difusion function: S = f(D) -> [n, k, w]
+        Apply pre-integrated diffusion function: S = f(D) -> [n, k, w]
         Reshape peak intensities to P = [n, k, w*]
         Apply scaling: I = P * S -> [n, k, w] element wise
 
