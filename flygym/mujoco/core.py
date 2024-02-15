@@ -741,7 +741,7 @@ class NeuroMechFly(gym.Env):
         True and the camera is within the animat and not a head camera, the
         z position will be fixed to avoid oscillations. If
         self.sim_params.camera_follows_fly_orientation is True, the camera
-        will be rotated to follow the fly orientation (i.e the front camera
+        will be rotated to follow the fly orientation (i.e. the front camera
         will always be in front of the fly).
         """
 
@@ -1737,7 +1737,7 @@ class NeuroMechFly(gym.Env):
 
     def is_truncated(self):
         """Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (e.g. time limit, etc). This method
+            Markov Decision Process (e.g. time limit, etc.). This method
             always returns False unless extended by the user.
 
         Returns
