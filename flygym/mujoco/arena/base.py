@@ -9,18 +9,17 @@ class BaseArena(ABC):
 
     Attributes
     ----------
-    arena : Any
+    root_element : Any
         The arena object that the terrain is built on. Exactly what it
         is depends on the physics simulator.
     friction : Tuple [float]
         Default sliding, torsional, and rolling friction coefficients of
-        surfaces. This is provided for the user's convinience but can be
-        overriden for either all or some surfaces.
+        surfaces. This is provided for the user's convenience but can be
+        overridden for either all or some surfaces.
     """
 
     friction = (100.0, 0.005, 0.0001)
 
-    @abstractmethod
     def __init__(self, *args: List, **kwargs: Dict):
         """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
@@ -30,14 +29,14 @@ class BaseArena(ABC):
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Given a relative entity spawn position and orientation (as if it
-        was a simple flat terrain), return the abjusted position and
+        was a simple flat terrain), return the adjusted position and
         orientation. This is useful for environments that have complex
-        terrain (eg. with obstacles) where the entity's spawn position
+        terrain (e.g. with obstacles) where the entity's spawn position
         needs to be shifted accordingly.
 
         For example, if the arena has flat terrain, this method can simply
         return ``rel_pos``, ``rel_angle`` unchanged (as is the case by
-        default). If there is are featues on the ground that are 0.1 mm in
+        default). If there is are features on the ground that are 0.1 mm in
         height, then this method should return ``rel_pos + [0, 0, 0.1],
         rel_angle``.
 
@@ -50,18 +49,14 @@ class BaseArena(ABC):
             Euler angle (rotation along x, y, z in radian) of the fly's
             orientation as supplied by the user (before any
             transformation).
-        *args
-            User defined arguments and keyword arguments.
-        **kwargs
-            User defined arguments and keyword arguments.
 
         Returns
         -------
         np.ndarray
             Adjusted (x, y, z) position of the entity.
         np.ndarray
-            Adjusted euler angle (rotation along x, y, z in raidan) of the
-            fly's oreintation.
+            Adjusted euler angles (rotations along x, y, z in radian) of the
+            fly's orientation.
         """
         pass
 
@@ -95,14 +90,14 @@ class BaseArena(ABC):
             The Cartesian coordinates of the antennae of the fly as a
             (n, 3) NumPy array where n is the number of sensors (usually
             n=4: 2 antennae + 2 maxillary palps), and the second dimension
-            gives the corrdinates in (x, y, z).
+            gives the coordinates in (x, y, z).
 
         Returns
         -------
         np.ndarray
             The odor intensity readings from the environment as a (k, n)
             NumPy array where k is the dimension of the odor signal and n
-            is the number of odor sensors (usally n=4: 2 antennae + 2
+            is the number of odor sensors (usually n=4: 2 antennae + 2
             maxillary palps).
         """
         return np.zeros((0, 2))
@@ -111,7 +106,7 @@ class BaseArena(ABC):
     def odor_dimensions(self) -> int:
         """The dimension of the odor signal. This can be used to emulate
         multiple monomolecular chemical concentrations or multiple
-        composite ordor intensities.
+        composite odor intensities.
 
         Returns
         -------
@@ -121,14 +116,14 @@ class BaseArena(ABC):
         return 0
 
     def pre_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. make certain visualization markers
+        """Make necessary changes (e.g. make certain visualization markers
         transparent) before rendering the visual inputs. By default, this
         does nothing.
         """
         pass
 
     def post_visual_render_hook(self, physics: mjcf.Physics, *args, **kwargs) -> None:
-        """Make necessary changes (eg. make certain visualization markers
+        """Make necessary changes (e.g. make certain visualization markers
         opaque) after rendering the visual inputs. By default, this does
         nothing.
         """
@@ -136,8 +131,8 @@ class BaseArena(ABC):
 
     def step(self, dt: float, physics: mjcf.Physics, *args, **kwargs) -> None:
         """Advance the arena by one step. This is useful for interactive
-        environments (eg. moving object). Typically, this method is called
-        from the core simulation class (eg. ``NeuroMechFly``).
+        environments (e.g. moving object). Typically, this method is called
+        from the core simulation class (e.g. ``NeuroMechFly``).
 
         Parameters
         ----------
@@ -148,7 +143,7 @@ class BaseArena(ABC):
             every time the simulation steps).
         physics : mjcf.Physics
             The physics object of the simulation. This is typically
-            provided by the core simulation class (eg.
+            provided by the core simulation class (e.g.
             ``NeuroMechFly.physics``) when the core simulation calls
             this method.
         *args
@@ -190,7 +185,8 @@ class FlatTerrain(BaseArena):
         ground_alpha: float = 1.0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
-        self.root_element = mjcf.RootElement()
+        super().__init__()
+
         ground_size = [*size, 1]
         chequered = self.root_element.asset.add(
             "texture",

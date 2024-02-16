@@ -13,7 +13,7 @@ class PreprogrammedSteps:
     Attributes
     ----------
     legs : List[str]
-        List of leg names (eg. LF for left front leg).
+        List of leg names (e.g. LF for left front leg).
     dofs_per_leg : List[str]
         List of names for degrees of freedom for each leg.
     duration : float
@@ -22,7 +22,7 @@ class PreprogrammedSteps:
         Neutral position of DoFs for each leg. Keys are leg names; values
         are joint angles in the order of ``self.dofs_per_leg``.
     swing_period : Dict[str, np.ndarray]
-        The start and end of the liftedswing phase for each leg. Keys are
+        The start and end of the lifted swing phase for each leg. Keys are
         leg names; values are arrays of shape (2,) with the start and end
         of the swing normalized to [0, 2π].
 
@@ -49,7 +49,7 @@ class PreprogrammedSteps:
     ]
 
     def __init__(
-        self, path=None, neutral_pose_phases=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]
+        self, path=None, neutral_pose_phases=(np.pi, np.pi, np.pi, np.pi, np.pi, np.pi)
     ):
         if path is None:
             path = (
@@ -143,14 +143,14 @@ class PreprogrammedSteps:
         action space of ``NeuroMechFly`` like the following:
         ``NeuroMechFly.step(action={"joints": preprogrammed_steps.default_pose})``.
         """
-        return np.concatenate([self.neutral_pos[leg] for leg in self.legs]).flatten()
+        return np.concatenate([self.neutral_pos[leg] for leg in self.legs]).ravel()
 
 
 def plot_time_series_multi_legs(
     time_series_block,
     timestep,
     spacing=10,
-    legs=["LF", "LM", "LH", "RF", "RM", "RH"],
+    legs=("LF", "LM", "LH", "RF", "RM", "RH"),
     ax=None,
 ):
     """Plot a time series of scores for multiple legs.
@@ -182,7 +182,7 @@ def plot_time_series_multi_legs(
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 3), tight_layout=True)
     for i in range(len(legs)):
-        ax.axhline(offset.flatten()[i], color="k", linewidth=0.5)
+        ax.axhline(offset.ravel()[i], color="k", linewidth=0.5)
         ax.plot(t_grid, score_hist_viz[:, i])
     ax.set_yticks(offset[0], legs)
     ax.set_xlabel("Time (s)")
