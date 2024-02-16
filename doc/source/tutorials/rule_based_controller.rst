@@ -495,7 +495,7 @@ phases and stepping likelihood scores over time:
         if ax is None:
             fig, ax = plt.subplots(figsize=(8, 3), tight_layout=True)
         for i in range(len(legs)):
-            ax.axhline(offset.ravel()[i], color="k", linewidth=0.5)
+            ax.axhline(offset.flatten()[i], color="k", linewidth=0.5)
             ax.plot(t_grid, score_hist_viz[:, i])
         ax.set_yticks(offset[0], legs)
         ax.set_xlabel("Time (s)")

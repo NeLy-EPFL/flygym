@@ -174,7 +174,7 @@ def construct_rules_graph():
 
 def run_rule_based_simulation(nmf, controller, run_time):
     obs, info = nmf.reset()
-    for _ in trange(int(run_time / nmf.sim_params.timestep)):
+    for i in trange(int(run_time / nmf.sim_params.timestep)):
         controller.step()
         joint_angles = []
         adhesion_onoff = []

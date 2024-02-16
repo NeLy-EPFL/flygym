@@ -35,9 +35,9 @@ class CPGNetwork:
         ----------
         timestep : float
             The timestep of the simulation.
-        intrinsic_freqs : np.ndarray
+        intrinsic_frequencies : np.ndarray
             The intrinsic frequencies of the oscillators, shape (N,).
-        intrinsic_amps : np.ndarray
+        intrinsic_amplitudes : np.ndarray
             The intrinsic amplitude of the oscillators, shape (N,).
         coupling_weights : np.ndarray
             The coupling weights between the oscillators, shape (N, N).

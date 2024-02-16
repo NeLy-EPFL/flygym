@@ -4,7 +4,7 @@ Installation
 
 .. note:: 
 
-   Check special instructions at the bottom of this page if you want to run FlyGym on a machine without a display (e.g. a server).
+   Check special instructions at the bottom of this page if you want to run FlyGym on a machine without a display (eg. a server).
 
 
 Installation via PyPI 
