@@ -39,7 +39,7 @@ def test_check_env_vision():
 
 def test_check_env_olfaction():
     sim_params = Parameters(enable_vision=False, enable_olfaction=True)
-    arena = OdorArena(odor_source=[[10, 0, 0]], peak_intensity=[[1, 2]])
+    arena = OdorArena(odor_source=[[10, 0, 0]], peak_odor_intensity=[[1, 2]])
     nmf = NeuroMechFly(sim_params=sim_params, arena=arena)
     # Override action space so joint control signals are reasonably bound. Otherwise
     # the physics might become invalid
