@@ -9,7 +9,7 @@ from flygym.mujoco.util import load_config
 from flygym.mujoco.vision import visualize_visual_input
 
 
-np.random.seed(0)
+random_state = np.random.RandomState(0)
 
 
 @pytest.mark.skip(

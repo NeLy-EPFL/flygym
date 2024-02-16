@@ -43,7 +43,7 @@ Contributing to the codebase
 2. Create a fork from the ``develop`` branch.
 
    - Either work on the develop branch or create a new branch (recommended if tackling multiple issues at a time).
-   - If creating a branch, use your name followed by a relevant keyword for your changes, e.g.: ``git checkout -b john/some_issue``
+   - If creating a branch, use your name followed by a relevant keyword for your changes, eg: ``git checkout -b john/some_issue``
 
 3. Make some changes/additions to the source code that tackle the issue(s).
 4. Write `tests <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/mujoco/tests>`_.

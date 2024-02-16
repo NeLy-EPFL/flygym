@@ -36,11 +36,11 @@ def get_preprogrammed_pose(pose: str) -> KinematicPose:
     poses are:
 
     - "stretch": all legs are fully extended sideways to ensure that the
-      legs are not embedded into the ground upon initialization, which
+      legs are not embeded into the ground upon initialization, which
       breaks the physics. This is the suggested initial pose.
     - "tripod": a snapshot of a tethered fly walking in a tripod gait.
     - "zero": the zero pose of the NeuroMechFly model. Not that the fly
-      should be spawned significantly above the ground to ensure that the
+      should be spawn significantly above the ground to insure that the
       legs are not extended into the ground upon initialization.
     """
     data_path = get_data_path("flygym", "data") / "pose" / f"pose_{pose}.yaml"

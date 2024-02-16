@@ -121,7 +121,7 @@ class Parameters:
         False.
     draw_contacts : bool
         If True, arrows will be drawn to indicate contact forces between
-        the legs and the ground. By default False.
+        the legs and the ground. By default Fasle.
     decompose_contacts : bool
         If True, the arrows visualizing contact forces will be decomposed
         into x-y-z components. By default True.
@@ -134,7 +134,7 @@ class Parameters:
     contact_threshold : float
         The threshold for contact detection in mN (forces below this
         magnitude will be ignored). By default 0.1.
-    draw_gravity : bool
+    draw_gravtiy : bool
         If True, an arrow will be drawn indicating the direction of
         gravity. This is useful during climbing simulations. By default
         False.
@@ -143,7 +143,7 @@ class Parameters:
         gravity. By default 0.0001.
     align_camera_with_gravity : bool
         If True, the camera will be rotated such that gravity points down.
-        This is useful during climbing simulations. By default False.
+        This is usful during climbing simulations. By default False.
     camera_follows_fly_orientation: bool
         If True, the camera will be rotated so that it aligns with the fly's
         orientation. By default False.
@@ -204,7 +204,7 @@ class NeuroMechFly(gym.Env):
         Directory to save simulation data.
     arena : flygym.arena.BaseWorld
         The arena in which the fly is placed.
-    spawn_pos : Tuple[float, float, float], optional
+    spawn_pos : Tuple[froot_elementloat, float, float], optional
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
     spawn_orientation : Tuple[float, float, float, float], optional
@@ -228,7 +228,7 @@ class NeuroMechFly(gym.Env):
         achieved by checking whether the leg tips are free of any contact
         for a duration defined in the configuration file. Flip detection is
         disabled for a period of time at the beginning of the simulation as
-        defined in the configuration file. This avoids spurious detection
+        defined in the configuration file. This avoid spurious detection
         when the fly is not standing reliably on the ground yet.
     retina : flygym.mujoco.vision.Retina
         The retina simulation object used to render the fly's visual
@@ -253,7 +253,7 @@ class NeuroMechFly(gym.Env):
         size is the same as the number of simulation time steps, indicates
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
-        repetitions of the previous updated visual input frames.
+        repititions of the previous updated visual input frames.
     """
 
     _mujoco_config = util.load_config()
@@ -308,7 +308,7 @@ class NeuroMechFly(gym.Env):
             The spawn orientation of the fly in the Euler angle format:
             (x, y, z), where x, y, z define the rotation around x, y and
             z in radian. By default (0.0, 0.0, pi/2), which leads to a
-            position facing the positive direction of the x-axis.
+            position facing the positive direction of the x axis.
         control : str, optional
             The joint controller type. Can be "position", "velocity", or
             "torque", by default "position".
@@ -330,7 +330,7 @@ class NeuroMechFly(gym.Env):
             of any contact for a duration defined in the configuration
             file. Flip detection is disabled for a period of time at the
             beginning of the simulation as defined in the configuration
-            file. This avoids spurious detection when the fly is not
+            file. This avoid spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
         """
         if sim_params is None:
@@ -346,7 +346,7 @@ class NeuroMechFly(gym.Env):
         self.output_dir = output_dir
         self.arena = arena
         self.spawn_pos = spawn_pos
-        # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
+        # convert to mujoco orientation format [0, 0, 0] would orient along the x axis
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for
         # spawn_orient = [0, 0, 0]
         self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
@@ -438,7 +438,7 @@ class NeuroMechFly(gym.Env):
         self._curr_raw_visual_input = None
         self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.sim_params.vision_refresh_rate
-        self._vision_update_mask: List[bool] = []
+        self._vision_update_mask = []
         if self.sim_params.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -741,7 +741,7 @@ class NeuroMechFly(gym.Env):
         True and the camera is within the animat and not a head camera, the
         z position will be fixed to avoid oscillations. If
         self.sim_params.camera_follows_fly_orientation is True, the camera
-        will be rotated to follow the fly orientation (i.e. the front camera
+        will be rotated to follow the fly orientation (i.e the front camera
         will always be in front of the fly).
         """
 
@@ -1246,15 +1246,15 @@ class NeuroMechFly(gym.Env):
             The reward as defined by the environment.
         bool
             Whether the episode has terminated due to factors that are
-            defined within the Markov Decision Process (e.g. task
-            completion/failure, etc.).
+            defined within the Markov Decision Process (eg. task
+            completion/failure, etc).
         bool
             Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (e.g. time limit, etc.).
+            Markov Decision Process (eg. time limit, etc).
         Dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default (except when vision is
-            enabled; in this case a "vision_updated" boolean variable
+            enabled; in this case a "vison_updated" boolean variable
             indicates whether the visual input to the fly was refreshed at
             this step) but the user can override this method to return
             additional information.
@@ -1398,20 +1398,20 @@ class NeuroMechFly(gym.Env):
         """Highlight the tarsal segments of the leg having adhesion"""
         if np.any(self._last_adhesion == 1):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].flatten()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
+                self._leg_adhesion_drawing_segments[self._active_adhesion].flatten()
             ] = self._active_adhesion_rgba
         if np.any(self._last_adhesion == 0):
             self.physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].flatten()
             ] = self._base_rgba
         return
 
     def _draw_gravity(self, img: np.ndarray) -> np.ndarray:
-        """Draw gravity as an arrow. The arrow is drawn at the top right of the frame."""
+        """Draw gravity as an arrow. The arrow is drown at the top right of the frame."""
 
         camera_matrix = self._dm_camera.matrix
 
@@ -1445,8 +1445,8 @@ class NeuroMechFly(gym.Env):
         return img
 
     def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
-        """Draw contacts as arrow which length is proportional to the force
-        magnitude. The arrow is drawn at the center of the body. It uses the
+        """Draw contacts as arrow wich length is proportional to the force
+        magnitude. The arrow is drown at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
         contact_forces = np.linalg.norm(self._last_contact_force, axis=1)
         contact_indexes = np.nonzero(
@@ -1541,7 +1541,7 @@ class NeuroMechFly(gym.Env):
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
-        and buffer it to ``self._curr_raw_visual_input``.
+        and buffer it to ``self._curr_raw_visual_input)``.
         """
         vision_config = self._mujoco_config["vision"]
         next_render_time = (
@@ -1593,7 +1593,7 @@ class NeuroMechFly(gym.Env):
         size is the same as the number of simulation time steps, indicates
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
-        repetitions of the previous updated visual input frames.
+        repititions of the previous updated visual input frames.
         """
         return np.array(self._vision_update_mask)
 
@@ -1635,12 +1635,12 @@ class NeuroMechFly(gym.Env):
         if self.sim_params.draw_gravity:
             self._last_fly_pos = cart_pos
 
-        # contact forces from crf_ext (first three components are rotational)
+        # contact forces from crf_ext (first three componenents are rotational)
         contact_forces = self.physics.named.data.cfrc_ext[
             self.contact_sensor_placements
         ][:, 3:].copy()
         if self.sim_params.enable_adhesion:
-            # Adhesion inputs force in the contact. Let's compute this force
+            # Adhesion inputs force in the contact. Lets compute this force
             # and remove it from the contact forces
             contactid_normal = {}
             self._active_adhesion = np.zeros(self.n_legs, dtype=bool)
@@ -1677,7 +1677,7 @@ class NeuroMechFly(gym.Env):
                         self.sim_params.adhesion_force * normal
                     )
 
-        # if draw contacts same last contact forces and positions
+        # if draw contacts same last contact forces and positiions
         if self.sim_params.draw_contacts:
             self._last_contact_force = contact_forces
             self._last_contact_pos = (
@@ -1724,8 +1724,8 @@ class NeuroMechFly(gym.Env):
 
     def is_terminated(self):
         """Whether the episode has terminated due to factors that are
-        defined within the Markov Decision Process (e.g. task completion/
-        failure, etc.). This method always returns False unless extended by
+        defined within the Markov Decision Process (eg. task completion/
+        failure, etc). This method always returns False unless extended by
         the user.
 
         Returns
@@ -1737,7 +1737,7 @@ class NeuroMechFly(gym.Env):
 
     def is_truncated(self):
         """Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (e.g. time limit, etc.). This method
+            Markov Decision Process (eg. time limit, etc). This method
             always returns False unless extended by the user.
 
         Returns
@@ -1763,13 +1763,13 @@ class NeuroMechFly(gym.Env):
                 info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
         return info
 
-    def save_video(self, path: Union[str, Path], stabilization_time=0.02):
+    def save_video(self, path: Path, stabilization_time=0.02):
         """Save rendered video since the beginning or the last ``reset()``,
         whichever is the latest. Only useful if ``render_mode`` is 'saved'.
 
         Parameters
         ----------
-        path : str or Path
+        path : Path
             Path to which the video should be saved.
         stabilization_time : float, optional
             Time (in seconds) to wait before starting to render the video.
