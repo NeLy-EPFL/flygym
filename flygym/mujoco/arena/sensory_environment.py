@@ -53,7 +53,7 @@ class OdorArena(BaseArena):
     odor_source : np.ndarray, optional
         The position of the odor source in (x, y, z) coordinates. The shape
         of the array is (n_sources, 3).
-    peak_intensity : np.ndarray, optional
+    peak_odor_intensity : np.ndarray, optional
         The peak intensity of the odor source. The shape of the array is
         (n_sources, n_dimensions). Note that the odor intensity can be
         multidimensional.
@@ -76,7 +76,7 @@ class OdorArena(BaseArena):
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
-        peak_intensity: np.ndarray = np.array([[1]]),
+        peak_odor_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
         marker_size: float = 0.25,
@@ -111,7 +111,7 @@ class OdorArena(BaseArena):
         self.friction = friction
         self.num_sensors = num_sensors
         self.odor_source = np.array(odor_source)
-        self.peak_odor_intensity = np.array(peak_intensity)
+        self.peak_odor_intensity = np.array(peak_odor_intensity)
         self.num_odor_sources = self.odor_source.shape[0]
         if self.odor_source.shape[0] != self.peak_odor_intensity.shape[0]:
             raise ValueError(
