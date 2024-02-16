@@ -29,13 +29,13 @@ class MovingObjArena(BaseArena):
         (1, 0.005, 0.0001)
     obj_radius : float
         Radius of the spherical floating object in mm.
-    obj_spawn_pos : Tuple[float,float,float]
-        Initial position of the object, by default (0, 2, 1).
+    init_ball_pos : Tuple[float,float]
+        Initial position of the object, by default (5, 0).
+    move_speed : float
+        Speed of the moving object. By default 10.
     move_direction : str
         Which way the ball moves toward first. Can be "left", "right", or
         "random". By default "right".
-    move_speed : float
-        Speed of the moving object. By default 10.
     lateral_magnitude : float
         Magnitude of the lateral movement of the object as a multiplier of
         forward velocity. For example, when ``lateral_magnitude`` is 1, the
@@ -195,7 +195,7 @@ class VisualTaxis(HybridTurningNMF):
         features[:, 0] /= self.retina.nrows  # normalize y_center
         features[:, 1] /= self.retina.ncols  # normalize x_center
         features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-        return features.flatten().astype("float32")
+        return features.ravel().astype("float32")
 
     def reset(self, seed=0, **kwargs):
         raw_obs, _ = super().reset(seed=seed)

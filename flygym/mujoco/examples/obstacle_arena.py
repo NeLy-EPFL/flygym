@@ -65,7 +65,7 @@ class ObstacleOdorArena(BaseArena):
             )
             self._odor_marker_geoms.append(geom)
 
-        # Reshape odor source and peak intensity arrays to simplify future claculations
+        # Reshape odor source and peak intensity arrays to simplify future calculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(_odor_source_repeated, self.odor_dim, axis=1)
         _odor_source_repeated = np.repeat(
