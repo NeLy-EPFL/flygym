@@ -14,7 +14,7 @@ realm of robotic motor control (see review by `Ijspeert,
 2008 <https://doi.org/10.1016/j.neunet.2008.03.014>`__). It is
 hypothesized that CPGs play a more important role in animals whose
 locomotion is fast and therefore cannot process decentralized 
-limb sensory signals in time to adjust their movements (ie., 
+limb sensory signals in time to adjust their movements (i.e.,
 like cockroaches running at ~1 m/s!).
 
 In this tutorial, we will start by implementing an oscillator network.
@@ -46,7 +46,7 @@ weight between the i-th and the j-th oscillator, and :math:`\phi_{ij}`
 is the phase bias between them. Intuitively, the first term of the first
 equation maintains an intrinsic frequency for each oscillator; the
 second term of the first equation keeps the oscillators synchronized
-(ie. maintains the phase differences between the oscillators), and the
+(i.e. maintains the phase differences between the oscillators), and the
 second equation maintains the amplitudes of the oscillators.
 
 To start, let’s write a function that computes :math:`\dot\theta` and
@@ -98,9 +98,9 @@ ODE, but you can use any higher-order methods or libraries.
             ----------
             timestep : float
                 The timestep of the simulation.
-            intrinsic_frequencies : np.ndarray
+            intrinsic_freqs : np.ndarray
                 The intrinsic frequencies of the oscillators, shape (N,).
-            intrinsic_amplitudes : np.ndarray
+            intrinsic_amps : np.ndarray
                 The intrinsic amplitude of the oscillators, shape (N,).
             coupling_weights : np.ndarray
                 The coupling weights between the oscillators, shape (N, N).
@@ -256,16 +256,16 @@ are used to calculate motor neuron activity
 muscle model. By contrast, `Ijspeert et al
 (2007) <https://doi.org/10.1126/science.1138353>`__ uses a more abstract
 control strategy — the CPG states directly control the target joint
-*position* (ie. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
+*position* (i.e. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
 target position is then provided to a `proportional-derivative (PD)
 controller <https://www.matthewpeterkelly.com/tutorials/pdControl/index.html>`__
 which actuates the joint.
 
 Here, we will use an even higher-level control approach where each
 oscillator controls the stepping of an entire leg (as opposed to a joint).
-The phase of the CPG represents the phase of the step (ie. how far into
+The phase of the CPG represents the phase of the step (i.e. how far into
 the step the leg is), while the magnitude of the CPG represents the
-magnitude of the step (ie. how large the step is). We will use
+magnitude of the step (i.e. how large the step is). We will use
 experimentally recorded data to execute the individual steps. In other
 words, we will extract the kinematics of a single step for each leg from
 experimental behavior recordings and modify its magnitude (modulated by

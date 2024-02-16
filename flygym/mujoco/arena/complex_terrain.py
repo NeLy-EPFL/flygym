@@ -62,6 +62,8 @@ class GappedTerrain(BaseArena):
         ground_alpha: float = 1.0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ) -> None:
+        super().__init__()
+
         self.x_range = x_range
         self.y_range = y_range
         self.friction = friction
@@ -70,7 +72,6 @@ class GappedTerrain(BaseArena):
         self.gap_depth = gap_depth
 
         # add blocks
-        self.root_element = mjcf.RootElement()
         block_centers = np.arange(
             x_range[0] + block_width / 2, x_range[1], block_width + gap_width
         )
@@ -174,14 +175,14 @@ class BlocksTerrain(BaseArena):
         rand_seed: int = 0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
+        super().__init__()
+
         self.x_range = x_range
         self.y_range = y_range
         self.friction = friction
         self.block_size = block_size
         self.height_range = height_range
         rand_state = np.random.RandomState(rand_seed)
-
-        self.root_element = mjcf.RootElement()
 
         x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
         y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
@@ -278,7 +279,8 @@ class MixedTerrain(BaseArena):
         rand_seed: int = 0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
     ):
-        self.root_element = mjcf.RootElement()
+        super().__init__()
+
         self.friction = friction
         y_range = (-10, 10)
         rand_state = np.random.RandomState(rand_seed)
