@@ -50,14 +50,14 @@ color the attractive odor source orange and the aversive odor sources blue.
     # For each odor source, if the intensity is (x, 0) then the odor is in the 1st dimension
     # (in this case attractive). If it's (0, x) then it's in the 2nd dimension (in this case
     # aversive)
-    peak_intensity = np.array([[1, 0], [0, 1], [0, 1]])
+    peak_odor_intensity = np.array([[1, 0], [0, 1], [0, 1]])
     
     # Marker colors: array of shape (num_odor_sources, 4) - RGBA values for each marker,
     # normalized to [0, 1]
     marker_colors = [[255, 127, 14], [31, 119, 180], [31, 119, 180]]
     marker_colors = np.array([[*np.array(color) / 255, 1] for color in marker_colors])
     
-    odor_dimensions = len(peak_intensity[0])
+    odor_dimensions = len(peak_odor_intensity[0])
 
 Let’s create the arena using these parameters. The detailed
 documentation of the ``OdorArena`` class can be found in the `API
@@ -72,7 +72,7 @@ Its implementation is beyond the scope of this tutorial but can be found
     
     arena = OdorArena(
         odor_source=odor_source,
-        peak_intensity=peak_intensity,
+        peak_odor_intensity=peak_odor_intensity,
         diffuse_func=lambda x: x**-2,
         marker_colors=marker_colors,
         marker_size=0.3,
