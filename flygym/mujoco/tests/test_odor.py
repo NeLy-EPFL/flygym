@@ -8,11 +8,11 @@ def test_odor_dimensions():
     num_sources = 5
     num_dims = 4
     odor_source = np.zeros((num_sources, 3))
-    peak_odor_intensity = np.ones((num_sources, num_dims))
+    peak_intensity = np.ones((num_sources, num_dims))
 
     # Initialize simulation
     num_steps = 100
-    arena = OdorArena(odor_source=odor_source, peak_odor_intensity=peak_odor_intensity)
+    arena = OdorArena(odor_source=odor_source, peak_intensity=peak_intensity)
     sim_params = Parameters(enable_olfaction=True)
     nmf = NeuroMechFly(sim_params=sim_params, arena=arena)
 

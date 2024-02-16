@@ -8,7 +8,7 @@ from flygym.mujoco.util import plot_mujoco_rollout
 
 
 def test_basic_untethered_sinewave():
-    random_state = np.random.RandomState(0)
+    np.random.seed(0)
 
     nmf = NeuroMechFly()
     run_time = 0.01
