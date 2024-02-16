@@ -20,10 +20,10 @@ class Retina:
     num_pixels_per_ommatidia : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
         value of each element indicates the number of raw pixels covered
-        within each ommatidia.
+        within each ommatidium.
     pale_type_mask : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidia is pale-type
+        value of each element indicates whether the ommatidium is pale-type
         (1) or yellow-type (0).
     distortion_coefficient : float
         A coefficient determining the extent of fisheye effect applied to
@@ -46,7 +46,7 @@ class Retina:
         in the configuration file is loaded.
     pale_type_mask : np.ndarray
         Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidia is pale-type
+        value of each element indicates whether the ommatidium is pale-type
         (1) or yellow-type (0). By default, the mask indicated in the
         configuration file is used.
     distortion_coefficient : float
@@ -217,7 +217,7 @@ class Retina:
     ):
         vals = np.zeros((len(num_pixels_per_ommatidia), 2))
         img_arr_flat = raw_img.reshape((-1, 3))
-        hex_id_map_flat = ommatidia_id_map.flatten()
+        hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
@@ -231,7 +231,7 @@ class Retina:
     def _hex_pxls_to_human_readable(
         ommatidia_reading, ommatidia_id_map, processed_image_flat
     ):
-        hex_id_map_flat = ommatidia_id_map.flatten()
+        hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
             if hex_pxl_id != -1:
@@ -262,12 +262,7 @@ class Retina:
                 src_col = int(((src_col_norm + 1) * ncols) / 2)
 
                 # if new pixel is in bounds copy from source pixel to destination pixel
-                if (
-                    0 <= src_row
-                    and src_row < nrows
-                    and 0 <= src_col
-                    and src_col < ncols
-                ):
+                if 0 <= src_row < nrows and 0 <= src_col < ncols:
                     dst_img[dst_row][dst_col] = img[src_row][src_col]
 
         return dst_img

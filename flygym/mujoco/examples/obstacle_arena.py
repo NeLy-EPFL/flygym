@@ -65,18 +65,18 @@ class ObstacleOdorArena(BaseArena):
             )
             self._odor_marker_geoms.append(geom)
 
-        # Reshape odor source and peak intensity arrays to simplify future claculations
+        # Reshape odor source and peak intensity arrays to simplify future calculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(_odor_source_repeated, self.odor_dim, axis=1)
         _odor_source_repeated = np.repeat(
             _odor_source_repeated, self.num_sensors, axis=2
         )
         self._odor_source_repeated = _odor_source_repeated
-        _peak_odor_intensity_repeated = self.peak_odor_intensity[:, :, np.newaxis]
-        _peak_odor_intensity_repeated = np.repeat(
-            _peak_odor_intensity_repeated, self.num_sensors, axis=2
+        _peak_intensity_repeated = self.peak_odor_intensity[:, :, np.newaxis]
+        _peak_intensity_repeated = np.repeat(
+            _peak_intensity_repeated, self.num_sensors, axis=2
         )
-        self._peak_odor_intensity_repeated = _peak_odor_intensity_repeated
+        self._peak_intensity_repeated = _peak_intensity_repeated
 
         # Add obstacles
         self.obstacle_bodies = []
@@ -153,7 +153,7 @@ class ObstacleOdorArena(BaseArena):
         dist_3d = antennae_pos_repeated - self._odor_source_repeated  # (n, k, w, 3)
         dist_euc = np.linalg.norm(dist_3d, axis=3)  # (n, k, w)
         scaling = self.diffuse_func(dist_euc)  # (n, k, w)
-        intensity = self._peak_odor_intensity_repeated * scaling  # (n, k, w)
+        intensity = self._peak_intensity_repeated * scaling  # (n, k, w)
         return intensity.sum(axis=0)  # (k, w)
 
     def pre_visual_render_hook(self, physics):
