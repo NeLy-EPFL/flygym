@@ -15,7 +15,7 @@ class ObstacleOdorArena(BaseArena):
         obstacle_radius: float = 1,
         obstacle_height: float = 4,
         odor_source: np.ndarray = np.array([[25, 0, 2]]),
-        peak_intensity: np.ndarray = np.array([[1]]),
+        peak_odor_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
         marker_size: float = 0.1,
@@ -38,7 +38,7 @@ class ObstacleOdorArena(BaseArena):
             assert obstacle_colors.shape == (obstacle_positions.shape[0], 4)
 
         self.odor_source = np.array(odor_source)
-        self.peak_odor_intensity = np.array(peak_intensity)
+        self.peak_odor_intensity = np.array(peak_odor_intensity)
         self.num_odor_sources = self.odor_source.shape[0]
         if self.odor_source.shape[0] != self.peak_odor_intensity.shape[0]:
             raise ValueError(
