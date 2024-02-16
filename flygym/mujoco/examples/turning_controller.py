@@ -21,7 +21,7 @@ _tripod_phase_biases = np.pi * np.array(
 _tripod_coupling_weights = (_tripod_phase_biases > 0) * 10
 
 _default_correction_vectors = {
-    # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Femur_roll, Tibia, Tarsus1)
+    # "leg pos": (Coxa, Coxa_roll, Coxa_yaw, Femur, Fimur_roll, Tibia, Tarsus1)
     "F": np.array([0, 0, 0, -0.02, 0, 0.016, 0]),
     "M": np.array([-0.015, 0, 0, 0.004, 0, 0.01, -0.008]),
     "H": np.array([0, 0, 0, -0.01, 0, 0.005, 0]),
@@ -40,7 +40,7 @@ class HybridTurningNMF(NeuroMechFly):
         convergence_coefs=np.ones(6) * 20,
         init_phases=None,
         init_magnitudes=None,
-        stumble_segments=("Tibia", "Tarsus1", "Tarsus2"),
+        stumble_segments=["Tibia", "Tarsus1", "Tarsus2"],
         stumbling_force_threshold=-1,
         correction_vectors=_default_correction_vectors,
         correction_rates=_default_correction_rates,
@@ -92,7 +92,7 @@ class HybridTurningNMF(NeuroMechFly):
     def _find_stumbling_sensor_indices(self):
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
         for i, sensor_name in enumerate(self.contact_sensor_placements):
-            leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
+            leg = sensor_name.split("/")[1][:2]  # sensor_name: eg. "Animat/LFTarsus1"
             segment = sensor_name.split("/")[1][2:]
             if segment in self.stumble_segments:
                 stumbling_sensors[leg].append(i)
@@ -187,7 +187,7 @@ class HybridTurningNMF(NeuroMechFly):
             turning.
         """
         # update CPG parameters
-        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
+        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).flatten()
         freqs = self.intrinsic_freqs.copy()
         freqs[:3] *= 1 if action[0] > 0 else -1
         freqs[3:] *= 1 if action[1] > 0 else -1

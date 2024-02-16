@@ -6,8 +6,8 @@ the fly to follow a moving sphere. By doing so, we will also demonstrate
 how one can create a custom arena.
 
 Animals typically navigate over rugged terrain to reach attractive
-objects (e.g. potential mates, food sources) and to avoid repulsive
-features (e.g. pheromones from predators) and obstacles. Animals use a
+objects (eg. potential mates, food sources) and to avoid repulsive
+features (eg. pheromones from predators) and obstacles. Animals use a
 hierarchical controller to achieve these goals: processing higher-order
 sensory signals, using them to select the next action, and translating
 these decisions into descending commands that drive lower-level motor
@@ -189,7 +189,7 @@ it into a normal [0, 256) 8-bit RGB image that can be plotted. We set
 ``color_8bit`` to True to process the 8-bit color representation more
 efficiently and return the output as an integer ranged from 0 to 255. We
 will further take the grayscale image (disregard yellow- vs pale-type
-ommatidia) by taking the maximum along the last dimension, i.e. that of
+ommatidia) by taking the maximum along the last dimension, ie. that of
 color channels.
 
 .. code-block:: ipython3
@@ -494,7 +494,7 @@ Next, let’s implement the visual preprocessing logic discussed above:
            features[:, 0] /= self.retina.nrows  # normalize y_center
            features[:, 1] /= self.retina.ncols  # normalize x_center
            features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-           return features.ravel()
+           return features.flatten()
 
 In the ``step`` method, we will replace the raw observation with the
 output of the ``_process_visual_observation`` method. We will also

@@ -18,7 +18,7 @@ class KinematicPose(BaseState):
         self.joint_pos = joint_pos
 
     @classmethod
-    def from_yaml(cls, pose_file: Path) -> "KinematicPose":
+    def from_yaml(cls, pose_file: Path) -> None:
         """Load pose from YAML file.
 
         Parameters

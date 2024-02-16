@@ -125,7 +125,7 @@ def save_video_with_vision_insets(
         raise ValueError(
             "Length of `visual_input_hist` must match the number of "
             "frames in the `NeuroMechFly` object. Save the visual input "
-            "every time a frame is rendered, i.e. when `.render()` returns "
+            "every time a frame is rendered, ie. when `.render()` returns "
             "a non-`None` value."
         )
 
@@ -177,7 +177,7 @@ def visualize_visual_input(
         simulation. By default 500.
     playback_speed : float, optional
         Speed, as a multiple of the 1x speed, at which the video should be
-        rendered, by default 0.1.
+        rendred, by default 0.1.
     """
     vision_data_key_frames = np.array(vision_data_li)[vision_update_mask, :, :, :]
     raw_vision_key_frames = np.array(raw_vision_data_li)[vision_update_mask, :, :, :]

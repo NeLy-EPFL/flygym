@@ -9,7 +9,7 @@ from flygym.mujoco.arena import OdorArena
 def test_check_env_basic():
     sim_params = Parameters(enable_vision=False, enable_olfaction=False)
     nmf = NeuroMechFly(sim_params=sim_params)
-    # Override action space so joint control signals are reasonably bound. Otherwise,
+    # Override action space so joint control signals are reasonably bound. Otherwise
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
@@ -26,7 +26,7 @@ def test_check_env_basic():
 def test_check_env_vision():
     sim_params = Parameters(enable_vision=True, enable_olfaction=False)
     nmf = NeuroMechFly(sim_params=sim_params)
-    # Override action space so joint control signals are reasonably bound. Otherwise,
+    # Override action space so joint control signals are reasonably bound. Otherwise
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
@@ -41,7 +41,7 @@ def test_check_env_olfaction():
     sim_params = Parameters(enable_vision=False, enable_olfaction=True)
     arena = OdorArena(odor_source=[[10, 0, 0]], peak_intensity=[[1, 2]])
     nmf = NeuroMechFly(sim_params=sim_params, arena=arena)
-    # Override action space so joint control signals are reasonably bound. Otherwise,
+    # Override action space so joint control signals are reasonably bound. Otherwise
     # the physics might become invalid
     nmf.action_space = spaces.Dict(
         {
