@@ -1,22 +1,23 @@
 import numpy as np
-from typing import Tuple, Any
+from typing import Tuple, List, Dict, Any
 from dm_control import mjcf
 
 from .base import BaseArena
 
 
 class Tethered(BaseArena):
-    """Fly tethered in the air.
+    """Fly tethered in the air"""
 
-    Attributes
-    ----------
-    root_element : Any
-        The arena object that the terrain is built on. Exactly what it
-        is depends on the physics simulator.
-    friction : Tuple[float, float, float]
-        The sliding, torsional, and rolling friction coefficients of the
-        ground, by default (1, 0.005, 0.0001).
-    """
+    def __init__(self, *args: List, **kwargs: Dict):
+        """Create a new terrain object.
+
+        Attributes
+        ----------
+        arena : Any
+            The arena object that the terrain is built on. Exactly what it
+            is depends on the physics simulator.
+        """
+        self.root_element = mjcf.RootElement()
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
@@ -26,7 +27,7 @@ class Tethered(BaseArena):
     def spawn_entity(
         self, entity: Any, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> None:
-        """Add an entity (e.g. the fly) to the arena.
+        """Add an entity (eg. the fly) to the arena.
 
         Parameters
         ----------
@@ -49,15 +50,12 @@ class Tethered(BaseArena):
 
 
 class Ball(Tethered):
-    """Fly tethered on a spherical treadmill.
+    """Fly tethered on a spherical threadmill.
 
     Attributes
     ----------
-    root_element : mjcf.RootElement
+    arena : mjcf.RootElement
         The arena object that the terrain is built on.
-    friction : Tuple[float, float, float]
-        The sliding, torsional, and rolling friction coefficients of the
-        ground, by default (1, 0.005, 0.0001).
 
     Parameters
     ----------
@@ -89,7 +87,7 @@ class Ball(Tethered):
         torsional_friction: float = 0.005,
         rolling_friction: float = 0.0001,
     ):
-        super().__init__()
+        self.root_element = mjcf.RootElement()
 
         chequered = self.root_element.asset.add(
             "texture",

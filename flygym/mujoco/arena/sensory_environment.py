@@ -22,7 +22,7 @@ class OdorArena(BaseArena):
     odor_source : np.ndarray
         The position of the odor source in (x, y, z) coordinates. The shape
         of the array is (n_sources, 3).
-    peak_odor_intensity : np.ndarray
+    peak_intensity : np.ndarray
         The peak intensity of the odor source. The shape of the array is
         (n_sources, n_dimensions). Note that the odor intensity can be
         multidimensional.
@@ -32,7 +32,7 @@ class OdorArena(BaseArena):
         Dimension of the odor space.
     diffuse_func : Callable
         The function that, given a distance from the odor source, returns
-        the relative intensity of the odor. By default, this is an inverse
+        the relative intensity of the odor. By default, this is a inverse
         square relationship.
     birdeye_cam : dm_control.mujoco.Camera
         MuJoCo camera that gives a birdeye view of the arena.
@@ -59,7 +59,7 @@ class OdorArena(BaseArena):
         multidimensional.
     diffuse_func : Callable, optional
         The function that, given a distance from the odor source, returns
-        the relative intensity of the odor. By default, this is an inverse
+        the relative intensity of the odor. By default, this is a inverse
         square relationship.
     marker_colors : List[Tuple[float, float, float, float]], optional
         A list of n_sources RGBA values (each as a tuple) indicating the
@@ -81,8 +81,7 @@ class OdorArena(BaseArena):
         marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
         marker_size: float = 0.25,
     ):
-        super().__init__()
-
+        self.root_element = mjcf.RootElement()
         ground_size = [*size, 1]
         chequered = self.root_element.asset.add(
             "texture",
@@ -154,7 +153,7 @@ class OdorArena(BaseArena):
                 "geom", type="capsule", size=(marker_size, marker_size), rgba=rgba
             )
 
-        # Reshape odor source and peak intensity arrays to simplify future calculations
+        # Reshape odor source and peak intensity arrays to simplify future claculations
         _odor_source_repeated = self.odor_source[:, np.newaxis, np.newaxis, :]
         _odor_source_repeated = np.repeat(
             _odor_source_repeated, self.odor_dimensions, axis=1
@@ -186,14 +185,14 @@ class OdorArena(BaseArena):
         Input - odor source position: [n, 3]
         Input - sensor positions: [w, 3]
         Input - peak intensity: [n, k]
-        Input - diffusion function: f(dist)
+        Input - difusion function: f(dist)
 
         Reshape sources to S = [n, k*, w*, 3] (* means repeated)
         Reshape sensor position to A = [n*, k*, w, 3] (* means repeated)
-        Subtract, getting a Delta = [n, k, w, 3] array of rel difference
-        Calculate Euclidean distance: D = [n, k, w]
+        Subtract, getting an Delta = [n, k, w, 3] array of rel difference
+        Calculate Euclidean disctance: D = [n, k, w]
 
-        Apply pre-integrated diffusion function: S = f(D) -> [n, k, w]
+        Apply pre-integrated difusion function: S = f(D) -> [n, k, w]
         Reshape peak intensities to P = [n, k, w*]
         Apply scaling: I = P * S -> [n, k, w] element wise
 

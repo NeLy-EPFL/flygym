@@ -4,7 +4,7 @@ from flygym.mujoco import NeuroMechFly
 from flygym.mujoco.arena import GappedTerrain, BlocksTerrain, MixedTerrain
 
 
-np.random.seed(0)
+random_state = np.random.RandomState(0)
 
 
 def test_gapped_terrain():
