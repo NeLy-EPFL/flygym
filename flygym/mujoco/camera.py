@@ -334,7 +334,7 @@ class Camera:
         cam = physics.bind(self._cam)
         cam_name = self._cam.name
         fly_z_rot_euler = (
-            np.array([self.fly.fly_rot[0], 0.0, 0.0])
+            np.array([self.fly.last_obs["rot"][0], 0.0, 0.0])
             - self.fly.spawn_orientation[::-1]
             - [np.pi / 2, 0, 0]
         )
@@ -372,11 +372,12 @@ class Camera:
         """Draw gravity as an arrow. The arrow is drawn at the top right of the frame."""
 
         camera_matrix = self._dm_camera.matrix
+        last_fly_pos = self.fly.last_obs["pos"]
 
         if self.align_camera_with_gravity:
-            arrow_start = self.fly._last_fly_pos + self._camera_rot @ self._arrow_offset
+            arrow_start = last_fly_pos + self._camera_rot @ self._arrow_offset
         else:
-            arrow_start = self.fly._last_fly_pos + self._arrow_offset
+            arrow_start = last_fly_pos + self._arrow_offset
 
         print(arrow_start)
 
@@ -405,91 +406,88 @@ class Camera:
         """Draw contacts as arrow which length is proportional to the force
         magnitude. The arrow is drawn at the center of the body. It uses the
         camera matrix to transfer from the global space to the pixels space."""
-        contact_forces = np.linalg.norm(self.fly._last_contact_force, axis=1)
-        contact_indexes = np.nonzero(contact_forces > self.contact_threshold)[0]
 
-        n_contacts = len(contact_indexes)
+        forces = self.fly.last_obs["contact_forces"]
+        pos = self.fly.last_obs["contact_pos"]
+        magnitudes = np.linalg.norm(forces, axis=1)
+        contact_indices = np.nonzero(magnitudes > self.contact_threshold)[0]
+
+        n_contacts = len(contact_indices)
         # Build an array of start and end points for the force arrows
-        if n_contacts > 0:
-            if not self.decompose_contacts:
-                force_arrow_points = np.tile(
-                    self.fly._last_contact_pos[:, contact_indexes], (1, 2)
-                ).squeeze()
+        if n_contacts == 0:
+            return img
 
-                force_arrow_points[:, n_contacts:] += (
-                    self.fly._last_contact_force[:, contact_indexes]
-                    * self.force_arrow_scaling
+        if not self.decompose_contacts:
+            arrow_points = np.tile(pos[:, contact_indices], (1, 2)).squeeze()
+
+            arrow_points[:, n_contacts:] += (
+                forces[:, contact_indices] * self.force_arrow_scaling
+            )
+        else:
+            arrow_points = np.tile(pos[:, contact_indices], (1, 4)).squeeze()
+            for j in range(3):
+                arrow_points[j, (j + 1) * n_contacts : (j + 2) * n_contacts] += (
+                    forces[contact_indices, j] * self.force_arrow_scaling
                 )
-            else:
-                force_arrow_points = np.tile(
-                    self.fly._last_contact_pos[:, contact_indexes], (1, 4)
-                ).squeeze()
+
+        camera_matrix = self._dm_camera.matrix
+
+        # code sample from dm_control demo notebook
+        xyz_global = arrow_points
+
+        # Camera matrices multiply homogenous [x, y, z, 1] vectors.
+        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
+        corners_homogeneous[:3, :] = xyz_global
+
+        # Project world coordinates into pixel space. See:
+        # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
+        xs, ys, s = camera_matrix @ corners_homogeneous
+
+        # x and y are in the pixel coordinate system.
+        x = np.rint(xs / s).astype(int)
+        y = np.rint(ys / s).astype(int)
+
+        img = img.astype(np.uint8)
+
+        # Draw the contact forces
+        for i in range(n_contacts):
+            pts1 = [x[i], y[i]]
+            if self.decompose_contacts:
                 for j in range(3):
-                    force_arrow_points[
-                        j, (j + 1) * n_contacts : (j + 2) * n_contacts
-                    ] += (
-                        self.fly._last_contact_force[contact_indexes, j]
-                        * self.force_arrow_scaling
+                    pts2 = np.array(
+                        [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
                     )
-
-            camera_matrix = self._dm_camera.matrix
-
-            # code sample from dm_control demo notebook
-            xyz_global = force_arrow_points
-
-            # Camera matrices multiply homogenous [x, y, z, 1] vectors.
-            corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
-            corners_homogeneous[:3, :] = xyz_global
-
-            # Project world coordinates into pixel space. See:
-            # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
-            xs, ys, s = camera_matrix @ corners_homogeneous
-
-            # x and y are in the pixel coordinate system.
-            x = np.rint(xs / s).astype(int)
-            y = np.rint(ys / s).astype(int)
-
-            img = img.astype(np.uint8)
-
-            # Draw the contact forces
-            for i in range(n_contacts):
-                pts1 = [x[i], y[i]]
-                if self.decompose_contacts:
-                    for j in range(3):
-                        pts2 = np.array(
-                            [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
+                    if (
+                        np.linalg.norm(
+                            arrow_points[:, i]
+                            - arrow_points[:, i + (j + 1) * n_contacts]
                         )
-                        if (
-                            np.linalg.norm(
-                                force_arrow_points[:, i]
-                                - force_arrow_points[:, i + (j + 1) * n_contacts]
-                            )
-                            > self.contact_threshold
-                        ):
-                            arrow_length = np.linalg.norm(pts2 - pts1)
-                            if arrow_length > 1e-2:
-                                r = self.tip_length / arrow_length
-                            else:
-                                r = 1e-4
-                            img = cv2.arrowedLine(
-                                img,
-                                pts1,
-                                pts2,
-                                color=self.decompose_colors[j],
-                                thickness=2,
-                                tipLength=r,
-                            )
-                else:
-                    pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
-                    r = self.tip_length / np.linalg.norm(pts2 - pts1)
-                    img = cv2.arrowedLine(
-                        img,
-                        pts1,
-                        pts2,
-                        color=(255, 0, 0),
-                        thickness=2,
-                        tipLength=r,
-                    )
+                        > self.contact_threshold
+                    ):
+                        arrow_length = np.linalg.norm(pts2 - pts1)
+                        if arrow_length > 1e-2:
+                            r = self.tip_length / arrow_length
+                        else:
+                            r = 1e-4
+                        img = cv2.arrowedLine(
+                            img,
+                            pts1,
+                            pts2,
+                            color=self.decompose_colors[j],
+                            thickness=2,
+                            tipLength=r,
+                        )
+            else:
+                pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
+                r = self.tip_length / np.linalg.norm(pts2 - pts1)
+                img = cv2.arrowedLine(
+                    img,
+                    pts1,
+                    pts2,
+                    color=(255, 0, 0),
+                    thickness=2,
+                    tipLength=r,
+                )
         return img
 
     def save_video(self, path: Union[str, Path], stabilization_time=0.02):
