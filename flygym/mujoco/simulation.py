@@ -3,6 +3,7 @@ from gymnasium.core import ObsType
 import gymnasium as gym
 from flygym.mujoco.fly import Fly
 from flygym.mujoco.arena import BaseArena, FlatTerrain
+import numpy as np
 
 
 class Simulation(gym.Env):
@@ -41,6 +42,9 @@ class Simulation(gym.Env):
         self.timestep = timestep
         self.gravity = gravity
         self.fly = fly
+
+        self._floor_height = self._get_max_floor_height(self.arena)
+
         self.fly.post_init(self.arena, self.timestep, self.gravity)
 
     # get undefined methods or properties from fly
@@ -81,4 +85,27 @@ class Simulation(gym.Env):
         return self.fly.step(action)
 
     def render(self):
-        return self.fly.render()
+        return self.fly.render(self._floor_height)
+
+    def _get_max_floor_height(self, arena):
+        max_floor_height = -1 * np.inf
+        for geom in arena.root_element.find_all("geom"):
+            name = geom.name
+            if name is None or (
+                "floor" in name or "ground" in name or "treadmill" in name
+            ):
+                if geom.type == "box":
+                    block_height = geom.pos[2] + geom.size[2]
+                    max_floor_height = max(max_floor_height, block_height)
+                elif geom.type == "plane":
+                    try:
+                        plane_height = geom.pos[2]
+                    except TypeError:
+                        plane_height = 0.0
+                    max_floor_height = max(max_floor_height, plane_height)
+                elif geom.type == "sphere":
+                    sphere_height = geom.parent.pos[2] + geom.size[0]
+                    max_floor_height = max(max_floor_height, sphere_height)
+        if np.isinf(max_floor_height):
+            max_floor_height = self.spawn_pos[2]
+        return max_floor_height

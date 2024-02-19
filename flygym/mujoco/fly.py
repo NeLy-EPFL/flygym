@@ -361,8 +361,6 @@ class Fly:
         self.timestep = timestep
         self.gravity = gravity
 
-        self._floor_height = self._get_max_floor_height(arena)
-
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
         self.arena_root = arena.root_element
@@ -576,29 +574,6 @@ class Fly:
             for segment in specs["apply_to"]:
                 geom = self.model.find("geom", f"{segment}_visual")
                 geom.material = f"{type_}_material"
-
-    def _get_max_floor_height(self, arena):
-        max_floor_height = -1 * np.inf
-        for geom in arena.root_element.find_all("geom"):
-            name = geom.name
-            if name is None or (
-                "floor" in name or "ground" in name or "treadmill" in name
-            ):
-                if geom.type == "box":
-                    block_height = geom.pos[2] + geom.size[2]
-                    max_floor_height = max(max_floor_height, block_height)
-                elif geom.type == "plane":
-                    try:
-                        plane_height = geom.pos[2]
-                    except TypeError:
-                        plane_height = 0.0
-                    max_floor_height = max(max_floor_height, plane_height)
-                elif geom.type == "sphere":
-                    sphere_height = geom.parent.pos[2] + geom.size[0]
-                    max_floor_height = max(max_floor_height, sphere_height)
-        if np.isinf(max_floor_height):
-            max_floor_height = self.spawn_pos[2]
-        return max_floor_height
 
     def _define_action_space(self, action_bound):
         _action_space = {
@@ -1189,7 +1164,7 @@ class Fly:
 
         return observation, reward, terminated, truncated, info
 
-    def render(self) -> Union[np.ndarray, None]:
+    def render(self, floor_height: float) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
         action is required.
@@ -1207,7 +1182,7 @@ class Fly:
             width, height = self.render_window_size
             camera = self.render_camera
             if self.update_camera_pos:
-                self._update_cam_pos()
+                self._update_cam_pos(floor_height)
             if self.camera_follows_fly_orientation:
                 self._update_cam_rot()
             if self.draw_adhesion:
@@ -1247,10 +1222,10 @@ class Fly:
         else:
             raise NotImplementedError
 
-    def _update_cam_pos(self):
+    def _update_cam_pos(self, floor_height):
         cam = self.physics.bind(self._cam)
         cam_pos = cam.xpos.copy()
-        cam_pos[2] = self.cam_offset[2] + self._floor_height
+        cam_pos[2] = self.cam_offset[2]
         cam.xpos = cam_pos
 
     def _update_cam_rot(self):
