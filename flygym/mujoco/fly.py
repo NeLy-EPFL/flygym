@@ -596,7 +596,7 @@ class Fly:
                     )
                     floor_contact_pair = arena_root.contact.add(
                         "pair",
-                        name=f"{geom.name}_{animat_geom_name}",
+                        name=f"{geom.name}_{self.name}_{animat_geom_name}",
                         geom1=f"{self.name}/{animat_geom_name}",
                         geom2=f"{geom.name}",
                         solref=self.contact_solref,
