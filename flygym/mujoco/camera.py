@@ -379,10 +379,7 @@ class Camera:
         else:
             arrow_start = last_fly_pos + self._arrow_offset
 
-        print(arrow_start)
-
         arrow_end = arrow_start + physics.model.opt.gravity * self.gravity_arrow_scaling
-
         xyz_global = np.array([arrow_start, arrow_end]).T
 
         # Camera matrices multiply homogenous [x, y, z, 1] vectors.
