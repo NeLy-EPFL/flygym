@@ -57,9 +57,13 @@ class Simulation(gym.Env):
 
         self.fly.post_init(self.arena, self.physics, self.gravity)
 
-    # get undefined methods or properties from fly
-    def __getattr__(self, name):
-        return getattr(self.fly, name)
+    @property
+    def action_space(self):
+        return self.fly.action_space
+
+    @property
+    def observation_space(self):
+        return self.fly.observation_space
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
