@@ -11,7 +11,7 @@ from gymnasium.core import ObsType
 
 try:
     import mujoco
-    import dm_control
+    import dm_control.mujoco
     from dm_control import mjcf
     from dm_control.utils import transformations
 except ImportError:
@@ -98,6 +98,9 @@ class Fly:
         f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
     )
     n_legs = 6
+    _floor_contacts: Dict[str, mjcf.Element]
+    _self_contacts: Dict[str, mjcf.Element]
+    _dm_camera: dm_control.mujoco.Camera
 
     def __init__(
         self,
@@ -335,7 +338,7 @@ class Fly:
         # Add cameras imitating the fly's eyes
         self._curr_visual_input = None
         self._curr_raw_visual_input = None
-        self._last_vision_update_time = -np.inf
+        self.last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
         self._vision_update_mask: List[bool] = []
         if self.enable_vision:
@@ -343,7 +346,7 @@ class Fly:
             self.retina = vision.Retina()
 
         # Define list of actuated joints
-        self._actuators = [
+        self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
@@ -358,10 +361,7 @@ class Fly:
         self._initialize_custom_camera_handling(camera_name)
 
         # Add self collisions
-        self_collision_geoms = self._parse_collision_specs(self.self_collisions)
-        self._self_contacts, self._self_contact_names = self._define_self_contacts(
-            self_collision_geoms
-        )
+        self._init_self_contacts()
 
         # Add sensors
         self._joint_sensors = self._add_joint_sensors()
@@ -374,11 +374,11 @@ class Fly:
         self.contact_sensor_placements = [
             f"Animat/{body}" for body in self.contact_sensor_placements
         ]
-        self._adhesion_actuators = self._add_adhesion_actuators(self.adhesion_force)
+        self.adhesion_actuators = self._add_adhesion_actuators(self.adhesion_force)
         # Those need to be in the same order as the adhesion sensor
         # (due to comparison with the last adhesion_signal)
         adhesion_sensor_indices = []
-        for adhesion_actuator in self._adhesion_actuators:
+        for adhesion_actuator in self.adhesion_actuators:
             for index, contact_sensor in enumerate(self.contact_sensor_placements):
                 if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
                     adhesion_sensor_indices.append(index)
@@ -392,11 +392,11 @@ class Fly:
         self._frames: list[np.ndarray] = []
 
         if self.draw_contacts:
-            self._last_contact_force = []
-            self._last_contact_pos = []
+            self._last_contact_force = np.array([])
+            self._last_contact_pos = np.array([])
 
         # flip detection
-        self._flip_counter = 0
+        self.flip_counter = 0
 
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
@@ -408,19 +408,12 @@ class Fly:
             "render_fps": self.render_fps,
         }
 
-    def init_floor_collisions(self, arena: BaseArena):
-        # Add floor collisions
-        floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
-        self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
-            arena, floor_collision_geoms
-        )
-
-    def post_init(self, arena: BaseArena, physics: mjcf.Physics, gravity):
+    def post_init(self, arena: BaseArena, physics: mjcf.Physics):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self._adhesion_actuator_geomid = np.array(
             [
                 physics.model.geom("Animat/" + adhesion_actuator.body + "_collision").id
-                for adhesion_actuator in self._adhesion_actuators
+                for adhesion_actuator in self.adhesion_actuators
             ]
         )
 
@@ -519,7 +512,7 @@ class Fly:
         camera.euler = transformations.quat_to_euler(new_camera_quat)
 
         # Elevate the camera slightly gives a better view of the arena
-        if not "zoomin" in camera_name:
+        if "zoomin" not in camera_name:
             camera.pos = camera.pos + [0.0, 0.0, 0.5]
         if "front" in camera_name:
             camera.pos[2] = camera.pos[2] + 1.0
@@ -613,7 +606,7 @@ class Fly:
             or "camera_front_zoomin" in camera_name
         )
 
-        is_compound_camera = not camera_name in [
+        is_compound_camera = camera_name not in [
             "Animat/camera_front",
             "Animat/camera_top",
             "Animat/camera_bottom",
@@ -657,7 +650,7 @@ class Fly:
             return
 
     def _set_actuators_gain(self):
-        for actuator in self._actuators:
+        for actuator in self.actuators:
             actuator.kp = self.actuator_kp
 
     def _set_geoms_friction(self):
@@ -671,12 +664,13 @@ class Fly:
                 joint.stiffness = self.joint_stiffness
                 joint.damping = self.joint_damping
 
-    def _define_self_contacts(self, self_collisions_geoms):
-        self_contact_pairs = []
-        self_contact_pairs_names = []
-        for geom1 in self_collisions_geoms:
-            for geom2 in self_collisions_geoms:
-                is_duplicate = f"{geom1}_{geom2}" in self_contact_pairs_names
+    def _init_self_contacts(self):
+        self_collision_geoms = self._parse_collision_specs(self.self_collisions)
+        self_contacts: Dict[str, mjcf.Element] = {}
+
+        for geom1 in self_collision_geoms:
+            for geom2 in self_collision_geoms:
+                is_duplicate = f"{geom1}_{geom2}" in self_contacts
                 if geom1 != geom2 and not is_duplicate:
                     # Do not add contact if the parent bodies have a child parent
                     # relationship
@@ -709,13 +703,13 @@ class Fly:
                             solimp=self.contact_solimp,
                             margin=0.0,  # change margin to avoid penetration
                         )
-                        self_contact_pairs.append(contact_pair)
-                        self_contact_pairs_names.append(f"{geom1}_{geom2}")
-        return self_contact_pairs, self_contact_pairs_names
+                        self_contacts[f"{geom1}_{geom2}"] = contact_pair
+        self._self_contacts = self_contacts
 
-    def _define_floor_contacts(self, arena: BaseArena, floor_collisions_geoms):
-        floor_contact_pairs = []
-        floor_contact_pairs_names = []
+    def init_floor_contacts(self, arena: BaseArena):
+        floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
+
+        floor_contacts: Dict[str, mjcf.Element] = {}
         ground_id = 0
 
         arena_root = arena.root_element
@@ -730,7 +724,7 @@ class Fly:
             else:
                 is_ground = True
             if is_ground:
-                for animat_geom_name in floor_collisions_geoms:
+                for animat_geom_name in floor_collision_geoms:
                     if geom.name is None:
                         geom.name = f"groundblock_{ground_id}"
                         ground_id += 1
@@ -754,10 +748,9 @@ class Fly:
                             (2, 1, 2),
                         ),
                     )
-                    floor_contact_pairs.append(floor_contact_pair)
-                    floor_contact_pairs_names.append(f"{geom.name}_{animat_geom_name}")
+                    floor_contacts[f"{geom.name}_{animat_geom_name}"] = floor_contact_pair
 
-        return floor_contact_pairs, floor_contact_pairs_names
+        self._floor_contacts = floor_contacts
 
     def _add_joint_sensors(self):
         joint_sensors = []
@@ -891,7 +884,7 @@ class Fly:
     def set_pose(self, pose: state.KinematicPose, physics: mjcf.Physics):
         with physics.reset_context():
             for i in range(len(self.actuated_joints)):
-                curr_joint = self._actuators[i].joint.name
+                curr_joint = self.actuators[i].joint.name
                 if (curr_joint in self.actuated_joints) and (curr_joint in pose):
                     animat_name = f"Animat/{curr_joint}"
                     physics.named.data.qpos[animat_name] = pose[curr_joint]
@@ -1260,7 +1253,7 @@ class Fly:
         """
         vision_config = self._mujoco_config["vision"]
         next_render_time = (
-            self._last_vision_update_time + self._eff_visual_render_interval
+                self.last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
         if curr_time + 0.5 * timestep < next_render_time:
@@ -1286,7 +1279,7 @@ class Fly:
         self._curr_visual_input = np.array(ommatidia_readouts)
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
-        self._last_vision_update_time = self.curr_time
+        self.last_vision_update_time = self.curr_time
 
     def change_segment_color(self, physics: mjcf.Physics, segment: str, color):
         """Change the color of a segment of the fly.
@@ -1362,26 +1355,26 @@ class Fly:
             contactid_normal = {}
             self._active_adhesion = np.zeros(self.n_legs, dtype=bool)
             for contact in physics.data.contact:
-                id = np.where(self._adhesion_actuator_geomid == contact.geom1)
-                if len(id[0]) > 0 and contact.exclude == 0:
-                    contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id][
+                id_ = np.where(self._adhesion_actuator_geomid == contact.geom1)
+                if len(id_[0]) > 0 and contact.exclude == 0:
+                    contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id_][
                         0
                     ]
                     if contact_sensor_id in contactid_normal:
                         contactid_normal[contact_sensor_id].append(contact.frame[:3])
                     else:
                         contactid_normal[contact_sensor_id] = [contact.frame[:3]]
-                    self._active_adhesion[id] = True
-                id = np.where(self._adhesion_actuator_geomid == contact.geom2)
-                if len(id[0]) > 0 and contact.exclude == 0:
-                    contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id][
+                    self._active_adhesion[id_] = True
+                id_ = np.where(self._adhesion_actuator_geomid == contact.geom2)
+                if len(id_[0]) > 0 and contact.exclude == 0:
+                    contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id_][
                         0
                     ]
                     if contact_sensor_id in contactid_normal:
                         contactid_normal[contact_sensor_id].append(contact.frame[:3])
                     else:
                         contactid_normal[contact_sensor_id] = [contact.frame[:3]]
-                    self._active_adhesion[id] = True
+                    self._active_adhesion[id_] = True
 
             for contact_sensor_id, normal in contactid_normal.items():
                 adh_actuator_id = (
@@ -1511,18 +1504,6 @@ class Fly:
         with imageio.get_writer(path, fps=self.render_fps) as writer:
             for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
-
-    def _get_energy(self):
-        """Get the energy of the system (kinetic, potential).
-
-        Returns
-        -------
-        np.ndarray
-            The energy of the system (kinetic, potential).
-        """
-        if not self.model.option.flag.energy == "enable":
-            raise ValueError("Energy flag not activated in the mujoco xml file. ")
-        return self.data.energy
 
     def close(self) -> None:
         """Close the environment, save data, and release any resources."""

@@ -52,7 +52,7 @@ class Simulation(gym.Env):
         arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
-        self.fly.init_floor_collisions(self.arena)
+        self.fly.init_floor_contacts(self.arena)
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
 
         self.gravity = gravity
@@ -60,7 +60,7 @@ class Simulation(gym.Env):
         # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
         fly.set_pose(fly.init_pose, self.physics)
 
-        self.fly.post_init(self.arena, self.physics, self.gravity)
+        self.fly.post_init(self.arena, self.physics)
 
     @property
     def gravity(self):
@@ -115,11 +115,11 @@ class Simulation(gym.Env):
         fly.set_pose(fly.init_pose, self.physics)
         fly._frames = []
         fly._last_render_time = -np.inf
-        fly._last_vision_update_time = -np.inf
+        fly.last_vision_update_time = -np.inf
         fly._curr_raw_visual_input = None
         fly._curr_visual_input = None
         fly._vision_update_mask = []
-        fly._flip_counter = 0
+        fly.flip_counter = 0
         obs = fly.get_observation(
             self.physics, self.arena, self.timestep, self.curr_time
         )
@@ -163,9 +163,9 @@ class Simulation(gym.Env):
 
         fly = self.fly
 
-        self.physics.bind(fly._actuators).ctrl = action["joints"]
+        self.physics.bind(fly.actuators).ctrl = action["joints"]
         if fly.enable_adhesion:
-            self.physics.bind(fly._adhesion_actuators).ctrl = action["adhesion"]
+            self.physics.bind(fly.adhesion_actuators).ctrl = action["adhesion"]
             fly._last_adhesion = action["adhesion"]
 
         self.physics.step()
@@ -177,22 +177,23 @@ class Simulation(gym.Env):
         terminated = fly.is_terminated()
         truncated = fly.is_truncated()
         info = fly.get_info()
+
         if fly.enable_vision:
-            vision_updated_this_step = self.curr_time == fly._last_vision_update_time
+            vision_updated_this_step = self.curr_time == fly.last_vision_update_time
             fly._vision_update_mask.append(vision_updated_this_step)
             info["vision_updated"] = vision_updated_this_step
 
         if fly.detect_flip:
             if observation["contact_forces"].sum() < 1:
-                fly._flip_counter += 1
+                fly.flip_counter += 1
             else:
-                fly._flip_counter = 0
+                fly.flip_counter = 0
             flip_config = fly._mujoco_config["flip_detection"]
             has_passed_init = self.curr_time > flip_config["ignore_period"]
-            contact_lost_time = fly._flip_counter * self.timestep
+            contact_lost_time = fly.flip_counter * self.timestep
             lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
             info["flip"] = has_passed_init and lost_contact_long_enough
-            info["flip_counter"] = fly._flip_counter
+            info["flip_counter"] = fly.flip_counter
             info["contact_forces"] = observation["contact_forces"].copy()
 
         return observation, reward, terminated, truncated, info
@@ -220,7 +221,7 @@ class Simulation(gym.Env):
                     sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
         if np.isinf(max_floor_height):
-            max_floor_height = self.spawn_pos[2]
+            max_floor_height = self.fly.spawn_pos[2]
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
