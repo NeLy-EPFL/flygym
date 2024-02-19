@@ -211,7 +211,7 @@ class Fly:
         self.tarsus_stiffness = tarsus_stiffness
         self.tarsus_damping = tarsus_damping
         self.friction = friction
-        self.gravity = gravity
+        gravity = gravity
         self.contact_solref = contact_solref
         self.contact_solimp = contact_solimp
         self.enable_olfaction = enable_olfaction
@@ -235,7 +235,7 @@ class Fly:
         self.tip_length = tip_length
         self.contact_threshold = contact_threshold
         self.draw_gravity = draw_gravity
-        self.gravity_arrow_scaling = gravity_arrow_scaling
+        gravity_arrow_scaling = gravity_arrow_scaling
         self.align_camera_with_gravity = align_camera_with_gravity
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
 
@@ -359,7 +359,6 @@ class Fly:
     def post_init(self, arena: BaseArena, timestep: float, gravity):
         # arena = arena
         self.timestep = timestep
-        self.gravity = gravity
 
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
@@ -1030,34 +1029,7 @@ class Fly:
 
         self.physics.model.opt.gravity[:] = gravity
 
-    def set_slope(self, slope: float, rot_axis="y"):
-        """Set the slope of the environment and modify the camera
-        orientation so that gravity is always pointing down. Changing the
-        gravity vector might be useful during climbing simulations. The
-        change in the camera angle has been extensively tested for the
-        simple cameras (left, right, top, bottom, front, back) but not for
-        the composed ones.
-
-        Parameters
-        ----------
-        slope : float
-            The desired_slope of the environment in degrees.
-        rot_axis : str, optional
-            The axis about which the slope is applied, by default "y".
-        """
-        rot_mat = np.eye(3)
-        if rot_axis == "x":
-            rot_mat = transformations.rotation_x_axis(np.deg2rad(slope))
-        elif rot_axis == "y":
-            rot_mat = transformations.rotation_y_axis(np.deg2rad(slope))
-        elif rot_axis == "z":
-            rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
-        new_gravity = np.dot(rot_mat, self.gravity)
-        self._set_gravity(new_gravity, rot_mat)
-
-        return 0
-
-    def reset(self, arena: BaseArena) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, arena: BaseArena, gravity) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
         Parameters
@@ -1081,8 +1053,8 @@ class Fly:
             override this method to return additional information.
         """
         self.physics.reset()
-        if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-            self._set_gravity(self.gravity)
+        if np.any(self.physics.model.opt.gravity[:] - gravity > 1e-3):
+            self._set_gravity(gravity)
             if self.align_camera_with_gravity:
                 self._camera_rot = np.eye(3)
         self.curr_time = 0
@@ -1290,9 +1262,7 @@ class Fly:
         else:
             arrow_start = self._last_fly_pos + self._arrow_offset
 
-        arrow_end = (
-            arrow_start + self.physics.model.opt.gravity * self.gravity_arrow_scaling
-        )
+        arrow_end = arrow_start + self.physics.model.opt.gravity * self.gravity_arrow_scaling
 
         xyz_global = np.array([arrow_start, arrow_end]).T
 
