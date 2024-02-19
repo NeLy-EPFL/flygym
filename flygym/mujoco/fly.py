@@ -355,17 +355,12 @@ class Fly:
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
-    def post_init(self, arena: BaseArena, gravity):
         camera_name = self.render_camera
         model_camera_name = self.render_camera.split("/")[-1]
         self._cam = self.model.find("camera", model_camera_name)
         self._initialize_custom_camera_handling(camera_name)
 
-        # Add collision/contacts
-        floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
-        self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
-            arena, floor_collision_geoms
-        )
+        # Add self collisions
         self_collision_geoms = self._parse_collision_specs(self.self_collisions)
         self._self_contacts, self._self_contact_names = self._define_self_contacts(
             self_collision_geoms
@@ -391,6 +386,13 @@ class Fly:
                 if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
+
+    def post_init(self, arena: BaseArena, gravity):
+        # Add floor collisions
+        floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
+        self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
+            arena, floor_collision_geoms
+        )
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self.physics = mjcf.Physics.from_mjcf_model(arena.root_element)
