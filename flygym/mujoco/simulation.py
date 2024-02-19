@@ -104,7 +104,9 @@ class Simulation(gym.Env):
             info["vision_updated"] = True
         return obs, info
 
-    def step(self, action: ObsType) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+    def step(
+        self, action: ObsType
+    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
         """Step the Gym environment.
 
         Parameters
