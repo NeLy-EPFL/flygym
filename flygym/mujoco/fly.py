@@ -357,14 +357,14 @@ class Fly:
         self._set_compliant_tarsus()
 
     def post_init(self, arena: BaseArena, timestep: float, gravity):
-        self.arena = arena
+        # arena = arena
         self.timestep = timestep
         self.gravity = gravity
 
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
-        self.arena_root = arena.root_element
-        self.arena_root.option.timestep = timestep
+        arena_root = arena.root_element
+        arena_root.option.timestep = timestep
 
         camera_name = self.render_camera
         model_camera_name = self.render_camera.split("/")[-1]
@@ -374,7 +374,7 @@ class Fly:
         # Add collision/contacts
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
         self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
-            floor_collision_geoms
+            arena, floor_collision_geoms
         )
         self_collision_geoms = self._parse_collision_specs(self.self_collisions)
         self._self_contacts, self._self_contact_names = self._define_self_contacts(
@@ -403,7 +403,7 @@ class Fly:
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
-        self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
+        self.physics = mjcf.Physics.from_mjcf_model(arena_root)
         self._adhesion_actuator_geomid = np.array(
             [
                 self.physics.model.geom(
@@ -446,7 +446,7 @@ class Fly:
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
         self.action_space = self._define_action_space(action_bound)
-        self.observation_space = self._define_observation_space()
+        self.observation_space = self._define_observation_space(arena)
 
         # Add metadata as specified by Gym
         self.metadata = {
@@ -586,7 +586,7 @@ class Fly:
             _action_space["adhesion"] = spaces.Discrete(n=2, start=0)
         return spaces.Dict(_action_space)
 
-    def _define_observation_space(self):
+    def _define_observation_space(self, arena: BaseArena):
         _observation_space = {
             "joints": spaces.Box(
                 low=-np.inf, high=np.inf, shape=(3, len(self.actuated_joints))
@@ -609,7 +609,7 @@ class Fly:
             _observation_space["odor_intensity"] = spaces.Box(
                 low=0,
                 high=np.inf,
-                shape=(self.arena.odor_dimensions, len(self._antennae_sensors)),
+                shape=(arena.odor_dimensions, len(self._antennae_sensors)),
             )
         return spaces.Dict(_observation_space)
 
@@ -731,12 +731,14 @@ class Fly:
                         self_contact_pairs_names.append(f"{geom1}_{geom2}")
         return self_contact_pairs, self_contact_pairs_names
 
-    def _define_floor_contacts(self, floor_collisions_geoms):
+    def _define_floor_contacts(self, arena: BaseArena, floor_collisions_geoms):
         floor_contact_pairs = []
         floor_contact_pairs_names = []
         ground_id = 0
 
-        for geom in self.arena_root.find_all("geom"):
+        arena_root = arena.root_element
+
+        for geom in arena_root.find_all("geom"):
             if geom.name is None:
                 is_ground = True
             elif "visual" in geom.name or "collision" in geom.name:
@@ -753,11 +755,11 @@ class Fly:
                     mean_friction = np.mean(
                         [
                             self.friction,  # fly friction
-                            self.arena.friction,  # arena ground friction
+                            arena.friction,  # arena ground friction
                         ],
                         axis=0,
                     )
-                    floor_contact_pair = self.arena_root.contact.add(
+                    floor_contact_pair = arena_root.contact.add(
                         "pair",
                         name=f"{geom.name}_{animat_geom_name}",
                         geom1=f"Animat/{animat_geom_name}",
@@ -1055,9 +1057,7 @@ class Fly:
 
         return 0
 
-    def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
-    ) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, arena: BaseArena) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
         Parameters
@@ -1094,14 +1094,14 @@ class Fly:
         self._curr_visual_input = None
         self._vision_update_mask = []
         self._flip_counter = 0
-        obs = self.get_observation()
+        obs = self.get_observation(arena)
         info = self.get_info()
         if self.enable_vision:
             info["vision_updated"] = True
         return obs, info
 
     def step(
-        self, action: ObsType
+        self, action: ObsType, arena: BaseArena
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
         """Step the Gym environment.
 
@@ -1131,7 +1131,7 @@ class Fly:
             this step) but the user can override this method to return
             additional information.
         """
-        self.arena.step(dt=self.timestep, physics=self.physics)
+        arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
         if self.enable_adhesion:
             self.physics.bind(self._adhesion_actuators).ctrl = action["adhesion"]
@@ -1139,7 +1139,7 @@ class Fly:
 
         self.physics.step()
         self.curr_time += self.timestep
-        observation = self.get_observation()
+        observation = self.get_observation(arena)
         reward = self.get_reward()
         terminated = self.is_terminated()
         truncated = self.is_truncated()
@@ -1404,7 +1404,7 @@ class Fly:
                     )
         return img
 
-    def _update_vision(self) -> None:
+    def _update_vision(self, arena: BaseArena) -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
@@ -1421,7 +1421,7 @@ class Fly:
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
-        self.arena.pre_visual_render_hook(self.physics)
+        arena.pre_visual_render_hook(self.physics)
         for side in ["L", "R"]:
             raw_img = self.physics.render(
                 width=vision_config["raw_img_width_px"],
@@ -1434,7 +1434,7 @@ class Fly:
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
             self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
-        self.arena.post_visual_render_hook(self.physics)
+        arena.post_visual_render_hook(self.physics)
         self._curr_visual_input = np.array(ommatidia_readouts)
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
@@ -1464,7 +1464,7 @@ class Fly:
         """
         return np.array(self._vision_update_mask)
 
-    def get_observation(self) -> Tuple[ObsType, Dict[str, Any]]:
+    def get_observation(self, arena: BaseArena) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1566,12 +1566,12 @@ class Fly:
         # olfaction
         if self.enable_olfaction:
             antennae_pos = self.physics.bind(self._antennae_sensors).sensordata
-            odor_intensity = self.arena.get_olfaction(antennae_pos.reshape(4, 3))
+            odor_intensity = arena.get_olfaction(antennae_pos.reshape(4, 3))
             obs["odor_intensity"] = odor_intensity.astype(np.float32)
 
         # vision
         if self.enable_vision:
-            self._update_vision()
+            self._update_vision(arena)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
