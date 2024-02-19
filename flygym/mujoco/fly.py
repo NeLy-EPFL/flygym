@@ -387,6 +387,30 @@ class Fly:
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
+        # Set up a few things for rendering
+        self.curr_time = 0.0
+        self._last_render_time = -np.inf
+        if self.render_mode != "headless":
+            self._eff_render_interval = self.render_playspeed / self.render_fps
+        self._frames: list[np.ndarray] = []
+
+        if self.draw_contacts:
+            self._last_contact_force = []
+            self._last_contact_pos = []
+
+        # flip detection
+        self._flip_counter = 0
+
+        # Define action and observation spaces
+        action_bound = np.pi if self.control == "position" else np.inf
+        self.action_space = self._define_action_space(action_bound)
+
+        # Add metadata as specified by Gym
+        self.metadata = {
+            "render_modes": ["saved", "headless"],
+            "render_fps": self.render_fps,
+        }
+
     def post_init(self, arena: BaseArena, gravity):
         # Add floor collisions
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
@@ -411,17 +435,6 @@ class Fly:
         # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
         self.set_pose(self.init_pose)
 
-        # Set up a few things for rendering
-        self.curr_time = 0
-        self._last_render_time = -np.inf
-        if self.render_mode != "headless":
-            self._eff_render_interval = self.render_playspeed / self.render_fps
-        self._frames = []
-
-        if self.draw_contacts:
-            self._last_contact_force = []
-            self._last_contact_pos = []
-
         if self.draw_contacts or self.draw_gravity:
             width, height = self.render_window_size
             self._dm_camera = dm_control.mujoco.Camera(
@@ -432,19 +445,7 @@ class Fly:
             )
             self._decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
-        # flip detection
-        self._flip_counter = 0
-
-        # Define action and observation spaces
-        action_bound = np.pi if self.control == "position" else np.inf
-        self.action_space = self._define_action_space(action_bound)
         self.observation_space = self._define_observation_space(arena)
-
-        # Add metadata as specified by Gym
-        self.metadata = {
-            "render_modes": ["saved", "headless"],
-            "render_fps": self.render_fps,
-        }
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -605,7 +606,7 @@ class Fly:
             )
         return spaces.Dict(_observation_space)
 
-    def _initialize_custom_camera_handling(self, camera_name):
+    def _initialize_custom_camera_handling(self, camera_name: str):
         """
         This function is called when the camera is initialized. It can be
         used to customize the camera behavior. I case update_camera_pos is
@@ -1148,7 +1149,9 @@ class Fly:
         else:
             arrow_start = self._last_fly_pos + self._arrow_offset
 
-        arrow_end = arrow_start + self.physics.model.opt.gravity * self.gravity_arrow_scaling
+        arrow_end = (
+            arrow_start + self.physics.model.opt.gravity * self.gravity_arrow_scaling
+        )
 
         xyz_global = np.array([arrow_start, arrow_end]).T
 
@@ -1260,7 +1263,9 @@ class Fly:
                     )
         return img
 
-    def _update_vision(self, arena: BaseArena, timestep: float, curr_time: float) -> None:
+    def _update_vision(
+        self, arena: BaseArena, timestep: float, curr_time: float
+    ) -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
@@ -1320,7 +1325,9 @@ class Fly:
         """
         return np.array(self._vision_update_mask)
 
-    def get_observation(self, arena: BaseArena, timestep: float, curr_time: float) -> Tuple[ObsType, Dict[str, Any]]:
+    def get_observation(
+        self, arena: BaseArena, timestep: float, curr_time: float
+    ) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
         Returns
