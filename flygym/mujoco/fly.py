@@ -326,8 +326,10 @@ class Fly:
         # Add metadata as specified by Gym
         self.metadata = {}
 
-        self._last_contact_force = []
-        self._last_contact_pos = []
+        self.last_obs = {
+            "contact_forces": [],
+            "contact_pos": [],
+        }
 
     def post_init(self, arena: BaseArena, physics: mjcf.Physics):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
@@ -871,11 +873,8 @@ class Fly:
         ang_vel = physics.bind(self._body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
-        # if self.camera_follows_fly_orientation:
-        self.fly_rot = ang_pos
-
-        # if self.draw_gravity:
-        self._last_fly_pos = cart_pos
+        self.last_obs["rot"] = ang_pos
+        self.last_obs["pos"] = cart_pos
 
         # contact forces from crf_ext (first three components are rotational)
         contact_forces = physics.named.data.cfrc_ext[self.contact_sensor_placements][
@@ -919,8 +918,8 @@ class Fly:
 
         # if draw contacts same last contact forces and positions
         # if self.draw_contacts:
-        self._last_contact_force = contact_forces
-        self._last_contact_pos = (
+        self.last_obs["contact_forces"] = contact_forces
+        self.last_obs["contact_pos"] = (
             physics.named.data.xpos[self.contact_sensor_placements].copy().T
         )
 
