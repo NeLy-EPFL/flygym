@@ -393,7 +393,7 @@ class Fly:
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
-        self.physics = mjcf.Physics.from_mjcf_model(arena_root)
+        self.physics = mjcf.Physics.from_mjcf_model(arena.root_element)
         self._adhesion_actuator_geomid = np.array(
             [
                 self.physics.model.geom(
