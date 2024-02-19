@@ -48,7 +48,7 @@ class Simulation(gym.Env):
 
         fly = self.fly
         self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
-        arena_root = arena.root_element
+        arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
         self.fly.post_init(self.arena, self.gravity)
