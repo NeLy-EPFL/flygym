@@ -153,6 +153,9 @@ class Fly:
         gravity_arrow_scaling: float = 1e-4,
         align_camera_with_gravity: bool = False,
         camera_follows_fly_orientation: bool = False,
+        decompose_colors: Tuple[
+            Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]
+        ] = ((255, 0, 0), (0, 255, 0), (0, 0, 255)),
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -240,6 +243,7 @@ class Fly:
         self.gravity_arrow_scaling = gravity_arrow_scaling
         self.align_camera_with_gravity = align_camera_with_gravity
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
+        self.decompose_colors = decompose_colors
 
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
@@ -425,7 +429,6 @@ class Fly:
                 width=width,
                 height=height,
             )
-            self._decompose_colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
 
         self.observation_space = self._define_observation_space(arena)
 
@@ -748,7 +751,9 @@ class Fly:
                             (2, 1, 2),
                         ),
                     )
-                    floor_contacts[f"{geom.name}_{animat_geom_name}"] = floor_contact_pair
+                    floor_contacts[
+                        f"{geom.name}_{animat_geom_name}"
+                    ] = floor_contact_pair
 
         self._floor_contacts = floor_contacts
 
@@ -1039,13 +1044,17 @@ class Fly:
 
             render_playspeed_text = self.render_playspeed_text
             render_time_text = self.render_timestamp_text
-            if render_playspeed_text or render_time_text:
-                if render_playspeed_text and render_time_text:
-                    text = f"{curr_time:.2f}s ({self.render_playspeed}x)"
-                elif render_playspeed_text:
-                    text = f"{self.render_playspeed}x"
-                elif render_time_text:
-                    text = f"{curr_time:.2f}s"
+            # if render_playspeed_text or render_time_text:
+            if render_playspeed_text and render_time_text:
+                text = f"{curr_time:.2f}s ({self.render_playspeed}x)"
+            elif render_playspeed_text:
+                text = f"{self.render_playspeed}x"
+            elif render_time_text:
+                text = f"{curr_time:.2f}s"
+            else:
+                text = ""
+
+            if text:
                 img = cv2.putText(
                     img,
                     text,
@@ -1226,7 +1235,7 @@ class Fly:
                                 img,
                                 pts1,
                                 pts2,
-                                color=self._decompose_colors[j],
+                                color=self.decompose_colors[j],
                                 thickness=2,
                                 tipLength=r,
                             )
@@ -1253,7 +1262,7 @@ class Fly:
         """
         vision_config = self._mujoco_config["vision"]
         next_render_time = (
-                self.last_vision_update_time + self._eff_visual_render_interval
+            self.last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
         if curr_time + 0.5 * timestep < next_render_time:
