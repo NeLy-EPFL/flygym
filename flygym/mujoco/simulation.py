@@ -78,12 +78,12 @@ class Simulation(gym.Env):
             override this method to return additional information.
         """
         super().reset(seed=seed)
-        return self.fly.reset(self.arena, self.gravity)
+        return self.fly.reset(self.arena, self.gravity, self.timestep)
 
     def step(
         self, action: ObsType
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        return self.fly.step(action, self.arena)
+        return self.fly.step(action, self.arena, self.timestep)
 
     def render(self):
         return self.fly.render(self._floor_height)

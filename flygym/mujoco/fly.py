@@ -357,9 +357,6 @@ class Fly:
         self._set_compliant_tarsus()
 
     def post_init(self, arena: BaseArena, timestep: float, gravity):
-        # arena = arena
-        self.timestep = timestep
-
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
         arena_root = arena.root_element
@@ -1029,7 +1026,7 @@ class Fly:
 
         self.physics.model.opt.gravity[:] = gravity
 
-    def reset(self, arena: BaseArena, gravity) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, arena: BaseArena, gravity, timestep: float) -> Tuple[ObsType, Dict[str, Any]]:
         """Reset the Gym environment.
 
         Parameters
@@ -1066,14 +1063,14 @@ class Fly:
         self._curr_visual_input = None
         self._vision_update_mask = []
         self._flip_counter = 0
-        obs = self.get_observation(arena)
+        obs = self.get_observation(arena, timestep)
         info = self.get_info()
         if self.enable_vision:
             info["vision_updated"] = True
         return obs, info
 
     def step(
-        self, action: ObsType, arena: BaseArena
+        self, action: ObsType, arena: BaseArena, timestep: float
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
         """Step the Gym environment.
 
@@ -1103,15 +1100,15 @@ class Fly:
             this step) but the user can override this method to return
             additional information.
         """
-        arena.step(dt=self.timestep, physics=self.physics)
+        arena.step(dt=timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
         if self.enable_adhesion:
             self.physics.bind(self._adhesion_actuators).ctrl = action["adhesion"]
             self._last_adhesion = action["adhesion"]
 
         self.physics.step()
-        self.curr_time += self.timestep
-        observation = self.get_observation(arena)
+        self.curr_time += timestep
+        observation = self.get_observation(arena, timestep)
         reward = self.get_reward()
         terminated = self.is_terminated()
         truncated = self.is_truncated()
@@ -1128,7 +1125,7 @@ class Fly:
                 self._flip_counter = 0
             flip_config = self._mujoco_config["flip_detection"]
             has_passed_init = self.curr_time > flip_config["ignore_period"]
-            contact_lost_time = self._flip_counter * self.timestep
+            contact_lost_time = self._flip_counter * timestep
             lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
             info["flip"] = has_passed_init and lost_contact_long_enough
             info["flip_counter"] = self._flip_counter
@@ -1374,7 +1371,7 @@ class Fly:
                     )
         return img
 
-    def _update_vision(self, arena: BaseArena) -> None:
+    def _update_vision(self, arena: BaseArena, timestep: float) -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
@@ -1385,7 +1382,7 @@ class Fly:
             self._last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
-        if self.curr_time + 0.5 * self.timestep < next_render_time:
+        if self.curr_time + 0.5 * timestep < next_render_time:
             return
         raw_visual_input = []
         ommatidia_readouts = []
@@ -1434,7 +1431,7 @@ class Fly:
         """
         return np.array(self._vision_update_mask)
 
-    def get_observation(self, arena: BaseArena) -> Tuple[ObsType, Dict[str, Any]]:
+    def get_observation(self, arena: BaseArena, timestep: float) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1541,7 +1538,7 @@ class Fly:
 
         # vision
         if self.enable_vision:
-            self._update_vision(arena)
+            self._update_vision(arena, timestep)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
