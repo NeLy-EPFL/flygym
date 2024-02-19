@@ -211,7 +211,6 @@ class Fly:
         self.tarsus_stiffness = tarsus_stiffness
         self.tarsus_damping = tarsus_damping
         self.friction = friction
-        gravity = gravity
         self.contact_solref = contact_solref
         self.contact_solimp = contact_solimp
         self.enable_olfaction = enable_olfaction
@@ -235,7 +234,7 @@ class Fly:
         self.tip_length = tip_length
         self.contact_threshold = contact_threshold
         self.draw_gravity = draw_gravity
-        gravity_arrow_scaling = gravity_arrow_scaling
+        self.gravity_arrow_scaling = gravity_arrow_scaling
         self.align_camera_with_gravity = align_camera_with_gravity
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
 
@@ -249,7 +248,7 @@ class Fly:
             output_dir.mkdir(parents=True, exist_ok=True)
 
         self.output_dir = output_dir
-        self.spawn_pos = spawn_pos
+        self.spawn_pos = np.array(spawn_pos)
         # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for
         # spawn_orient = [0, 0, 0]
