@@ -2,7 +2,7 @@ import numpy as np
 import imageio
 import logging
 import sys
-from typing import List, Tuple, Dict, Any, Optional, Union
+from typing import List, Tuple, Dict, Optional, Union
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
@@ -101,6 +101,8 @@ class Fly:
     _floor_contacts: Dict[str, mjcf.Element]
     _self_contacts: Dict[str, mjcf.Element]
     _dm_camera: dm_control.mujoco.Camera
+    _adhesion_actuator_geom_id: np.ndarray
+    observation_space: spaces.Dict
 
     def __init__(
         self,
@@ -414,10 +416,10 @@ class Fly:
 
     def post_init(self, arena: BaseArena, physics: mjcf.Physics):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
-        self._adhesion_actuator_geomid = np.array(
+        self._adhesion_actuator_geom_id = np.array(
             [
-                physics.model.geom("Animat/" + adhesion_actuator.body + "_collision").id
-                for adhesion_actuator in self.adhesion_actuators
+                physics.model.geom(f"Animat/{actuator.body}_collision").id
+                for actuator in self.adhesion_actuators
             ]
         )
 
@@ -602,7 +604,7 @@ class Fly:
         will always be in front of the fly).
         """
 
-        is_Animat = "Animat" in camera_name
+        is_animat = "Animat" in camera_name
         is_visualization_camera = (
             "head" in camera_name
             or "Tarsus" in camera_name
@@ -619,7 +621,7 @@ class Fly:
         ]
 
         # always add pos update if it is a head camera
-        if is_Animat and not is_visualization_camera:
+        if is_animat and not is_visualization_camera:
             self.update_camera_pos = True
             self.cam_offset = self._cam.pos
             if is_compound_camera and self.camera_follows_fly_orientation:
@@ -1096,6 +1098,8 @@ class Fly:
         elif cam_name in ["camera_front", "camera_back", "camera_left", "camera_right"]:
             # if camera is front, back, left or right apply the rotation around y
             cam_matrix = R.from_euler("yzx", fly_z_rot_euler).as_matrix()
+        else:
+            cam_matrix = np.eye(3)
 
         if cam_name in ["camera_bottom"]:
             cam_matrix = cam_matrix.T
@@ -1316,7 +1320,7 @@ class Fly:
 
     def get_observation(
         self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
-    ) -> Tuple[ObsType, Dict[str, Any]]:
+    ) -> ObsType:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1364,7 +1368,7 @@ class Fly:
             contactid_normal = {}
             self._active_adhesion = np.zeros(self.n_legs, dtype=bool)
             for contact in physics.data.contact:
-                id_ = np.where(self._adhesion_actuator_geomid == contact.geom1)
+                id_ = np.where(self._adhesion_actuator_geom_id == contact.geom1)
                 if len(id_[0]) > 0 and contact.exclude == 0:
                     contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id_][
                         0
@@ -1374,7 +1378,7 @@ class Fly:
                     else:
                         contactid_normal[contact_sensor_id] = [contact.frame[:3]]
                     self._active_adhesion[id_] = True
-                id_ = np.where(self._adhesion_actuator_geomid == contact.geom2)
+                id_ = np.where(self._adhesion_actuator_geom_id == contact.geom2)
                 if len(id_[0]) > 0 and contact.exclude == 0:
                     contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id_][
                         0
