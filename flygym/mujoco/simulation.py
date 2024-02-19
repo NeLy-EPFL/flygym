@@ -78,15 +78,94 @@ class Simulation(gym.Env):
             override this method to return additional information.
         """
         super().reset(seed=seed)
-        return self.fly.reset(self.arena, self.gravity, self.timestep)
+        fly = self.fly
+        self.physics.reset()
+        if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
+            fly._set_gravity(self.gravity)
+            if fly.align_camera_with_gravity:
+                fly._camera_rot = np.eye(3)
+        self.curr_time = 0
+        fly._set_init_pose(fly.init_pose)
+        fly._frames = []
+        fly._last_render_time = -np.inf
+        fly._last_vision_update_time = -np.inf
+        fly._curr_raw_visual_input = None
+        fly._curr_visual_input = None
+        fly._vision_update_mask = []
+        fly._flip_counter = 0
+        obs = fly.get_observation(self.arena, self.timestep, self.curr_time)
+        info = fly.get_info()
+        if fly.enable_vision:
+            info["vision_updated"] = True
+        return obs, info
 
-    def step(
-        self, action: ObsType
-    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        return self.fly.step(action, self.arena, self.timestep)
+    def step(self, action: ObsType) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+        """Step the Gym environment.
+
+        Parameters
+        ----------
+        action : ObsType
+            Action dictionary as defined by the environment's action space.
+
+        Returns
+        -------
+        ObsType
+            The observation as defined by the environment.
+        float
+            The reward as defined by the environment.
+        bool
+            Whether the episode has terminated due to factors that are
+            defined within the Markov Decision Process (e.g. task
+            completion/failure, etc.).
+        bool
+            Whether the episode has terminated due to factors beyond the
+            Markov Decision Process (e.g. time limit, etc.).
+        Dict[str, Any]
+            Any additional information that is not part of the observation.
+            This is an empty dictionary by default (except when vision is
+            enabled; in this case a "vision_updated" boolean variable
+            indicates whether the visual input to the fly was refreshed at
+            this step) but the user can override this method to return
+            additional information.
+        """
+        self.arena.step(dt=self.timestep, physics=self.physics)
+
+        fly = self.fly
+
+        self.physics.bind(fly._actuators).ctrl = action["joints"]
+        if fly.enable_adhesion:
+            self.physics.bind(fly._adhesion_actuators).ctrl = action["adhesion"]
+            fly._last_adhesion = action["adhesion"]
+
+        self.physics.step()
+        self.curr_time += self.timestep
+        observation = fly.get_observation(self.arena, self.timestep, self.curr_time)
+        reward = fly.get_reward()
+        terminated = fly.is_terminated()
+        truncated = fly.is_truncated()
+        info = fly.get_info()
+        if fly.enable_vision:
+            vision_updated_this_step = self.curr_time == fly._last_vision_update_time
+            fly._vision_update_mask.append(vision_updated_this_step)
+            info["vision_updated"] = vision_updated_this_step
+
+        if fly.detect_flip:
+            if observation["contact_forces"].sum() < 1:
+                fly._flip_counter += 1
+            else:
+                fly._flip_counter = 0
+            flip_config = fly._mujoco_config["flip_detection"]
+            has_passed_init = self.curr_time > flip_config["ignore_period"]
+            contact_lost_time = fly._flip_counter * self.timestep
+            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
+            info["flip"] = has_passed_init and lost_contact_long_enough
+            info["flip_counter"] = fly._flip_counter
+            info["contact_forces"] = observation["contact_forces"].copy()
+
+        return observation, reward, terminated, truncated, info
 
     def render(self):
-        return self.fly.render(self._floor_height)
+        return self.fly.render(self._floor_height, self.curr_time)
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf

@@ -1026,114 +1026,7 @@ class Fly:
 
         self.physics.model.opt.gravity[:] = gravity
 
-    def reset(self, arena: BaseArena, gravity, timestep: float) -> Tuple[ObsType, Dict[str, Any]]:
-        """Reset the Gym environment.
-
-        Parameters
-        ----------
-        seed : int
-            Random seed for the environment. The provided base simulation
-            is deterministic, so this does not have an effect unless
-            extended by the user.
-        options : Dict
-            Additional parameter for the simulation. There is none in the
-            provided base simulation, so this does not have an effect
-            unless extended by the user.
-
-        Returns
-        -------
-        ObsType
-            The observation as defined by the environment.
-        Dict[str, Any]
-            Any additional information that is not part of the observation.
-            This is an empty dictionary by default but the user can
-            override this method to return additional information.
-        """
-        self.physics.reset()
-        if np.any(self.physics.model.opt.gravity[:] - gravity > 1e-3):
-            self._set_gravity(gravity)
-            if self.align_camera_with_gravity:
-                self._camera_rot = np.eye(3)
-        self.curr_time = 0
-        self._set_init_pose(self.init_pose)
-        self._frames = []
-        self._last_render_time = -np.inf
-        self._last_vision_update_time = -np.inf
-        self._curr_raw_visual_input = None
-        self._curr_visual_input = None
-        self._vision_update_mask = []
-        self._flip_counter = 0
-        obs = self.get_observation(arena, timestep)
-        info = self.get_info()
-        if self.enable_vision:
-            info["vision_updated"] = True
-        return obs, info
-
-    def step(
-        self, action: ObsType, arena: BaseArena, timestep: float
-    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        """Step the Gym environment.
-
-        Parameters
-        ----------
-        action : ObsType
-            Action dictionary as defined by the environment's action space.
-
-        Returns
-        -------
-        ObsType
-            The observation as defined by the environment.
-        float
-            The reward as defined by the environment.
-        bool
-            Whether the episode has terminated due to factors that are
-            defined within the Markov Decision Process (e.g. task
-            completion/failure, etc.).
-        bool
-            Whether the episode has terminated due to factors beyond the
-            Markov Decision Process (e.g. time limit, etc.).
-        Dict[str, Any]
-            Any additional information that is not part of the observation.
-            This is an empty dictionary by default (except when vision is
-            enabled; in this case a "vision_updated" boolean variable
-            indicates whether the visual input to the fly was refreshed at
-            this step) but the user can override this method to return
-            additional information.
-        """
-        arena.step(dt=timestep, physics=self.physics)
-        self.physics.bind(self._actuators).ctrl = action["joints"]
-        if self.enable_adhesion:
-            self.physics.bind(self._adhesion_actuators).ctrl = action["adhesion"]
-            self._last_adhesion = action["adhesion"]
-
-        self.physics.step()
-        self.curr_time += timestep
-        observation = self.get_observation(arena, timestep)
-        reward = self.get_reward()
-        terminated = self.is_terminated()
-        truncated = self.is_truncated()
-        info = self.get_info()
-        if self.enable_vision:
-            vision_updated_this_step = self.curr_time == self._last_vision_update_time
-            self._vision_update_mask.append(vision_updated_this_step)
-            info["vision_updated"] = vision_updated_this_step
-
-        if self.detect_flip:
-            if observation["contact_forces"].sum() < 1:
-                self._flip_counter += 1
-            else:
-                self._flip_counter = 0
-            flip_config = self._mujoco_config["flip_detection"]
-            has_passed_init = self.curr_time > flip_config["ignore_period"]
-            contact_lost_time = self._flip_counter * timestep
-            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
-            info["flip"] = has_passed_init and lost_contact_long_enough
-            info["flip_counter"] = self._flip_counter
-            info["contact_forces"] = observation["contact_forces"].copy()
-
-        return observation, reward, terminated, truncated, info
-
-    def render(self, floor_height: float) -> Union[np.ndarray, None]:
+    def render(self, floor_height: float, curr_time: float) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
         action is required.
@@ -1145,7 +1038,7 @@ class Fly:
         """
         if self.render_mode == "headless":
             return None
-        if self.curr_time < len(self._frames) * self._eff_render_interval:
+        if curr_time < len(self._frames) * self._eff_render_interval:
             return None
         if self.render_mode == "saved":
             width, height = self.render_window_size
@@ -1169,11 +1062,11 @@ class Fly:
             render_time_text = self.render_timestamp_text
             if render_playspeed_text or render_time_text:
                 if render_playspeed_text and render_time_text:
-                    text = f"{self.curr_time:.2f}s ({self.render_playspeed}x)"
+                    text = f"{curr_time:.2f}s ({self.render_playspeed}x)"
                 elif render_playspeed_text:
                     text = f"{self.render_playspeed}x"
                 elif render_time_text:
-                    text = f"{self.curr_time:.2f}s"
+                    text = f"{curr_time:.2f}s"
                 img = cv2.putText(
                     img,
                     text,
@@ -1186,7 +1079,7 @@ class Fly:
                 )
 
             self._frames.append(img)
-            self._last_render_time = self.curr_time
+            self._last_render_time = curr_time
             return self._frames[-1]
         else:
             raise NotImplementedError
@@ -1371,7 +1264,7 @@ class Fly:
                     )
         return img
 
-    def _update_vision(self, arena: BaseArena, timestep: float) -> None:
+    def _update_vision(self, arena: BaseArena, timestep: float, curr_time: float) -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
@@ -1382,7 +1275,7 @@ class Fly:
             self._last_vision_update_time + self._eff_visual_render_interval
         )
         # avoid floating point errors: when too close, update anyway
-        if self.curr_time + 0.5 * timestep < next_render_time:
+        if curr_time + 0.5 * timestep < next_render_time:
             return
         raw_visual_input = []
         ommatidia_readouts = []
@@ -1431,7 +1324,7 @@ class Fly:
         """
         return np.array(self._vision_update_mask)
 
-    def get_observation(self, arena: BaseArena, timestep: float) -> Tuple[ObsType, Dict[str, Any]]:
+    def get_observation(self, arena: BaseArena, timestep: float, curr_time: float) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1538,7 +1431,7 @@ class Fly:
 
         # vision
         if self.enable_vision:
-            self._update_vision(arena, timestep)
+            self._update_vision(arena, timestep, curr_time)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
