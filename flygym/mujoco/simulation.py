@@ -5,6 +5,7 @@ from flygym.mujoco.fly import Fly
 from flygym.mujoco.arena import BaseArena, FlatTerrain
 import numpy as np
 from dm_control.utils import transformations
+from dm_control import mjcf
 
 
 class Simulation(gym.Env):
@@ -51,7 +52,10 @@ class Simulation(gym.Env):
         arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
-        self.fly.post_init(self.arena, self.gravity)
+        self.fly.init_floor_collisions(self.arena)
+        self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
+
+        self.fly.post_init(self.arena, self.physics, self.gravity)
 
     # get undefined methods or properties from fly
     def __getattr__(self, name):
@@ -86,11 +90,11 @@ class Simulation(gym.Env):
         fly = self.fly
         self.physics.reset()
         if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-            fly._set_gravity(self.gravity)
+            fly._set_gravity(self.physics, self.gravity)
             if fly.align_camera_with_gravity:
                 fly._camera_rot = np.eye(3)
         self.curr_time = 0
-        fly.set_pose(fly.init_pose)
+        fly.set_pose(fly.init_pose, self.physics)
         fly._frames = []
         fly._last_render_time = -np.inf
         fly._last_vision_update_time = -np.inf
@@ -98,7 +102,9 @@ class Simulation(gym.Env):
         fly._curr_visual_input = None
         fly._vision_update_mask = []
         fly._flip_counter = 0
-        obs = fly.get_observation(self.arena, self.timestep, self.curr_time)
+        obs = fly.get_observation(
+            self.physics, self.arena, self.timestep, self.curr_time
+        )
         info = fly.get_info()
         if fly.enable_vision:
             info["vision_updated"] = True
@@ -146,7 +152,9 @@ class Simulation(gym.Env):
 
         self.physics.step()
         self.curr_time += self.timestep
-        observation = fly.get_observation(self.arena, self.timestep, self.curr_time)
+        observation = fly.get_observation(
+            self.physics, self.arena, self.timestep, self.curr_time
+        )
         reward = fly.get_reward()
         terminated = fly.is_terminated()
         truncated = fly.is_truncated()
@@ -172,7 +180,7 @@ class Simulation(gym.Env):
         return observation, reward, terminated, truncated, info
 
     def render(self):
-        return self.fly.render(self._floor_height, self.curr_time)
+        return self.fly.render(self.physics, self._floor_height, self.curr_time)
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
@@ -223,3 +231,16 @@ class Simulation(gym.Env):
         self._set_gravity(new_gravity, rot_mat)
 
         return 0
+
+    def _get_center_of_mass(self):
+        """Get the center of mass of the fly.
+        (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
+
+        Returns
+        -------
+        np.ndarray
+            The center of mass of the fly.
+        """
+        return np.average(
+            self.physics.data.subtree_com, axis=0, weights=self.physics.data.crb[:, 0]
+        )

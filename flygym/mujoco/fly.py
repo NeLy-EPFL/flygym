@@ -75,9 +75,6 @@ class Fly:
         inputs.
     arena_root = dm_control.mjcf.RootElement
         The root element of the arena.
-    physics: dm_control.mjcf.Physics
-        The MuJoCo Physics object built from the arena's MJCF model with
-        the fly in it.
     curr_time : float
         The (simulated) time elapsed since the last reset (in seconds).
     action_space : gymnasium.core.ObsType
@@ -411,34 +408,32 @@ class Fly:
             "render_fps": self.render_fps,
         }
 
-    def post_init(self, arena: BaseArena, gravity):
+    def init_floor_collisions(self, arena: BaseArena):
         # Add floor collisions
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
         self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
             arena, floor_collision_geoms
         )
 
+    def post_init(self, arena: BaseArena, physics: mjcf.Physics, gravity):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
-        self.physics = mjcf.Physics.from_mjcf_model(arena.root_element)
         self._adhesion_actuator_geomid = np.array(
             [
-                self.physics.model.geom(
-                    "Animat/" + adhesion_actuator.body + "_collision"
-                ).id
+                physics.model.geom("Animat/" + adhesion_actuator.body + "_collision").id
                 for adhesion_actuator in self._adhesion_actuators
             ]
         )
 
         # Set gravity
-        self._set_gravity(gravity)
+        self._set_gravity(physics, gravity)
 
         # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
-        self.set_pose(self.init_pose)
+        self.set_pose(self.init_pose, physics)
 
         if self.draw_contacts or self.draw_gravity:
             width, height = self.render_window_size
             self._dm_camera = dm_control.mujoco.Camera(
-                self.physics,
+                physics,
                 camera_id=self.render_camera,
                 width=width,
                 height=height,
@@ -899,13 +894,13 @@ class Fly:
             )
         return adhesion_actuators
 
-    def set_pose(self, pose: state.KinematicPose):
-        with self.physics.reset_context():
+    def set_pose(self, pose: state.KinematicPose, physics: mjcf.Physics):
+        with physics.reset_context():
             for i in range(len(self.actuated_joints)):
                 curr_joint = self._actuators[i].joint.name
                 if (curr_joint in self.actuated_joints) and (curr_joint in pose):
                     animat_name = f"Animat/{curr_joint}"
-                    self.physics.named.data.qpos[animat_name] = pose[curr_joint]
+                    physics.named.data.qpos[animat_name] = pose[curr_joint]
 
     def _set_compliant_tarsus(self):
         """Set the Tarsus2/3/4/5 to be compliant by setting the stiffness
@@ -921,7 +916,9 @@ class Fly:
                     joint.stiffness = stiffness
                     joint.damping = damping
 
-    def _set_gravity(self, gravity: List[float], rot_mat: np.ndarray = None) -> None:
+    def _set_gravity(
+        self, physics: mjcf.Physics, gravity: List[float], rot_mat: np.ndarray = None
+    ) -> None:
         """Set the gravity of the environment. Changing the gravity vector
         might be useful during climbing simulations. The change in the
         camera point of view has been extensively tested for the simple
@@ -957,7 +954,7 @@ class Fly:
             downward_ref = np.array([0.0, 0.0, -1.0]).reshape((1, 3))
 
             if (
-                not (normalised_gravity == downward_ref).all()
+                not np.all(normalised_gravity == downward_ref)
                 and self.align_camera_with_gravity
             ):
                 # Generate a bunch of vectors to help the optimisation algorithm
@@ -1021,9 +1018,11 @@ class Fly:
 
                 self._camera_rot = rot_mat.T
 
-        self.physics.model.opt.gravity[:] = gravity
+        physics.model.opt.gravity[:] = gravity
 
-    def render(self, floor_height: float, curr_time: float) -> Union[np.ndarray, None]:
+    def render(
+        self, physics: mjcf.Physics, floor_height: float, curr_time: float
+    ) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
         action is required.
@@ -1041,19 +1040,19 @@ class Fly:
             width, height = self.render_window_size
             camera = self.render_camera
             if self.update_camera_pos:
-                self._update_cam_pos(floor_height)
+                self._update_cam_pos(physics, floor_height)
             if self.camera_follows_fly_orientation:
-                self._update_cam_rot()
+                self._update_cam_rot(physics)
             if self.draw_adhesion:
-                self._draw_adhesion()
+                self._draw_adhesion(physics)
             if self.align_camera_with_gravity:
-                self._rotate_camera()
-            img = self.physics.render(width=width, height=height, camera_id=camera)
+                self._rotate_camera(physics)
+            img = physics.render(width=width, height=height, camera_id=camera)
             img = img.copy()
             if self.draw_contacts:
                 img = self._draw_contacts(img)
             if self.draw_gravity:
-                img = self._draw_gravity(img)
+                img = self._draw_gravity(img, physics)
 
             render_playspeed_text = self.render_playspeed_text
             render_time_text = self.render_timestamp_text
@@ -1081,14 +1080,14 @@ class Fly:
         else:
             raise NotImplementedError
 
-    def _update_cam_pos(self, floor_height):
-        cam = self.physics.bind(self._cam)
+    def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float):
+        cam = physics.bind(self._cam)
         cam_pos = cam.xpos.copy()
-        cam_pos[2] = self.cam_offset[2]
+        cam_pos[2] = self.cam_offset[2] + floor_height
         cam.xpos = cam_pos
 
-    def _update_cam_rot(self):
-        cam = self.physics.bind(self._cam)
+    def _update_cam_rot(self, physics: mjcf.Physics):
+        cam = physics.bind(self._cam)
         cam_name = self._cam.name
         fly_z_rot_euler = np.array(
             [self.fly_rot[0], 0.0, 0.0]
@@ -1113,9 +1112,9 @@ class Fly:
         cam_matrix = self.base_camera_rot @ cam_matrix
         cam.xmat = cam_matrix.flatten()
 
-    def _rotate_camera(self):
+    def _rotate_camera(self, physics: mjcf.Physics):
         # get camera
-        cam = self.physics.bind(self._cam)
+        cam = physics.bind(self._cam)
         # rotate the cam
         cam_matrix_base = getattr(cam, "xmat").copy()
         cam_matrix = self._camera_rot @ cam_matrix_base.reshape(3, 3)
@@ -1123,23 +1122,23 @@ class Fly:
 
         return 0
 
-    def _draw_adhesion(self):
+    def _draw_adhesion(self, physics: mjcf.Physics):
         """Highlight the tarsal segments of the leg having adhesion"""
         if np.any(self._last_adhesion == 1):
-            self.physics.named.model.geom_rgba[
+            physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
-            self.physics.named.model.geom_rgba[
+            physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
             ] = self._active_adhesion_rgba
         if np.any(self._last_adhesion == 0):
-            self.physics.named.model.geom_rgba[
+            physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
             ] = self._base_rgba
         return
 
-    def _draw_gravity(self, img: np.ndarray) -> np.ndarray:
+    def _draw_gravity(self, img: np.ndarray, physics: mjcf.Physics) -> np.ndarray:
         """Draw gravity as an arrow. The arrow is drawn at the top right of the frame."""
 
         camera_matrix = self._dm_camera.matrix
@@ -1149,9 +1148,7 @@ class Fly:
         else:
             arrow_start = self._last_fly_pos + self._arrow_offset
 
-        arrow_end = (
-            arrow_start + self.physics.model.opt.gravity * self.gravity_arrow_scaling
-        )
+        arrow_end = arrow_start + physics.model.opt.gravity * self.gravity_arrow_scaling
 
         xyz_global = np.array([arrow_start, arrow_end]).T
 
@@ -1264,7 +1261,7 @@ class Fly:
         return img
 
     def _update_vision(
-        self, arena: BaseArena, timestep: float, curr_time: float
+        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
     ) -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
@@ -1281,10 +1278,10 @@ class Fly:
         raw_visual_input = []
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
-            self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
-        arena.pre_visual_render_hook(self.physics)
+            physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
+        arena.pre_visual_render_hook(physics)
         for side in ["L", "R"]:
-            raw_img = self.physics.render(
+            raw_img = physics.render(
                 width=vision_config["raw_img_width_px"],
                 height=vision_config["raw_img_height_px"],
                 camera_id=f"Animat/{side}Eye_cam",
@@ -1294,14 +1291,14 @@ class Fly:
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
-            self.physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
-        arena.post_visual_render_hook(self.physics)
+            physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
+        arena.post_visual_render_hook(physics)
         self._curr_visual_input = np.array(ommatidia_readouts)
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
         self._last_vision_update_time = self.curr_time
 
-    def change_segment_color(self, segment, color):
+    def change_segment_color(self, physics: mjcf.Physics, segment: str, color):
         """Change the color of a segment of the fly.
 
         Parameters
@@ -1311,7 +1308,7 @@ class Fly:
         color : Tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
-        self.physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
+        physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
 
     @property
     def vision_update_mask(self) -> np.ndarray:
@@ -1326,7 +1323,7 @@ class Fly:
         return np.array(self._vision_update_mask)
 
     def get_observation(
-        self, arena: BaseArena, timestep: float, curr_time: float
+        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
     ) -> Tuple[ObsType, Dict[str, Any]]:
         """Get observation without stepping the physics simulation.
 
@@ -1337,7 +1334,7 @@ class Fly:
         """
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
-        joint_sensordata = self.physics.bind(self._joint_sensors).sensordata
+        joint_sensordata = physics.bind(self._joint_sensors).sensordata
         for i, joint in enumerate(self.actuated_joints):
             base_idx = i * 5
             # pos and vel
@@ -1347,16 +1344,16 @@ class Fly:
         joint_obs[2, :] *= 1e-9  # convert to N
 
         # fly position and orientation
-        cart_pos = self.physics.bind(self._body_sensors[0]).sensordata
-        cart_vel = self.physics.bind(self._body_sensors[1]).sensordata
+        cart_pos = physics.bind(self._body_sensors[0]).sensordata
+        cart_vel = physics.bind(self._body_sensors[1]).sensordata
 
-        quat = self.physics.bind(self._body_sensors[2]).sensordata
+        quat = physics.bind(self._body_sensors[2]).sensordata
         # ang_pos = transformations.quat_to_euler(quat)
         ang_pos = R.from_quat(quat[[1, 2, 3, 0]]).as_euler(
             "ZYX"
         )  # explicitly use extrinsic ZYX
         # ang_pos[0] *= -1  # flip roll??
-        ang_vel = self.physics.bind(self._body_sensors[3]).sensordata
+        ang_vel = physics.bind(self._body_sensors[3]).sensordata
         fly_pos = np.array([cart_pos, cart_vel, ang_pos, ang_vel])
 
         if self.camera_follows_fly_orientation:
@@ -1366,15 +1363,15 @@ class Fly:
             self._last_fly_pos = cart_pos
 
         # contact forces from crf_ext (first three components are rotational)
-        contact_forces = self.physics.named.data.cfrc_ext[
-            self.contact_sensor_placements
-        ][:, 3:].copy()
+        contact_forces = physics.named.data.cfrc_ext[self.contact_sensor_placements][
+            :, 3:
+        ].copy()
         if self.enable_adhesion:
             # Adhesion inputs force in the contact. Let's compute this force
             # and remove it from the contact forces
             contactid_normal = {}
             self._active_adhesion = np.zeros(self.n_legs, dtype=bool)
-            for contact in self.physics.data.contact:
+            for contact in physics.data.contact:
                 id = np.where(self._adhesion_actuator_geomid == contact.geom1)
                 if len(id[0]) > 0 and contact.exclude == 0:
                     contact_sensor_id = self._adhesion_bodies_with_contact_sensors[id][
@@ -1409,14 +1406,14 @@ class Fly:
         if self.draw_contacts:
             self._last_contact_force = contact_forces
             self._last_contact_pos = (
-                self.physics.named.data.xpos[self.contact_sensor_placements].copy().T
+                physics.named.data.xpos[self.contact_sensor_placements].copy().T
             )
 
         # end effector position
-        ee_pos = self.physics.bind(self._end_effector_sensors).sensordata.copy()
+        ee_pos = physics.bind(self._end_effector_sensors).sensordata.copy()
         ee_pos = ee_pos.reshape((self.n_legs, 3))
 
-        orientation_vec = self.physics.bind(self._body_sensors[4]).sensordata.copy()
+        orientation_vec = physics.bind(self._body_sensors[4]).sensordata.copy()
 
         obs = {
             "joints": joint_obs.astype(np.float32),
@@ -1428,13 +1425,13 @@ class Fly:
 
         # olfaction
         if self.enable_olfaction:
-            antennae_pos = self.physics.bind(self._antennae_sensors).sensordata
+            antennae_pos = physics.bind(self._antennae_sensors).sensordata
             odor_intensity = arena.get_olfaction(antennae_pos.reshape(4, 3))
             obs["odor_intensity"] = odor_intensity.astype(np.float32)
 
         # vision
         if self.enable_vision:
-            self._update_vision(arena, timestep, curr_time)
+            self._update_vision(physics, arena, timestep, curr_time)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
@@ -1524,19 +1521,6 @@ class Fly:
         with imageio.get_writer(path, fps=self.render_fps) as writer:
             for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
-
-    def _get_center_of_mass(self):
-        """Get the center of mass of the fly.
-        (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
-
-        Returns
-        -------
-        np.ndarray
-            The center of mass of the fly.
-        """
-        return np.average(
-            self.physics.data.subtree_com, axis=0, weights=self.physics.data.crb[:, 0]
-        )
 
     def _get_energy(self):
         """Get the energy of the system (kinetic, potential).
