@@ -23,13 +23,17 @@ except ImportError:
 try:
     import cv2
 except ImportError:
-    pass
+    raise ImportError(
+        "OpenCV prerequisites not installed. Please install the prerequisites "
+        "by running `pip install flygym[mujoco]` or "
+        '`pip install -e ."[mujoco]"` if installing locally.'
+    )
 
 import flygym.mujoco.util as util
 import flygym.mujoco.preprogrammed as preprogrammed
 import flygym.mujoco.state as state
 import flygym.mujoco.vision as vision
-from flygym.mujoco.arena import BaseArena, FlatTerrain
+from flygym.mujoco.arena import BaseArena
 from flygym.common import get_data_path
 
 
@@ -38,12 +42,8 @@ class Fly:
 
     Attributes
     ----------
-    timestep: float
-        Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
-    arena : flygym.arena.BaseWorld
-        The arena in which the fly is placed.
     spawn_pos : Tuple[float, float, float], optional
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
@@ -103,7 +103,6 @@ class Fly:
         actuated_joints: List = preprogrammed.all_leg_dofs,
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
-        arena: BaseArena = None,
         xml_variant: Union[str, Path] = "seqik",
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
@@ -112,7 +111,6 @@ class Fly:
         floor_collisions: Union[str, List[str]] = "legs",
         self_collisions: Union[str, List[str]] = "legs",
         detect_flip: bool = False,
-        timestep: float = 0.0001,
         joint_stiffness: float = 0.05,
         joint_damping: float = 0.06,
         actuator_kp: float = 50.0,
@@ -166,9 +164,6 @@ class Fly:
         output_dir : Path, optional
             Directory to save simulation data. If ``None``, no data will
             be saved. By default None.
-        arena : flygym.mujoco.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
         xml_variant: str or Path, optional
             The variant of the fly model to use. Multiple variants exist
             because when replaying experimentally recorded behavior, the
@@ -210,7 +205,6 @@ class Fly:
             file. This avoids spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
         """
-        self.timestep = timestep
         self.joint_stiffness = joint_stiffness
         self.joint_damping = joint_damping
         self.actuator_kp = actuator_kp
@@ -245,14 +239,16 @@ class Fly:
         self.align_camera_with_gravity = align_camera_with_gravity
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
 
-        if arena is None:
-            arena = FlatTerrain()
+        self.floor_collisions = floor_collisions
+        self.self_collisions = self_collisions
+
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
+
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
+
         self.output_dir = output_dir
-        self.arena = arena
         self.spawn_pos = spawn_pos
         # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for
@@ -360,12 +356,17 @@ class Fly:
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
+    def post_init(self, arena: BaseArena, timestep: float, gravity):
+        self.arena = arena
+        self.timestep = timestep
+        self.gravity = gravity
+
         self._floor_height = self._get_max_floor_height(arena)
 
         # Add arena and put fly in it
         arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
         self.arena_root = arena.root_element
-        self.arena_root.option.timestep = self.timestep
+        self.arena_root.option.timestep = timestep
 
         camera_name = self.render_camera
         model_camera_name = self.render_camera.split("/")[-1]
@@ -373,11 +374,11 @@ class Fly:
         self._initialize_custom_camera_handling(camera_name)
 
         # Add collision/contacts
-        floor_collision_geoms = self._parse_collision_specs(floor_collisions)
+        floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
         self._floor_contacts, self._floor_contact_names = self._define_floor_contacts(
             floor_collision_geoms
         )
-        self_collision_geoms = self._parse_collision_specs(self_collisions)
+        self_collision_geoms = self._parse_collision_specs(self.self_collisions)
         self._self_contacts, self._self_contact_names = self._define_self_contacts(
             self_collision_geoms
         )
@@ -415,7 +416,7 @@ class Fly:
         )
 
         # Set gravity
-        self._set_gravity(self.gravity)
+        self._set_gravity(gravity)
 
         # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
         self._set_init_pose(self.init_pose)

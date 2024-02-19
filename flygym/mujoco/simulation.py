@@ -2,14 +2,46 @@ from typing import Optional, Dict, Any, Tuple
 from gymnasium.core import ObsType
 import gymnasium as gym
 from flygym.mujoco.fly import Fly
+from flygym.mujoco.arena import BaseArena, FlatTerrain
 
 
 class Simulation(gym.Env):
+    """
+    Attributes
+    ----------
+    arena : flygym.arena.BaseWorld
+        The arena in which the fly is placed.
+    timestep: float
+        Simulation timestep in seconds.
+    gravity : Tuple[float, float, float]
+        Gravity in (x, y, z) axes. Note that the gravity is -9.81 * 1000
+        due to the scaling of the model.
+    """
+
     def __init__(
         self,
         fly: Fly,
+        arena: BaseArena = None,
+        timestep: float = 0.0001,
+        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
+        """
+        Parameters
+        ----------
+        arena : flygym.mujoco.arena.BaseArena, optional
+            The arena in which the fly is placed. ``FlatTerrain`` will be
+            used if not specified.
+        timestep : float
+            Simulation timestep in seconds, by default 0.0001.
+        gravity : Tuple[float, float, float]
+            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
+            the gravity is -9.81 * 1000 due to the scaling of the model.
+        """
+        self.arena = arena if arena is not None else FlatTerrain()
+        self.timestep = timestep
+        self.gravity = gravity
         self.fly = fly
+        self.fly.post_init(self.arena, self.timestep, self.gravity)
 
     # get undefined methods or properties from fly
     def __getattr__(self, name):
