@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Union, Iterable
 from gymnasium.core import ObsType
 import gymnasium as gym
 from flygym.mujoco.fly import Fly
@@ -7,6 +7,7 @@ from flygym.mujoco.arena import BaseArena, FlatTerrain
 import numpy as np
 from dm_control.utils import transformations
 from dm_control import mjcf
+from gymnasium.core import spaces
 
 
 class Simulation(gym.Env):
@@ -24,8 +25,8 @@ class Simulation(gym.Env):
 
     def __init__(
         self,
-        fly: Fly,
-        camera: Camera,
+        flies: Union[Fly, Iterable[Fly]],
+        cameras: Union[Camera, Iterable[Fly]],
         arena: BaseArena = None,
         timestep: float = 0.0001,
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
@@ -42,30 +43,47 @@ class Simulation(gym.Env):
             Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
             the gravity is -9.81 * 1000 due to the scaling of the model.
         """
+        if isinstance(flies, Iterable):
+            self.flies = list(flies)
+        else:
+            self.flies = [flies]
+
+        if isinstance(cameras, Iterable):
+            self.cameras = list(cameras)
+        else:
+            self.cameras = [cameras]
+
         self.arena = arena if arena is not None else FlatTerrain()
         self.timestep = timestep
-        self.fly = fly
-        self.camera = camera
         self.curr_time = 0.0
 
         self._floor_height = self._get_max_floor_height(self.arena)
 
-        fly = self.fly
-        self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
+        for fly in self.flies:
+            self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
+
         arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
-        self.fly.init_floor_contacts(self.arena)
+        for fly in self.flies:
+            fly.init_floor_contacts(self.arena)
+
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
 
-        self.camera.initialize_dm_camera(self.physics)
+        for camera in self.cameras:
+            camera.initialize_dm_camera(self.physics)
 
         self.gravity = gravity
 
-        # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
-        fly.set_pose(fly.init_pose, self.physics)
+        self._set_init_pose()
 
-        self.fly.post_init(self.arena, self.physics)
+        for fly in self.flies:
+            fly.post_init(self.arena, self.physics)
+
+    def _set_init_pose(self):
+        with self.physics.reset_context():
+            for fly in self.flies:
+                fly.set_pose(fly.init_pose, self.physics)
 
     @property
     def gravity(self):
@@ -74,15 +92,17 @@ class Simulation(gym.Env):
     @gravity.setter
     def gravity(self, value):
         self.physics.model.opt.gravity[:] = value
-        self.camera.set_gravity(value)
+
+        for camera in self.cameras:
+            camera.set_gravity(value)
 
     @property
     def action_space(self):
-        return self.fly.action_space
+        return spaces.Dict({fly.name: fly.action_space for fly in self.flies})
 
     @property
     def observation_space(self):
-        return self.fly.observation_space
+        return spaces.Dict({fly.name: fly.observation_space for fly in self.flies})
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
@@ -110,27 +130,35 @@ class Simulation(gym.Env):
             override this method to return additional information.
         """
         super().reset(seed=seed)
-        fly = self.fly
         self.physics.reset()
-        if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-            self.camera.set_gravity(self.gravity)
-            if self.camera.align_camera_with_gravity:
-                self.camera._camera_rot = np.eye(3)
+
+        # if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
+        #     self.camera.set_gravity(self.gravity)
+        #     if self.camera.align_camera_with_gravity:
+        #         self.camera._camera_rot = np.eye(3)
+
         self.curr_time = 0
-        fly.set_pose(fly.init_pose, self.physics)
-        fly._frames = []
-        fly._last_render_time = -np.inf
-        fly.last_vision_update_time = -np.inf
-        fly._curr_raw_visual_input = None
-        fly._curr_visual_input = None
-        fly._vision_update_mask = []
-        fly.flip_counter = 0
-        obs = fly.get_observation(
-            self.physics, self.arena, self.timestep, self.curr_time
-        )
-        info = fly.get_info()
-        if fly.enable_vision:
-            info["vision_updated"] = True
+
+        self._set_init_pose()
+
+        obs = {}
+        info = {}
+
+        for fly in self.flies:
+            fly._frames = []
+            fly._last_render_time = -np.inf
+            fly.last_vision_update_time = -np.inf
+            fly._curr_raw_visual_input = None
+            fly._curr_visual_input = None
+            fly._vision_update_mask = []
+            fly.flip_counter = 0
+            obs[fly.name] = fly.get_observation(
+                self.physics, self.arena, self.timestep, self.curr_time
+            )
+            info[fly.name] = fly.get_info()
+            if fly.enable_vision:
+                info[fly.name]["vision_updated"] = True
+
         return obs, info
 
     def step(
@@ -166,46 +194,53 @@ class Simulation(gym.Env):
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
 
-        fly = self.fly
+        for fly in self.flies:
+            self.physics.bind(fly.actuators).ctrl = action[fly.name]["joints"]
 
-        self.physics.bind(fly.actuators).ctrl = action["joints"]
-        if fly.enable_adhesion:
-            self.physics.bind(fly.adhesion_actuators).ctrl = action["adhesion"]
-            fly._last_adhesion = action["adhesion"]
+        for fly in self.flies:
+            if fly.enable_adhesion:
+                self.physics.bind(fly.adhesion_actuators).ctrl = action[fly.name]["adhesion"]
+                fly._last_adhesion = action[fly.name]["adhesion"]
 
         self.physics.step()
         self.curr_time += self.timestep
-        observation = fly.get_observation(
-            self.physics, self.arena, self.timestep, self.curr_time
-        )
-        reward = fly.get_reward()
-        terminated = fly.is_terminated()
-        truncated = fly.is_truncated()
-        info = fly.get_info()
 
-        if fly.enable_vision:
-            vision_updated_this_step = self.curr_time == fly.last_vision_update_time
-            fly._vision_update_mask.append(vision_updated_this_step)
-            info["vision_updated"] = vision_updated_this_step
+        obs, reward, terminated, truncated, info = {}, {}, {}, {}, {}
 
-        if fly.detect_flip:
-            if observation["contact_forces"].sum() < 1:
-                fly.flip_counter += 1
-            else:
-                fly.flip_counter = 0
-            flip_config = fly.mujoco_config["flip_detection"]
-            has_passed_init = self.curr_time > flip_config["ignore_period"]
-            contact_lost_time = fly.flip_counter * self.timestep
-            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
-            info["flip"] = has_passed_init and lost_contact_long_enough
-            info["flip_counter"] = fly.flip_counter
-            info["contact_forces"] = observation["contact_forces"].copy()
+        for fly in self.flies:
+            key = fly.name
+            obs[key] = fly.get_observation(
+                self.physics, self.arena, self.timestep, self.curr_time
+            )
+            reward[key] = fly.get_reward()
+            terminated[key] = fly.is_terminated()
+            truncated[key] = fly.is_truncated()
+            info[key] = fly.get_info()
 
-        return observation, reward, terminated, truncated, info
+            if fly.enable_vision:
+                vision_updated_this_step = self.curr_time == fly.last_vision_update_time
+                fly._vision_update_mask.append(vision_updated_this_step)
+                info[key]["vision_updated"] = vision_updated_this_step
+
+            if fly.detect_flip:
+                if obs[key]["contact_forces"].sum() < 1:
+                    fly.flip_counter += 1
+                else:
+                    fly.flip_counter = 0
+                flip_config = fly.mujoco_config["flip_detection"]
+                has_passed_init = self.curr_time > flip_config["ignore_period"]
+                contact_lost_time = fly.flip_counter * self.timestep
+                lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
+                info[key]["flip"] = has_passed_init and lost_contact_long_enough
+                info[key]["flip_counter"] = fly.flip_counter
+                info[key]["contact_forces"] = obs[key]["contact_forces"].copy()
+
+        return obs, sum(reward.values()), any(terminated.values()), any(truncated.values()), info
 
     def render(self):
-        self.fly.update_colors(self.physics)
-        return self.camera.render(self.physics, self._floor_height, self.curr_time)
+        for fly in self.flies:
+            fly.update_colors(self.physics)
+        return [camera.render(self.physics, self._floor_height, self.curr_time) for camera in self.cameras]
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
@@ -227,7 +262,7 @@ class Simulation(gym.Env):
                     sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
         if np.isinf(max_floor_height):
-            max_floor_height = self.fly.spawn_pos[2]
+            max_floor_height = (fly.spawn_pos[2] for fly in self.flies)
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
@@ -254,13 +289,13 @@ class Simulation(gym.Env):
             rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
         new_gravity = np.dot(rot_mat, self.gravity)
 
-        self.gravity = new_gravity
-        self.camera.set_gravity(new_gravity, rot_mat)
+        self.physics.model.opt.gravity[:] = new_gravity
 
-        return 0
+        for camera in self.cameras:
+            camera.set_gravity(new_gravity, rot_mat)
 
     def _get_center_of_mass(self):
-        """Get the center of mass of the fly.
+        """Get the center of mass of the flies.
         (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
 
         Returns
@@ -275,6 +310,7 @@ class Simulation(gym.Env):
     def close(self) -> None:
         """Close the environment, save data, and release any resources."""
 
-        if self.camera.output_path is not None:
-            self.camera.output_path.parent.mkdir(parents=True, exist_ok=True)
-            self.camera.save_video(self.camera.output_path)
+        for camera in self.cameras:
+            if camera.output_path is not None:
+                camera.output_path.parent.mkdir(parents=True, exist_ok=True)
+                camera.save_video(camera.output_path)

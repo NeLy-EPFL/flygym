@@ -99,6 +99,7 @@ class Fly:
 
     def __init__(
         self,
+        name: str,
         actuated_joints: List = preprogrammed.all_leg_dofs,
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
@@ -187,6 +188,7 @@ class Fly:
             file. This avoids spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
         """
+        self.name = str(name)
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
@@ -270,6 +272,7 @@ class Fly:
                 / self.mujoco_config["paths"]["mjcf"][xml_variant]
             )
         self.model = mjcf.from_path(xml_variant)
+        print(self.model.model)
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes
@@ -736,12 +739,11 @@ class Fly:
         return adhesion_actuators
 
     def set_pose(self, pose: state.KinematicPose, physics: mjcf.Physics):
-        with physics.reset_context():
-            for i in range(len(self.actuated_joints)):
-                curr_joint = self.actuators[i].joint.name
-                if (curr_joint in self.actuated_joints) and (curr_joint in pose):
-                    animat_name = f"Animat/{curr_joint}"
-                    physics.named.data.qpos[animat_name] = pose[curr_joint]
+        for i in range(len(self.actuated_joints)):
+            curr_joint = self.actuators[i].joint.name
+            if (curr_joint in self.actuated_joints) and (curr_joint in pose):
+                animat_name = f"Animat/{curr_joint}"
+                physics.named.data.qpos[animat_name] = pose[curr_joint]
 
     def _set_compliant_tarsus(self):
         """Set the Tarsus2/3/4/5 to be compliant by setting the stiffness
