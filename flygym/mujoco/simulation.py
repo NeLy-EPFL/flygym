@@ -4,6 +4,7 @@ import gymnasium as gym
 from flygym.mujoco.fly import Fly
 from flygym.mujoco.arena import BaseArena, FlatTerrain
 import numpy as np
+from dm_control.utils import transformations
 
 
 class Simulation(gym.Env):
@@ -77,7 +78,7 @@ class Simulation(gym.Env):
             override this method to return additional information.
         """
         super().reset(seed=seed)
-        return self.fly.reset(self.arena)
+        return self.fly.reset(self.arena, self.gravity)
 
     def step(
         self, action: ObsType
@@ -109,3 +110,30 @@ class Simulation(gym.Env):
         if np.isinf(max_floor_height):
             max_floor_height = self.spawn_pos[2]
         return max_floor_height
+
+    def set_slope(self, slope: float, rot_axis="y"):
+        """Set the slope of the environment and modify the camera
+        orientation so that gravity is always pointing down. Changing the
+        gravity vector might be useful during climbing simulations. The
+        change in the camera angle has been extensively tested for the
+        simple cameras (left, right, top, bottom, front, back) but not for
+        the composed ones.
+
+        Parameters
+        ----------
+        slope : float
+            The desired_slope of the environment in degrees.
+        rot_axis : str, optional
+            The axis about which the slope is applied, by default "y".
+        """
+        rot_mat = np.eye(3)
+        if rot_axis == "x":
+            rot_mat = transformations.rotation_x_axis(np.deg2rad(slope))
+        elif rot_axis == "y":
+            rot_mat = transformations.rotation_y_axis(np.deg2rad(slope))
+        elif rot_axis == "z":
+            rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
+        new_gravity = np.dot(rot_mat, self.gravity)
+        self._set_gravity(new_gravity, rot_mat)
+
+        return 0
