@@ -56,6 +56,8 @@ class Camera:
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
         self.decompose_colors = decompose_colors
 
+        self.camera_id = self.render_camera.replace("Animat", fly.name)
+
         if output_path is not None:
             self.output_path = Path(output_path)
         else:
@@ -161,7 +163,7 @@ class Camera:
             width, height = self.render_window_size
             self._dm_camera = dm_control.mujoco.Camera(
                 physics,
-                camera_id=self.render_camera,
+                camera_id=self.camera_id,
                 width=width,
                 height=height,
             )
@@ -282,14 +284,13 @@ class Camera:
             return None
 
         width, height = self.render_window_size
-        camera = self.render_camera
         if self.update_camera_pos:
             self._update_cam_pos(physics, floor_height)
         if self.camera_follows_fly_orientation:
             self._update_cam_rot(physics)
         if self.align_camera_with_gravity:
             self._rotate_camera(physics)
-        img = physics.render(width=width, height=height, camera_id=camera)
+        img = physics.render(width=width, height=height, camera_id=self.camera_id)
         img = img.copy()
         if self.draw_contacts:
             img = self._draw_contacts(img)
