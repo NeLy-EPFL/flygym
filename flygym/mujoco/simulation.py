@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any, Tuple
 from gymnasium.core import ObsType
 import gymnasium as gym
 from flygym.mujoco.fly import Fly
+from flygym.mujoco.camera import Camera
 from flygym.mujoco.arena import BaseArena, FlatTerrain
 import numpy as np
 from dm_control.utils import transformations
@@ -24,6 +25,7 @@ class Simulation(gym.Env):
     def __init__(
         self,
         fly: Fly,
+        camera: Camera,
         arena: BaseArena = None,
         timestep: float = 0.0001,
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
@@ -43,7 +45,8 @@ class Simulation(gym.Env):
         self.arena = arena if arena is not None else FlatTerrain()
         self.timestep = timestep
         self.fly = fly
-        self.curr_time = 0
+        self.camera = camera
+        self.curr_time = 0.0
 
         self._floor_height = self._get_max_floor_height(self.arena)
 
@@ -54,6 +57,8 @@ class Simulation(gym.Env):
 
         self.fly.init_floor_contacts(self.arena)
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
+
+        self.camera.initialize_dm_camera(self.physics)
 
         self.gravity = gravity
 
@@ -69,7 +74,7 @@ class Simulation(gym.Env):
     @gravity.setter
     def gravity(self, value):
         self.physics.model.opt.gravity[:] = value
-        self.fly.set_gravity(value)
+        self.camera.set_gravity(value)
 
     @property
     def action_space(self):
@@ -108,9 +113,9 @@ class Simulation(gym.Env):
         fly = self.fly
         self.physics.reset()
         if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-            fly.set_gravity(self.gravity)
-            if fly.align_camera_with_gravity:
-                fly._camera_rot = np.eye(3)
+            self.camera.set_gravity(self.gravity)
+            if self.camera.align_camera_with_gravity:
+                self.camera._camera_rot = np.eye(3)
         self.curr_time = 0
         fly.set_pose(fly.init_pose, self.physics)
         fly._frames = []
@@ -188,7 +193,7 @@ class Simulation(gym.Env):
                 fly.flip_counter += 1
             else:
                 fly.flip_counter = 0
-            flip_config = fly._mujoco_config["flip_detection"]
+            flip_config = fly.mujoco_config["flip_detection"]
             has_passed_init = self.curr_time > flip_config["ignore_period"]
             contact_lost_time = fly.flip_counter * self.timestep
             lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
@@ -199,7 +204,8 @@ class Simulation(gym.Env):
         return observation, reward, terminated, truncated, info
 
     def render(self):
-        return self.fly.render(self.physics, self._floor_height, self.curr_time)
+        self.fly.update_colors(self.physics)
+        return self.camera.render(self.physics, self._floor_height, self.curr_time)
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
@@ -249,7 +255,7 @@ class Simulation(gym.Env):
         new_gravity = np.dot(rot_mat, self.gravity)
 
         self.gravity = new_gravity
-        self.fly.set_gravity(new_gravity, rot_mat)
+        self.camera.set_gravity(new_gravity, rot_mat)
 
         return 0
 
@@ -265,3 +271,10 @@ class Simulation(gym.Env):
         return np.average(
             self.physics.data.subtree_com, axis=0, weights=self.physics.data.crb[:, 0]
         )
+
+    def close(self) -> None:
+        """Close the environment, save data, and release any resources."""
+
+        if self.camera.output_path is not None:
+            self.camera.output_path.parent.mkdir(parents=True, exist_ok=True)
+            self.camera.save_video(self.camera.output_path)
