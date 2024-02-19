@@ -188,7 +188,6 @@ class Fly:
             file. This avoids spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
         """
-        self.name = str(name)
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
@@ -212,6 +211,15 @@ class Fly:
 
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
+
+        # Load NMF model
+        if isinstance(xml_variant, str):
+            xml_variant = (
+                get_data_path("flygym", "data")
+                / self.mujoco_config["paths"]["mjcf"][xml_variant]
+            )
+        self.model = mjcf.from_path(xml_variant)
+        self.model.model = str(name)
 
         if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -255,7 +263,7 @@ class Fly:
             self._leg_adhesion_drawing_segments = np.array(
                 [
                     [
-                        "Animat/" + tarsus5.replace("5", str(i)) + "_visual"
+                        f"{self.name}/{tarsus5.replace('5', str(i))}_visual"
                         for i in range(1, 6)
                     ]
                     for tarsus5 in self._last_tarsal_seg_names
@@ -265,14 +273,6 @@ class Fly:
             self._active_adhesion_rgba = [0.0, 0.0, 1.0, 0.8]
             self._base_rgba = [0.5, 0.5, 0.5, 1.0]
 
-        # Load NMF model
-        if isinstance(xml_variant, str):
-            xml_variant = (
-                get_data_path("flygym", "data")
-                / self.mujoco_config["paths"]["mjcf"][xml_variant]
-            )
-        self.model = mjcf.from_path(xml_variant)
-        print(self.model.model)
         self._set_geom_colors()
 
         # Add cameras imitating the fly's eyes
@@ -307,7 +307,7 @@ class Fly:
         )
         self._add_force_sensors()
         self.contact_sensor_placements = [
-            f"Animat/{body}" for body in self.contact_sensor_placements
+            f"{self.name}/{body}" for body in self.contact_sensor_placements
         ]
         self.adhesion_actuators = self._add_adhesion_actuators(self.adhesion_force)
         # Those need to be in the same order as the adhesion sensor
@@ -315,7 +315,7 @@ class Fly:
         adhesion_sensor_indices = []
         for adhesion_actuator in self.adhesion_actuators:
             for index, contact_sensor in enumerate(self.contact_sensor_placements):
-                if f"{contact_sensor}_adhesion" in f"Animat/{adhesion_actuator.name}":
+                if f"{contact_sensor}_adhesion" in f"{self.name}/{adhesion_actuator.name}":
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
@@ -334,11 +334,15 @@ class Fly:
             "contact_pos": [],
         }
 
+    @property
+    def name(self) -> str:
+        return self.model.model
+
     def post_init(self, arena: BaseArena, physics: mjcf.Physics):
         # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
         self._adhesion_actuator_geom_id = np.array(
             [
-                physics.model.geom(f"Animat/{actuator.body}_collision").id
+                physics.model.geom(f"{self.name}/{actuator.body}_collision").id
                 for actuator in self.adhesion_actuators
             ]
         )
@@ -593,7 +597,7 @@ class Fly:
                     floor_contact_pair = arena_root.contact.add(
                         "pair",
                         name=f"{geom.name}_{animat_geom_name}",
-                        geom1=f"Animat/{animat_geom_name}",
+                        geom1=f"{self.name}/{animat_geom_name}",
                         geom2=f"{geom.name}",
                         solref=self.contact_solref,
                         solimp=self.contact_solimp,
@@ -742,7 +746,7 @@ class Fly:
         for i in range(len(self.actuated_joints)):
             curr_joint = self.actuators[i].joint.name
             if (curr_joint in self.actuated_joints) and (curr_joint in pose):
-                animat_name = f"Animat/{curr_joint}"
+                animat_name = f"{self.name}/{curr_joint}"
                 physics.named.data.qpos[animat_name] = pose[curr_joint]
 
     def _set_compliant_tarsus(self):
@@ -797,20 +801,20 @@ class Fly:
         raw_visual_input = []
         ommatidia_readouts = []
         for geom in self._geoms_to_hide:
-            physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 0]
+            physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 0]
         arena.pre_visual_render_hook(physics)
         for side in ["L", "R"]:
             raw_img = physics.render(
                 width=vision_config["raw_img_width_px"],
                 height=vision_config["raw_img_height_px"],
-                camera_id=f"Animat/{side}Eye_cam",
+                camera_id=f"{self.name}/{side}Eye_cam",
             )
             fish_img = np.ascontiguousarray(self.retina.correct_fisheye(raw_img))
             readouts_per_eye = self.retina.raw_image_to_hex_pxls(fish_img)
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(fish_img)
         for geom in self._geoms_to_hide:
-            physics.named.model.geom_rgba[f"Animat/{geom}"] = [0.5, 0.5, 0.5, 1]
+            physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 1]
         arena.post_visual_render_hook(physics)
         self._curr_visual_input = np.array(ommatidia_readouts)
         if self.render_raw_vision:
@@ -827,7 +831,7 @@ class Fly:
         color : Tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
-        physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
+        physics.named.model.geom_rgba[f"{self.name}/{segment}_visual"] = color
 
     @property
     def vision_update_mask(self) -> np.ndarray:
