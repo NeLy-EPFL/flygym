@@ -258,8 +258,10 @@ class Fly:
         self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
         self.control = control
         if isinstance(init_pose, str):
-            init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
-        self.init_pose = init_pose
+            self.init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
+        else:
+            self.init_pose = init_pose
+
         self.detect_flip = detect_flip
 
         if self.draw_contacts and "cv2" not in sys.modules:
@@ -410,7 +412,7 @@ class Fly:
         self._set_gravity(gravity)
 
         # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
-        self._set_init_pose(self.init_pose)
+        self.set_pose(self.init_pose)
 
         # Set up a few things for rendering
         self.curr_time = 0
@@ -899,13 +901,13 @@ class Fly:
             )
         return adhesion_actuators
 
-    def _set_init_pose(self, init_pose: Dict[str, float]):
+    def set_pose(self, pose: state.KinematicPose):
         with self.physics.reset_context():
             for i in range(len(self.actuated_joints)):
                 curr_joint = self._actuators[i].joint.name
-                if (curr_joint in self.actuated_joints) and (curr_joint in init_pose):
+                if (curr_joint in self.actuated_joints) and (curr_joint in pose):
                     animat_name = f"Animat/{curr_joint}"
-                    self.physics.named.data.qpos[animat_name] = init_pose[curr_joint]
+                    self.physics.named.data.qpos[animat_name] = pose[curr_joint]
 
     def _set_compliant_tarsus(self):
         """Set the Tarsus2/3/4/5 to be compliant by setting the stiffness

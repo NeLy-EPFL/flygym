@@ -85,7 +85,7 @@ class Simulation(gym.Env):
             if fly.align_camera_with_gravity:
                 fly._camera_rot = np.eye(3)
         self.curr_time = 0
-        fly._set_init_pose(fly.init_pose)
+        fly.set_pose(fly.init_pose)
         fly._frames = []
         fly._last_render_time = -np.inf
         fly._last_vision_update_time = -np.inf
