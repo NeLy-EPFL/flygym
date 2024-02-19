@@ -46,7 +46,12 @@ class Simulation(gym.Env):
 
         self._floor_height = self._get_max_floor_height(self.arena)
 
-        self.fly.post_init(self.arena, self.timestep, self.gravity)
+        fly = self.fly
+        self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
+        arena_root = arena.root_element
+        arena_root.option.timestep = timestep
+
+        self.fly.post_init(self.arena, self.gravity)
 
     # get undefined methods or properties from fly
     def __getattr__(self, name):

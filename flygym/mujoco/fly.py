@@ -355,12 +355,7 @@ class Fly:
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
 
-    def post_init(self, arena: BaseArena, timestep: float, gravity):
-        # Add arena and put fly in it
-        arena.spawn_entity(self.model, self.spawn_pos, self.spawn_orientation)
-        arena_root = arena.root_element
-        arena_root.option.timestep = timestep
-
+    def post_init(self, arena: BaseArena, gravity):
         camera_name = self.render_camera
         model_camera_name = self.render_camera.split("/")[-1]
         self._cam = self.model.find("camera", model_camera_name)
