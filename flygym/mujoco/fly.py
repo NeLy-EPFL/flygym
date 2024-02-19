@@ -97,6 +97,10 @@ class Fly:
     """
 
     _mujoco_config = util.load_config()
+    _last_tarsal_seg_names = tuple(
+        f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
+    )
+    n_legs = 6
 
     def __init__(
         self,
@@ -117,7 +121,6 @@ class Fly:
         tarsus_stiffness: float = 10.0,
         tarsus_damping: float = 10.0,
         friction: float = (1.0, 0.005, 0.0001),
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
         contact_solref: Tuple[float, float] = (2e-4, 1e3),
         contact_solimp: Tuple[float, float, float, float, float] = (
             9.99e-01,
@@ -258,9 +261,6 @@ class Fly:
             init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
         self.init_pose = init_pose
         self.detect_flip = detect_flip
-        self._last_tarsalseg_names = [
-            f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
-        ]
 
         if self.draw_contacts and "cv2" not in sys.modules:
             logging.warning(
@@ -283,8 +283,6 @@ class Fly:
         else:
             self._self_collisions = self_collisions
 
-        self.n_legs = 6
-
         self._last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
@@ -301,7 +299,7 @@ class Fly:
                         "Animat/" + tarsus5.replace("5", str(i)) + "_visual"
                         for i in range(1, 6)
                     ]
-                    for tarsus5 in self._last_tarsalseg_names
+                    for tarsus5 in self._last_tarsal_seg_names
                 ]
             )
             self._adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
@@ -828,7 +826,7 @@ class Fly:
 
     def _add_end_effector_sensors(self):
         end_effector_sensors = []
-        for name in self._last_tarsalseg_names:
+        for name in self._last_tarsal_seg_names:
             sensor = self.model.sensor.add(
                 "framepos",
                 name=f"{name}_pos",
@@ -888,7 +886,7 @@ class Fly:
 
     def _add_adhesion_actuators(self, gain):
         adhesion_actuators = []
-        for name in self._last_tarsalseg_names:
+        for name in self._last_tarsal_seg_names:
             adhesion_actuators.append(
                 self.model.actuator.add(
                     "adhesion",
