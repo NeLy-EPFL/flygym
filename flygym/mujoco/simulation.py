@@ -42,8 +42,8 @@ class Simulation(gym.Env):
         """
         self.arena = arena if arena is not None else FlatTerrain()
         self.timestep = timestep
-        self.gravity = gravity
         self.fly = fly
+        self.curr_time = 0
 
         self._floor_height = self._get_max_floor_height(self.arena)
 
@@ -55,7 +55,21 @@ class Simulation(gym.Env):
         self.fly.init_floor_collisions(self.arena)
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
 
+        self.gravity = gravity
+
+        # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
+        fly.set_pose(fly.init_pose, self.physics)
+
         self.fly.post_init(self.arena, self.physics, self.gravity)
+
+    @property
+    def gravity(self):
+        return np.array(self.physics.model.opt.gravity)
+
+    @gravity.setter
+    def gravity(self, value):
+        self.physics.model.opt.gravity[:] = value
+        self.fly.set_gravity(value)
 
     @property
     def action_space(self):
@@ -94,7 +108,7 @@ class Simulation(gym.Env):
         fly = self.fly
         self.physics.reset()
         if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-            fly._set_gravity(self.physics, self.gravity)
+            fly.set_gravity(self.gravity)
             if fly.align_camera_with_gravity:
                 fly._camera_rot = np.eye(3)
         self.curr_time = 0
@@ -232,7 +246,9 @@ class Simulation(gym.Env):
         elif rot_axis == "z":
             rot_mat = transformations.rotation_z_axis(np.deg2rad(slope))
         new_gravity = np.dot(rot_mat, self.gravity)
-        self._set_gravity(new_gravity, rot_mat)
+
+        self.gravity = new_gravity
+        self.fly.set_gravity(new_gravity, rot_mat)
 
         return 0
 
