@@ -424,12 +424,6 @@ class Fly:
             ]
         )
 
-        # Set gravity
-        self._set_gravity(physics, gravity)
-
-        # Apply initial pose.(TARSI MUST HAVE MADE COMPLIANT BEFORE)!
-        self.set_pose(self.init_pose, physics)
-
         if self.draw_contacts or self.draw_gravity:
             width, height = self.render_window_size
             self._dm_camera = dm_control.mujoco.Camera(
@@ -916,9 +910,7 @@ class Fly:
                     joint.stiffness = stiffness
                     joint.damping = damping
 
-    def _set_gravity(
-        self, physics: mjcf.Physics, gravity: List[float], rot_mat: np.ndarray = None
-    ) -> None:
+    def set_gravity(self, gravity: np.ndarray, rot_mat: np.ndarray = None) -> None:
         """Set the gravity of the environment. Changing the gravity vector
         might be useful during climbing simulations. The change in the
         camera point of view has been extensively tested for the simple
@@ -927,7 +919,7 @@ class Fly:
 
         Parameters
         ----------
-        gravity : List[float]
+        gravity : np.ndarray
             The gravity vector.
         rot_mat : np.ndarray, optional
             The rotation matrix to align the camera with the gravity vector
@@ -1017,8 +1009,6 @@ class Fly:
                 rot_mat = rot.as_matrix()
 
                 self._camera_rot = rot_mat.T
-
-        physics.model.opt.gravity[:] = gravity
 
     def render(
         self, physics: mjcf.Physics, floor_height: float, curr_time: float
