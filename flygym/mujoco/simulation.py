@@ -199,7 +199,9 @@ class Simulation(gym.Env):
 
         for fly in self.flies:
             if fly.enable_adhesion:
-                self.physics.bind(fly.adhesion_actuators).ctrl = action[fly.name]["adhesion"]
+                self.physics.bind(fly.adhesion_actuators).ctrl = action[fly.name][
+                    "adhesion"
+                ]
                 fly._last_adhesion = action[fly.name]["adhesion"]
 
         self.physics.step()
@@ -230,17 +232,28 @@ class Simulation(gym.Env):
                 flip_config = fly.mujoco_config["flip_detection"]
                 has_passed_init = self.curr_time > flip_config["ignore_period"]
                 contact_lost_time = fly.flip_counter * self.timestep
-                lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
+                lost_contact_long_enough = (
+                    contact_lost_time > flip_config["flip_threshold"]
+                )
                 info[key]["flip"] = has_passed_init and lost_contact_long_enough
                 info[key]["flip_counter"] = fly.flip_counter
                 info[key]["contact_forces"] = obs[key]["contact_forces"].copy()
 
-        return obs, sum(reward.values()), any(terminated.values()), any(truncated.values()), info
+        return (
+            obs,
+            sum(reward.values()),
+            any(terminated.values()),
+            any(truncated.values()),
+            info,
+        )
 
     def render(self):
         for fly in self.flies:
             fly.update_colors(self.physics)
-        return [camera.render(self.physics, self._floor_height, self.curr_time) for camera in self.cameras]
+        return [
+            camera.render(self.physics, self._floor_height, self.curr_time)
+            for camera in self.cameras
+        ]
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
