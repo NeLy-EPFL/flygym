@@ -1,17 +1,16 @@
-from typing import Optional, Dict, Any, Tuple, Union, Iterable, List
-from gymnasium.core import ObsType
-import gymnasium as gym
-from flygym.mujoco.fly import Fly
-from flygym.mujoco.camera import Camera
-from flygym.mujoco import preprogrammed
-from flygym.mujoco.arena import BaseArena, FlatTerrain
-import numpy as np
-from dm_control.utils import transformations
-from dm_control import mjcf
-from gymnasium.core import spaces
-from flygym.mujoco.core import Parameters
-from flygym.mujoco import state
 from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
+import gymnasium as gym
+import numpy as np
+from dm_control import mjcf
+from dm_control.utils import transformations
+from flygym.mujoco import preprogrammed, state
+from flygym.mujoco.arena import BaseArena, FlatTerrain
+from flygym.mujoco.camera import Camera
+from flygym.mujoco.core import Parameters
+from flygym.mujoco.fly import Fly
+from gymnasium.core import ObsType, spaces
 
 
 class Simulation(gym.Env):
