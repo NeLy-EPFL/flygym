@@ -315,7 +315,10 @@ class Fly:
         adhesion_sensor_indices = []
         for adhesion_actuator in self.adhesion_actuators:
             for index, contact_sensor in enumerate(self.contact_sensor_placements):
-                if f"{contact_sensor}_adhesion" in f"{self.name}/{adhesion_actuator.name}":
+                if (
+                    f"{contact_sensor}_adhesion"
+                    in f"{self.name}/{adhesion_actuator.name}"
+                ):
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
