@@ -13,15 +13,63 @@ from scipy.spatial.transform import Rotation as R
 
 
 class Camera:
+    """Camera associated with a fly.
+
+    Attributes
+    ----------
+    fly : Fly
+        The fly to which the camera is associated.
+    window_size : Tuple[int, int]
+        Size of the rendered images in pixels.
+    play_speed : float
+        Play speed of the rendered video.
+    fps: int
+        FPS of the rendered video when played at ``play_speed``.
+    timestamp_text : bool
+        If True, text indicating the current simulation time will be added to the
+        rendered video.
+    play_speed_text : bool
+        If True, text indicating the play speed will be added to the rendered video.
+    draw_contacts : bool
+        If True, arrows will be drawn to indicate contact forces between the legs and
+        the ground.
+    decompose_contacts : bool
+        If True, the arrows visualizing contact forces will be decomposed into x-y-z
+        components.
+    force_arrow_scaling : float
+        Scaling factor determining the length of arrows visualizing contact forces.
+    tip_length : float
+        Size of the arrows indicating the contact forces in pixels.
+    contact_threshold : float
+        The threshold for contact detection in mN (forces below this magnitude will be
+        ignored).
+    draw_gravity : bool
+        If True, an arrow will be drawn indicating the direction of gravity. This is
+        useful during climbing simulations.
+    gravity_arrow_scaling : float
+        Scaling factor determining the size of the arrow indicating gravity.
+    align_camera_with_gravity : bool
+        If True, the camera will be rotated such that gravity points down. This is
+        useful during climbing simulations.
+    camera_follows_fly_orientation : bool
+        If True, the camera will be rotated so that it aligns with the fly's
+        orientation.
+    decompose_colors : Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]]
+        Colors for the x, y, and z components of the contact force arrows.
+    output_path : Optional[Union[str, Path]]
+        Path to which the rendered video should be saved. If None, the video will not
+        be saved.
+    """
+
     _dm_camera: dm_control.mujoco.Camera
 
     def __init__(
         self,
         fly: Fly,
+        camera_id: str = "Animat/camera_left",
         window_size: Tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
         fps: int = 30,
-        camera_id: str = "Animat/camera_left",
         timestamp_text: bool = False,
         play_speed_text: bool = True,
         draw_contacts: bool = False,
@@ -38,6 +86,63 @@ class Camera:
         ] = ((255, 0, 0), (0, 255, 0), (0, 0, 255)),
         output_path: Optional[Union[str, Path]] = None,
     ):
+        """Initialize a Camera.
+
+        Parameters
+        ----------
+        fly : Fly
+            The fly to which the camera is associated.
+        camera_id : str
+            The camera that will be used for rendering, by default
+            "Animat/camera_left".
+        window_size : Tuple[int, int]
+            Size of the rendered images in pixels, by default (640, 480).
+        play_speed : float
+            Play speed of the rendered video, by default 0.2.
+        fps: int
+            FPS of the rendered video when played at ``play_speed``, by
+            default 30.
+        timestamp_text : bool
+            If True, text indicating the current simulation time will be added
+            to the rendered video.
+        play_speed_text : bool
+            If True, text indicating the play speed will be added to the
+            rendered video.
+        draw_contacts : bool
+            If True, arrows will be drawn to indicate contact forces between
+            the legs and the ground. By default False.
+        decompose_contacts : bool
+            If True, the arrows visualizing contact forces will be decomposed
+            into x-y-z components. By default True.
+        force_arrow_scaling : float
+            Scaling factor determining the length of arrows visualizing contact
+            forces. By default 1.0.
+        tip_length : float
+            Size of the arrows indicating the contact forces in pixels. By
+            default 10.
+        contact_threshold : float
+            The threshold for contact detection in mN (forces below this
+            magnitude will be ignored). By default 0.1.
+        draw_gravity : bool
+            If True, an arrow will be drawn indicating the direction of
+            gravity. This is useful during climbing simulations. By default
+            False.
+        gravity_arrow_scaling : float
+            Scaling factor determining the size of the arrow indicating
+            gravity. By default 0.0001.
+        align_camera_with_gravity : bool
+            If True, the camera will be rotated such that gravity points down.
+            This is useful during climbing simulations. By default False.
+        camera_follows_fly_orientation : bool
+            If True, the camera will be rotated so that it aligns with the fly's
+            orientation. By default False.
+        decompose_colors : Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]]
+            Colors for the x, y, and z components of the contact force arrows.
+            By default ((255, 0, 0), (0, 255, 0), (0, 0, 255)).
+        output_path : str or Path, optional
+            Path to which the rendered video should be saved. If None, the video
+            will not be saved. By default None.
+        """
         self.fly = fly
         self.window_size = window_size
         self.play_speed = play_speed
