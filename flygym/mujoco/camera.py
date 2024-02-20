@@ -1,14 +1,15 @@
-from typing import Tuple, Union, Optional
 import logging
 import sys
-from flygym.mujoco.fly import Fly
-import numpy as np
-import dm_control.mujoco
-from dm_control import mjcf
-from scipy.spatial.transform import Rotation as R
-import cv2
 from pathlib import Path
+from typing import Optional, Tuple, Union
+
+import cv2
+import dm_control.mujoco
 import imageio
+import numpy as np
+from dm_control import mjcf
+from flygym.mujoco.fly import Fly
+from scipy.spatial.transform import Rotation as R
 
 
 class Camera:

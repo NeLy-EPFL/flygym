@@ -1,17 +1,18 @@
-import numpy as np
 import logging
-from typing import List, Tuple, Dict, Optional, Union
 from pathlib import Path
-from scipy.spatial.transform import Rotation as R
+from typing import Dict, List, Tuple, Union
 
+import numpy as np
 from gymnasium import spaces
 from gymnasium.core import ObsType
+from scipy.spatial.transform import Rotation as R
 
 try:
-    import mujoco
     import dm_control.mujoco
     from dm_control import mjcf
     from dm_control.utils import transformations
+
+    import mujoco
 except ImportError:
     raise ImportError(
         "MuJoCo prerequisites not installed. Please install the prerequisites "
@@ -27,12 +28,12 @@ except ImportError:
         '`pip install -e ."[mujoco]"` if installing locally.'
     )
 
-import flygym.mujoco.util as util
 import flygym.mujoco.preprogrammed as preprogrammed
 import flygym.mujoco.state as state
+import flygym.mujoco.util as util
 import flygym.mujoco.vision as vision
-from flygym.mujoco.arena import BaseArena
 from flygym.common import get_data_path
+from flygym.mujoco.arena import BaseArena
 
 
 class Fly:
