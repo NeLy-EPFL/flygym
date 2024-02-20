@@ -26,7 +26,7 @@ class Simulation(gym.Env):
     def __init__(
         self,
         flies: Union[Fly, Iterable[Fly]],
-        cameras: Union[Camera, Iterable[Fly]],
+        cameras: Union[Camera, Iterable[Fly], None],
         arena: BaseArena = None,
         timestep: float = 0.0001,
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
@@ -48,7 +48,9 @@ class Simulation(gym.Env):
         else:
             self.flies = [flies]
 
-        if isinstance(cameras, Iterable):
+        if cameras is None:
+            self.cameras = [Camera(self.flies[0])]
+        elif isinstance(cameras, Iterable):
             self.cameras = list(cameras)
         else:
             self.cameras = [cameras]
@@ -129,13 +131,8 @@ class Simulation(gym.Env):
             This is an empty dictionary by default but the user can
             override this method to return additional information.
         """
-        super().reset(seed=seed)
+        super().reset(seed=seed, options=options)
         self.physics.reset()
-
-        # if np.any(self.physics.model.opt.gravity[:] - self.gravity > 1e-3):
-        #     self.camera.set_gravity(self.gravity)
-        #     if self.camera.align_camera_with_gravity:
-        #         self.camera._camera_rot = np.eye(3)
 
         self.curr_time = 0
 
@@ -327,3 +324,93 @@ class Simulation(gym.Env):
             if camera.output_path is not None:
                 camera.output_path.parent.mkdir(parents=True, exist_ok=True)
                 camera.save_video(camera.output_path)
+
+
+class SingleFlySimulation(Simulation):
+    def __init__(
+        self,
+        fly: Fly,
+        cameras: Union[Camera, Iterable[Camera], None] = None,
+        arena: BaseArena = None,
+        timestep: float = 0.0001,
+        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
+    ):
+        super().__init__(
+            flies=[fly],
+            cameras=cameras,
+            arena=arena,
+            timestep=timestep,
+            gravity=gravity,
+        )
+
+    @property
+    def action_space(self):
+        return spaces.Dict(super().action_space[self.flies[0].name])
+
+    @property
+    def observation_space(self):
+        return spaces.Dict(super().observation_space[self.flies[0].name])
+
+    def reset(
+        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[ObsType, Dict[str, Any]]:
+        """Reset the Gym environment.
+
+        Parameters
+        ----------
+        seed : int
+            Random seed for the environment. The provided base simulation
+            is deterministic, so this does not have an effect unless
+            extended by the user.
+        options : Dict
+            Additional parameter for the simulation. There is none in the
+            provided base simulation, so this does not have an effect
+            unless extended by the user.
+
+        Returns
+        -------
+        ObsType
+            The observation as defined by the environment.
+        Dict[str, Any]
+            Any additional information that is not part of the observation.
+            This is an empty dictionary by default but the user can
+            override this method to return additional information.
+        """
+        key = self.flies[0].name
+        obs, info = super().reset(seed=seed, options=options)
+        return obs[key], info[key]
+
+    def step(
+        self, action: ObsType
+    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+        """Step the Gym environment.
+
+        Parameters
+        ----------
+        action : ObsType
+            Action dictionary as defined by the environment's action space.
+
+        Returns
+        -------
+        ObsType
+            The observation as defined by the environment.
+        float
+            The reward as defined by the environment.
+        bool
+            Whether the episode has terminated due to factors that are
+            defined within the Markov Decision Process (e.g. task
+            completion/failure, etc.).
+        bool
+            Whether the episode has terminated due to factors beyond the
+            Markov Decision Process (e.g. time limit, etc.).
+        Dict[str, Any]
+            Any additional information that is not part of the observation.
+            This is an empty dictionary by default (except when vision is
+            enabled; in this case a "vision_updated" boolean variable
+            indicates whether the visual input to the fly was refreshed at
+            this step) but the user can override this method to return
+            additional information.
+        """
+        key = self.flies[0].name
+        obs, reward, terminated, truncated, info = super().step({key: action})
+        return obs[key], reward, terminated, truncated, info[key]
