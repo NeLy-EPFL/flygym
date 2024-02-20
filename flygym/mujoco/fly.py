@@ -102,7 +102,6 @@ class Fly:
         name: str,
         actuated_joints: List = preprogrammed.all_leg_dofs,
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
-        output_dir: Optional[Path] = None,
         xml_variant: Union[str, Path] = "seqik",
         spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
         spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
@@ -144,9 +143,6 @@ class Fly:
         contact_sensor_placements : List[str], optional
             List of body segments where contact sensors are placed. By
             default all tarsus segments.
-        output_dir : Path, optional
-            Directory to save simulation data. If ``None``, no data will
-            be saved. By default None.
         xml_variant: str or Path, optional
             The variant of the fly model to use. Multiple variants exist
             because when replaying experimentally recorded behavior, the
@@ -221,10 +217,6 @@ class Fly:
         self.model = mjcf.from_path(xml_variant)
         self.model.model = str(name)
 
-        if output_dir is not None:
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-        self.output_dir = output_dir
         self.spawn_pos = np.array(spawn_pos)
         # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
         # but the output fly_orientation from framequat would be [0, 0, pi/2] for
