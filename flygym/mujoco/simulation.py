@@ -14,22 +14,32 @@ from gymnasium.core import ObsType, spaces
 
 
 class Simulation(gym.Env):
-    """
+    """A multi-fly simulation environment using MuJoCo as the physics engine.
+
     Attributes
     ----------
-    arena : flygym.arena.BaseWorld
+    flies : List[flygym.mujoco.fly.Fly]
+        List of flies in the simulation.
+    cameras : List[flygym.mujoco.camera.Camera]
+        List of cameras in the simulation.
+    arena : flygym.mujoco.arena.BaseArena
         The arena in which the fly is placed.
     timestep: float
         Simulation timestep in seconds.
     gravity : Tuple[float, float, float]
         Gravity in (x, y, z) axes. Note that the gravity is -9.81 * 1000
         due to the scaling of the model.
+    curr_time : float
+        The (simulated) time elapsed since the last reset (in seconds).
+    physics: dm_control.mjcf.Physics
+        The MuJoCo Physics object built from the arena's MJCF model with
+        the fly in it.
     """
 
     def __init__(
         self,
-        flies: Union[Fly, Iterable[Fly]],
-        cameras: Union[Camera, Iterable[Fly], None],
+        flies: Union[Iterable[Fly], Fly],
+        cameras: Union[Iterable[Fly], Camera, None],
         arena: BaseArena = None,
         timestep: float = 0.0001,
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
@@ -37,6 +47,11 @@ class Simulation(gym.Env):
         """
         Parameters
         ----------
+        flies : Iterable[Fly] or Fly
+            List of flies in the simulation.
+        cameras : Iterable[Fly] or Camera, optional
+            List of cameras in the simulation. Defaults to the left camera
+            of the first fly.
         arena : flygym.mujoco.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
@@ -52,7 +67,7 @@ class Simulation(gym.Env):
             self.flies = [flies]
 
         if cameras is None:
-            self.cameras = [Camera(self.flies[0])]
+            self.cameras = [Camera(self.flies[0], render_camera="Animat/camera_left")]
         elif isinstance(cameras, Iterable):
             self.cameras = list(cameras)
         else:
@@ -86,6 +101,7 @@ class Simulation(gym.Env):
             fly.post_init(self.arena, self.physics)
 
     def _set_init_pose(self):
+        """Set the initial pose of all flies."""
         with self.physics.reset_context():
             for fly in self.flies:
                 fly.set_pose(fly.init_pose, self.physics)
@@ -112,12 +128,12 @@ class Simulation(gym.Env):
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
     ) -> Tuple[ObsType, Dict[str, Any]]:
-        """Reset the Gym environment.
+        """Reset the Simulation.
 
         Parameters
         ----------
         seed : int
-            Random seed for the environment. The provided base simulation
+            Random seed for the simulation. The provided base simulation
             is deterministic, so this does not have an effect unless
             extended by the user.
         options : Dict
@@ -128,7 +144,7 @@ class Simulation(gym.Env):
         Returns
         -------
         ObsType
-            The observation as defined by the environment.
+            The observation as defined by the simulation environment.
         Dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default but the user can
@@ -164,19 +180,20 @@ class Simulation(gym.Env):
     def step(
         self, action: ObsType
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        """Step the Gym environment.
+        """Step the simulation.
 
         Parameters
         ----------
         action : ObsType
-            Action dictionary as defined by the environment's action space.
+            Action dictionary as defined by the simulation environment's
+            action space.
 
         Returns
         -------
         ObsType
-            The observation as defined by the environment.
+            The observation as defined by the simulation environment.
         float
-            The reward as defined by the environment.
+            The reward as defined by the simulation environment.
         bool
             Whether the episode has terminated due to factors that are
             defined within the Markov Decision Process (e.g. task
@@ -279,7 +296,7 @@ class Simulation(gym.Env):
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
-        """Set the slope of the environment and modify the camera
+        """Set the slope of the simulation environment and modify the camera
         orientation so that gravity is always pointing down. Changing the
         gravity vector might be useful during climbing simulations. The
         change in the camera angle has been extensively tested for the
@@ -321,7 +338,7 @@ class Simulation(gym.Env):
         )
 
     def close(self) -> None:
-        """Close the environment, save data, and release any resources."""
+        """Close the simulation, save data, and release any resources."""
 
         for camera in self.cameras:
             if camera.output_path is not None:
@@ -330,6 +347,32 @@ class Simulation(gym.Env):
 
 
 class SingleFlySimulation(Simulation):
+    """A single fly simulation environment using MuJoCo as the physics engine.
+
+    This class is a wrapper around the Simulation class with a single fly.
+    It is provided for convenience, so that the action and observation spaces
+    do not have to be keyed by the fly's name.
+
+    Attributes
+    ----------
+    fly : flygym.mujoco.fly.Fly
+        The fly in the simulation.
+    cameras : List[flygym.mujoco.camera.Camera]
+        List of cameras in the simulation.
+    arena : flygym.mujoco.arena.BaseArena
+        The arena in which the fly is placed.
+    timestep: float
+        Simulation timestep in seconds.
+    gravity : Tuple[float, float, float]
+        Gravity in (x, y, z) axes. Note that the gravity is -9.81 * 1000
+        due to the scaling of the model.
+    curr_time : float
+        The (simulated) time elapsed since the last reset (in seconds).
+    physics: dm_control.mjcf.Physics
+        The MuJoCo Physics object built from the arena's MJCF model with
+        the fly in it.
+    """
+
     def __init__(
         self,
         fly: Fly,
@@ -338,6 +381,24 @@ class SingleFlySimulation(Simulation):
         timestep: float = 0.0001,
         gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
+        """
+        Parameters
+        ----------
+        fly : Fly
+            The fly in the simulation.
+        cameras : Iterable[Fly] or Camera, optional
+            List of cameras in the simulation. Defaults to the left camera
+            of the first fly.
+        arena : flygym.mujoco.arena.BaseArena, optional
+            The arena in which the fly is placed. ``FlatTerrain`` will be
+            used if not specified.
+        timestep : float
+            Simulation timestep in seconds, by default 0.0001.
+        gravity : Tuple[float, float, float]
+            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
+            the gravity is -9.81 * 1000 due to the scaling of the model.
+        """
+        self.fly = fly
         super().__init__(
             flies=[fly],
             cameras=cameras,
@@ -357,7 +418,7 @@ class SingleFlySimulation(Simulation):
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
     ) -> Tuple[ObsType, Dict[str, Any]]:
-        """Reset the Gym environment.
+        """Reset the simulation environment.
 
         Parameters
         ----------
@@ -386,7 +447,7 @@ class SingleFlySimulation(Simulation):
     def step(
         self, action: ObsType
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        """Step the Gym environment.
+        """Step the simulation environment.
 
         Parameters
         ----------
@@ -420,7 +481,9 @@ class SingleFlySimulation(Simulation):
 
 
 class NeuroMechFly(SingleFlySimulation):
-    """A NeuroMechFly environment using MuJoCo as the physics engine.
+    """A NeuroMechFly environment using MuJoCo as the physics engine. This
+    class is a wrapper around the SingleFlySimulation and is provided for
+    backward compatibility.
 
     Attributes
     ----------
@@ -430,12 +493,12 @@ class NeuroMechFly(SingleFlySimulation):
         Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
-    arena : flygym.arena.BaseWorld
+    arena : flygym.mujoco.arena.BaseArena
         The arena in which the fly is placed.
-    spawn_pos : Tuple[float, float, float], optional
+    spawn_pos : Tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
-    spawn_orientation : Tuple[float, float, float, float], optional
+    spawn_orientation : Tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
     control : str
