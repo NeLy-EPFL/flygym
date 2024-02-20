@@ -644,8 +644,6 @@
         </body>
       </body>
     </body>
-    <light name="light_animat_top" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 80" dir="0 0 -1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
-    <light name="light_animat_bottom" class="nmf" mode="trackcom" directional="true" castshadow="false" active="true" pos="0 0 -80" dir="0 0 1" attenuation="0.5 0 0" cutoff="100.0" exponent="1.0" ambient="0.20000000000000001 0.20000000000000001 0.20000000000000001" diffuse="0.69999999999999996 0.69999999999999996 0.69999999999999996" specular="0.29999999999999999 0.29999999999999999 0.29999999999999999"/>
     <camera name="camera_back" class="nmf" mode="fixed" ipd="0.068" pos="-8 0 1.0" euler="1.57 0.0 -1.57"/>
     <camera name="camera_back_track" class="nmf" mode="track" ipd="0.068" pos="-12 0 6" euler="1.2 0.0 -1.57"/>
     <camera name="camera_front" class="nmf" mode="fixed" ipd="0.068" pos="8 0 1.0" euler="1.57 0.0 1.57"/>

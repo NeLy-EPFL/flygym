@@ -23,6 +23,42 @@ class BaseArena(ABC):
     def __init__(self, *args: List, **kwargs: Dict):
         """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
+        self.init_lights()
+
+    def init_lights(self):
+        self.root_element.worldbody.add(
+            "light",
+            name="light_top",
+            mode="trackcom",
+            directional=True,
+            castshadow=False,
+            active=True,
+            pos=(0, 0, 80),
+            dir=(0, 0, -1),
+            attenuation=(0.5, 0, 0),
+            cutoff=100.0,
+            exponent=1.0,
+            ambient=(0.2, 0.2, 0.2),
+            diffuse=(0.7, 0.7, 0.7),
+            specular=(0.3, 0.3, 0.3),
+        )
+
+        self.root_element.worldbody.add(
+            "light",
+            name="light_bottom",
+            mode="trackcom",
+            directional=True,
+            castshadow=False,
+            active=True,
+            pos=(0, 0, -80),
+            dir=(0, 0, 1),
+            attenuation=(0.5, 0, 0),
+            cutoff=100.0,
+            exponent=1.0,
+            ambient=(0.2, 0.2, 0.2),
+            diffuse=(0.7, 0.7, 0.7),
+            specular=(0.3, 0.3, 0.3),
+        )
 
     @abstractmethod
     def get_spawn_position(
