@@ -2070,7 +2070,16 @@ class NeuroMechFly(SingleFlySimulation):
     def render(self):
         if self.sim_params.render_mode == "saved":
             return super().render()[0]
-        return None
+
+    def save_video(self, path: Union[str, Path], stabilization_time=0.02):
+        if self.cameras:
+            return self.cameras[0].save_video(path, stabilization_time)
+
+    def get_observation(self) -> ObsType:
+        return self.fly.get_observation(self.physics, self.arena, self.timestep, self.curr_time)
 
     def __getattr__(self, item):
-        return getattr(self.fly, item)
+        try:
+            return getattr(self.fly, item)
+        except AttributeError:
+            return getattr(self.cameras[0], item)
