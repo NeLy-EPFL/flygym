@@ -121,9 +121,19 @@ class Simulation(gym.Env):
     def action_space(self):
         return spaces.Dict({fly.name: fly.action_space for fly in self.flies})
 
+    @action_space.setter
+    def action_space(self, value):
+        for fly in self.flies:
+            fly.action_space = value[fly.name]
+
     @property
     def observation_space(self):
         return spaces.Dict({fly.name: fly.observation_space for fly in self.flies})
+
+    @observation_space.setter
+    def observation_space(self, value):
+        for fly in self.flies:
+            fly.observation_space = value[fly.name]
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
@@ -409,11 +419,19 @@ class SingleFlySimulation(Simulation):
 
     @property
     def action_space(self):
-        return spaces.Dict(super().action_space[self.flies[0].name])
+        return self.flies[0].action_space
+
+    @action_space.setter
+    def action_space(self, value):
+        self.flies[0].action_space = value
 
     @property
     def observation_space(self):
-        return spaces.Dict(super().observation_space[self.flies[0].name])
+        return self.flies[0].observation_space
+
+    @observation_space.setter
+    def observation_space(self, value):
+        self.flies[0].observation_space = value
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
@@ -657,9 +675,12 @@ class NeuroMechFly(SingleFlySimulation):
         )
 
         if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
             output_path = Path(output_dir) / "video.mp4"
         else:
             output_path = None
+
+        self.output_dir = output_dir
 
         camera = Camera(
             fly,
@@ -688,3 +709,6 @@ class NeuroMechFly(SingleFlySimulation):
             timestep=sim_params.timestep,
             gravity=sim_params.gravity,
         )
+
+    def __getattr__(self, item):
+        return getattr(self.fly, item)
