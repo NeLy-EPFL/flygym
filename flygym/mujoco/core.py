@@ -147,8 +147,8 @@ class Parameters:
         If True, the camera will be rotated such that gravity points down.
         This is useful during climbing simulations. By default False.
     camera_follows_fly_orientation : bool
-        If True, the camera will be rotated so that it aligns with the fly's
-        orientation. By default False.
+        If True, the camera will be rotated so that it aligns with the
+        fly's orientation. By default False.
     """
 
     timestep: float = 0.0001
@@ -743,8 +743,8 @@ class NeuroMechFlyV0(gym.Env):
         True and the camera is within the animat and not a head camera, the
         z position will be fixed to avoid oscillations. If
         self.sim_params.camera_follows_fly_orientation is True, the camera
-        will be rotated to follow the fly orientation (i.e. the front camera
-        will always be in front of the fly).
+        will be rotated to follow the fly orientation (i.e. the front
+        camera will always be in front of the fly).
         """
 
         is_Animat = "Animat" in camera_name
@@ -1413,7 +1413,9 @@ class NeuroMechFlyV0(gym.Env):
         return
 
     def _draw_gravity(self, img: np.ndarray) -> np.ndarray:
-        """Draw gravity as an arrow. The arrow is drawn at the top right of the frame."""
+        """Draw gravity as an arrow. The arrow is drawn at the top right
+        of the frame.
+        """
 
         camera_matrix = self._dm_camera.matrix
 
@@ -1448,8 +1450,10 @@ class NeuroMechFlyV0(gym.Env):
 
     def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
         """Draw contacts as arrow which length is proportional to the force
-        magnitude. The arrow is drawn at the center of the body. It uses the
-        camera matrix to transfer from the global space to the pixels space."""
+        magnitude. The arrow is drawn at the center of the body. It uses
+        the camera matrix to transfer from the global space to the pixels
+        space.
+        """
         contact_forces = np.linalg.norm(self._last_contact_force, axis=1)
         contact_indexes = np.nonzero(
             contact_forces > self.sim_params.contact_threshold
@@ -2076,7 +2080,9 @@ class NeuroMechFly(SingleFlySimulation):
             return self.cameras[0].save_video(path, stabilization_time)
 
     def get_observation(self) -> ObsType:
-        return self.fly.get_observation(self.physics, self.arena, self.timestep, self.curr_time)
+        return self.fly.get_observation(
+            self.physics, self.arena, self.timestep, self.curr_time
+        )
 
     def __getattr__(self, item):
         try:

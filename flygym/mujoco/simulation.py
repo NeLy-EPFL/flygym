@@ -11,7 +11,8 @@ from gymnasium.core import ObsType, spaces
 
 
 class Simulation(gym.Env):
-    """A multi-fly simulation environment using MuJoCo as the physics engine.
+    """A multi-fly simulation environment using MuJoCo as the physics
+    engine.
 
     Attributes
     ----------
@@ -55,8 +56,9 @@ class Simulation(gym.Env):
         timestep : float
             Simulation timestep in seconds, by default 0.0001.
         gravity : Tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
-            the gravity is -9.81 * 1000 due to the scaling of the model.
+            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+            that the gravity is -9.81 * 1000 due to the scaling of the
+            model.
         """
         if isinstance(flies, Iterable):
             self.flies = list(flies)
@@ -300,12 +302,12 @@ class Simulation(gym.Env):
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
-        """Set the slope of the simulation environment and modify the camera
-        orientation so that gravity is always pointing down. Changing the
-        gravity vector might be useful during climbing simulations. The
-        change in the camera angle has been extensively tested for the
-        simple cameras (left, right, top, bottom, front, back) but not for
-        the composed ones.
+        """Set the slope of the simulation environment and modify the
+        camera orientation so that gravity is always pointing down.
+        Changing the gravity vector might be useful during climbing
+        simulations. The change in the camera angle has been extensively
+        tested for the simple cameras (left, right, top, bottom, front,
+        back) but not for the composed ones.
 
         Parameters
         ----------
@@ -330,7 +332,8 @@ class Simulation(gym.Env):
 
     def _get_center_of_mass(self):
         """Get the center of mass of the flies.
-        (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE THOROUGHLY
+        (subtree com weighted by mass) STILL NEEDS TO BE TESTED MORE
+        THOROUGHLY
 
         Returns
         -------
@@ -351,11 +354,12 @@ class Simulation(gym.Env):
 
 
 class SingleFlySimulation(Simulation):
-    """A single fly simulation environment using MuJoCo as the physics engine.
+    """A single fly simulation environment using MuJoCo as the physics
+    engine.
 
     This class is a wrapper around the Simulation class with a single fly.
-    It is provided for convenience, so that the action and observation spaces
-    do not have to be keyed by the fly's name.
+    It is provided for convenience, so that the action and observation
+    spaces do not have to be keyed by the fly's name.
 
     Attributes
     ----------
@@ -399,8 +403,9 @@ class SingleFlySimulation(Simulation):
         timestep : float
             Simulation timestep in seconds, by default 0.0001.
         gravity : Tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
-            the gravity is -9.81 * 1000 due to the scaling of the model.
+            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+            that the gravity is -9.81 * 1000 due to the scaling of the
+            model.
         """
         self.fly = fly
         super().__init__(

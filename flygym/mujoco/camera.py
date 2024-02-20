@@ -26,39 +26,43 @@ class Camera:
     fps: int
         FPS of the rendered video when played at ``play_speed``.
     timestamp_text : bool
-        If True, text indicating the current simulation time will be added to the
-        rendered video.
+        If True, text indicating the current simulation time will be added
+        to the rendered video.
     play_speed_text : bool
-        If True, text indicating the play speed will be added to the rendered video.
+        If True, text indicating the play speed will be added to the
+        rendered video.
     draw_contacts : bool
-        If True, arrows will be drawn to indicate contact forces between the legs and
-        the ground.
+        If True, arrows will be drawn to indicate contact forces between
+        the legs and the ground.
     decompose_contacts : bool
-        If True, the arrows visualizing contact forces will be decomposed into x-y-z
-        components.
+        If True, the arrows visualizing contact forces will be decomposed
+        into x-y-z components.
     force_arrow_scaling : float
-        Scaling factor determining the length of arrows visualizing contact forces.
+        Scaling factor determining the length of arrows visualizing contact
+        forces.
     tip_length : float
         Size of the arrows indicating the contact forces in pixels.
     contact_threshold : float
-        The threshold for contact detection in mN (forces below this magnitude will be
-        ignored).
+        The threshold for contact detection in mN (forces below this
+        magnitude will be ignored).
     draw_gravity : bool
-        If True, an arrow will be drawn indicating the direction of gravity. This is
-        useful during climbing simulations.
+        If True, an arrow will be drawn indicating the direction of
+        gravity. This is useful during climbing simulations.
     gravity_arrow_scaling : float
-        Scaling factor determining the size of the arrow indicating gravity.
+        Scaling factor determining the size of the arrow indicating
+        gravity.
     align_camera_with_gravity : bool
-        If True, the camera will be rotated such that gravity points down. This is
+        If True, the camera will be rotated such that gravity points down.
+        This is
         useful during climbing simulations.
     camera_follows_fly_orientation : bool
-        If True, the camera will be rotated so that it aligns with the fly's
-        orientation.
-    decompose_colors : Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]]
+        If True, the camera will be rotated so that it aligns with the
+        fly's orientation.
+    decompose_colors
         Colors for the x, y, and z components of the contact force arrows.
     output_path : Optional[Union[str, Path]]
-        Path to which the rendered video should be saved. If None, the video will not
-        be saved.
+        Path to which the rendered video should be saved. If None, the
+        video will not be saved.
     """
 
     _dm_camera: dm_control.mujoco.Camera
@@ -103,20 +107,20 @@ class Camera:
             FPS of the rendered video when played at ``play_speed``, by
             default 30.
         timestamp_text : bool
-            If True, text indicating the current simulation time will be added
-            to the rendered video.
+            If True, text indicating the current simulation time will be
+            added to the rendered video.
         play_speed_text : bool
             If True, text indicating the play speed will be added to the
             rendered video.
         draw_contacts : bool
-            If True, arrows will be drawn to indicate contact forces between
-            the legs and the ground. By default False.
+            If True, arrows will be drawn to indicate contact forces
+            between the legs and the ground. By default False.
         decompose_contacts : bool
-            If True, the arrows visualizing contact forces will be decomposed
-            into x-y-z components. By default True.
+            If True, the arrows visualizing contact forces will be
+            decomposed into x-y-z components. By default True.
         force_arrow_scaling : float
-            Scaling factor determining the length of arrows visualizing contact
-            forces. By default 1.0.
+            Scaling factor determining the length of arrows visualizing
+            contact forces. By default 1.0.
         tip_length : float
             Size of the arrows indicating the contact forces in pixels. By
             default 10.
@@ -131,17 +135,18 @@ class Camera:
             Scaling factor determining the size of the arrow indicating
             gravity. By default 0.0001.
         align_camera_with_gravity : bool
-            If True, the camera will be rotated such that gravity points down.
-            This is useful during climbing simulations. By default False.
+            If True, the camera will be rotated such that gravity points
+            down. This is useful during climbing simulations. By default
+            False.
         camera_follows_fly_orientation : bool
-            If True, the camera will be rotated so that it aligns with the fly's
-            orientation. By default False.
-        decompose_colors : Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]]
-            Colors for the x, y, and z components of the contact force arrows.
-            By default ((255, 0, 0), (0, 255, 0), (0, 0, 255)).
+            If True, the camera will be rotated so that it aligns with the
+            fly's orientation. By default False.
+        decompose_colors
+            Colors for the x, y, and z components of the contact force
+            arrows. By default ((255, 0, 0), (0, 255, 0), (0, 0, 255)).
         output_path : str or Path, optional
-            Path to which the rendered video should be saved. If None, the video
-            will not be saved. By default None.
+            Path to which the rendered video should be saved. If None, the
+            video will not be saved. By default None.
         """
         self.fly = fly
         self.window_size = window_size
@@ -203,8 +208,8 @@ class Camera:
         True and the camera is within the animat and not a head camera, the
         z position will be fixed to avoid oscillations. If
         self.camera_follows_fly_orientation is True, the camera
-        will be rotated to follow the fly orientation (i.e. the front camera
-        will always be in front of the fly).
+        will be rotated to follow the fly orientation (i.e. the front
+        camera will always be in front of the fly).
         """
 
         is_animat = "Animat" in camera_name
@@ -469,7 +474,9 @@ class Camera:
         return 0
 
     def _draw_gravity(self, img: np.ndarray, physics: mjcf.Physics) -> np.ndarray:
-        """Draw gravity as an arrow. The arrow is drawn at the top right of the frame."""
+        """Draw gravity as an arrow. The arrow is drawn at the top right
+        of the frame.
+        """
 
         camera_matrix = self._dm_camera.matrix
         last_fly_pos = self.fly.last_obs["pos"]
@@ -501,8 +508,10 @@ class Camera:
 
     def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
         """Draw contacts as arrow which length is proportional to the force
-        magnitude. The arrow is drawn at the center of the body. It uses the
-        camera matrix to transfer from the global space to the pixels space."""
+        magnitude. The arrow is drawn at the center of the body. It uses
+        the camera matrix to transfer from the global space to the pixels
+        space.
+        """
 
         forces = self.fly.last_obs["contact_forces"]
         pos = self.fly.last_obs["contact_pos"]

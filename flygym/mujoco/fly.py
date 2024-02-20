@@ -244,50 +244,55 @@ class Fly:
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
         tarsus_stiffness : float
-            Stiffness of the passive, compliant tarsus joints, by default 2.2.
+            Stiffness of the passive, compliant tarsus joints, by default
+            2.2.
         tarsus_damping : float
             Damping coefficient of the passive, compliant tarsus joints, by
             default 0.126.
         friction : float
-            Sliding, torsional, and rolling friction coefficients, by default
-            (1, 0.005, 0.0001)
+            Sliding, torsional, and rolling friction coefficients, by
+            default (1, 0.005, 0.0001)
         contact_solref: Tuple[float, float]
             MuJoCo contact reference parameters (see `MuJoCo documentation
             <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
-            2.0e+00). Under the default configuration, contacts are very stiff.
-            This is to avoid penetration of the leg tips into the ground when
-            leg adhesion is enabled. The user might want to decrease the
-            stiffness if the stability becomes an issue.
+            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+            5.0e-01, 2.0e+00). Under the default configuration, contacts
+            are very stiff. This is to avoid penetration of the leg tips
+            into the ground when leg adhesion is enabled. The user might
+            want to decrease the stiffness if the stability becomes an
+            issue.
         contact_solimp: Tuple[float, float, float, float, float]
             MuJoCo contact reference parameters (see `MuJoCo docs
             <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
-            2.0e+00). Under the default configuration, contacts are very stiff.
-            This is to avoid penetration of the leg tips into the ground when
-            leg adhesion is enabled. The user might want to decrease the
-            stiffness if the stability becomes an issue.
+            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+            5.0e-01, 2.0e+00). Under the default configuration, contacts
+            are very stiff. This is to avoid penetration of the leg tips
+            into the ground when leg adhesion is enabled. The user might
+            want to decrease the stiffness if the stability becomes an
+            issue.
         enable_olfaction : bool
             Whether to enable olfaction, by default False.
         enable_vision : bool
             Whether to enable vision, by default False.
         render_raw_vision : bool
             If ``enable_vision`` is True, whether to render the raw vision
-            (raw pixel values before binning by ommatidia), by default False.
+            (raw pixel values before binning by ommatidia), by default
+            False.
         vision_refresh_rate : int
-            The rate at which the vision sensor is updated, in Hz, by default
+            The rate at which the vision sensor is updated, in Hz, by
+            default
             500.
         enable_adhesion : bool
             Whether to enable adhesion. By default False.
         adhesion_force : float
             The magnitude of the adhesion force. By default 20.
         draw_adhesion : bool
-            Whether to signal that adhesion is on by changing the color of the
-            concerned leg. By default False.
+            Whether to signal that adhesion is on by changing the color of
+            the concerned leg. By default False.
         draw_sensor_markers : bool
-            If True, colored spheres will be added to the model to indicate the
-            positions of the cameras (for vision) and odor sensors. By default
-            False.
+            If True, colored spheres will be added to the model to indicate
+            the positions of the cameras (for vision) and odor sensors. By
+            default False.
 
         """
         self.actuated_joints = actuated_joints
@@ -675,9 +680,9 @@ class Fly:
         self._self_contacts = self_contacts
 
     def init_floor_contacts(self, arena: BaseArena):
-        """Initialize contacts between the fly and the floor. This is called
-        by the Simulation after the fly is placed in the arena and before
-        setting up the physics engine.
+        """Initialize contacts between the fly and the floor. This is
+        called by the Simulation after the fly is placed in the arena and
+        before setting up the physics engine.
 
         Parameters
         ----------
