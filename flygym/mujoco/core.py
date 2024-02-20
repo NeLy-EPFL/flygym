@@ -144,7 +144,7 @@ class Parameters:
     align_camera_with_gravity : bool
         If True, the camera will be rotated such that gravity points down.
         This is useful during climbing simulations. By default False.
-    camera_follows_fly_orientation: bool
+    camera_follows_fly_orientation : bool
         If True, the camera will be rotated so that it aligns with the fly's
         orientation. By default False.
     """
