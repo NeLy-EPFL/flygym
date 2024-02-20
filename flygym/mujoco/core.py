@@ -202,7 +202,7 @@ class NeuroMechFly(gym.Env):
         Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
-    arena : flygym.arena.BaseWorld
+    arena : flygym.mujoco.arena.BaseArena
         The arena in which the fly is placed.
     spawn_pos : Tuple[float, float, float], optional
         The (x, y, z) position in the arena defining where the fly will be
@@ -218,7 +218,7 @@ class NeuroMechFly(gym.Env):
     render_mode : str
         The rendering mode. Can be "saved" or "headless".
     actuated_joints : List[str]
-            List of names of actuated joints.
+        List of names of actuated joints.
     contact_sensor_placements : List[str]
         List of body segments where contact sensors are placed. By
         default all tarsus segments.

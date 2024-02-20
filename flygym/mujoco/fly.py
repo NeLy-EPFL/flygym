@@ -8,11 +8,8 @@ from gymnasium.core import ObsType
 from scipy.spatial.transform import Rotation as R
 
 try:
-    import dm_control.mujoco
     from dm_control import mjcf
     from dm_control.utils import transformations
-
-    import mujoco
 except ImportError:
     raise ImportError(
         "MuJoCo prerequisites not installed. Please install the prerequisites "
@@ -41,12 +38,16 @@ class Fly:
 
     Attributes
     ----------
-    output_dir : Path
-        Directory to save simulation data.
-    spawn_pos : Tuple[float, float, float], optional
+    name : str
+        The name of the fly model.
+    actuated_joints : List[str]
+        List of names of actuated joints.
+    contact_sensor_placements : List[str]
+        List of body segments where contact sensors are placed.
+    spawn_pos : Tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
-    spawn_orientation : Tuple[float, float, float, float], optional
+    spawn_orientation : Tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
     control : str
@@ -54,11 +55,13 @@ class Fly:
         "torque".
     init_pose : flygym.state.BaseState
         Which initial pose to start the simulation from.
-    actuated_joints : List[str]
-            List of names of actuated joints.
-    contact_sensor_placements : List[str]
-        List of body segments where contact sensors are placed. By
-        default all tarsus segments.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names.
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+        body names.
     detect_flip : bool
         If True, the simulation will indicate whether the fly has flipped
         in the ``info`` returned by ``.step(...)``. Flip detection is
@@ -67,16 +70,62 @@ class Fly:
         disabled for a period of time at the beginning of the simulation as
         defined in the configuration file. This avoids spurious detection
         when the fly is not standing reliably on the ground yet.
+    joint_stiffness : float
+        Stiffness of actuated joints.
+        joint_stiffness : float
+        Stiffness of actuated joints.
+    joint_damping : float
+        Damping coefficient of actuated joints.
+    actuator_kp : float
+        Position gain of the actuators.
+    tarsus_stiffness : float
+        Stiffness of the passive, compliant tarsus joints.
+    tarsus_damping : float
+        Damping coefficient of the passive, compliant tarsus joints.
+    friction : float
+        Sliding, torsional, and rolling friction coefficients.
+    contact_solref: Tuple[float, float]
+        MuJoCo contact reference parameters (see `MuJoCo documentation
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
+        for details). Under the default configuration, contacts are very
+        stiff. This is to avoid penetration of the leg tips into the ground
+        when leg adhesion is enabled. The user might want to decrease the
+        stiffness if the stability becomes an issue.
+    contact_solimp: Tuple[float, float, float, float, float]
+        MuJoCo contact reference parameters (see `MuJoCo docs
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
+        for details). Under the default configuration, contacts are very
+        stiff. This is to avoid penetration of the leg tips into the ground
+        when leg adhesion is enabled. The user might want to decrease the
+        stiffness if the stability becomes an issue.
+    enable_olfaction : bool
+        Whether to enable olfaction.
+    enable_vision : bool
+        Whether to enable vision.
+    render_raw_vision : bool
+        If ``enable_vision`` is True, whether to render the raw vision
+        (raw pixel values before binning by ommatidia).
+    vision_refresh_rate : int
+        The rate at which the vision sensor is updated, in Hz.
+    enable_adhesion : bool
+        Whether to enable adhesion.
+    adhesion_force : float
+        The magnitude of the adhesion force.
+    draw_adhesion : bool
+        Whether to signal that adhesion is on by changing the color of the
+        concerned leg.
+    draw_sensor_markers : bool
+        If True, colored spheres will be added to the model to indicate the
+        positions of the cameras (for vision) and odor sensors.
     retina : flygym.mujoco.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
     arena_root = dm_control.mjcf.RootElement
         The root element of the arena.
     action_space : gymnasium.core.ObsType
-        Definition of the simulation's action space as a Gym environment.
+        Definition of the fly's action space.
     observation_space : gymnasium.core.ObsType
-        Definition of the simulation's observation space as a Gym
-        environment.
+        Definition of the fly's observation space.
     model : dm_control.mjcf.RootElement
         The MuJoCo model.
     vision_update_mask : np.ndarray
@@ -138,6 +187,8 @@ class Fly:
 
         Parameters
         ----------
+        name : str
+            The name of the fly model.
         actuated_joints : List[str], optional
             List of names of actuated joints. By default all active leg
             DoFs.
@@ -184,11 +235,64 @@ class Fly:
             beginning of the simulation as defined in the configuration
             file. This avoids spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
+        joint_stiffness : float
+            Stiffness of actuated joints, by default 0.05.
+            joint_stiffness : float
+            Stiffness of actuated joints, by default 0.05.
+        joint_damping : float
+            Damping coefficient of actuated joints, by default 0.06.
+        actuator_kp : float
+            Position gain of the actuators, by default 18.0.
+        tarsus_stiffness : float
+            Stiffness of the passive, compliant tarsus joints, by default 2.2.
+        tarsus_damping : float
+            Damping coefficient of the passive, compliant tarsus joints, by
+            default 0.126.
+        friction : float
+            Sliding, torsional, and rolling friction coefficients, by default
+            (1, 0.005, 0.0001)
+        contact_solref: Tuple[float, float]
+            MuJoCo contact reference parameters (see `MuJoCo documentation
+            <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
+            for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
+            2.0e+00). Under the default configuration, contacts are very stiff.
+            This is to avoid penetration of the leg tips into the ground when
+            leg adhesion is enabled. The user might want to decrease the
+            stiffness if the stability becomes an issue.
+        contact_solimp: Tuple[float, float, float, float, float]
+            MuJoCo contact reference parameters (see `MuJoCo docs
+            <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
+            for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
+            2.0e+00). Under the default configuration, contacts are very stiff.
+            This is to avoid penetration of the leg tips into the ground when
+            leg adhesion is enabled. The user might want to decrease the
+            stiffness if the stability becomes an issue.
+        enable_olfaction : bool
+            Whether to enable olfaction, by default False.
+        enable_vision : bool
+            Whether to enable vision, by default False.
+        render_raw_vision : bool
+            If ``enable_vision`` is True, whether to render the raw vision
+            (raw pixel values before binning by ommatidia), by default False.
+        vision_refresh_rate : int
+            The rate at which the vision sensor is updated, in Hz, by default
+            500.
+        enable_adhesion : bool
+            Whether to enable adhesion. By default False.
+        adhesion_force : float
+            The magnitude of the adhesion force. By default 20.
+        draw_adhesion : bool
+            Whether to signal that adhesion is on by changing the color of the
+            concerned leg. By default False.
+        draw_sensor_markers : bool
+            If True, colored spheres will be added to the model to indicate the
+            positions of the cameras (for vision) and odor sensors. By default
+            False.
+
         """
         self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
-
         self.joint_stiffness = joint_stiffness
         self.joint_damping = joint_damping
         self.actuator_kp = actuator_kp
@@ -335,7 +439,16 @@ class Fly:
         return self.model.model
 
     def post_init(self, arena: BaseArena, physics: mjcf.Physics):
-        # Set up physics and apply ad hoc changes to gravity, stiffness, and friction
+        """Initialize attributes that depend on the arena or physics of the
+        simulation.
+
+        Parameters
+        ----------
+        arena : BaseArena
+            The arena in which the fly is placed.
+        physics : mjcf.Physics
+            The physics object of the simulation.
+        """
         self._adhesion_actuator_geom_id = np.array(
             [
                 physics.model.geom(f"{self.name}/{actuator.body}_collision").id
@@ -562,6 +675,15 @@ class Fly:
         self._self_contacts = self_contacts
 
     def init_floor_contacts(self, arena: BaseArena):
+        """Initialize contacts between the fly and the floor. This is called
+        by the Simulation after the fly is placed in the arena and before
+        setting up the physics engine.
+
+        Parameters
+        ----------
+        arena : BaseArena
+            The arena in which the fly is placed.
+        """
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
 
         floor_contacts: Dict[str, mjcf.Element] = {}
@@ -760,6 +882,15 @@ class Fly:
                     joint.damping = damping
 
     def update_colors(self, physics: mjcf.Physics):
+        """Update the colors of the fly's body segments. This is typically
+        called by Simulation.render to update the colors of the fly before
+        the cameras do the rendering.
+
+        Parameters
+        ----------
+        physics : mjcf.Physics
+            The physics object of the simulation.
+        """
         if self.draw_adhesion:
             self._draw_adhesion(physics)
 
