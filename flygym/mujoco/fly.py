@@ -953,6 +953,8 @@ class Fly:
 
         Parameters
         ----------
+        physics : mjcf.Physics
+            The physics object of the simulation.
         segment : str
             The name of the segment to change the color of.
         color : Tuple[float, float, float, float]
