@@ -18,12 +18,12 @@ class Camera:
     def __init__(
         self,
         fly: Fly,
-        render_window_size: Tuple[int, int] = (640, 480),
-        render_playspeed: float = 0.2,
-        render_fps: int = 30,
-        render_camera: str = "Animat/camera_left",
-        render_timestamp_text: bool = False,
-        render_playspeed_text: bool = True,
+        window_size: Tuple[int, int] = (640, 480),
+        play_speed: float = 0.2,
+        fps: int = 30,
+        camera_id: str = "Animat/camera_left",
+        timestamp_text: bool = False,
+        play_speed_text: bool = True,
         draw_contacts: bool = False,
         decompose_contacts: bool = True,
         force_arrow_scaling: float = 1.0,
@@ -39,13 +39,11 @@ class Camera:
         output_path: Optional[Union[str, Path]] = None,
     ):
         self.fly = fly
-        self.render_window_size = render_window_size
-        self.render_playspeed = render_playspeed
-        self.render_fps = render_fps
-        self.render_camera = render_camera
-        self.render_timestamp_text = render_timestamp_text
-        self.render_playspeed_text = render_playspeed_text
-
+        self.window_size = window_size
+        self.play_speed = play_speed
+        self.fps = fps
+        self.timestamp_text = timestamp_text
+        self.play_speed_text = play_speed_text
         self.draw_contacts = draw_contacts
         self.decompose_contacts = decompose_contacts
         self.force_arrow_scaling = force_arrow_scaling
@@ -56,8 +54,7 @@ class Camera:
         self.align_camera_with_gravity = align_camera_with_gravity
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
         self.decompose_colors = decompose_colors
-
-        self.camera_id = self.render_camera.replace("Animat", fly.name)
+        self.camera_id = camera_id.replace("Animat", fly.name)
 
         if output_path is not None:
             self.output_path = Path(output_path)
@@ -74,28 +71,24 @@ class Camera:
         if self.draw_gravity:
             fly._last_fly_pos = self.fly.spawn_pos
             self._gravity_rgba = [1 - 213 / 255, 1 - 90 / 255, 1 - 255 / 255, 1.0]
-            cam_name = self.render_camera
             self._arrow_offset = np.zeros(3)
-            if "bottom" in cam_name or "top" in cam_name:
+            if "bottom" in camera_id or "top" in camera_id:
                 self._arrow_offset[0] = -3
                 self._arrow_offset[1] = 2
-            elif "left" in cam_name or "right" in cam_name:
+            elif "left" in camera_id or "right" in camera_id:
                 self._arrow_offset[2] = 2
                 self._arrow_offset[0] = -3
-            elif "front" in cam_name or "back" in cam_name:
+            elif "front" in camera_id or "back" in camera_id:
                 self._arrow_offset[2] = 2
                 self._arrow_offset[1] = 3
 
         if self.align_camera_with_gravity:
             self._camera_rot = np.eye(3)
 
-        camera_name = self.render_camera
-        model_camera_name = self.render_camera.split("/")[-1]
-        self._cam = self.fly.model.find("camera", model_camera_name)
-        self._initialize_custom_camera_handling(camera_name)
-
+        self._cam = self.fly.model.find("camera", camera_id.split("/")[-1])
+        self._initialize_custom_camera_handling(camera_id)
         self._last_render_time = -np.inf
-        self._eff_render_interval = self.render_playspeed / self.render_fps
+        self._eff_render_interval = self.play_speed / self.fps
         self._frames: list[np.ndarray] = []
 
     def _initialize_custom_camera_handling(self, camera_name: str):
@@ -161,7 +154,7 @@ class Camera:
 
     def initialize_dm_camera(self, physics: mjcf.Physics):
         if self.draw_contacts or self.draw_gravity:
-            width, height = self.render_window_size
+            width, height = self.window_size
             self._dm_camera = dm_control.mujoco.Camera(
                 physics,
                 camera_id=self.camera_id,
@@ -187,12 +180,12 @@ class Camera:
         # Only change the angle of the camera if the new gravity vector and the camera
         # angle are compatible
         camera_is_compatible = False
-        if "left" in self.render_camera or "right" in self.render_camera:
+        if "left" in self.camera_id or "right" in self.camera_id:
             if not gravity[1] > 0:
                 camera_is_compatible = True
         # elif "top" in self.camera_name or "bottom" in
         # self.camera_name:
-        elif "front" in self.render_camera or "back" in self.render_camera:
+        elif "front" in self.camera_id or "back" in self.camera_id:
             if not gravity[1] > 0:
                 camera_is_compatible = True
 
@@ -284,7 +277,7 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        width, height = self.render_window_size
+        width, height = self.window_size
         if self.update_camera_pos:
             self._update_cam_pos(physics, floor_height)
         if self.camera_follows_fly_orientation:
@@ -298,13 +291,13 @@ class Camera:
         if self.draw_gravity:
             img = self._draw_gravity(img, physics)
 
-        render_playspeed_text = self.render_playspeed_text
-        render_time_text = self.render_timestamp_text
+        render_playspeed_text = self.play_speed_text
+        render_time_text = self.timestamp_text
         # if render_playspeed_text or render_time_text:
         if render_playspeed_text and render_time_text:
-            text = f"{curr_time:.2f}s ({self.render_playspeed}x)"
+            text = f"{curr_time:.2f}s ({self.play_speed}x)"
         elif render_playspeed_text:
-            text = f"{self.render_playspeed}x"
+            text = f"{self.play_speed}x"
         elif render_time_text:
             text = f"{curr_time:.2f}s"
         else:
@@ -514,6 +507,6 @@ class Camera:
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
-        with imageio.get_writer(path, fps=self.render_fps) as writer:
+        with imageio.get_writer(path, fps=self.fps) as writer:
             for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
