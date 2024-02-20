@@ -347,7 +347,7 @@ class Fly:
         else:
             self._self_collisions = self_collisions
 
-        self._last_adhesion = np.zeros(self.n_legs)
+        self.last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
         if self.draw_adhesion and not self.enable_adhesion:
@@ -377,7 +377,7 @@ class Fly:
         self._curr_raw_visual_input = None
         self.last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
-        self._vision_update_mask: List[bool] = []
+        self.vision_update_mask_: List[bool] = []
         if self.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -896,17 +896,17 @@ class Fly:
 
     def _draw_adhesion(self, physics: mjcf.Physics):
         """Highlight the tarsal segments of the leg having adhesion"""
-        if np.any(self._last_adhesion == 1):
+        if np.any(self.last_adhesion == 1):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
+                self._leg_adhesion_drawing_segments[self.last_adhesion == 1].ravel()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
             physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
             ] = self._active_adhesion_rgba
-        if np.any(self._last_adhesion == 0):
+        if np.any(self.last_adhesion == 0):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
+                self._leg_adhesion_drawing_segments[self.last_adhesion == 0].ravel()
             ] = self._base_rgba
         return
 
@@ -972,7 +972,7 @@ class Fly:
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
         """
-        return np.array(self._vision_update_mask)
+        return np.array(self.vision_update_mask_)
 
     def get_observation(
         self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
@@ -1046,7 +1046,7 @@ class Fly:
                 adh_actuator_id = (
                     self._adhesion_bodies_with_contact_sensors == contact_sensor_id
                 )
-                if self._last_adhesion[adh_actuator_id] > 0:
+                if self.last_adhesion[adh_actuator_id] > 0:
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
                     contact_forces[contact_sensor_id, :] -= self.adhesion_force * normal
@@ -1136,3 +1136,10 @@ class Fly:
             if self.render_raw_vision:
                 info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
         return info
+
+    def reset(self):
+        self.last_vision_update_time = -np.inf
+        self._curr_raw_visual_input = None
+        self._curr_visual_input = None
+        self.vision_update_mask_ = []
+        self.flip_counter = 0

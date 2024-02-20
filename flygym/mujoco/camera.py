@@ -615,3 +615,7 @@ class Camera:
         with imageio.get_writer(path, fps=self.fps) as writer:
             for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
+
+    def reset(self):
+        self._frames.clear()
+        self._last_render_time = -np.inf

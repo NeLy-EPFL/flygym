@@ -167,14 +167,11 @@ class Simulation(gym.Env):
         obs = {}
         info = {}
 
+        for camera in self.cameras:
+            camera.reset()
+
         for fly in self.flies:
-            fly._frames = []
-            fly._last_render_time = -np.inf
-            fly.last_vision_update_time = -np.inf
-            fly._curr_raw_visual_input = None
-            fly._curr_visual_input = None
-            fly._vision_update_mask = []
-            fly.flip_counter = 0
+            fly.reset()
             obs[fly.name] = fly.get_observation(
                 self.physics, self.arena, self.timestep, self.curr_time
             )
@@ -226,7 +223,7 @@ class Simulation(gym.Env):
                 self.physics.bind(fly.adhesion_actuators).ctrl = action[fly.name][
                     "adhesion"
                 ]
-                fly._last_adhesion = action[fly.name]["adhesion"]
+                fly.last_adhesion = action[fly.name]["adhesion"]
 
         self.physics.step()
         self.curr_time += self.timestep
@@ -245,7 +242,7 @@ class Simulation(gym.Env):
 
             if fly.enable_vision:
                 vision_updated_this_step = self.curr_time == fly.last_vision_update_time
-                fly._vision_update_mask.append(vision_updated_this_step)
+                fly.vision_update_mask_.append(vision_updated_this_step)
                 info[key]["vision_updated"] = vision_updated_this_step
 
             if fly.detect_flip:
