@@ -67,7 +67,7 @@ class Simulation(gym.Env):
             self.flies = [flies]
 
         if cameras is None:
-            self.cameras = [Camera(self.flies[0], render_camera="Animat/camera_left")]
+            self.cameras = [Camera(self.flies[0], camera_id="Animat/camera_left")]
         elif isinstance(cameras, Iterable):
             self.cameras = list(cameras)
         else:
@@ -663,12 +663,12 @@ class NeuroMechFly(SingleFlySimulation):
 
         camera = Camera(
             fly,
-            render_window_size=sim_params.render_window_size,
-            render_playspeed=sim_params.render_playspeed,
-            render_fps=sim_params.render_fps,
-            render_camera=sim_params.render_camera,
-            render_timestamp_text=sim_params.render_timestamp_text,
-            render_playspeed_text=sim_params.render_playspeed_text,
+            window_size=sim_params.render_window_size,
+            play_speed=sim_params.render_playspeed,
+            fps=sim_params.render_fps,
+            camera_id=sim_params.render_camera,
+            timestamp_text=sim_params.render_timestamp_text,
+            play_speed_text=sim_params.render_playspeed_text,
             draw_contacts=sim_params.draw_contacts,
             decompose_contacts=sim_params.decompose_contacts,
             force_arrow_scaling=sim_params.force_arrow_scaling,
