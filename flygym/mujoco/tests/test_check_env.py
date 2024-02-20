@@ -2,7 +2,14 @@ import pytest
 import gymnasium.spaces as spaces
 import gymnasium.utils.env_checker as env_checker
 
-from flygym.mujoco import NeuroMechFly, Parameters
+from flygym.mujoco import (
+    Camera,
+    Fly,
+    NeuroMechFly,
+    Parameters,
+    Simulation,
+    SingleFlySimulation,
+)
 from flygym.mujoco.arena import OdorArena
 
 
@@ -18,6 +25,49 @@ def test_check_env_basic():
         }
     )
     env_checker.check_env(nmf, skip_render_check=True)
+
+
+def test_check_simulation_env_basic():
+    flies = [
+        Fly(
+            name=f"{i}",
+            enable_vision=False,
+            enable_olfaction=False,
+        )
+        for i in range(2)
+    ]
+    cameras = [Camera(fly=fly) for fly in flies]
+    sim = Simulation(flies, cameras)
+
+    sim.action_space = spaces.Dict(
+        {
+            fly.name: spaces.Dict(
+                {
+                    "joints": spaces.Box(
+                        low=-0.1, high=0.1, shape=(len(fly.actuated_joints),)
+                    ),
+                    "adhesion": spaces.Discrete(
+                        n=2, start=0
+                    ),  # 0: no adhesion, 1: adhesion
+                }
+            )
+            for fly in flies
+        }
+    )
+    env_checker.check_env(sim, skip_render_check=True)
+
+
+def test_check_single_fly_simulation_env_basic():
+    fly = Fly(name="0", enable_vision=False, enable_olfaction=False)
+    camera = Camera(fly=fly)
+    sim = SingleFlySimulation(fly, camera)
+    fly.action_space = spaces.Dict(
+        {
+            "joints": spaces.Box(low=-0.1, high=0.1, shape=(len(fly.actuated_joints),)),
+            "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
+        }
+    )
+    env_checker.check_env(sim, skip_render_check=True)
 
 
 @pytest.mark.skip(
