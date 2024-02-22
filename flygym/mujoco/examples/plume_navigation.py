@@ -1,5 +1,6 @@
 import numpy as np
-from numpy import pi
+import cv2
+from enum import Enum
 from scipy.interpolate import LinearNDInterpolator
 from dm_control.mujoco import Camera
 from numba import njit, prange
@@ -11,7 +12,7 @@ from flygym.mujoco.core import Parameters
 from flygym.mujoco.preprogrammed import all_leg_dofs, all_tarsi_links
 from flygym.mujoco.state.kinematic_pose import KinematicPose
 
-from flygym.mujoco.util import load_config
+from flygym.mujoco.util import load_config, get_data_path
 from flygym.mujoco.arena import BaseArena
 from flygym.mujoco import Parameters, NeuroMechFly
 from flygym.mujoco.examples.turning_controller import HybridTurningNMF
@@ -65,18 +66,6 @@ class OdorPlumeArena(BaseArena):
         )
 
         # Add birdeye camera
-        # cam_fovy = 30
-        # cam_pitch = np.deg2rad(60)
-        # cam_height = 1.1 * (self.arena_size[1] / 2) * np.tan(cam_pitch)
-        # print(cam_height)
-        # self.birdeye_cam = self.root_element.worldbody.add(
-        #     "camera",
-        #     name="birdeye_cam",
-        #     mode="fixed",
-        #     pos=(self.arena_size[0] / 2, self.arena_size[1] / 2 - 40, cam_height),
-        #     euler=(cam_pitch, 0, 0),
-        #     fovy=cam_fovy,
-        # )
         self.birdeye_cam = self.root_element.worldbody.add(
             "camera",
             name="birdeye_cam",
@@ -89,6 +78,16 @@ class OdorPlumeArena(BaseArena):
             euler=(np.deg2rad(15), 0, 0),
             fovy=60,
         )
+
+        # # Add second camera
+        # self.birdeye_cam = self.root_element.worldbody.add(
+        #     "camera",
+        #     name="birdeye_cam",
+        #     mode="fixed",
+        #     pos=(158, 93, 20),
+        #     euler=(0, 0, 0),
+        #     fovy=45,
+        # )
 
     def get_position_mapping(
         self, sim: NeuroMechFly, camera_id: str = "birdeye_cam"
@@ -175,7 +174,19 @@ class OdorPlumeArena(BaseArena):
         self.curr_time += dt
 
 
-class PlumeNavigationController(HybridTurningNMF):
+class WalkingState(Enum):
+    FORWARD = 0
+    TURN_LEFT = 1
+    TURN_RIGHT = 2
+    STOP = 3
+
+
+class TurningObjective(Enum):
+    UPWIND = 0
+    DOWNWIND = 1
+
+
+class PlumeNavigationTask(HybridTurningNMF):
     def __init__(
         self,
         render_plume_alpha: float = 0.75,
@@ -236,9 +247,6 @@ class PlumeNavigationController(HybridTurningNMF):
         res = np.clip(res - plume_img * 255, 0, 255).astype(np.uint8)
 
         # Add intensity indicator
-        # odor_intensity = self.get_observation()["odor_intensity"]
-        # if np.isnan(odor_intensity).any():
-        #     return res
         mean_intensity = obs["odor_intensity"].mean()
         mean_intensity_relative = np.clip(
             mean_intensity / self._intensity_display_vmax, 0, 1
@@ -272,6 +280,96 @@ def _resample_plume_image(grid_idx_all, plume_grid):
     return plume_img
 
 
+class PlumeNavigationController:
+    def __init__(
+        self,
+        forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
+        left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
+        right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
+        stop_dn_drive: Tuple[float, float] = (0.0, 0.0),
+        inter_turn_interval: float = 0.5,
+        turn_duration: float = 0.2,
+    ) -> None:
+        # DN drives
+        self.dn_drives = {
+            WalkingState.FORWARD: np.array(forward_dn_drive),
+            WalkingState.TURN_LEFT: np.array(left_turn_dn_drive),
+            WalkingState.TURN_RIGHT: np.array(right_turn_dn_drive),
+            WalkingState.STOP: np.array(stop_dn_drive),
+        }
+
+        self.inter_turn_interval = inter_turn_interval
+        self.turn_duration = turn_duration
+
+        self.current_state = WalkingState.FORWARD
+        self.current_state_start_time = 0.0
+
+    def decide_state(
+        self, encounter_flag: bool, curr_time: float, fly_heading: np.ndarray
+    ):
+        # Update integration state
+        if self.current_state == WalkingState.STOP:
+            # TODO
+            ...
+
+        # Forward -> turn transition
+        if (
+            self.current_state == WalkingState.FORWARD
+            and curr_time - self.current_state_start_time > self.inter_turn_interval
+        ):
+            turn_objective = TurningObjective.UPWIND  # TODO
+
+            if fly_heading[1] >= 0:  # upwind == left turn
+                if turn_objective == TurningObjective.UPWIND:
+                    self.current_state = WalkingState.TURN_LEFT
+                else:
+                    self.current_state = WalkingState.TURN_RIGHT
+            else:
+                if turn_objective == TurningObjective.UPWIND:
+                    self.current_state = WalkingState.TURN_RIGHT
+                else:
+                    self.current_state = WalkingState.TURN_LEFT
+            self.current_state_start_time = curr_time
+
+        # Forward -> stop transition
+        # TODO
+        ...
+
+        # Turn -> forward transition
+        if (
+            self.current_state in (WalkingState.TURN_LEFT, WalkingState.TURN_RIGHT)
+            and curr_time - self.current_state_start_time > self.turn_duration
+        ):
+            self.current_state = WalkingState.FORWARD
+            self.current_state_start_time = curr_time
+
+        # Stop -> forward transition
+        # TODO
+        ...
+
+        return self.current_state, self.dn_drives[self.current_state]
+
+
+def get_walking_icons():
+    icons_dir = get_data_path("flygym", "data") / "etc/locomotion_icons"
+    icons = {}
+    for key in ["forward", "left", "right", "stop"]:
+        icon_path = icons_dir / f"{key}.png"
+        icons[key] = cv2.imread(str(icon_path), cv2.IMREAD_UNCHANGED)
+    return {
+        WalkingState.FORWARD: icons["forward"],
+        WalkingState.TURN_LEFT: icons["left"],
+        WalkingState.TURN_RIGHT: icons["right"],
+        WalkingState.STOP: icons["stop"],
+    }
+
+
+def add_icon_to_image(image, icon):
+    sel = image[: icon.shape[0], -icon.shape[1] :, :]
+    mask = icon[:, :, 3] > 0
+    sel[mask] = icon[mask, :3]
+
+
 if __name__ == "__main__":
     arena = OdorPlumeArena(
         Path("/home/sibwang/Projects/flygym/outputs/complex_plume/plume.npy.npz")
@@ -292,34 +390,41 @@ if __name__ == "__main__":
         enable_adhesion=True,
         draw_adhesion=False,
         render_camera="birdeye_cam",
+        render_timestamp_text=True,
     )
-    sim = PlumeNavigationController(
+    sim = PlumeNavigationTask(
         sim_params=sim_params,
         arena=arena,
         spawn_pos=(arena.arena_size[0] * 0.75, arena.arena_size[1] / 2, 0.2),
-        spawn_orientation=(0, 0, -pi / 2),
+        spawn_orientation=(0, 0, -np.pi / 2),
         contact_sensor_placements=contact_sensor_placements,
     )
+    controller = PlumeNavigationController()
+    icons = get_walking_icons()
+    encounter_threshold = 0.05
 
     # Run the simulation
-    attractive_gain = -500
-    aversive_gain = 80
     run_time = 5
 
     obs_hist = []
     odor_history = []
     obs, _ = sim.reset()
     for i in trange(int(run_time / sim_params.timestep)):
-        obs, reward, terminated, truncated, info = sim.step(np.array([1, 1]))
+        obs = sim.get_observation()
+        walking_state, dn_drive = controller.decide_state(
+            encounter_flag=obs["odor_intensity"].max() > encounter_threshold,
+            curr_time=sim.curr_time,
+            fly_heading=obs["fly_orientation"],
+        )
+        obs, reward, terminated, truncated, info = sim.step(dn_drive)
         if terminated or truncated:
             break
         rendered_img = sim.render()
         if rendered_img is not None:
-            import cv2
-
+            add_icon_to_image(rendered_img, icons[walking_state])
             cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
             cv2.waitKey(1)
 
         obs_hist.append(obs)
 
-    sim.save_video("./outputs/plume_navigation.mp4")
+    # sim.save_video("./outputs/plume_navigation.mp4")
