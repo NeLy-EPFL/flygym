@@ -2,7 +2,7 @@ import pytest
 import gymnasium.spaces as spaces
 import gymnasium.utils.env_checker as env_checker
 
-from flygym.mujoco import (
+from flygym import (
     Camera,
     Fly,
     NeuroMechFly,
@@ -10,7 +10,7 @@ from flygym.mujoco import (
     Simulation,
     SingleFlySimulation,
 )
-from flygym.mujoco.arena import OdorArena
+from flygym.arena import OdorArena
 
 
 def test_check_env_basic():

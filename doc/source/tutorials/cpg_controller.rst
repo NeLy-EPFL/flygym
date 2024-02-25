@@ -526,17 +526,17 @@ We start by initializing the simulation:
 .. code-block:: ipython3
     :linenos:
 
-    import flygym.mujoco
-    import flygym.mujoco.preprogrammed
+    import flygym
+    import flygym.preprogrammed
     
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4, render_mode="saved", render_playspeed=0.1, draw_contacts=True
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
 
@@ -706,17 +706,17 @@ parts of the code that have been changed are indicated with comments.
     :linenos:
 
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4,
         render_mode="saved",
         render_playspeed=0.1,
         enable_adhesion=True,  # THIS HAS CHANGED
         draw_adhesion=True,  # THIS HAS CHANGED (tarsus color indicates adhesion on/off)
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
     

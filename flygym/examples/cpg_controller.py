@@ -1,8 +1,8 @@
 import numpy as np
 from tqdm import trange
 
-from flygym.mujoco import Parameters, NeuroMechFly
-from flygym.mujoco.examples.common import PreprogrammedSteps
+from flygym import Parameters, NeuroMechFly
+from flygym.examples.common import PreprogrammedSteps
 
 
 def calculate_ddt(theta, r, w, phi, nu, R, alpha):

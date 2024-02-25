@@ -4,9 +4,9 @@ import gymnasium as gym
 import numpy as np
 from dm_control import mjcf
 from dm_control.utils import transformations
-from flygym.mujoco.arena import BaseArena, FlatTerrain
-from flygym.mujoco.camera import Camera
-from flygym.mujoco.fly import Fly
+from flygym.arena import BaseArena, FlatTerrain
+from flygym.camera import Camera
+from flygym.fly import Fly
 from gymnasium.core import ObsType, spaces
 
 
@@ -16,11 +16,11 @@ class Simulation(gym.Env):
 
     Attributes
     ----------
-    flies : List[flygym.mujoco.fly.Fly]
+    flies : List[flygym.fly.Fly]
         List of flies in the simulation.
-    cameras : List[flygym.mujoco.camera.Camera]
+    cameras : List[flygym.camera.Camera]
         List of cameras in the simulation.
-    arena : flygym.mujoco.arena.BaseArena
+    arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     timestep: float
         Simulation timestep in seconds.
@@ -45,12 +45,12 @@ class Simulation(gym.Env):
         """
         Parameters
         ----------
-        flies : Iterable[flygym.mujoco.fly.Fly] or Fly
+        flies : Iterable[flygym.fly.Fly] or Fly
             List of flies in the simulation.
-        cameras : Iterable[flygym.mujoco.camera.Camera] or Camera, optional
+        cameras : Iterable[flygym.camera.Camera] or Camera, optional
             List of cameras in the simulation. Defaults to the left camera
             of the first fly.
-        arena : flygym.mujoco.arena.BaseArena, optional
+        arena : flygym.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
         timestep : float
@@ -252,7 +252,7 @@ class Simulation(gym.Env):
                     fly.flip_counter += 1
                 else:
                     fly.flip_counter = 0
-                flip_config = fly.mujoco_config["flip_detection"]
+                flip_config = fly.config["flip_detection"]
                 has_passed_init = self.curr_time > flip_config["ignore_period"]
                 contact_lost_time = fly.flip_counter * self.timestep
                 lost_contact_long_enough = (
@@ -363,11 +363,11 @@ class SingleFlySimulation(Simulation):
 
     Attributes
     ----------
-    fly : flygym.mujoco.fly.Fly
+    fly : flygym.fly.Fly
         The fly in the simulation.
-    cameras : List[flygym.mujoco.camera.Camera]
+    cameras : List[flygym.camera.Camera]
         List of cameras in the simulation.
-    arena : flygym.mujoco.arena.BaseArena
+    arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     timestep: float
         Simulation timestep in seconds.
@@ -397,7 +397,7 @@ class SingleFlySimulation(Simulation):
         cameras : Iterable[Fly] or Camera, optional
             List of cameras in the simulation. Defaults to the left camera
             of the first fly.
-        arena : flygym.mujoco.arena.BaseArena, optional
+        arena : flygym.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
         timestep : float

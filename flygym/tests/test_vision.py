@@ -4,9 +4,9 @@ import pytest
 import logging
 from pathlib import Path
 
-from flygym.mujoco import NeuroMechFly, Parameters
-from flygym.mujoco.util import load_config
-from flygym.mujoco.vision import visualize_visual_input
+from flygym import NeuroMechFly, Parameters
+from flygym.util import load_config
+from flygym.vision import visualize_visual_input
 
 
 np.random.seed(0)

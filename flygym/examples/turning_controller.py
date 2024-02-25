@@ -3,9 +3,9 @@ from tqdm import trange
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 
-from flygym.mujoco import Parameters, NeuroMechFly
-from flygym.mujoco.examples.common import PreprogrammedSteps
-from flygym.mujoco.examples.cpg_controller import CPGNetwork
+from flygym import Parameters, NeuroMechFly
+from flygym.examples.common import PreprogrammedSteps
+from flygym.examples.cpg_controller import CPGNetwork
 
 
 _tripod_phase_biases = np.pi * np.array(

@@ -3,8 +3,8 @@ import tempfile
 import logging
 from pathlib import Path
 
-from flygym.mujoco import NeuroMechFly
-from flygym.mujoco.util import plot_mujoco_rollout
+from flygym import NeuroMechFly
+from flygym.util import plot_mujoco_rollout
 
 
 def test_stretched_pose():

@@ -10,12 +10,12 @@ from gymnasium import spaces
 from gymnasium.core import ObsType
 from scipy.spatial.transform import Rotation as R
 
-import flygym.mujoco.preprogrammed as preprogrammed
-import flygym.mujoco.state as state
-import flygym.mujoco.util as util
-import flygym.mujoco.vision as vision
+import flygym.preprogrammed as preprogrammed
+import flygym.state as state
+import flygym.util as util
+import flygym.vision as vision
 from flygym.common import get_data_path
-from flygym.mujoco.arena import BaseArena
+from flygym.arena import BaseArena
 
 
 class Fly:
@@ -102,7 +102,7 @@ class Fly:
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors.
-    retina : flygym.mujoco.vision.Retina
+    retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
     arena_root = dm_control.mjcf.RootElement
@@ -122,7 +122,7 @@ class Fly:
         repetitions of the previous updated visual input frames.
     """
 
-    mujoco_config = util.load_config()
+    config = util.load_config()
     _last_tarsal_seg_names = tuple(
         f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
     )
@@ -307,7 +307,7 @@ class Fly:
         if isinstance(xml_variant, str):
             xml_variant = (
                 get_data_path("flygym", "data")
-                / self.mujoco_config["paths"]["mjcf"][xml_variant]
+                / self.config["paths"]["mjcf"][xml_variant]
             )
         self.model = mjcf.from_path(xml_variant)
         self.model.model = str(name)
@@ -450,7 +450,7 @@ class Fly:
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
-            sensor_config = self.mujoco_config["vision"]["sensor_positions"][name]
+            sensor_config = self.config["vision"]["sensor_positions"][name]
             parent_body = self.model.find("body", sensor_config["parent"])
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
@@ -461,7 +461,7 @@ class Fly:
                 dclass="nmf",
                 mode="track",
                 euler=sensor_config["orientation"],
-                fovy=self.mujoco_config["vision"]["fovy_per_eye"],
+                fovy=self.config["vision"]["fovy_per_eye"],
             )
             if self.draw_sensor_markers:
                 sensor_body.add(
@@ -474,7 +474,7 @@ class Fly:
 
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = []
-        for segment in self.mujoco_config["vision"]["hidden_segments"]:
+        for segment in self.config["vision"]["hidden_segments"]:
             # all body segments have a visual geom - add this first
             visual_geom_name = f"{segment}_visual"
             self._geoms_to_hide.append(visual_geom_name)
@@ -539,7 +539,7 @@ class Fly:
         return camera
 
     def _set_geom_colors(self):
-        for type_, specs in self.mujoco_config["appearance"].items():
+        for type_, specs in self.config["appearance"].items():
             # Define texture and material
             if specs["texture"] is not None:
                 self.model.asset.add(
@@ -597,7 +597,7 @@ class Fly:
             _observation_space["vision"] = spaces.Box(
                 low=0,
                 high=255,
-                shape=(2, self.mujoco_config["vision"]["num_ommatidia_per_eye"], 2),
+                shape=(2, self.config["vision"]["num_ommatidia_per_eye"], 2),
             )
         if self.enable_olfaction:
             _observation_space["odor_intensity"] = spaces.Box(
@@ -789,7 +789,7 @@ class Fly:
 
     def _add_odor_sensors(self):
         antennae_sensors = []
-        for name, specs in self.mujoco_config["olfaction"]["sensor_positions"].items():
+        for name, specs in self.config["olfaction"]["sensor_positions"].items():
             parent_body = self.model.find("body", specs["parent"])
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=specs["rel_pos"]
@@ -908,7 +908,7 @@ class Fly:
         simulation timestep). If needed, update the visual input of the fly
         and buffer it to ``self._curr_raw_visual_input``.
         """
-        vision_config = self.mujoco_config["vision"]
+        vision_config = self.config["vision"]
         next_render_time = (
             self.last_vision_update_time + self._eff_visual_render_interval
         )

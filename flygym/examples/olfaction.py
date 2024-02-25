@@ -2,9 +2,9 @@ import numpy as np
 from tqdm import trange
 from gymnasium.utils.env_checker import check_env
 
-from flygym.mujoco import Parameters
-from flygym.mujoco.arena import OdorArena
-from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+from flygym import Parameters
+from flygym.arena import OdorArena
+from flygym.examples.turning_controller import HybridTurningNMF
 
 
 if __name__ == "__main__":

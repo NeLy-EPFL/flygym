@@ -1,6 +1,6 @@
 from flygym.common import get_data_path
 from typing import List
-from flygym.mujoco.state import KinematicPose
+from flygym.state import KinematicPose
 
 
 all_leg_dofs = [

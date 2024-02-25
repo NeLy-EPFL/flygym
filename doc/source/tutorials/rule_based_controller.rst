@@ -51,7 +51,7 @@ This time, we will use the `PreprogrammedSteps` Python class that
 encapsulates much of the code implemented in the previous tutorial.
 The following is the documentation for this class:
 
-.. autoclass:: flygym.mujoco.examples.rule_based_controller.PreprogrammedSteps
+.. autoclass:: flygym.examples.rule_based_controller.PreprogrammedSteps
    :members:
    :show-inheritance:
    :inherited-members:
@@ -62,7 +62,7 @@ Let’s import this class:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.rule_based_controller import PreprogrammedSteps
+    from flygym.examples.rule_based_controller import PreprogrammedSteps
 
 We can verify that this works by regenerating the following plot from
 the CPGs tutorial:
@@ -403,13 +403,13 @@ Finally, let’s implement the main ``step()`` method:
 
            self.curr_step += 1
 
-This class is actually included in ``flygym.mujoco.examples``. Let’s
+This class is actually included in ``flygym.examples``. Let’s
 import it.
 
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.rule_based_controller import RuleBasedSteppingCoordinator
+    from flygym.examples.rule_based_controller import RuleBasedSteppingCoordinator
 
 Let’s define the weights of the rules and run 1 second of simulation:
 
@@ -553,7 +553,7 @@ signals (joint positions) into the NeuroMechFly physics simulation:
 .. code-block:: ipython3
     :linenos:
 
-    import flygym.mujoco
+    import flygym
     from tqdm import trange
     
     
@@ -563,17 +563,17 @@ signals (joint positions) into the NeuroMechFly physics simulation:
         weights=weights,
         preprogrammed_steps=preprogrammed_steps,
     )
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=timestep,
         render_mode="saved",
         render_playspeed=0.1,
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
     

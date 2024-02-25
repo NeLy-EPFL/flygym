@@ -2,7 +2,7 @@ import numpy as np
 from typing import Tuple, List, Optional, Callable
 from dm_control import mjcf
 
-from flygym.mujoco.util import load_config
+from flygym.util import load_config
 from .base import BaseArena
 
 

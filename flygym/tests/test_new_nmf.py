@@ -1,11 +1,11 @@
 import pickle
 
-import flygym.mujoco.preprogrammed
+import flygym.preprogrammed
 import numpy as np
 import pytest
 from flygym.common import get_data_path
-from flygym.mujoco import NeuroMechFly, Parameters
-from flygym.mujoco.tests.core_v0 import NeuroMechFlyV0
+from flygym import NeuroMechFly, Parameters
+from flygym.tests.core_v0 import NeuroMechFlyV0
 
 
 @pytest.mark.skip(
@@ -13,7 +13,7 @@ from flygym.mujoco.tests.core_v0 import NeuroMechFlyV0
 )
 def test_new_nmf_same_as_nmf_v0():
     timestep = 1e-4
-    actuated_joints = flygym.mujoco.preprogrammed.all_leg_dofs
+    actuated_joints = flygym.preprogrammed.all_leg_dofs
     data_path = get_data_path("flygym", "data")
     with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
         data = pickle.load(f)

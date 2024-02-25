@@ -8,7 +8,7 @@ import dm_control.mujoco
 import imageio
 import numpy as np
 from dm_control import mjcf
-from flygym.mujoco.fly import Fly
+from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
 
 
