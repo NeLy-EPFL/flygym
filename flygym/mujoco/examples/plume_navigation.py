@@ -18,12 +18,15 @@ from flygym.mujoco import Parameters, NeuroMechFly
 from flygym.mujoco.examples.turning_controller import HybridTurningNMF
 
 
+np.random.seed(0)
+
+
 class OdorPlumeArena(BaseArena):
     def __init__(
         self,
         plume_data_path: Optional[Path] = None,
         dimension_scale_factor: float = 0.5,
-        plume_simulation_fps: float = 100,
+        plume_simulation_fps: float = 150,
         intensity_scale_factor: float = 1.0,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
@@ -41,7 +44,6 @@ class OdorPlumeArena(BaseArena):
             raise NotImplementedError("TODO: download from some URL automatically")
         self.plume_data = np.load(plume_data_path)
         self.plume_grid = self.plume_data["plume"].copy()
-        print(self.plume_grid.shape, self.dimension_scale_factor)
         self.arena_size = (
             np.array(self.plume_grid.shape[1:])[::-1] * self.dimension_scale_factor
         )
@@ -283,13 +285,25 @@ def _resample_plume_image(grid_idx_all, plume_grid):
 class PlumeNavigationController:
     def __init__(
         self,
+        dt: float,
         forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
         left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
         right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
         stop_dn_drive: Tuple[float, float] = (0.0, 0.0),
         inter_turn_interval: float = 0.5,
         turn_duration: float = 0.2,
+        lambda_ws_0: float = 0.78,  # s^-1
+        delta_lambda_ws: float = -0.61,  # s^-1
+        tau_s: float = 0.25,  # s
+        alpha: float = 0.5,#0.242,  # Hz^-1
+        tau_freq_conv: float = 2,  # s
+        cummulative_evidence_window: float = 2.0,  # s
+        lambda_sw_0: float = 0.29,  # s^-1
+        delta_lambda_sw: float = 0.41,  # s^-1
+        tau_w=0.52,  # s
+        lambda_turn: float = 1.33,  # s^-1
     ) -> None:
+        self.dt = dt
         # DN drives
         self.dn_drives = {
             WalkingState.FORWARD: np.array(forward_dn_drive),
@@ -298,56 +312,149 @@ class PlumeNavigationController:
             WalkingState.STOP: np.array(stop_dn_drive),
         }
 
+        # Walking->stopping transition parameters
+        self.lambda_ws_0 = lambda_ws_0
+        self.delta_lambda_ws = delta_lambda_ws
+        self.tau_s = tau_s
+
+        self.curr_time = 0.0
+        self.curr_state = WalkingState.FORWARD
+        self.curr_state_start_time = 0.0
+        self.last_encounter_time = -np.inf
+        self.encounter_history = []
+
+        # Stopping->walking transition parameters
+        self.cummulative_evidence_window = cummulative_evidence_window
+        self.cummulative_evidence_len = int(cummulative_evidence_window / dt)
+        self.lambda_sw_0 = lambda_sw_0
+        self.delta_lambda_sw = delta_lambda_sw
+        self.tau_w = tau_w
+        self.encounter_weights = (
+            -np.arange(self.cummulative_evidence_len)[::-1] * self.dt
+        )
+
+        # Turning related parameters
         self.inter_turn_interval = inter_turn_interval
         self.turn_duration = turn_duration
+        self.alpha = alpha
+        self.tau_freq_conv = tau_freq_conv
+        self.freq_kernel = np.exp(self.encounter_weights / tau_freq_conv)
+        self.lambda_turn = lambda_turn
 
-        self.current_state = WalkingState.FORWARD
-        self.current_state_start_time = 0.0
+        self._turn_debug_str_buffer = ""
 
-    def decide_state(
-        self, encounter_flag: bool, curr_time: float, fly_heading: np.ndarray
-    ):
-        # Update integration state
-        if self.current_state == WalkingState.STOP:
-            # TODO
-            ...
+    def decide_state(self, encounter_flag: bool, fly_heading: np.ndarray):
+        self.encounter_history.append(encounter_flag)
+        if encounter_flag:
+            self.last_encounter_time = self.curr_time
+
+        debug_str = ""
 
         # Forward -> turn transition
-        if (
-            self.current_state == WalkingState.FORWARD
-            and curr_time - self.current_state_start_time > self.inter_turn_interval
-        ):
-            turn_objective = TurningObjective.UPWIND  # TODO
+        if self.curr_state == WalkingState.FORWARD:
+            p_nochange = np.exp(-self.lambda_turn * self.dt)
+            if np.random.rand() > p_nochange:
+                encounter_hist = np.array(
+                    self.encounter_history[-self.cummulative_evidence_len :]
+                )
+                kernel = self.freq_kernel[-len(encounter_hist) :]
+                w_freq = np.sum(kernel * encounter_hist) * self.dt
+                correction_factor = self.exp_integral_norm_factor(
+                    window=len(encounter_hist) * self.dt, tau=self.tau_freq_conv
+                )
+                w_freq *= correction_factor
+                p_upwind = 1 / (1 + np.exp(-self.alpha * w_freq))
+                if np.random.rand() < p_upwind:
+                    turn_objective = TurningObjective.UPWIND
+                    debug_str = (
+                        f"Wfreq={w_freq:.2f}  "
+                        f"P(upwind)={p_upwind:.2f}, turning UPWIND"
+                    )
+                else:
+                    turn_objective = TurningObjective.DOWNWIND
+                    debug_str = (
+                        f"Wfreq={w_freq:.2f}  "
+                        f"P(upwind)={p_upwind:.2f}, turning DOWNWIND"
+                    )
+                self._turn_debug_str_buffer = debug_str
 
-            if fly_heading[1] >= 0:  # upwind == left turn
-                if turn_objective == TurningObjective.UPWIND:
-                    self.current_state = WalkingState.TURN_LEFT
+                if fly_heading[1] >= 0:  # upwind == left turn
+                    if turn_objective == TurningObjective.UPWIND:
+                        self.curr_state = WalkingState.TURN_LEFT
+                    else:
+                        self.curr_state = WalkingState.TURN_RIGHT
                 else:
-                    self.current_state = WalkingState.TURN_RIGHT
-            else:
-                if turn_objective == TurningObjective.UPWIND:
-                    self.current_state = WalkingState.TURN_RIGHT
-                else:
-                    self.current_state = WalkingState.TURN_LEFT
-            self.current_state_start_time = curr_time
+                    if turn_objective == TurningObjective.UPWIND:
+                        self.curr_state = WalkingState.TURN_RIGHT
+                    else:
+                        self.curr_state = WalkingState.TURN_LEFT
+                self.curr_state_start_time = self.curr_time
 
         # Forward -> stop transition
-        # TODO
-        ...
+        if self.curr_state == WalkingState.FORWARD:
+            lambda_ws = self.lambda_ws_0 + self.delta_lambda_ws * np.exp(
+                -(self.curr_time - self.last_encounter_time) / self.tau_s
+            )
+            p_nochange = np.exp(-lambda_ws * self.dt)
+            p_stop_1s = 1 - np.exp(-lambda_ws)
+            debug_str = (
+                f"lambda(w->s)={lambda_ws:.2f}  P(stop within 1s)={p_stop_1s:.2f}"
+            )
+            if np.random.rand() > p_nochange:
+                self.curr_state = WalkingState.STOP
+                self.curr_state_start_time = self.curr_time
 
         # Turn -> forward transition
-        if (
-            self.current_state in (WalkingState.TURN_LEFT, WalkingState.TURN_RIGHT)
-            and curr_time - self.current_state_start_time > self.turn_duration
-        ):
-            self.current_state = WalkingState.FORWARD
-            self.current_state_start_time = curr_time
+        if self.curr_state in (WalkingState.TURN_LEFT, WalkingState.TURN_RIGHT):
+            debug_str = self._turn_debug_str_buffer
+            if self.curr_time - self.curr_state_start_time > self.turn_duration:
+                self.curr_state = WalkingState.FORWARD
+                self.curr_state_start_time = self.curr_time
 
         # Stop -> forward transition
-        # TODO
-        ...
+        if self.curr_state == WalkingState.STOP:
+            encounter_hist = np.array(
+                self.encounter_history[-self.cummulative_evidence_len :]
+            )
+            time_diff = self.encounter_weights[-len(encounter_hist) :]
+            cumm_evidence_integral = (
+                np.sum(np.exp(time_diff / self.tau_w) * encounter_hist) * self.dt
+            )
+            correction_factor = self.exp_integral_norm_factor(
+                window=len(encounter_hist) * self.dt, tau=self.tau_w
+            )
+            # print("s->w", correction_factor)
+            cumm_evidence_integral *= correction_factor
+            lambda_sw = self.lambda_sw_0 + self.delta_lambda_sw * cumm_evidence_integral
+            p_nochange = np.exp(-lambda_sw * self.dt)
+            p_walk_1s = 1 - np.exp(-lambda_sw)
+            debug_str = (
+                f"lambda(s->w)={lambda_sw:.2f}  P(walk within 1s)={p_walk_1s:.2f}"
+            )
+            if self.curr_time > 2:
+                pass
+            if np.random.rand() > p_nochange:
+                self.curr_state = WalkingState.FORWARD
+                self.curr_state_start_time = self.curr_time
 
-        return self.current_state, self.dn_drives[self.current_state]
+        self.curr_time += self.dt
+        return self.curr_state, self.dn_drives[self.curr_state], debug_str
+
+    def exp_integral_norm_factor(self, window: float, tau: float):
+        """_summary_
+               int_{-inf}^0 exp(t / tau) dt
+        k(w) = ----------------------------
+                int_{-w}^0 exp(t / tau) dt
+             = 1 / (1 - exp(-w / tau))
+
+        Parameters
+        ----------
+        window : float
+            Window size for cummulative evidence in seconds.
+        """
+        if window <= 0:
+            raise ValueError("Window size must be positive for cummulative evidence")
+        return 1 / (1 - np.exp(-window / tau))
 
 
 def get_walking_icons():
@@ -399,21 +506,20 @@ if __name__ == "__main__":
         spawn_orientation=(0, 0, -np.pi / 2),
         contact_sensor_placements=contact_sensor_placements,
     )
-    controller = PlumeNavigationController()
+    controller = PlumeNavigationController(dt=sim_params.timestep)
     icons = get_walking_icons()
     encounter_threshold = 0.05
 
     # Run the simulation
-    run_time = 5
+    run_time = 46
 
     obs_hist = []
     odor_history = []
     obs, _ = sim.reset()
     for i in trange(int(run_time / sim_params.timestep)):
         obs = sim.get_observation()
-        walking_state, dn_drive = controller.decide_state(
+        walking_state, dn_drive, debug_str = controller.decide_state(
             encounter_flag=obs["odor_intensity"].max() > encounter_threshold,
-            curr_time=sim.curr_time,
             fly_heading=obs["fly_orientation"],
         )
         obs, reward, terminated, truncated, info = sim.step(dn_drive)
@@ -422,9 +528,19 @@ if __name__ == "__main__":
         rendered_img = sim.render()
         if rendered_img is not None:
             add_icon_to_image(rendered_img, icons[walking_state])
+            cv2.putText(
+                rendered_img,
+                debug_str,
+                (20, sim_params.render_window_size[1] - 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 0),
+                1,
+                cv2.LINE_AA,
+            )
             cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
             cv2.waitKey(1)
 
         obs_hist.append(obs)
 
-    # sim.save_video("./outputs/plume_navigation.mp4")
+    sim.save_video("./outputs/plume_navigation.mp4")
