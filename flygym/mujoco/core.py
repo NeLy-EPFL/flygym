@@ -14,7 +14,6 @@ from gymnasium import spaces
 from gymnasium.core import ObsType
 
 try:
-    import mujoco
     import dm_control
     from dm_control import mjcf
     from dm_control.utils import transformations
@@ -1976,6 +1975,12 @@ class NeuroMechFly(SingleFlySimulation):
             file. This avoids spurious detection when the fly is not
             standing reliably on the ground yet. By default False.
         """
+
+        warnings.warn(
+            "Deprecation warning: The `NeuroMechFly` class has been"
+            "restructured into `Simulation`, `Fly`, and `Camera`."
+            "`NeuroMechFly` will be removed in future versions."
+        )
 
         if sim_params is None:
             sim_params = Parameters()
