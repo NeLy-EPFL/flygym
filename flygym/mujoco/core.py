@@ -1834,24 +1834,6 @@ class NeuroMechFlyV0(gym.Env):
             self.save_video(self.output_dir / "video.mp4")
 
 
-class MuJoCoParameters(Parameters):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Deprecation warning: The `MuJoCoParameters` class has been renamed "
-            "`Parameters`. `MuJoCoParameters` will be removed in future versions."
-        )
-        super().__init__(*args, **kwargs)
-
-
-class NeuroMechFlyMuJoCo(NeuroMechFlyV0):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Deprecation warning: The `NeuroMechFlyMuJoCo` class has been renamed "
-            "`NeuroMechFly`. `NeuroMechFlyMuJoCo` will be removed in future versions."
-        )
-        super().__init__(*args, **kwargs)
-
-
 class NeuroMechFly(SingleFlySimulation):
     """A NeuroMechFly environment using MuJoCo as the physics engine. This
     class is a wrapper around the SingleFlySimulation and is provided for
