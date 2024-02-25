@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from flygym.common import get_data_path
 from flygym.mujoco import NeuroMechFly, Parameters
-from flygym.mujoco.core import NeuroMechFlyV0
+from flygym.mujoco.tests.core_v0 import NeuroMechFlyV0
 
 
 @pytest.mark.skip(
