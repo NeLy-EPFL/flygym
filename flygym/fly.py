@@ -1,8 +1,7 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional
 
-import cv2
 import numpy as np
 from dm_control import mjcf
 from dm_control.utils import transformations
@@ -130,11 +129,13 @@ class Fly:
     _floor_contacts: Dict[str, mjcf.Element]
     _self_contacts: Dict[str, mjcf.Element]
     _adhesion_actuator_geom_id: np.ndarray
+    _default_fly_name = 0
+    _existing_fly_names = set()
     observation_space: spaces.Dict
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         actuated_joints: List = preprogrammed.all_leg_dofs,
         contact_sensor_placements: List = preprogrammed.all_tarsi_links,
         xml_variant: Union[str, Path] = "seqik",
@@ -172,8 +173,9 @@ class Fly:
 
         Parameters
         ----------
-        name : str
-            The name of the fly model.
+        name : str, optional
+            The name of the fly model. Will be automatically generated if
+            not provided.
         actuated_joints : List[str], optional
             List of names of actuated joints. By default all active leg
             DoFs.
@@ -310,6 +312,16 @@ class Fly:
                 / self.config["paths"]["mjcf"][xml_variant]
             )
         self.model = mjcf.from_path(xml_variant)
+
+        if name is None:
+            name = f"{self._default_fly_name}"
+            self._default_fly_name += 1
+
+            while name in self._existing_fly_names:
+                name = f"{self._default_fly_name}"
+                self._default_fly_name += 1
+
+        self._existing_fly_names.add(str(name))
         self.model.model = str(name)
 
         self.spawn_pos = np.array(spawn_pos)
