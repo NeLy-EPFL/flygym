@@ -183,8 +183,8 @@ We start with the necessary imports:
     from tqdm import trange
     
     import flygym.common
-    import flygym.mujoco
-    import flygym.mujoco.preprogrammed
+    import flygym
+    import flygym.preprogrammed
 
 Let’s define some simulation parameters:
 
@@ -192,10 +192,10 @@ Let’s define some simulation parameters:
     :linenos:
 
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4, render_mode="saved", render_playspeed=0.2, draw_contacts=True
     )
-    actuated_joints = flygym.mujoco.preprogrammed.all_leg_dofs
+    actuated_joints = flygym.preprogrammed.all_leg_dofs
 
 We can now load recorded kinematics that are included with the FlyGym
 package:
@@ -259,7 +259,7 @@ recorded kinematics in the MDP loop:
 .. code-block:: ipython3
     :linenos:
 
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
         actuated_joints=actuated_joints,

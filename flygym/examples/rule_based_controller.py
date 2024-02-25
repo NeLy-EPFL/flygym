@@ -2,8 +2,8 @@ import numpy as np
 import networkx as nx
 from tqdm import trange
 
-import flygym.mujoco
-from flygym.mujoco.examples.common import PreprogrammedSteps
+import flygym
+from flygym.examples.common import PreprogrammedSteps
 
 
 class RuleBasedSteppingCoordinator:
@@ -218,17 +218,17 @@ if __name__ == "__main__":
     )
 
     # Initialize NeuroMechFly simulation
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=timestep,
         render_mode="saved",
         render_playspeed=0.1,
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
 

@@ -15,13 +15,13 @@ from gymnasium import spaces
 from gymnasium.core import ObsType
 from scipy.spatial.transform import Rotation as R
 
-import flygym.mujoco.preprogrammed as preprogrammed
-import flygym.mujoco.state as state
-import flygym.mujoco.util as util
-import flygym.mujoco.vision as vision
+import flygym.preprogrammed as preprogrammed
+import flygym.state as state
+import flygym.util as util
+import flygym.vision as vision
 from flygym.common import get_data_path
-from flygym.mujoco.arena import BaseArena, FlatTerrain
-from flygym.mujoco.core import Parameters
+from flygym.arena import BaseArena, FlatTerrain
+from flygym.core import Parameters
 
 
 class NeuroMechFlyV0(gym.Env):
@@ -30,13 +30,13 @@ class NeuroMechFlyV0(gym.Env):
 
     Attributes
     ----------
-    sim_params : flygym.mujoco.Parameters
+    sim_params : flygym.Parameters
         Parameters of the MuJoCo simulation.
     timestep: float
         Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
-    arena : flygym.mujoco.arena.BaseArena
+    arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     spawn_pos : Tuple[float, float, float], optional
         The (x, y, z) position in the arena defining where the fly will be
@@ -64,7 +64,7 @@ class NeuroMechFlyV0(gym.Env):
         disabled for a period of time at the beginning of the simulation as
         defined in the configuration file. This avoids spurious detection
         when the fly is not standing reliably on the ground yet.
-    retina : flygym.mujoco.vision.Retina
+    retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
     arena_root = dm_control.mjcf.RootElement
@@ -90,7 +90,7 @@ class NeuroMechFlyV0(gym.Env):
         repetitions of the previous updated visual input frames.
     """
 
-    _mujoco_config = util.load_config()
+    _config = util.load_config()
 
     def __init__(
         self,
@@ -112,7 +112,7 @@ class NeuroMechFlyV0(gym.Env):
 
         Parameters
         ----------
-        sim_params : flygym.mujoco.Parameters
+        sim_params : flygym.Parameters
             Parameters of the MuJoCo simulation.
         actuated_joints : List[str], optional
             List of names of actuated joints. By default all active leg
@@ -123,7 +123,7 @@ class NeuroMechFlyV0(gym.Env):
         output_dir : Path, optional
             Directory to save simulation data. If ``None``, no data will
             be saved. By default None.
-        arena : flygym.mujoco.arena.BaseArena, optional
+        arena : flygym.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
         xml_variant: str or Path, optional
@@ -262,7 +262,7 @@ class NeuroMechFlyV0(gym.Env):
         if isinstance(xml_variant, str):
             xml_variant = (
                 get_data_path("flygym", "data")
-                / self._mujoco_config["paths"]["mjcf"][xml_variant]
+                / self._config["paths"]["mjcf"][xml_variant]
             )
         self.model = mjcf.from_path(xml_variant)
         self._set_geom_colors()
@@ -388,7 +388,7 @@ class NeuroMechFlyV0(gym.Env):
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
-            sensor_config = self._mujoco_config["vision"]["sensor_positions"][name]
+            sensor_config = self._config["vision"]["sensor_positions"][name]
             parent_body = self.model.find("body", sensor_config["parent"])
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
@@ -399,7 +399,7 @@ class NeuroMechFlyV0(gym.Env):
                 dclass="nmf",
                 mode="track",
                 euler=sensor_config["orientation"],
-                fovy=self._mujoco_config["vision"]["fovy_per_eye"],
+                fovy=self._config["vision"]["fovy_per_eye"],
             )
             if self.sim_params.draw_sensor_markers:
                 sensor_body.add(
@@ -412,7 +412,7 @@ class NeuroMechFlyV0(gym.Env):
 
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = []
-        for segment in self._mujoco_config["vision"]["hidden_segments"]:
+        for segment in self._config["vision"]["hidden_segments"]:
             # all body segments have a visual geom - add this first
             visual_geom_name = f"{segment}_visual"
             self._geoms_to_hide.append(visual_geom_name)
@@ -477,7 +477,7 @@ class NeuroMechFlyV0(gym.Env):
         return camera
 
     def _set_geom_colors(self):
-        for type_, specs in self._mujoco_config["appearance"].items():
+        for type_, specs in self._config["appearance"].items():
             # Define texture and material
             if specs["texture"] is not None:
                 self.model.asset.add(
@@ -558,7 +558,7 @@ class NeuroMechFlyV0(gym.Env):
             _observation_space["vision"] = spaces.Box(
                 low=0,
                 high=255,
-                shape=(2, self._mujoco_config["vision"]["num_ommatidia_per_eye"], 2),
+                shape=(2, self._config["vision"]["num_ommatidia_per_eye"], 2),
             )
         if self.sim_params.enable_olfaction:
             _observation_space["odor_intensity"] = spaces.Box(
@@ -798,7 +798,7 @@ class NeuroMechFlyV0(gym.Env):
 
     def _add_odor_sensors(self):
         antennae_sensors = []
-        for name, specs in self._mujoco_config["olfaction"]["sensor_positions"].items():
+        for name, specs in self._config["olfaction"]["sensor_positions"].items():
             parent_body = self.model.find("body", specs["parent"])
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=specs["rel_pos"]
@@ -1116,7 +1116,7 @@ class NeuroMechFlyV0(gym.Env):
                 self._flip_counter += 1
             else:
                 self._flip_counter = 0
-            flip_config = self._mujoco_config["flip_detection"]
+            flip_config = self._config["flip_detection"]
             has_passed_init = self.curr_time > flip_config["ignore_period"]
             contact_lost_time = self._flip_counter * self.timestep
             lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
@@ -1381,7 +1381,7 @@ class NeuroMechFlyV0(gym.Env):
         simulation timestep). If needed, update the visual input of the fly
         and buffer it to ``self._curr_raw_visual_input``.
         """
-        vision_config = self._mujoco_config["vision"]
+        vision_config = self._config["vision"]
         next_render_time = (
             self._last_vision_update_time + self._eff_visual_render_interval
         )

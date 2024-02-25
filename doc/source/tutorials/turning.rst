@@ -131,9 +131,9 @@ as before:
     from gymnasium import spaces
     from gymnasium.utils.env_checker import check_env
     
-    from flygym.mujoco import Parameters, NeuroMechFly
-    from flygym.mujoco.examples.common import PreprogrammedSteps
-    from flygym.mujoco.examples.cpg_controller import CPGNetwork
+    from flygym import Parameters, NeuroMechFly
+    from flygym.examples.common import PreprogrammedSteps
+    from flygym.examples.cpg_controller import CPGNetwork
     
     
     _tripod_phase_biases = np.pi * np.array(
@@ -158,9 +158,9 @@ as before:
 
 Now, we will define the ``__init__`` method of our ``HybridTurningNMF``
 class. The `complete, functional class
-definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/hybrid_turning_controller.py>`__
+definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/hybrid_turning_controller.py>`__
 can be found on our GitHub repository. You can import it with
-``from flygym.mujoco.examples.turning_controller import HybridTurningNMF``.
+``from flygym.examples.turning_controller import HybridTurningNMF``.
 
 We start with initializing the parent class by calling
 ``super().__init__(...)``. This basically calls the ``__init__`` logic
@@ -516,7 +516,7 @@ Let’s import this class and instantiate it:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym.examples.turning_controller import HybridTurningNMF
     
     run_time = 1
     timestep = 1e-4

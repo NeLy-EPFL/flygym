@@ -61,15 +61,15 @@ To start, we do the necessary imports:
     from tqdm import trange
     from gymnasium.utils.env_checker import check_env
     
-    from flygym.mujoco import Parameters
-    from flygym.mujoco.arena import FlatTerrain
-    from flygym.mujoco.examples.obstacle_arena import ObstacleOdorArena
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym import Parameters
+    from flygym.arena import FlatTerrain
+    from flygym.examples.obstacle_arena import ObstacleOdorArena
+    from flygym.examples.turning_controller import HybridTurningNMF
 
 We have pre-implemented an ``ObstacleOdorArena`` class with visual
 obstacles and an odor source. The details of this class is beyond the
 scope of this tutorial, but you can refer to it on the `FlyGym github
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/obstacle_arena.py>`__:
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/obstacle_arena.py>`__:
 
 .. code-block:: ipython3
     :linenos:
@@ -250,10 +250,10 @@ A dynamic arena with a moving sphere
 
 The next step is to create a custom arena with a moving sphere. To do
 this, we will implement a ``MovingObjArena`` class that inherits from
-the ``flygym.mujoco.arena.BaseArena`` class. A complete, functioning
+the ``flygym.arena.BaseArena`` class. A complete, functioning
 implementation of this class is provided under
-``flygym.mujoco.examples.vision`` on the `FlyGym
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/vision.py>`__.
+``flygym.examples.vision`` on the `FlyGym
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/vision.py>`__.
 We start by defining some attributes in its ``__init__`` method:
 
 .. code:: python
@@ -446,8 +446,8 @@ Here, we will build yet another layer on top of
 ``HybridTurningController``, implementing the aforementioned sensory
 preprocessing logic (cyan arrow) and encapsulating it inside the new
 MDP. As before, a complete, functioning implementation of this class is
-provided under ``flygym.mujoco.examples.vision`` on the `FlyGym
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/vision.py>`__.
+provided under ``flygym.examples.vision`` on the `FlyGym
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/vision.py>`__.
 
 We start by defining an ``__init__`` method. This time, we will specify
 the threshold used in the binary thresholding step. Any pixel darker
@@ -554,7 +554,7 @@ our arena and Gym environment:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.vision import MovingObjArena, VisualTaxis
+    from flygym.examples.vision import MovingObjArena, VisualTaxis
     
     obj_threshold = 0.15
     decision_interval = 0.05
@@ -667,7 +667,7 @@ experience of the fly:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.vision.visualize import save_video_with_vision_insets
+    from flygym.vision.visualize import save_video_with_vision_insets
     
     save_video_with_vision_insets(
         nmf, "./outputs/object_following_with_retina_images.mp4", nmf.visual_inputs_hist

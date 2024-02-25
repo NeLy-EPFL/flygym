@@ -61,14 +61,14 @@ color the attractive odor source orange and the aversive odor sources blue.
 
 Let’s create the arena using these parameters. The detailed
 documentation of the ``OdorArena`` class can be found in the `API
-reference <https://neuromechfly.org/api_ref/arena.html#flygym.mujoco.arena.OdorArena>`__.
+reference <https://neuromechfly.org/api_ref/arena.html#flygym.arena.OdorArena>`__.
 Its implementation is beyond the scope of this tutorial but can be found
-`here <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/arena/sensory_environment.py>`__.
+`here <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/arena/sensory_environment.py>`__.
 
 .. code-block:: ipython3
    :linenos:
 
-    from flygym.mujoco.arena import OdorArena
+    from flygym.arena import OdorArena
     
     arena = OdorArena(
         odor_source=odor_source,
@@ -85,8 +85,8 @@ to stand on the ground in a stable manner.
    :linenos:
 
     import matplotlib.pyplot as plt
-    from flygym.mujoco import Parameters
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym import Parameters
+    from flygym.examples.turning_controller import HybridTurningNMF
     
     
     contact_sensor_placements = [

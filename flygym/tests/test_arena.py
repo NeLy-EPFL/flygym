@@ -1,7 +1,7 @@
 import numpy as np
 
-from flygym.mujoco import NeuroMechFly
-from flygym.mujoco.arena import GappedTerrain, BlocksTerrain, MixedTerrain
+from flygym import NeuroMechFly
+from flygym.arena import GappedTerrain, BlocksTerrain, MixedTerrain
 
 
 np.random.seed(0)

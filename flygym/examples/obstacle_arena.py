@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union, Tuple, List, Optional, Callable
 
-from flygym.mujoco.arena import BaseArena
+from flygym.arena import BaseArena
 
 
 class ObstacleOdorArena(BaseArena):

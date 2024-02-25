@@ -4,10 +4,10 @@ from gymnasium import spaces
 from tqdm import trange
 from gymnasium.utils.env_checker import check_env
 
-from flygym.mujoco import Parameters
-from flygym.mujoco.arena import BaseArena
-from flygym.mujoco.examples.turning_controller import HybridTurningNMF
-from flygym.mujoco.vision.visualize import save_video_with_vision_insets
+from flygym import Parameters
+from flygym.arena import BaseArena
+from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.vision import save_video_with_vision_insets
 
 
 class MovingObjArena(BaseArena):

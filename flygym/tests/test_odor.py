@@ -1,7 +1,7 @@
 import numpy as np
 
-from flygym.mujoco import NeuroMechFly, Parameters
-from flygym.mujoco.arena import OdorArena
+from flygym import NeuroMechFly, Parameters
+from flygym.arena import OdorArena
 
 
 def test_odor_dimensions():

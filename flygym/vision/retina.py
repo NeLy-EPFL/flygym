@@ -3,7 +3,7 @@ import numba as nb
 from typing import Optional
 
 from flygym.common import get_data_path
-from flygym.mujoco.util import load_config
+from flygym.util import load_config
 
 
 class Retina:

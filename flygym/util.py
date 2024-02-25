@@ -9,7 +9,7 @@ from flygym.common import get_data_path
 
 def load_config() -> Dict[str, Any]:
     """Load the YAML configuration file as a dictionary."""
-    with open(get_data_path("flygym.mujoco", "config.yaml"), "r") as f:
+    with open(get_data_path("flygym", "config.yaml"), "r") as f:
         return yaml.safe_load(f)
 
 

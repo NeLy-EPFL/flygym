@@ -10,12 +10,12 @@ from dm_control import mjcf
 from dm_control.utils import transformations
 from gymnasium.core import ObsType
 
-import flygym.mujoco.preprogrammed as preprogrammed
-import flygym.mujoco.state as state
-from flygym.mujoco.arena import BaseArena
-from flygym.mujoco.camera import Camera
-from flygym.mujoco.fly import Fly
-from flygym.mujoco.simulation import SingleFlySimulation
+import flygym.preprogrammed as preprogrammed
+import flygym.state as state
+from flygym.arena import BaseArena
+from flygym.camera import Camera
+from flygym.fly import Fly
+from flygym.simulation import SingleFlySimulation
 
 
 @dataclass
@@ -178,13 +178,13 @@ class NeuroMechFly(SingleFlySimulation):
 
     Attributes
     ----------
-    sim_params : flygym.mujoco.Parameters
+    sim_params : flygym.Parameters
         Parameters of the MuJoCo simulation.
     timestep: float
         Simulation timestep in seconds.
     output_dir : Path
         Directory to save simulation data.
-    arena : flygym.mujoco.arena.BaseArena
+    arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     spawn_pos : Tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
@@ -212,7 +212,7 @@ class NeuroMechFly(SingleFlySimulation):
         disabled for a period of time at the beginning of the simulation as
         defined in the configuration file. This avoids spurious detection
         when the fly is not standing reliably on the ground yet.
-    retina : flygym.mujoco.vision.Retina
+    retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
     arena_root = dm_control.mjcf.RootElement
@@ -258,7 +258,7 @@ class NeuroMechFly(SingleFlySimulation):
 
         Parameters
         ----------
-        sim_params : flygym.mujoco.Parameters
+        sim_params : flygym.Parameters
             Parameters of the MuJoCo simulation.
         actuated_joints : List[str], optional
             List of names of actuated joints. By default all active leg
@@ -269,7 +269,7 @@ class NeuroMechFly(SingleFlySimulation):
         output_dir : Path, optional
             Directory to save simulation data. If ``None``, no data will
             be saved. By default None.
-        arena : flygym.mujoco.arena.BaseArena, optional
+        arena : flygym.arena.BaseArena, optional
             The arena in which the fly is placed. ``FlatTerrain`` will be
             used if not specified.
         xml_variant: str or Path, optional

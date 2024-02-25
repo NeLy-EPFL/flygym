@@ -13,7 +13,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinxcontrib-googleanalytics
-          pip install -e ."[mujoco]"
           pip install -e ."[dev]"
           pip install -e ."[tutorials]"
       - name: Sphinx build

@@ -28,7 +28,7 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
 ## Installation and dependencies
 In brief:
 ```bash
-pip install "flygym[mujoco]"
+pip install "flygym"
 ```
 
 See [our website](https://neuromechfly.org/installation.html) for details, especially if you plan to install FlyGym in the developer mode (i.e. if you plan to make changes to the code). Dependencies are specified in [`setup.py`](https://github.com/NeLy-EPFL/flygym/blob/main/setup.py) and will be installed automatically upon installation using pip. Installation should take no more than a few minutes. NeuroMechFly has been tested on Linux (Ubuntu 22.04.3) and macOS (13.5.2). All commits are tested automatically using the latest Ubuntu version on Python versions 3.7 through 3.11 (see [CI workflow](https://github.com/NeLy-EPFL/flygym/blob/main/.github/workflows/tests.yaml) for exact test specification). The PyPI version of the current release of FlyGym is indicated on the shield at the top of this page. No special or paid software is required to use FlyGym.
