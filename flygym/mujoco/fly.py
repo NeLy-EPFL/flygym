@@ -2,28 +2,13 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
+import cv2
 import numpy as np
+from dm_control import mjcf
+from dm_control.utils import transformations
 from gymnasium import spaces
 from gymnasium.core import ObsType
 from scipy.spatial.transform import Rotation as R
-
-try:
-    from dm_control import mjcf
-    from dm_control.utils import transformations
-except ImportError:
-    raise ImportError(
-        "MuJoCo prerequisites not installed. Please install the prerequisites "
-        "by running `pip install flygym[mujoco]` or "
-        '`pip install -e ."[mujoco]"` if installing locally.'
-    )
-try:
-    import cv2
-except ImportError:
-    raise ImportError(
-        "OpenCV prerequisites not installed. Please install the prerequisites "
-        "by running `pip install flygym[mujoco]` or "
-        '`pip install -e ."[mujoco]"` if installing locally.'
-    )
 
 import flygym.mujoco.preprogrammed as preprogrammed
 import flygym.mujoco.state as state

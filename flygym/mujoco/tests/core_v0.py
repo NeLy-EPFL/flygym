@@ -4,27 +4,16 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import cv2
+import dm_control
 import gymnasium as gym
 import imageio
 import numpy as np
+from dm_control import mjcf
+from dm_control.utils import transformations
 from gymnasium import spaces
 from gymnasium.core import ObsType
 from scipy.spatial.transform import Rotation as R
-
-try:
-    import dm_control
-    from dm_control import mjcf
-    from dm_control.utils import transformations
-except ImportError:
-    raise ImportError(
-        "MuJoCo prerequisites not installed. Please install the prerequisites "
-        "by running `pip install flygym[mujoco]` or "
-        '`pip install -e ."[mujoco]"` if installing locally.'
-    )
-try:
-    import cv2
-except ImportError:
-    pass
 
 import flygym.mujoco.preprogrammed as preprogrammed
 import flygym.mujoco.state as state

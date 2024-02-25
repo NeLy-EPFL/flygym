@@ -26,9 +26,12 @@ setup(
         "imageio[pyav]",
         "imageio[ffmpeg]",
         "tqdm",
+        "mujoco>=2.1.2",
+        "dm_control",
+        "numba",
+        "opencv-python",
     ],
     extras_require={
-        "mujoco": ["mujoco>=2.1.2", "dm_control", "numba", "opencv-python"],
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
