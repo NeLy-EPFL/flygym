@@ -350,7 +350,7 @@ Now, let’s load the behavior kinematics data:
     :linenos:
 
     import pickle
-    from flygym.common import get_data_path
+    from flygym.util import get_data_path
     
     
     single_steps_path = get_data_path("flygym", "data") / "behavior/single_steps.pkl"

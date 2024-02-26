@@ -3,8 +3,8 @@ import pickle
 import flygym.preprogrammed
 import numpy as np
 import pytest
-from flygym.common import get_data_path
-from flygym import NeuroMechFly, Parameters
+from flygym.util import get_data_path
+from flygym.core import NeuroMechFly, Parameters
 from flygym.tests.core_v0 import NeuroMechFlyV0
 
 

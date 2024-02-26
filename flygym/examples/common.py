@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 
-from flygym.common import get_data_path
+from flygym.util import get_data_path
 
 
 class PreprogrammedSteps:

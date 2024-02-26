@@ -315,7 +315,7 @@ class NeuroMechFly(SingleFlySimulation):
         """
 
         warnings.warn(
-            "Deprecation warning: The `NeuroMechFly` class has been"
+            "Deprecation warning: The `NeuroMechFly` class has been "
             "restructured into `Simulation`, `Fly`, and `Camera`."
             "`NeuroMechFly` will be removed in future versions."
         )
@@ -403,11 +403,6 @@ class NeuroMechFly(SingleFlySimulation):
     def save_video(self, path: Union[str, Path], stabilization_time=0.02):
         if self.cameras:
             return self.cameras[0].save_video(path, stabilization_time)
-
-    def get_observation(self) -> ObsType:
-        return self.fly.get_observation(
-            self.physics, self.arena, self.timestep, self.curr_time
-        )
 
     def __getattr__(self, item):
         try:

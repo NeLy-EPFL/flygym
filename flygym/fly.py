@@ -13,8 +13,8 @@ import flygym.preprogrammed as preprogrammed
 import flygym.state as state
 import flygym.util as util
 import flygym.vision as vision
-from flygym.common import get_data_path
 from flygym.arena import BaseArena
+from flygym.util import get_data_path
 
 
 class Fly:

@@ -3,7 +3,7 @@ from tqdm import trange
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 
-from flygym import Parameters, NeuroMechFly
+from flygym.simulation import SingleFlySimulation
 from flygym.examples.common import PreprogrammedSteps
 from flygym.examples.cpg_controller import CPGNetwork
 
@@ -29,7 +29,7 @@ _default_correction_vectors = {
 _default_correction_rates = {"retraction": (500, 1000 / 3), "stumbling": (2000, 500)}
 
 
-class HybridTurningNMF(NeuroMechFly):
+class HybridTurningNMF(SingleFlySimulation):
     def __init__(
         self,
         preprogrammed_steps=None,
@@ -72,7 +72,7 @@ class HybridTurningNMF(NeuroMechFly):
 
         # Initialize CPG network
         self.cpg_network = CPGNetwork(
-            timestep=self.sim_params.timestep,
+            timestep=self.timestep,
             intrinsic_freqs=intrinsic_freqs,
             intrinsic_amps=intrinsic_amps,
             coupling_weights=coupling_weights,
@@ -91,7 +91,7 @@ class HybridTurningNMF(NeuroMechFly):
 
     def _find_stumbling_sensor_indices(self):
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
-        for i, sensor_name in enumerate(self.contact_sensor_placements):
+        for i, sensor_name in enumerate(self.fly.contact_sensor_placements):
             leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
             segment = sensor_name.split("/")[1][2:]
             if segment in self.stumble_segments:
@@ -247,6 +247,8 @@ class HybridTurningNMF(NeuroMechFly):
 
 
 if __name__ == "__main__":
+    from flygym import Fly, Camera
+
     run_time = 2
     timestep = 1e-4
     contact_sensor_placements = [
@@ -255,32 +257,27 @@ if __name__ == "__main__":
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
 
-    sim_params = Parameters(
-        timestep=1e-4,
-        render_mode="saved",
-        render_camera="Animat/camera_top",
-        render_playspeed=0.1,
+    fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
         actuator_kp=20,
-    )
-
-    nmf = HybridTurningNMF(
-        sim_params=sim_params,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(0, 0, 0.2),
     )
-    check_env(nmf)
 
-    obs, info = nmf.reset()
-    for i in trange(int(run_time / nmf.sim_params.timestep)):
-        curr_time = i * nmf.sim_params.timestep
+    cam = Camera(fly=fly, camera_id="Animat/camera_top", play_speed=0.1)
+    sim = HybridTurningNMF(fly=fly, cameras=[cam], timestep=1e-4)
+    check_env(sim)
+
+    obs, info = sim.reset()
+    for i in trange(int(run_time / sim.timestep)):
+        curr_time = i * sim.timestep
         if curr_time < 1:
             action = np.array([1.2, 0.2])
         else:
             action = np.array([0.2, 1.2])
 
-        obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        obs, reward, terminated, truncated, info = sim.step(action)
+        sim.render()
 
-    nmf.save_video("./outputs/hybrid_turning.mp4")
+    cam.save_video("./outputs/hybrid_turning.mp4")

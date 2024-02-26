@@ -19,9 +19,9 @@ import flygym.preprogrammed as preprogrammed
 import flygym.state as state
 import flygym.util as util
 import flygym.vision as vision
-from flygym.common import get_data_path
 from flygym.arena import BaseArena, FlatTerrain
 from flygym.core import Parameters
+from flygym.util import get_data_path
 
 
 class NeuroMechFlyV0(gym.Env):

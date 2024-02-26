@@ -182,7 +182,7 @@ We start with the necessary imports:
     from pathlib import Path
     from tqdm import trange
     
-    import flygym.common
+    import flygym
     import flygym
     import flygym.preprogrammed
 
@@ -203,7 +203,7 @@ package:
 .. code-block:: ipython3
     :linenos:
 
-    data_path = flygym.common.get_data_path("flygym", "data")
+    data_path = flygym.get_data_path("flygym", "data")
     with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
         data = pickle.load(f)
 

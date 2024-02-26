@@ -295,6 +295,8 @@ We start by defining some attributes in its ``__init__`` method:
            move_speed: float = 8,
            move_direction: str = "right",
        ):
+           super().__init__()
+       
            self.init_ball_pos = (*init_ball_pos, obj_radius)
            self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
            self.friction = friction

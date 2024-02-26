@@ -1,8 +1,7 @@
 import numpy as np
 from tqdm import trange
-from gymnasium.utils.env_checker import check_env
 
-from flygym import Parameters
+from flygym import Fly, Camera
 from flygym.arena import OdorArena
 from flygym.examples.turning_controller import HybridTurningNMF
 
@@ -39,21 +38,26 @@ if __name__ == "__main__":
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
-    sim_params = Parameters(
-        timestep=1e-4,
-        render_mode="saved",
-        render_playspeed=0.5,
-        render_window_size=(800, 608),
+    fly = Fly(
+        spawn_pos=(0, 0, 0.2),
+        contact_sensor_placements=contact_sensor_placements,
         enable_olfaction=True,
         enable_adhesion=True,
         draw_adhesion=False,
-        render_camera="birdeye_cam",
     )
+
+    cam = Camera(
+        fly=fly,
+        camera_id="birdeye_cam",
+        play_speed=0.5,
+        window_size=(800, 608),
+    )
+
     sim = HybridTurningNMF(
-        sim_params=sim_params,
+        fly=fly,
+        cameras=[cam],
         arena=arena,
-        spawn_pos=(0, 0, 0.2),
-        contact_sensor_placements=contact_sensor_placements,
+        timestep=1e-4,
     )
 
     # Run the simulation
@@ -62,7 +66,7 @@ if __name__ == "__main__":
     decision_interval = 0.05
     run_time = 5
     num_decision_steps = int(run_time / decision_interval)
-    physics_steps_per_decision_step = int(decision_interval / sim_params.timestep)
+    physics_steps_per_decision_step = int(decision_interval / sim.timestep)
 
     obs_hist = []
     odor_history = []
@@ -105,4 +109,4 @@ if __name__ == "__main__":
         if np.linalg.norm(obs["fly"][0, :2] - odor_source[0, :2]) < 2:
             break
 
-    sim.save_video("./outputs/odor_taxis.mp4")
+    cam.save_video("./outputs/odor_taxis.mp4")

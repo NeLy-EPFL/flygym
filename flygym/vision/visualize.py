@@ -93,7 +93,7 @@ def add_insets(retina, viz_frame, visual_input, panel_height=150):
 
 
 def save_video_with_vision_insets(
-    nmf, path, visual_input_hist, stabilization_time=0.02
+    sim, cam, path, visual_input_hist, stabilization_time=0.02
 ):
     """Save a list of frames as a video with insets showing the visual
     experience of the fly. This is almost a drop-in replacement of
@@ -102,8 +102,10 @@ def save_video_with_vision_insets(
 
     Parameters
     ----------
-    nmf : NeuroMechFly
-        The NeuroMechFly object that has been used to generate the frames.
+    sim : Simulation
+        The Simulation object.
+    cam : Camera
+        The Camera object that has been used to generate the frames.
     path : Path
         Path of the output video will be saved. Should end with ".mp4".
     visual_input_hist : List[np.ndarray]
@@ -115,13 +117,7 @@ def save_video_with_vision_insets(
         position controller to move the joints to the specified angles
         from the default, all-stretched position. By default 0.02s
     """
-    if nmf.render_mode != "saved":
-        logging.warning(
-            'Render mode is not "saved"; no video will be '
-            "saved despite `save_video()` call."
-        )
-
-    if len(visual_input_hist) != len(nmf._frames):
+    if len(visual_input_hist) != len(cam._frames):
         raise ValueError(
             "Length of `visual_input_hist` must match the number of "
             "frames in the `NeuroMechFly` object. Save the visual input "
@@ -129,15 +125,15 @@ def save_video_with_vision_insets(
             "a non-`None` value."
         )
 
-    num_stab_frames = int(np.ceil(stabilization_time / nmf._eff_render_interval))
+    num_stab_frames = int(np.ceil(stabilization_time / cam._eff_render_interval))
 
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     logging.info(f"Saving video to {path}")
-    with imageio.get_writer(path, fps=nmf.sim_params.render_fps) as writer:
-        for i, (frame, visual_input) in enumerate(zip(nmf._frames, visual_input_hist)):
+    with imageio.get_writer(path, fps=cam.fps) as writer:
+        for i, (frame, visual_input) in enumerate(zip(cam._frames, visual_input_hist)):
             if i < num_stab_frames:
                 continue
-            frame = add_insets(nmf.retina, frame, visual_input)
+            frame = add_insets(sim.fly.retina, frame, visual_input)
             writer.append_data(frame)
 
 
