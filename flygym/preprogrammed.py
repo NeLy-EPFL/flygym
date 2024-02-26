@@ -1,6 +1,6 @@
-from flygym.common import get_data_path
 from typing import List
 from flygym.state import KinematicPose
+from flygym.util import get_data_path
 
 
 all_leg_dofs = [

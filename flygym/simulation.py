@@ -495,3 +495,8 @@ class SingleFlySimulation(Simulation):
         key = self.flies[0].name
         obs, reward, terminated, truncated, info = super().step({key: action})
         return obs[key], reward, terminated, truncated, info[key]
+
+    def get_observation(self) -> ObsType:
+        return self.fly.get_observation(
+            self.physics, self.arena, self.timestep, self.curr_time
+        )

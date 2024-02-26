@@ -1,7 +1,6 @@
 import numpy as np
 from tqdm import trange
 
-from flygym import Parameters, NeuroMechFly
 from flygym.examples.common import PreprogrammedSteps
 
 
@@ -106,7 +105,7 @@ class CPGNetwork:
 
 def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
     obs, info = nmf.reset()
-    for i in trange(int(run_time / nmf.sim_params.timestep)):
+    for _ in trange(int(run_time / nmf.timestep)):
         cpg_network.step()
         joints_angles = []
         adhesion_onoff = []
@@ -128,6 +127,8 @@ def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
 
 
 if __name__ == "__main__":
+    from flygym import Fly, Camera, SingleFlySimulation
+
     run_time = 1
     timestep = 1e-4
 
@@ -159,17 +160,22 @@ if __name__ == "__main__":
     preprogrammed_steps = PreprogrammedSteps()
 
     # Initialize NeuroMechFly simulation
-    sim_params = Parameters(
-        timestep=1e-4,
-        render_mode="saved",
-        render_playspeed=0.1,
+    fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
+        init_pose="stretch",
+        control="position",
     )
-    nmf = NeuroMechFly(sim_params=sim_params, init_pose="stretch", control="position")
+
+    cam = Camera(fly=fly, play_speed=0.1)
+    sim = SingleFlySimulation(
+        fly=fly,
+        cameras=[cam],
+        timestep=1e-4,
+    )
 
     # Run simulation
-    run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time)
+    run_cpg_simulation(sim, cpg_network, preprogrammed_steps, run_time)
 
     # Save video
-    nmf.save_video("./outputs/cpg_controller.mp4")
+    cam.save_video("./outputs/cpg_controller.mp4")

@@ -4,7 +4,7 @@ from gymnasium import spaces
 from tqdm import trange
 from gymnasium.utils.env_checker import check_env
 
-from flygym import Parameters
+from flygym.camera import Camera
 from flygym.arena import BaseArena
 from flygym.examples.turning_controller import HybridTurningNMF
 from flygym.vision import save_video_with_vision_insets
@@ -53,6 +53,8 @@ class MovingObjArena(BaseArena):
         move_direction="right",
         lateral_magnitude=2,
     ):
+        super().__init__()
+
         self.init_ball_pos = (*init_ball_pos, obj_radius)
         self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
         self.friction = friction
@@ -68,8 +70,6 @@ class MovingObjArena(BaseArena):
             self.y_mult = np.random.choice([-1, 1])
         else:
             raise ValueError("Invalid move_direction")
-
-        self.root_element = mjcf.RootElement()
 
         # Add ground
         ground_size = [*size, 1]
@@ -155,17 +155,19 @@ class MovingObjArena(BaseArena):
 
 
 class VisualTaxis(HybridTurningNMF):
-    def __init__(self, obj_threshold=0.15, decision_interval=0.05, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self, camera: Camera, obj_threshold=0.15, decision_interval=0.05, **kwargs
+    ):
+        super().__init__(cameras=[camera], **kwargs)
 
         self.obj_threshold = obj_threshold
         self.decision_interval = decision_interval
         self.num_substeps = int(self.decision_interval / self.timestep)
         self.visual_inputs_hist = []
 
-        self.coms = np.empty((self.retina.num_ommatidia_per_eye, 2))
-        for i in range(self.retina.num_ommatidia_per_eye):
-            mask = self.retina.ommatidia_id_map == i + 1
+        self.coms = np.empty((self.fly.retina.num_ommatidia_per_eye, 2))
+        for i in range(self.fly.retina.num_ommatidia_per_eye):
+            mask = self.fly.retina.ommatidia_id_map == i + 1
             self.coms[i, :] = np.argwhere(mask).mean(axis=0)
 
         self.observation_space = spaces.Box(0, 1, shape=(6,))
@@ -176,7 +178,7 @@ class VisualTaxis(HybridTurningNMF):
             raw_obs, _, _, _, info = super().step(control_signal)
             if info["vision_updated"]:
                 vision_inputs.append(raw_obs["vision"])
-            render_res = super().render()
+            render_res = super().render()[0]
             if render_res is not None:
                 # record visual inputs too because they will be played in the video
                 self.visual_inputs_hist.append(raw_obs["vision"].copy())
@@ -192,9 +194,9 @@ class VisualTaxis(HybridTurningNMF):
             if is_obj_coords.shape[0] > 0:
                 features[i, :2] = is_obj_coords.mean(axis=0)
             features[i, 2] = is_obj_coords.shape[0]
-        features[:, 0] /= self.retina.nrows  # normalize y_center
-        features[:, 1] /= self.retina.ncols  # normalize x_center
-        features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
+        features[:, 0] /= self.fly.retina.nrows  # normalize y_center
+        features[:, 1] /= self.fly.retina.ncols  # normalize x_center
+        features[:, 2] /= self.fly.retina.num_ommatidia_per_eye  # normalize area
         return features.ravel().astype("float32")
 
     def reset(self, seed=0, **kwargs):
@@ -211,6 +213,8 @@ def calc_ipsilateral_speed(deviation, is_found):
 
 
 if __name__ == "__main__":
+    from flygym import Fly, Camera
+
     obj_threshold = 0.2
     decision_interval = 0.025
     contact_sensor_placements = [
@@ -219,31 +223,35 @@ if __name__ == "__main__":
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
     arena = MovingObjArena()
-    sim_params = Parameters(
-        render_camera="birdeye_cam",
-        render_playspeed=0.5,
-        render_window_size=(800, 608),
+    fly = Fly(
+        contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
     )
-    nmf = VisualTaxis(
+    cam = Camera(
+        fly=fly,
+        camera_id="birdeye_cam",
+        play_speed=0.5,
+        window_size=(800, 608),
+    )
+    sim = VisualTaxis(
+        fly=fly,
+        camera=cam,
         obj_threshold=obj_threshold,
         decision_interval=decision_interval,
-        sim_params=sim_params,
         arena=arena,
-        contact_sensor_placements=contact_sensor_placements,
         intrinsic_freqs=np.ones(6) * 9,
     )
-    check_env(nmf)
+    check_env(sim)
 
-    num_substeps = int(decision_interval / sim_params.timestep)
+    num_substeps = int(decision_interval / sim.timestep)
 
     obs_hist = []
     deviations_hist = []
     control_signal_hist = []
     raw_visual_hist = []
 
-    obs, _ = nmf.reset()
+    obs, _ = sim.reset()
     for i in trange(140):
         left_deviation = 1 - obs[1]
         right_deviation = obs[4]
@@ -260,14 +268,17 @@ if __name__ == "__main__":
             ]
         )
 
-        obs, _, _, _, _ = nmf.step(control_signal)
+        obs, _, _, _, _ = sim.step(control_signal)
         obs_hist.append(obs)
-        raw_visual_hist.append(nmf._curr_visual_input.copy())
+        raw_visual_hist.append(sim.fly._curr_visual_input.copy())
         deviations_hist.append([left_deviation, right_deviation])
         control_signal_hist.append(control_signal)
 
-    nmf.save_video("./outputs/object_following.mp4")
+    cam.save_video("./outputs/object_following.mp4")
 
     save_video_with_vision_insets(
-        nmf, "./outputs/object_following_with_retina_images.mp4", nmf.visual_inputs_hist
+        sim,
+        cam,
+        "./outputs/object_following_with_retina_images.mp4",
+        sim.visual_inputs_hist,
     )

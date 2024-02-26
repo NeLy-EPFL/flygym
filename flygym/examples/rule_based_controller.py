@@ -2,7 +2,6 @@ import numpy as np
 import networkx as nx
 from tqdm import trange
 
-import flygym
 from flygym.examples.common import PreprogrammedSteps
 
 
@@ -172,9 +171,9 @@ def construct_rules_graph():
     return rules_graph
 
 
-def run_rule_based_simulation(nmf, controller, run_time):
-    obs, info = nmf.reset()
-    for _ in trange(int(run_time / nmf.sim_params.timestep)):
+def run_rule_based_simulation(sim, controller, run_time):
+    obs, info = sim.reset()
+    for _ in trange(int(run_time / sim.timestep)):
         controller.step()
         joint_angles = []
         adhesion_onoff = []
@@ -190,11 +189,14 @@ def run_rule_based_simulation(nmf, controller, run_time):
             "joints": np.concatenate(joint_angles),
             "adhesion": np.array(adhesion_onoff),
         }
-        obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        obs, reward, terminated, truncated, info = sim.step(action)
+        sim.render()
 
 
 if __name__ == "__main__":
+    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym.preprogrammed import all_leg_dofs
+
     run_time = 1
     timestep = 1e-4
 
@@ -218,22 +220,27 @@ if __name__ == "__main__":
     )
 
     # Initialize NeuroMechFly simulation
-    sim_params = flygym.Parameters(
-        timestep=timestep,
-        render_mode="saved",
-        render_playspeed=0.1,
+    fly = Fly(
+        init_pose="stretch",
+        actuated_joints=all_leg_dofs,
+        control="position",
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    nmf = flygym.NeuroMechFly(
-        sim_params=sim_params,
-        init_pose="stretch",
-        actuated_joints=flygym.preprogrammed.all_leg_dofs,
-        control="position",
+
+    cam = Camera(
+        fly=fly,
+        play_speed=0.1,
+    )
+
+    sim = SingleFlySimulation(
+        fly=fly,
+        cameras=[cam],
+        timestep=timestep,
     )
 
     # Run simulation
-    run_rule_based_simulation(nmf, controller, run_time)
+    run_rule_based_simulation(sim, controller, run_time)
 
     # Save video
-    nmf.save_video("./outputs/rule_based_controller.mp4")
+    cam.save_video("./outputs/rule_based_controller.mp4")
