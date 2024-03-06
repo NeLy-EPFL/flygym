@@ -158,7 +158,7 @@ class Parameters:
     joint_damping: float = 0.06
     non_actuated_joint_stiffness: float = 1.0
     non_actuated_joint_damping: float = 1.0
-    actuator_kp: float = 50.0
+    actuator_kp: float = 40.0
     tarsus_stiffness: float = 10.0
     tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
