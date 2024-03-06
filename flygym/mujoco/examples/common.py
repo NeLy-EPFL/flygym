@@ -31,9 +31,10 @@ class PreprogrammedSteps:
     path : str or Path, optional
         Path to the preprogrammed steps data. If None, the default
         preprogrammed steps data will be loaded.
-    neutral_pos_indexes : List[float]
-        Indexes of the neutral position in the preprogrammed step. The
-        indexes are normalized to [0, 2π].
+    neutral_pose_phases : List[float]
+        Phase during the preprogrammed step that should be considered the
+        "neutral" resting pose. This is specified for each of the 6 limbs
+        and normalized to [0, 2π).
     """
 
     legs = [f"{side}{pos}" for side in "LR" for pos in "FMH"]
@@ -48,10 +49,12 @@ class PreprogrammedSteps:
     ]
 
     def __init__(
-        self, path=None, neutral_pos_indexes=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]
+        self, path=None, neutral_pose_phases=[np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]
     ):
         if path is None:
-            path = get_data_path("flygym", "data") / "behavior/single_steps_new.pkl"
+            path = (
+                get_data_path("flygym", "data") / "behavior/single_steps_untethered.pkl"
+            )
         with open(path, "rb") as f:
             single_steps_data = pickle.load(f)
         self._length = len(single_steps_data["joint_LFCoxa"])
@@ -69,8 +72,8 @@ class PreprogrammedSteps:
             )
 
         self.neutral_pos = {
-            leg: self._psi_funcs[leg](neutral_pos_indexes[i])[:, np.newaxis]
-            for i, leg in enumerate(self.legs)
+            leg: self._psi_funcs[leg](theta_neutral)[:, np.newaxis]
+            for leg, theta_neutral in zip(self.legs, neutral_pose_phases)
         }
 
         swing_stance_time_dict = single_steps_data["swing_stance_time"]
