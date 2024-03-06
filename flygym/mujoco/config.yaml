@@ -194,8 +194,10 @@ flip_detection:
   min_flip_duration: 0.05  # ignore possible flips shorter than this
 
 paths:
-  mjcf_model: mjcf/groundwalking_nmf_mjcf_nofloor_230518__bendTarsus_scaled.xml
-  mjcf_ikpy_model: mjcf/groundwalking_nmf_mjcf_nofloor_240125_bendTarsus_scaled_ikpyreferenceframe.xml
+  mjcf_model: mjcf/nmf_mjcf_240305_sym_kinorder_ryp.xml
+  mjcf_model_old: mjcf/groundwalking_nmf_mjcf_nofloor_230518__bendTarsus_scaled_clean_geoms.xml
+  mjcf_ikpy_model: mjcf/nmf_mjcf_240305_sym_kinorder_ypr.xml
+  mjcf_ikpy_model_old: mjcf/groundwalking_nmf_mjcf_nofloor_240125_bendTarsus_scaled_ikpyreferenceframe_clean_geoms.xml
   ommatidia_id_map: vision/ommatidia_id_map.npy
   canonical_pale_type_mask: "vision/pale_mask.npy"
 
