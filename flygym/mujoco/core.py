@@ -47,20 +47,20 @@ class Parameters:
     timestep : float
         Simulation timestep in seconds, by default 0.0001.
     joint_stiffness : float
-        Stiffness of actuated joints, by default 10.0.
+        Stiffness of actuated joints, by default 0.05.
     joint_damping : float
-        Damping coefficient of actuated joints, by default 10.0.
+        Damping coefficient of actuated joints, by default 0.06.
     non_actuated_joint_stiffness : float
         Stiffness of non-actuated joints, by default 1.0. (made stiff for better stability)
     non_actuated_joint_damping : float
         Damping coefficient of non-actuated joints, by default 1.0. (made stiff for better stability)
     actuator_kp : float
-        Position gain of the actuators, by default 18.0.
+        Position gain of the actuators, by default 40.0.
     tarsus_stiffness : float
-        Stiffness of the passive, compliant tarsus joints, by default 2.2.
+        Stiffness of the passive, compliant tarsus joints, by default 10.0.
     tarsus_damping : float
         Damping coefficient of the passive, compliant tarsus joints, by
-        default 0.126.
+        default 10.0.
     friction : float
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
@@ -577,17 +577,7 @@ class NeuroMechFly(gym.Env):
                     rgba=sensor_config["marker_rgba"],
                 )
 
-        # Make list of geometries that are hidden during visual input rendering
-        self._geoms_to_hide = []
-        for segment in self._mujoco_config["vision"]["hidden_segments"]:
-            # all body segments have a visual geom - add this first
-            visual_geom_name = f"{segment}"
-            self._geoms_to_hide.append(visual_geom_name)
-            # some body segments also have a collision geom - add this if it exists
-            collision_geom_name = f"{segment}"
-            collision_geom = self.model.find("geom", collision_geom_name)
-            if collision_geom is not None:
-                self._geoms_to_hide.append(collision_geom_name)
+        self._geoms_to_hide = self._mujoco_config["vision"]["hidden_segments"]
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
