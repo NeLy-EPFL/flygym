@@ -32,6 +32,7 @@ setup(
         "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
+            "sphinxcontrib.googleanalytics",
             "furo",
             "numpydoc",
             "pytest",

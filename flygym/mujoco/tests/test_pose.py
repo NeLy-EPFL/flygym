@@ -12,7 +12,7 @@ def test_stretched_pose():
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
-    nmf = NeuroMechFly(init_pose="stretch", spawn_pos=(0, 0, 0.0001))
+    nmf = NeuroMechFly(init_pose="stretch")
     run_time = 0.01
     freq = 100
     amp = np.pi / 2
