@@ -195,8 +195,10 @@ flip_detection:
 
 paths:
   mjcf:
-    deepfly3d: mjcf/neuromechfly_untethered_deepfly3d.xml
-    seqik: mjcf/neuromechfly_untethered_seqik.xml
+    deepfly3d: mjcf/neuromechfly_deepfly3d_kinorder_ryp.xml
+    deepfly3d_old: mjcf/neuromechfly_deepfly3d_kinorder_ryp_old.xml
+    seqik: mjcf/neuromechfly_seqik_kinorder_ypr.xml
+    seqik_old: mjcf/neuromechfly_seqik_kinorder_ypr_old.xml
   ommatidia_id_map: vision/ommatidia_id_map.npy
   canonical_pale_type_mask: "vision/pale_mask.npy"
 
