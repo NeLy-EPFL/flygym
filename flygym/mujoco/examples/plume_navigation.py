@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+import pickle
+from datetime import datetime
 from enum import Enum
 from scipy.interpolate import LinearNDInterpolator
 from dm_control.mujoco import Camera
@@ -62,7 +64,7 @@ class OdorPlumeArena(BaseArena):
             "geom",
             name="floor",
             type="box",
-            size=(self.arena_size[0] / 2, self.arena_size[1] / 2, 1),
+            size=(self.arena_size[0] / 2, self.arena_size[1], 1),
             pos=(self.arena_size[0] / 2, self.arena_size[1] / 2, -1),
             material=floor_material,
         )
@@ -249,7 +251,7 @@ class PlumeNavigationTask(HybridTurningNMF):
         res = np.clip(res - plume_img * 255, 0, 255).astype(np.uint8)
 
         # Add intensity indicator
-        mean_intensity = obs["odor_intensity"].mean()
+        mean_intensity = self.get_observation()["odor_intensity"].mean()
         mean_intensity_relative = np.clip(
             mean_intensity / self._intensity_display_vmax, 0, 1
         )
@@ -291,11 +293,11 @@ class PlumeNavigationController:
         right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
         stop_dn_drive: Tuple[float, float] = (0.0, 0.0),
         inter_turn_interval: float = 0.5,
-        turn_duration: float = 0.2,
+        turn_duration: float = 0.08,
         lambda_ws_0: float = 0.78,  # s^-1
         delta_lambda_ws: float = -0.61,  # s^-1
         tau_s: float = 0.25,  # s
-        alpha: float = 0.5,#0.242,  # Hz^-1
+        alpha: float = 0.5,  # 0.242,  # Hz^-1
         tau_freq_conv: float = 2,  # s
         cummulative_evidence_window: float = 2.0,  # s
         lambda_sw_0: float = 0.29,  # s^-1
@@ -438,7 +440,8 @@ class PlumeNavigationController:
                 self.curr_state_start_time = self.curr_time
 
         self.curr_time += self.dt
-        return self.curr_state, self.dn_drives[self.curr_state], debug_str
+        # return self.curr_state, self.dn_drives[self.curr_state], debug_str
+        return WalkingState.FORWARD, np.array([0.76, 1.0]), ""
 
     def exp_integral_norm_factor(self, window: float, tau: float):
         """_summary_
@@ -477,7 +480,9 @@ def add_icon_to_image(image, icon):
     sel[mask] = icon[mask, :3]
 
 
-if __name__ == "__main__":
+def run_simulation(seed, live_display=False):
+    np.random.seed(seed)
+
     arena = OdorPlumeArena(
         Path("/home/sibwang/Projects/flygym/outputs/complex_plume/plume.npy.npz")
     )
@@ -508,7 +513,7 @@ if __name__ == "__main__":
     )
     controller = PlumeNavigationController(dt=sim_params.timestep)
     icons = get_walking_icons()
-    encounter_threshold = 0.05
+    encounter_threshold = 0.001
 
     # Run the simulation
     run_time = 46
@@ -516,7 +521,10 @@ if __name__ == "__main__":
     obs_hist = []
     odor_history = []
     obs, _ = sim.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
+    for i in range(int(run_time / sim_params.timestep)):
+        if i % int(1 / sim_params.timestep) == 0:
+            sec = i * sim_params.timestep
+            print(f"{datetime.now()} - seed {seed}: {sec:.1f} / {run_time:.1f} sec")
         obs = sim.get_observation()
         walking_state, dn_drive, debug_str = controller.decide_state(
             encounter_flag=obs["odor_intensity"].max() > encounter_threshold,
@@ -538,9 +546,38 @@ if __name__ == "__main__":
                 1,
                 cv2.LINE_AA,
             )
+            if obs["odor_intensity"].max() > encounter_threshold:
+                cv2.putText(
+                    rendered_img,
+                    f"Encounter {obs['odor_intensity'].max()}",
+                    (20, sim_params.render_window_size[1] - 80),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 0, 0),
+                    1,
+                    cv2.LINE_AA,
+                )
             cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
             cv2.waitKey(1)
 
         obs_hist.append(obs)
 
-    sim.save_video("./outputs/plume_navigation.mp4")
+    sim.save_video(f"./outputs/plume_navigation_par_seed{seed}.mp4")
+    with open(f"./outputs/plume_navigation_par_seed{seed}.pkl", "wb") as f:
+        pickle.dump(obs_hist, f)
+    
+def parallel_wrapper(seed):
+    try:
+        return run_simulation(seed, live_display=False)
+    except Exception as e:
+        print(f"Error in seed {seed}: {e}")
+
+if __name__ == "__main__":
+    # for i in range(10):
+    #     run_simulation(i)
+    # from multiprocessing.pool import ThreadPool
+
+    # with ThreadPool(8) as pool:
+    #     pool.map(parallel_wrapper, range(128))
+
+    run_simulation(0)
