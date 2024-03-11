@@ -801,6 +801,33 @@ class NeuroMechFly(gym.Env):
                 joint.stiffness = self.sim_params.non_actuated_joint_stiffness
                 joint.damping = self.sim_params.non_actuated_joint_damping
 
+    def _get_real_parent(self, child):
+        real_parent = None
+        child_name = child.name.split("_")[0]
+        parent = child.parent
+        if child_name in parent.name:
+            real_parent = self._get_real_parent(parent)
+
+        else:
+            real_parent = parent.name.split("_")[0]
+
+        assert (
+            real_parent is not None
+        ), f"Real parent not found for {child_name} but this cannot be"
+        return real_parent
+
+    def get_real_childrens(self, parent):
+        real_childrens = []
+        parent_name = parent.name.split("_")[0]
+        for child in parent.get_children("body"):
+            if parent_name in child.name:
+                real_childrens.extend(self._get_real_childrens(child.name))
+
+            else:
+                real_childrens.extend([child.name.split("_")[0]])
+
+        return real_childrens
+
     def _define_self_contacts(self, self_collisions_geoms):
         self_contact_pairs = []
         self_contact_pairs_names = []
@@ -812,23 +839,21 @@ class NeuroMechFly(gym.Env):
                     # relationship
                     body1 = self.model.find("geom", geom1).parent
                     body2 = self.model.find("geom", geom2).parent
-                    body1_children = [
-                        child.name
-                        for child in body1.all_children()
-                        if child.tag == "body"
-                    ]
-                    body2_children = [
-                        child.name
-                        for child in body2.all_children()
-                        if child.tag == "body"
-                    ]
+                    simple_body1_name = body1.name.split("_")[0]
+                    simple_body2_name = body2.name.split("_")[0]
+
+                    body1_children = self.get_real_childrens(body1)
+                    body2_children = self.get_real_childrens(body2)
+
+                    body1_parent = self._get_real_parent(body1)
+                    body2_parent = self._get_real_parent(body2)
 
                     if not (
                         body1.name == body2.name
-                        or body1.name in body2_children
-                        or body2.name in body1_children
-                        or body1.name in body2.parent.name
-                        or body2.name in body1.parent.name
+                        or simple_body1_name in body2_children
+                        or simple_body2_name in body1_children
+                        or simple_body1_name == body2_parent
+                        or simple_body2_name == body1_parent
                     ):
                         contact_pair = self.model.contact.add(
                             "pair",
