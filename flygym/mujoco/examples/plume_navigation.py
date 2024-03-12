@@ -588,7 +588,7 @@ if __name__ == "__main__":
 
     xx, yy = np.meshgrid(np.linspace(155, 200, 10), np.linspace(57.5, 102.5, 10))
     points = np.vstack((xx.flat, yy.flat)).T
-    
+
     with ThreadPool(4) as pool:
         pool.starmap(parallel_wrapper, zip(range(100), points))
         # pool.starmap(parallel_wrapper, range(30))
