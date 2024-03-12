@@ -34,9 +34,9 @@ if __name__ == "__main__":
     from pathlib import Path
 
     np.random.seed(0)
-    output_dir = Path("./outputs/complex_plume")
+    output_dir = Path("./outputs/complex_plume_0.2_0.2_1")
     output_dir.mkdir(exist_ok=True, parents=True)
-    simulation_time = 4900
+    simulation_time = 13000
     dt = 0.7
     arena_size = (120, 80)
     inflow_pos = (5, 40)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     curr_wind = np.zeros((2,))
     wind_hist = [curr_wind.copy()]
     for i in range(simulation_steps):
-        curr_wind = converging_brownian_step(curr_wind, (0, 0), (0.2, 0.2), 0.4)
+        curr_wind = converging_brownian_step(curr_wind, (0, 0), (0.2, 0.2), 1.0)
         wind_hist.append(curr_wind.copy())
 
     # Define simulation grids

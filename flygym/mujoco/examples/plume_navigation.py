@@ -28,7 +28,7 @@ class OdorPlumeArena(BaseArena):
         self,
         plume_data_path: Optional[Path] = None,
         dimension_scale_factor: float = 0.5,
-        plume_simulation_fps: float = 150,
+        plume_simulation_fps: float = 200,
         intensity_scale_factor: float = 1.0,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
@@ -45,6 +45,7 @@ class OdorPlumeArena(BaseArena):
         if plume_data_path is None:
             raise NotImplementedError("TODO: download from some URL automatically")
         self.plume_data = np.load(plume_data_path)
+        self.inflow_pos = self.plume_data["inflow_pos"].copy() * dimension_scale_factor
         self.plume_grid = self.plume_data["plume"].copy()
         self.arena_size = (
             np.array(self.plume_grid.shape[1:])[::-1] * self.dimension_scale_factor
@@ -177,6 +178,11 @@ class OdorPlumeArena(BaseArena):
     def step(self, dt: float, physics: mjcf.Physics = None, *args, **kwargs) -> None:
         self.curr_time += dt
 
+    def is_in_target(self, x: float, y: float) -> bool:
+        x_in_range = self.inflow_pos[0] <= x <= self.inflow_pos[0] + 20
+        y_in_range = self.inflow_pos[1] - 20 <= y <= self.inflow_pos[1] + 20
+        return x_in_range and y_in_range
+
 
 class WalkingState(Enum):
     FORWARD = 0
@@ -198,7 +204,7 @@ class PlumeNavigationTask(HybridTurningNMF):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.arena = kwargs["arena"]
+        self.arena: OdorPlumeArena = kwargs["arena"]
         self._plume_last_update_time = -np.inf
         self._cached_plume_img = None
         self._render_plume_alpha = render_plume_alpha
@@ -269,6 +275,9 @@ class PlumeNavigationTask(HybridTurningNMF):
         obs, reward, terminated, truncated, info = super().step(action)
         if np.isnan(obs["odor_intensity"]).any():
             truncated = True
+        if self.arena.is_in_target(*obs["fly"][0, :2]):
+            terminated = True
+            reward = 1
         return obs, reward, terminated, truncated, info
 
 
@@ -292,16 +301,15 @@ class PlumeNavigationController:
         left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
         right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
         stop_dn_drive: Tuple[float, float] = (0.0, 0.0),
-        inter_turn_interval: float = 0.5,
-        turn_duration: float = 0.08,
+        turn_duration: float = 0.25,  # 0.3,
         lambda_ws_0: float = 0.78,  # s^-1
-        delta_lambda_ws: float = -0.61,  # s^-1
-        tau_s: float = 0.25,  # s
-        alpha: float = 0.5,  # 0.242,  # Hz^-1
+        delta_lambda_ws: float = -0.8,  # -0.61,  # s^-1
+        tau_s: float = 0.2,  # s
+        alpha: float = 0.8,  # 0.6,  # 0.242,  # Hz^-1
         tau_freq_conv: float = 2,  # s
         cummulative_evidence_window: float = 2.0,  # s
-        lambda_sw_0: float = 0.29,  # s^-1
-        delta_lambda_sw: float = 0.41,  # s^-1
+        lambda_sw_0: float = 0.5,  # 0.29,  # s^-1
+        delta_lambda_sw: float = 1,  # 0.41,  # s^-1
         tau_w=0.52,  # s
         lambda_turn: float = 1.33,  # s^-1
     ) -> None:
@@ -336,7 +344,6 @@ class PlumeNavigationController:
         )
 
         # Turning related parameters
-        self.inter_turn_interval = inter_turn_interval
         self.turn_duration = turn_duration
         self.alpha = alpha
         self.tau_freq_conv = tau_freq_conv
@@ -440,8 +447,7 @@ class PlumeNavigationController:
                 self.curr_state_start_time = self.curr_time
 
         self.curr_time += self.dt
-        # return self.curr_state, self.dn_drives[self.curr_state], debug_str
-        return WalkingState.FORWARD, np.array([0.76, 1.0]), ""
+        return self.curr_state, self.dn_drives[self.curr_state], debug_str
 
     def exp_integral_norm_factor(self, window: float, tau: float):
         """_summary_
@@ -480,11 +486,13 @@ def add_icon_to_image(image, icon):
     sel[mask] = icon[mask, :3]
 
 
-def run_simulation(seed, live_display=False):
+def run_simulation(seed, initial_position=(180, 80), live_display=False):
     np.random.seed(seed)
 
     arena = OdorPlumeArena(
-        Path("/home/sibwang/Projects/flygym/outputs/complex_plume/plume.npy.npz")
+        Path(
+            "/home/sibwang/Projects/flygym/outputs/complex_plume_0.2_0.2_1/plume.npy.npz"
+        )
     )
 
     # Define the fly
@@ -507,7 +515,7 @@ def run_simulation(seed, live_display=False):
     sim = PlumeNavigationTask(
         sim_params=sim_params,
         arena=arena,
-        spawn_pos=(arena.arena_size[0] * 0.75, arena.arena_size[1] / 2, 0.2),
+        spawn_pos=(*initial_position, 0.2),
         spawn_orientation=(0, 0, -np.pi / 2),
         contact_sensor_placements=contact_sensor_placements,
     )
@@ -516,7 +524,7 @@ def run_simulation(seed, live_display=False):
     encounter_threshold = 0.001
 
     # Run the simulation
-    run_time = 46
+    run_time = 60
 
     obs_hist = []
     odor_history = []
@@ -557,27 +565,32 @@ def run_simulation(seed, live_display=False):
                     1,
                     cv2.LINE_AA,
                 )
-            cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
-            cv2.waitKey(1)
+            if live_display:
+                cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
+                cv2.waitKey(1)
 
         obs_hist.append(obs)
 
-    sim.save_video(f"./outputs/plume_navigation_par_seed{seed}.mp4")
-    with open(f"./outputs/plume_navigation_par_seed{seed}.pkl", "wb") as f:
-        pickle.dump(obs_hist, f)
-    
-def parallel_wrapper(seed):
+    sim.save_video(f"./outputs/240311b/plume_navigation_par_seed{seed}.mp4")
+    with open(f"./outputs/240311b/plume_navigation_par_seed{seed}.pkl", "wb") as f:
+        pickle.dump({"obs_hist": obs_hist, "reward": reward}, f)
+
+
+def parallel_wrapper(seed, initial_position):
     try:
-        return run_simulation(seed, live_display=False)
+        return run_simulation(seed, initial_position, live_display=False)
     except Exception as e:
         print(f"Error in seed {seed}: {e}")
 
+
 if __name__ == "__main__":
-    # for i in range(10):
-    #     run_simulation(i)
-    # from multiprocessing.pool import ThreadPool
+    from multiprocessing.pool import ThreadPool
 
-    # with ThreadPool(8) as pool:
-    #     pool.map(parallel_wrapper, range(128))
+    xx, yy = np.meshgrid(np.linspace(155, 200, 10), np.linspace(57.5, 102.5, 10))
+    points = np.vstack((xx.flat, yy.flat)).T
+    
+    with ThreadPool(4) as pool:
+        pool.starmap(parallel_wrapper, zip(range(100), points))
+        # pool.starmap(parallel_wrapper, range(30))
 
-    run_simulation(0)
+    # run_simulation(0, live_display=True)
