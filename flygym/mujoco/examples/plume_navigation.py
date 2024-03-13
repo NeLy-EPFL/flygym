@@ -178,10 +178,10 @@ class OdorPlumeArena(BaseArena):
     def step(self, dt: float, physics: mjcf.Physics = None, *args, **kwargs) -> None:
         self.curr_time += dt
 
-    def is_in_target(self, x: float, y: float) -> bool:
-        x_in_range = self.inflow_pos[0] <= x <= self.inflow_pos[0] + 20
-        y_in_range = self.inflow_pos[1] - 20 <= y <= self.inflow_pos[1] + 20
-        return x_in_range and y_in_range
+    # def is_in_target(self, x: float, y: float) -> bool:
+    #     x_in_range = self.inflow_pos[0] <= x <= self.inflow_pos[0] + 20
+    #     y_in_range = self.inflow_pos[1] - 20 <= y <= self.inflow_pos[1] + 20
+    #     return x_in_range and y_in_range
 
 
 class WalkingState(Enum):
@@ -275,9 +275,9 @@ class PlumeNavigationTask(HybridTurningNMF):
         obs, reward, terminated, truncated, info = super().step(action)
         if np.isnan(obs["odor_intensity"]).any():
             truncated = True
-        if self.arena.is_in_target(*obs["fly"][0, :2]):
-            terminated = True
-            reward = 1
+        # if self.arena.is_in_target(*obs["fly"][0, :2]):
+        #     terminated = True
+        #     reward = 1
         return obs, reward, terminated, truncated, info
 
 
@@ -486,13 +486,13 @@ def add_icon_to_image(image, icon):
     sel[mask] = icon[mask, :3]
 
 
-def run_simulation(seed, initial_position=(180, 80), live_display=False):
+def run_simulation(
+    seed, initial_position=(180, 80), live_display=False, is_control=False
+):
     np.random.seed(seed)
 
     arena = OdorPlumeArena(
-        Path(
-            "/home/sibwang/Projects/flygym/outputs/complex_plume_0.2_0.2_1/plume.npy.npz"
-        )
+        Path("/home/sibwang/Projects/flygym/outputs/complex_plume_0.2_0.2_1/plume.npz")
     )
 
     # Define the fly
@@ -519,7 +519,12 @@ def run_simulation(seed, initial_position=(180, 80), live_display=False):
         spawn_orientation=(0, 0, -np.pi / 2),
         contact_sensor_placements=contact_sensor_placements,
     )
-    controller = PlumeNavigationController(dt=sim_params.timestep)
+    if is_control:
+        controller = PlumeNavigationController(
+            dt=sim_params.timestep, alpha=0, delta_lambda_sw=0, delta_lambda_ws=0
+        )
+    else:
+        controller = PlumeNavigationController(dt=sim_params.timestep)
     icons = get_walking_icons()
     encounter_threshold = 0.001
 
@@ -554,31 +559,34 @@ def run_simulation(seed, initial_position=(180, 80), live_display=False):
                 1,
                 cv2.LINE_AA,
             )
-            if obs["odor_intensity"].max() > encounter_threshold:
-                cv2.putText(
-                    rendered_img,
-                    f"Encounter {obs['odor_intensity'].max()}",
-                    (20, sim_params.render_window_size[1] - 80),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 0, 0),
-                    1,
-                    cv2.LINE_AA,
-                )
+            # if obs["odor_intensity"].max() > encounter_threshold:
+            #     cv2.putText(
+            #         rendered_img,
+            #         f"Encounter {obs['odor_intensity'].max()}",
+            #         (20, sim_params.render_window_size[1] - 80),
+            #         cv2.FONT_HERSHEY_SIMPLEX,
+            #         0.5,
+            #         (0, 0, 0),
+            #         1,
+            #         cv2.LINE_AA,
+            #     )
             if live_display:
                 cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
                 cv2.waitKey(1)
 
         obs_hist.append(obs)
 
-    sim.save_video(f"./outputs/240311b/plume_navigation_par_seed{seed}.mp4")
-    with open(f"./outputs/240311b/plume_navigation_par_seed{seed}.pkl", "wb") as f:
+    filename_stem = f"./outputs/240312a/plume_navigation_seed{seed}_control{is_control}"
+    sim.save_video(filename_stem + ".mp4")
+    with open(filename_stem + ".pkl", "wb") as f:
         pickle.dump({"obs_hist": obs_hist, "reward": reward}, f)
 
 
-def parallel_wrapper(seed, initial_position):
+def parallel_wrapper(seed, initial_position, is_control):
     try:
-        return run_simulation(seed, initial_position, live_display=False)
+        return run_simulation(
+            seed, initial_position, is_control=is_control, live_display=False
+        )
     except Exception as e:
         print(f"Error in seed {seed}: {e}")
 
@@ -589,8 +597,14 @@ if __name__ == "__main__":
     xx, yy = np.meshgrid(np.linspace(155, 200, 10), np.linspace(57.5, 102.5, 10))
     points = np.vstack((xx.flat, yy.flat)).T
 
+    experiment_params_list = [
+        (seed, initial_position, False) for seed, initial_position in enumerate(points)
+    ]
+    control_params_list = [
+        (seed, initial_position, True) for seed, initial_position in enumerate(points)
+    ]
+
     with ThreadPool(4) as pool:
-        pool.starmap(parallel_wrapper, zip(range(100), points))
-        # pool.starmap(parallel_wrapper, range(30))
+        pool.starmap(parallel_wrapper, control_params_list)
 
     # run_simulation(0, live_display=True)
