@@ -33,9 +33,14 @@ class MovingObjArena(BaseArena):
         Initial position of the object, by default (0, 2, 1).
     move_direction : str
         Which way the ball moves toward first. Can be "left", "right", or
-        "random".
+        "random". By default "right".
     move_speed : float
-        Speed of the moving object.
+        Speed of the moving object. By default 10.
+    lateral_magnitude : float
+        Magnitude of the lateral movement of the object as a multiplier of
+        forward velocity. For example, when ``lateral_magnitude`` is 1, the
+        object moves at a heading (1, 1) when its movement is the most
+        lateral. By default 2.
     """
 
     def __init__(
@@ -44,8 +49,9 @@ class MovingObjArena(BaseArena):
         friction=(1, 0.005, 0.0001),
         obj_radius=1,
         init_ball_pos=(5, 0),
-        move_speed=9,
+        move_speed=10,
         move_direction="right",
+        lateral_magnitude=2,
     ):
         self.init_ball_pos = (*init_ball_pos, obj_radius)
         self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
@@ -53,6 +59,7 @@ class MovingObjArena(BaseArena):
         self.move_speed = move_speed
         self.curr_time = 0
         self.move_direction = move_direction
+        self.lateral_magnitude = lateral_magnitude
         if move_direction == "left":
             self.y_mult = 1
         elif move_direction == "right":
@@ -131,7 +138,9 @@ class MovingObjArena(BaseArena):
         return rel_pos, rel_angle
 
     def step(self, dt, physics):
-        heading_vec = np.array([1, 2 * np.cos(self.curr_time * 3) * self.y_mult])
+        heading_vec = np.array(
+            [1, self.lateral_magnitude * np.cos(self.curr_time * 3) * self.y_mult]
+        )
         heading_vec /= np.linalg.norm(heading_vec)
         self.ball_pos[:2] += self.move_speed * heading_vec * dt
         physics.bind(self.object_body).mocap_pos = self.ball_pos
@@ -162,18 +171,22 @@ class VisualTaxis(HybridTurningNMF):
         self.observation_space = spaces.Box(0, 1, shape=(6,))
 
     def step(self, control_signal):
+        vision_inputs = []
         for _ in range(self.num_substeps):
-            raw_obs, _, _, _, _ = super().step(control_signal)
+            raw_obs, _, _, _, info = super().step(control_signal)
+            if info["vision_updated"]:
+                vision_inputs.append(raw_obs["vision"])
             render_res = super().render()
             if render_res is not None:
                 # record visual inputs too because they will be played in the video
                 self.visual_inputs_hist.append(raw_obs["vision"].copy())
-        visual_features = self._process_visual_observation(raw_obs)
+        median_vision_input = np.median(vision_inputs, axis=0)
+        visual_features = self._process_visual_observation(median_vision_input)
         return visual_features, 0, False, False, {}
 
-    def _process_visual_observation(self, raw_obs):
+    def _process_visual_observation(self, vision_input):
         features = np.zeros((2, 3))
-        for i, ommatidia_readings in enumerate(raw_obs["vision"]):
+        for i, ommatidia_readings in enumerate(vision_input):
             is_obj = ommatidia_readings.max(axis=1) < self.obj_threshold
             is_obj_coords = self.coms[is_obj]
             if is_obj_coords.shape[0] > 0:
@@ -187,19 +200,19 @@ class VisualTaxis(HybridTurningNMF):
     def reset(self, seed=0, **kwargs):
         raw_obs, _ = super().reset(seed=seed)
         self.visual_inputs_hist = []
-        return self._process_visual_observation(raw_obs), {}
+        return self._process_visual_observation(raw_obs["vision"]), {}
 
 
 def calc_ipsilateral_speed(deviation, is_found):
     if not is_found:
         return 1.0
     else:
-        return np.clip(1 - deviation * 3, 0.2, 1.0)
+        return np.clip(1 - deviation * 3, 0.4, 1.2)
 
 
 if __name__ == "__main__":
-    obj_threshold = 0.15
-    decision_interval = 0.05
+    obj_threshold = 0.2
+    decision_interval = 0.025
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
@@ -219,6 +232,7 @@ if __name__ == "__main__":
         sim_params=sim_params,
         arena=arena,
         contact_sensor_placements=contact_sensor_placements,
+        intrinsic_freqs=np.ones(6) * 9,
     )
     check_env(nmf)
 
@@ -230,7 +244,7 @@ if __name__ == "__main__":
     raw_visual_hist = []
 
     obs, _ = nmf.reset()
-    for i in trange(70):
+    for i in trange(140):
         left_deviation = 1 - obs[1]
         right_deviation = obs[4]
         left_found = obs[2] > 0.01

@@ -185,13 +185,24 @@ We can verify this below:
 
 But this is array representation is not good for visualization. We can
 use the ``hex_pxls_to_human_readable`` method of the retina to convert
-it into a normal [0, 256) 8-bit RGB image that can be plotted:
+it into a normal [0, 256) 8-bit RGB image that can be plotted. We set
+``color_8bit`` to True to process the 8-bit color representation more
+efficiently and return the output as an integer ranged from 0 to 255. We
+will further take the grayscale image (disregard yellow- vs pale-type
+ommatidia) by taking the maximum along the last dimension, ie. that of
+color channels.
 
 .. code-block:: ipython3
     :linenos:
 
-    vision_left = nmf.retina.hex_pxls_to_human_readable(obs["vision"][0, :, :])
-    vision_right = nmf.retina.hex_pxls_to_human_readable(obs["vision"][1, :, :])
+    vision_left = nmf.retina.hex_pxls_to_human_readable(
+        obs["vision"][0, :, :], color_8bit=True
+    )
+    vision_left = vision_left.max(axis=-1)
+    vision_right = nmf.retina.hex_pxls_to_human_readable(
+        obs["vision"][1, :, :], color_8bit=True
+    )
+    vision_right = vision_right.max(axis=-1)
     
     fig, axs = plt.subplots(1, 2, figsize=(6, 3), tight_layout=True)
     axs[0].imshow(vision_left, cmap="gray", vmin=0, vmax=255)
