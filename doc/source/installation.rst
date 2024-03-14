@@ -13,7 +13,7 @@ The easiest way to install FlyGym is via PyPI. Before you start, you might want 
 
 .. code-block:: bash
 
-   conda create -n flygym python=3.11    # flygym is tested on Python 3.7-3.11
+   conda create -n flygym python=3.12    # flygym is tested on Python 3.7-3.12
    conda activate flygym    # run this every time you use the environment
 
 Then, install the package:
@@ -56,7 +56,7 @@ You might want to create a Python virtual environment with virtualenv or Conda. 
 
 .. code-block:: bash
 
-   conda create -n flygym python=3.11    # flygym is tested on Python 3.7-3.11
+   conda create -n flygym python=3.12    # flygym is tested on Python 3.7-3.12
    conda activate flygym    # run this every time you use the environment
 
 Next, install the FlyGym package:
