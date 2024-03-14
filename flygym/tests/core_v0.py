@@ -229,13 +229,10 @@ class NeuroMechFlyV0(gym.Env):
         if self.sim_params.draw_adhesion:
             self._leg_adhesion_drawing_segments = np.array(
                 [
-                    [
-                        "Animat/" + tarsus5.replace("5", str(i)) + "_visual"
-                        for i in range(1, 6)
-                    ]
+                    ["Animat/" + tarsus5.replace("5", str(i)) for i in range(1, 6)]
                     for tarsus5 in self._last_tarsalseg_names
                 ]
-            )
+            ).astype("U64")
             self._adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
             self._active_adhesion_rgba = [0.0, 0.0, 1.0, 0.8]
             self._base_rgba = [0.5, 0.5, 0.5, 1.0]
@@ -336,9 +333,7 @@ class NeuroMechFlyV0(gym.Env):
         self.physics = mjcf.Physics.from_mjcf_model(self.arena_root)
         self._adhesion_actuator_geomid = np.array(
             [
-                self.physics.model.geom(
-                    "Animat/" + adhesion_actuator.body + "_collision"
-                ).id
+                self.physics.model.geom("Animat/" + adhesion_actuator.body).id
                 for adhesion_actuator in self._adhesion_actuators
             ]
         )
@@ -410,25 +405,11 @@ class NeuroMechFlyV0(gym.Env):
                     rgba=sensor_config["marker_rgba"],
                 )
 
-        # Make list of geometries that are hidden during visual input rendering
-        self._geoms_to_hide = []
-        for segment in self._config["vision"]["hidden_segments"]:
-            # all body segments have a visual geom - add this first
-            visual_geom_name = f"{segment}_visual"
-            self._geoms_to_hide.append(visual_geom_name)
-            # some body segments also have a collision geom - add this if it exists
-            collision_geom_name = f"{segment}_collision"
-            collision_geom = self.model.find("geom", collision_geom_name)
-            if collision_geom is not None:
-                self._geoms_to_hide.append(collision_geom_name)
+        self._geoms_to_hide = self._mujoco_config["vision"]["hidden_segments"]
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
-            return [
-                geom.name
-                for geom in self.model.find_all("geom")
-                if "collision" in geom.name
-            ]
+            return [geom.name for geom in self.model.find_all("geom")]
         elif isinstance(collision_spec, str):
             return preprogrammed.get_collision_geometries(collision_spec)
         elif isinstance(collision_spec, list):
@@ -504,7 +485,9 @@ class NeuroMechFlyV0(gym.Env):
             )
             # Apply to geoms
             for segment in specs["apply_to"]:
-                geom = self.model.find("geom", f"{segment}_visual")
+                geom = self.model.find("geom", segment)
+                if geom is None:
+                    geom = self.model.find("geom", f"{segment}")
                 geom.material = f"{type_}_material"
 
     def _get_max_floor_height(self, arena):
@@ -635,14 +618,43 @@ class NeuroMechFlyV0(gym.Env):
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
-            if "collision" in geom.name:
-                geom.friction = self.sim_params.friction
+            geom.friction = self.sim_params.friction
 
     def _set_joints_stiffness_and_damping(self):
         for joint in self.model.find_all("joint"):
             if joint.name in self.actuated_joints:
                 joint.stiffness = self.sim_params.joint_stiffness
                 joint.damping = self.sim_params.joint_damping
+            else:
+                joint.stiffness = self.sim_params.non_actuated_joint_stiffness
+                joint.damping = self.sim_params.non_actuated_joint_damping
+
+    def _get_real_parent(self, child):
+        real_parent = None
+        child_name = child.name.split("_")[0]
+        parent = child.parent
+        if child_name in parent.name:
+            real_parent = self._get_real_parent(parent)
+
+        else:
+            real_parent = parent.name.split("_")[0]
+
+        assert (
+            real_parent is not None
+        ), f"Real parent not found for {child_name} but this cannot be"
+        return real_parent
+
+    def get_real_children(self, parent):
+        real_children = []
+        parent_name = parent.name.split("_")[0]
+        for child in parent.get_children("body"):
+            if parent_name in child.name:
+                real_children.extend(self.get_real_children(child.name))
+
+            else:
+                real_children.extend([child.name.split("_")[0]])
+
+        return real_children
 
     def _define_self_contacts(self, self_collisions_geoms):
         self_contact_pairs = []
@@ -655,23 +667,21 @@ class NeuroMechFlyV0(gym.Env):
                     # relationship
                     body1 = self.model.find("geom", geom1).parent
                     body2 = self.model.find("geom", geom2).parent
-                    body1_children = [
-                        child.name
-                        for child in body1.all_children()
-                        if child.tag == "body"
-                    ]
-                    body2_children = [
-                        child.name
-                        for child in body2.all_children()
-                        if child.tag == "body"
-                    ]
+                    simple_body1_name = body1.name.split("_")[0]
+                    simple_body2_name = body2.name.split("_")[0]
+
+                    body1_children = self.get_real_children(body1)
+                    body2_children = self.get_real_children(body2)
+
+                    body1_parent = self._get_real_parent(body1)
+                    body2_parent = self._get_real_parent(body2)
 
                     if not (
                         body1.name == body2.name
-                        or body1.name in body2_children
-                        or body2.name in body1_children
-                        or body1.name in body2.parent.name
-                        or body2.name in body1.parent.name
+                        or simple_body1_name in body2_children
+                        or simple_body2_name in body1_children
+                        or simple_body1_name == body2_parent
+                        or simple_body2_name == body1_parent
                     ):
                         contact_pair = self.model.contact.add(
                             "pair",
@@ -694,7 +704,7 @@ class NeuroMechFlyV0(gym.Env):
         for geom in self.arena_root.find_all("geom"):
             if geom.name is None:
                 is_ground = True
-            elif "visual" in geom.name or "collision" in geom.name:
+            elif not geom.dclass is None and geom.dclass.dclass == "nmf":
                 is_ground = False
             elif "cam" in geom.name or "sensor" in geom.name:
                 is_ground = False
@@ -1421,7 +1431,7 @@ class NeuroMechFlyV0(gym.Env):
         color : Tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
-        self.physics.named.model.geom_rgba[f"Animat/{segment}_visual"] = color
+        self.physics.named.model.geom_rgba[f"Animat/{segment}"] = color
 
     @property
     def vision_update_mask(self) -> np.ndarray:

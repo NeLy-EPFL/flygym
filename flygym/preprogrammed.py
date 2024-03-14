@@ -56,7 +56,7 @@ def get_collision_geometries(config: str = "all") -> List[str]:
     """
     if config == "legs":
         return [
-            f"{side}{pos}{dof}_collision"
+            f"{side}{pos}{dof}"
             for side in "LR"
             for pos in "FMH"
             for dof in [
@@ -72,7 +72,7 @@ def get_collision_geometries(config: str = "all") -> List[str]:
         ]
     elif config == "legs-no-coxa":
         return [
-            f"{side}{pos}{dof}_collision"
+            f"{side}{pos}{dof}"
             for side in "LR"
             for pos in "FMH"
             for dof in [
@@ -87,7 +87,7 @@ def get_collision_geometries(config: str = "all") -> List[str]:
         ]
     elif config == "tarsi":
         return [
-            f"{side}{pos}{dof}_collision"
+            f"{side}{pos}{dof}"
             for side in "LR"
             for pos in "FMH"
             for dof in ["Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]

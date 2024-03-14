@@ -30,8 +30,12 @@ class Parameters:
         Stiffness of actuated joints, by default 0.05.
     joint_damping : float
         Damping coefficient of actuated joints, by default 0.06.
+    non_actuated_joint_stiffness : float
+        Stiffness of non-actuated joints, by default 1.0. (made stiff for better stability)
+    non_actuated_joint_damping : float
+        Damping coefficient of non-actuated joints, by default 1.0. (made stiff for better stability)
     actuator_kp : float
-        Position gain of the actuators, by default 18.0.
+        Position gain of the actuators, by default 40.0.
     tarsus_stiffness : float
         Stiffness of the passive, compliant tarsus joints, by default 2.2.
     tarsus_damping : float
@@ -132,7 +136,9 @@ class Parameters:
     timestep: float = 0.0001
     joint_stiffness: float = 0.05
     joint_damping: float = 0.06
-    actuator_kp: float = 50.0
+    non_actuated_joint_stiffness: float = 1.0
+    non_actuated_joint_damping: float = 1.0
+    actuator_kp: float = 40.0
     tarsus_stiffness: float = 10.0
     tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
@@ -339,6 +345,8 @@ class NeuroMechFly(SingleFlySimulation):
             detect_flip=detect_flip,
             joint_stiffness=sim_params.joint_stiffness,
             joint_damping=sim_params.joint_damping,
+            non_actuated_joint_stiffness=sim_params.non_actuated_joint_stiffness,
+            non_actuated_joint_damping=sim_params.non_actuated_joint_damping,
             actuator_kp=sim_params.actuator_kp,
             tarsus_stiffness=sim_params.tarsus_stiffness,
             tarsus_damping=sim_params.tarsus_damping,

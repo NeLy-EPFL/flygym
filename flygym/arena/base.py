@@ -216,7 +216,7 @@ class FlatTerrain(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (50, 50),
+        size: Tuple[float, float] = (100, 100),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
         ground_alpha: float = 1.0,
         scale_bar_pos: Optional[Tuple[float, float, float]] = None,
