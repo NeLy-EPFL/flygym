@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     package_data={"flygym": ["data/*"], "flygym.mujoco": ["mujoco/config.yaml"]},
     include_package_data=True,
-    python_requires=">=3.8,<3.12",
+    python_requires=">=3.8,<3.13",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
