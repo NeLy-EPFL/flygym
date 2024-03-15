@@ -243,7 +243,9 @@ class HybridTurningNMF(SingleFlySimulation):
             "joints": np.array(np.concatenate(joints_angles)),
             "adhesion": np.array(adhesion_onoff).astype(int),
         }
-        return super().step(action)
+        obs, reward, terminated, truncated, info = super().step(action)
+        info.update(action)  # add lower-level action to info
+        return obs, reward, terminated, truncated, info
 
 
 if __name__ == "__main__":
@@ -260,7 +262,6 @@ if __name__ == "__main__":
     fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
-        actuator_kp=20,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(0, 0, 0.2),
     )
@@ -269,7 +270,7 @@ if __name__ == "__main__":
     sim = HybridTurningNMF(fly=fly, cameras=[cam], timestep=1e-4)
     check_env(sim)
 
-    obs, info = sim.reset()
+    obs, info = sim.reset(0)
     for i in trange(int(run_time / sim.timestep)):
         curr_time = i * sim.timestep
         if curr_time < 1:
