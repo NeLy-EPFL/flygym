@@ -169,7 +169,7 @@ class RandomWalkStateSwitcher:
 #         stride_to_heading_model: Optional[Callable] = None,
 #     ) -> None:
 #         self.stride_to_heading_model = stride_to_heading_model
-    
+
 #     def step(self, stride_diff):
 #         if self.stride_to_heading_model is not None:
 #             lr_asymmetry = stride_diff[:3].sum() - stride_diff[3:].sum()
