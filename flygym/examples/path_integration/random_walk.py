@@ -34,7 +34,32 @@ def add_icon_to_image(image, icon):
     sel[mask] = icon[mask, :3]
 
 
-def add_heading_to_image(image, real_heading, estimated_heading):
+def add_heading_to_image(
+    image, real_heading, estimated_heading, real_position, estimated_position
+):
+    cv2.putText(
+        image,
+        f"Real position: ({int(real_position[0]): 3d}, {int(real_position[1]): 3d})",
+        org=(20, 390),
+        fontFace=cv2.FONT_HERSHEY_DUPLEX,
+        fontScale=0.5,
+        color=(0, 0, 0),
+        lineType=cv2.LINE_AA,
+        thickness=1,
+    )
+    cv2.putText(
+        image,
+        (
+            f"Estm position: ({int(estimated_position[0]): 3d}, "
+            f"{int(estimated_position[1]): 3d})"
+        ),
+        org=(20, 410),
+        fontFace=cv2.FONT_HERSHEY_DUPLEX,
+        fontScale=0.5,
+        color=(0, 0, 0),
+        lineType=cv2.LINE_AA,
+        thickness=1,
+    )
     cv2.putText(
         image,
         f"Real heading: {int(np.rad2deg(real_heading)): 4d} deg",
@@ -182,17 +207,29 @@ class PathIntegrationController(HybridTurningNMF):
     def __init__(
         self,
         comparison_window: float = 0.1,
-        stride_to_heading_model: Optional[Callable] = None,
+        do_path_integration: bool = True,
+        heading_model: Optional[Callable] = None,
+        displacement_model: Optional[Callable] = None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self._last_end_efector_pos: Union[None, np.ndarray] = None
-        self.total_stride_lengths_hist = []
-        self.heading_estimate_hist = []
         self.comparsion_window_steps = int(comparison_window / self.timestep)
         self.comparsion_window = self.comparsion_window_steps * self.timestep
-        self.stride_to_heading_model = stride_to_heading_model
+        self.do_path_integration = do_path_integration
+        self.heading_model = heading_model
+        self.displacement_model = displacement_model
+        if do_path_integration:
+            if heading_model is None or displacement_model is None:
+                raise ValueError(
+                    "``heading_model`` and ``displacement_model`` "
+                    "must be provided when ``do_path_integration`` is True."
+                )
+
+        self._last_end_effector_pos: Union[None, np.ndarray] = None
+        self.total_stride_lengths_hist = []
+        self.heading_estimate_hist = []
+        self.pos_estimate_hist = []
 
     def step(self, action):
         obs, reward, terminated, truncated, info = super().step(action)
@@ -201,12 +238,12 @@ class PathIntegrationController(HybridTurningNMF):
         ee_pos_rel = self.absolute_to_relative_pos(
             obs["end_effectors"][:, :2], obs["fly"][0, :2], obs["fly_orientation"][:2]
         )
-        if self._last_end_efector_pos is None:
+        if self._last_end_effector_pos is None:
             ee_diff = np.zeros_like(ee_pos_rel)
         else:
-            ee_diff = ee_pos_rel - self._last_end_efector_pos
+            ee_diff = ee_pos_rel - self._last_end_effector_pos
         ee_diff *= info["adhesion"][:, None]
-        self._last_end_efector_pos = ee_pos_rel
+        self._last_end_effector_pos = ee_pos_rel
 
         # Update total stride length per leg
         last_total_stride_lengths = (
@@ -214,22 +251,45 @@ class PathIntegrationController(HybridTurningNMF):
         )
         self.total_stride_lengths_hist.append(last_total_stride_lengths + ee_diff[:, 0])
 
-        # Update heading estimate, if model is provided
-        if self.stride_to_heading_model is not None:
+        # Update path integration if enabled
+        if self.do_path_integration:
+            # Estimate change in heading and position in the past step
             if len(self.total_stride_lengths_hist) > self.comparsion_window_steps:
                 stride_diff = (
                     self.total_stride_lengths_hist[-1]
                     - self.total_stride_lengths_hist[-self.comparsion_window_steps - 1]
                 )
                 lr_asymmetry = stride_diff[:3].sum() - stride_diff[3:].sum()
-                heading_diff = self.stride_to_heading_model(lr_asymmetry)
+                stride_total = stride_diff.sum()
+
+                # Estimate Δheading
+                heading_diff = self.heading_model(lr_asymmetry)
                 heading_diff /= self.comparsion_window_steps
+
+                # Estimate ||Δposition|| in the direction of the fly's heading
+                forward_displacement_diff = self.displacement_model(stride_total)
+                forward_displacement_diff /= self.comparsion_window_steps
             else:
                 heading_diff = 0  # no update when not enough data
+                forward_displacement_diff = 0
+
+            # Integrate heading and position estimates
             last_heading_estimate = (
                 self.heading_estimate_hist[-1] if self.heading_estimate_hist else 0
             )
-            self.heading_estimate_hist.append(last_heading_estimate + heading_diff)
+            curr_heading_estimate = last_heading_estimate + heading_diff
+            self.heading_estimate_hist.append(curr_heading_estimate)
+            vec_disp_estimate = np.array(
+                [
+                    np.cos(curr_heading_estimate) * forward_displacement_diff,
+                    np.sin(curr_heading_estimate) * forward_displacement_diff,
+                ]
+            )
+            last_pos_estimate = (
+                self.pos_estimate_hist[-1] if self.pos_estimate_hist else np.zeros(2)
+            )
+            curr_pos_estimate = last_pos_estimate + vec_disp_estimate
+            self.pos_estimate_hist.append(curr_pos_estimate)
         else:
             self.heading_estimate_hist.append(None)
 
@@ -237,6 +297,7 @@ class PathIntegrationController(HybridTurningNMF):
         info["ee_diff"] = ee_diff
         info["total_stride_lengths"] = self.total_stride_lengths_hist[-1]
         info["heading_estimate"] = self.heading_estimate_hist[-1]
+        info["position_estimate"] = self.pos_estimate_hist[-1]
 
         return obs, reward, terminated, truncated, info
 
@@ -259,7 +320,8 @@ def simulate_exploration(
     run_time: float = 30.0,
     live_display: bool = False,
     comparison_window: float = 0.1,
-    stride_to_heading_model: Optional[Callable] = None,
+    heading_model: Optional[Callable] = None,
+    displacement_model: Optional[Callable] = None,
     output_dir: Optional[Path] = None,
 ):
     icons = get_walking_icons()
@@ -283,7 +345,8 @@ def simulate_exploration(
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = PathIntegrationController(
         comparison_window=comparison_window,
-        stride_to_heading_model=stride_to_heading_model,
+        heading_model=heading_model,
+        displacement_model=displacement_model,
         fly=fly,
         arena=arena,
         cameras=[cam],
@@ -309,23 +372,31 @@ def simulate_exploration(
         _real_heading_buffer.append(real_heading)
 
         # Get estimated heading
-        estimated_heading = info["heading_estimate"]
-        # the following lines wrap heading to [-pi, pi]
-        est_orientation_x = np.cos(estimated_heading)
-        est_orientation_y = np.sin(estimated_heading)
-        estimated_heading = np.arctan2(est_orientation_y, est_orientation_x)
-        _estimated_heading_buffer.append(estimated_heading)
+        if heading_model is not None:
+            estimated_heading = info["heading_estimate"]
+            # the following lines wrap heading to [-pi, pi]
+            est_orientation_x = np.cos(estimated_heading)
+            est_orientation_y = np.sin(estimated_heading)
+            estimated_heading = np.arctan2(est_orientation_y, est_orientation_x)
+            _estimated_heading_buffer.append(estimated_heading)
 
         if rendered_img is not None:
             # Add walking state icon
             add_icon_to_image(rendered_img, icons[walking_state])
 
             # Add heading info
-            real_heading = np.mean(_real_heading_buffer)
-            estimated_heading = np.mean(_estimated_heading_buffer)
-            _real_heading_buffer = []
-            _estimated_heading_buffer = []
-            add_heading_to_image(rendered_img, real_heading, estimated_heading)
+            if heading_model is not None:
+                real_heading = np.mean(_real_heading_buffer)
+                estimated_heading = np.mean(_estimated_heading_buffer)
+                _real_heading_buffer = []
+                _estimated_heading_buffer = []
+                add_heading_to_image(
+                    rendered_img,
+                    real_heading=real_heading,
+                    estimated_heading=estimated_heading,
+                    real_position=obs["fly"][0, :2],
+                    estimated_position=info["position_estimate"],
+                )
 
             # Display rendered image live
             if live_display:
@@ -353,11 +424,13 @@ if __name__ == "__main__":
     # # Initial exploration to establish proprioception-heading relationship with
     # simulate_exploration(seed=0, run_time=20, live_display=True)
 
-    # Try homing with established model
-    model = lambda x: x * 0.12
+    # Try homing with established models
+    heading_integration_model = lambda x: 0.12 * x
+    displacement_integration_model = lambda x: -0.31 * x - 0.1
     simulate_exploration(
         comparison_window=0.1,
-        stride_to_heading_model=model,
+        heading_model=heading_integration_model,
+        displacement_model=displacement_integration_model,
         seed=1,
         run_time=20,
         live_display=True,
