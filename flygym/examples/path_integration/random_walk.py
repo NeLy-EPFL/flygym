@@ -128,7 +128,7 @@ class WalkingState(Enum):
     STOP = 3
 
 
-class RandomWalkStateSwitcher:
+class RandomExplorationController:
     def __init__(
         self,
         dt: float,
@@ -188,22 +188,87 @@ class RandomWalkStateSwitcher:
         return self.curr_state, self.dn_drives[self.curr_state]
 
 
-# class HomingStateSwitcher:
-#     def __init__(
-#         self,
-#         stride_to_heading_model: Optional[Callable] = None,
-#     ) -> None:
-#         self.stride_to_heading_model = stride_to_heading_model
+class HomingController:
+    def __init__(
+        self,
+        forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
+        right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
+        min_turn_angle: float = np.deg2rad(5),
+        max_turn_angle: float = np.deg2rad(20),
+        w_turn: float = 0.1,
+        w_stop: float = 0.5,
+        dt: float = 1e-4,
+        accepted_radius: float = 1.0,
+    ):
+        # Parse parameters
+        self.forward_dn_drive = np.array(forward_dn_drive)
+        self.right_turn_dn_diff = np.array(right_turn_dn_drive) - self.forward_dn_drive
+        self.min_turn_angle = min_turn_angle
+        self.gain = 1 / max_turn_angle
+        self.w_turn_steps = int(w_turn / dt)
+        self.w_stop_steps = int(w_stop / dt)
+        self.dt = dt
+        self.accepted_radius = accepted_radius
 
-#     def step(self, stride_diff):
-#         if self.stride_to_heading_model is not None:
-#             lr_asymmetry = stride_diff[:3].sum() - stride_diff[3:].sum()
-#             return self.stride_to_heading_model(lr_asymmetry)
-#         else:
-#             return 0
+        # State tracking
+        self._heading_hist = []
+        self._dist_to_home_hist = []
+        self._last_walking_state = None
+        self._heading_tgt_buffer = 0
+
+    def step(self, curr_heading: float, curr_pos: np.ndarray):
+        # Make decision on stopping
+        dist_to_home = np.linalg.norm(curr_pos)
+        self._dist_to_home_hist.append(dist_to_home)
+        dist_to_home_sel = self._dist_to_home_hist[-self.w_stop_steps :]
+        if len(dist_to_home_sel) >= self.w_stop_steps:
+            delta_t = -self.dt * np.arange(self.w_stop_steps)
+            k, _ = np.polyfit(delta_t, dist_to_home_sel, 1)
+            print(f"dist_to_home: {dist_to_home:.2f}, k: {k:.2f}")
+            if k > 0 and dist_to_home < self.accepted_radius:
+                return WalkingState.STOP, np.zeros(2)
+
+        # Make decision on turning
+        self._heading_hist.append(curr_heading)
+        print(f"        {curr_heading}")
+        curr_heading_smoothed = np.mean(self._heading_hist[-self.w_turn_steps :])
+        if (
+            self._last_walking_state is None
+            or self._last_walking_state == WalkingState.STOP
+        ):
+            self._heading_tgt_buffer = np.arctan2(-curr_pos[1], -curr_pos[0])
+        # heading_tgt = np.arctan2(-curr_pos[1], -curr_pos[0])
+        print(
+            f"heading_tgt: {self._heading_tgt_buffer:.2f}, curr_heading: {curr_heading_smoothed:.2f}"
+        )
+        heading_diff = wrap_angle(self._heading_tgt_buffer - curr_heading_smoothed)
+        # print(f"heading_diff: {heading_diff:.2f}")
+        if np.abs(heading_diff) < self.min_turn_angle:
+            heading_diff = 0
+            print("+++++++++++++++++++++++++++++++++++++++++++++")
+            print("+++++++++++++++++++++++++++++++++++++++++++++")
+            print("+++++++++++++++++++++++++++++++++++++++++++++")
+        elif heading_diff > 0 and self._last_walking_state == WalkingState.TURN_LEFT:
+            # if intended turn direction suddenly jumps to RIGHT during a LEFT turn,
+            # it's because the angle has jumped by 2π. Continue the LEFT turn.
+            heading_diff -= 2 * np.pi
+        elif heading_diff < 0 and self._last_walking_state == WalkingState.TURN_RIGHT:
+            # if intended turn direction suddenly jumps to LEFT during a RIGHT turn,
+            # it's because the angle has jumped by 2π. Continue the RIGHT turn.
+            heading_diff += 2 * np.pi
+        turn_signal_1d = np.clip(self.gain * heading_diff, -1, 1)
+        dn_drive = self.forward_dn_drive + self.right_turn_dn_diff * turn_signal_1d
+        if turn_signal_1d > 0:
+            walking_state = WalkingState.TURN_RIGHT
+        elif turn_signal_1d < 0:
+            walking_state = WalkingState.TURN_LEFT
+        else:
+            walking_state = WalkingState.FORWARD
+        self._last_walking_state = walking_state
+        return walking_state, dn_drive
 
 
-class PathIntegrationController(HybridTurningNMF):
+class PathIntegrationNMF(HybridTurningNMF):
     def __init__(
         self,
         comparison_window: float = 0.1,
@@ -315,9 +380,15 @@ class PathIntegrationController(HybridTurningNMF):
         return pos_rotated
 
 
-def simulate_exploration(
+def wrap_angle(angle):
+    """Wrap angle to [-π, π]."""
+    return np.arctan2(np.sin(angle), np.cos(angle))
+
+
+def run_simulation(
     seed: int = 0,
-    run_time: float = 30.0,
+    explore_time: float = 30.0,
+    max_homing_time: float = 0.0,
     live_display: bool = False,
     comparison_window: float = 0.1,
     heading_model: Optional[Callable] = None,
@@ -343,7 +414,7 @@ def simulate_exploration(
     #     fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     # )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
-    sim = PathIntegrationController(
+    sim = PathIntegrationNMF(
         comparison_window=comparison_window,
         heading_model=heading_model,
         displacement_model=displacement_model,
@@ -353,16 +424,24 @@ def simulate_exploration(
         timestep=1e-4,
     )
 
-    random_walk_controller = RandomWalkStateSwitcher(
+    random_exploration_controller = RandomExplorationController(
         dt=sim.timestep, lambda_turn=2, seed=seed
     )
+    homing_controller = HomingController(dt=sim.timestep)
 
     obs, info = sim.reset(0)
     obs_hist, info_hist = [], []
     _real_heading_buffer = []
     _estimated_heading_buffer = []
-    for i in trange(int(run_time / sim.timestep)):
-        walking_state, dn_drive = random_walk_controller.step()
+    for i in trange(int(explore_time + max_homing_time / sim.timestep)):
+        if i * sim.timestep <= explore_time:
+            walking_state, dn_drive = random_exploration_controller.step()
+        else:
+            walking_state, dn_drive = homing_controller.step(
+                info["heading_estimate"], info["position_estimate"]
+            )
+            if walking_state == WalkingState.STOP:
+                break
         obs, reward, terminated, truncated, info = sim.step(dn_drive)
         rendered_img = sim.render()[0]
 
@@ -374,11 +453,7 @@ def simulate_exploration(
         # Get estimated heading
         if heading_model is not None:
             estimated_heading = info["heading_estimate"]
-            # the following lines wrap heading to [-pi, pi]
-            est_orientation_x = np.cos(estimated_heading)
-            est_orientation_y = np.sin(estimated_heading)
-            estimated_heading = np.arctan2(est_orientation_y, est_orientation_x)
-            _estimated_heading_buffer.append(estimated_heading)
+            _estimated_heading_buffer.append(wrap_angle(estimated_heading))
 
         if rendered_img is not None:
             # Add walking state icon
@@ -419,20 +494,21 @@ if __name__ == "__main__":
 
     # for i in range(10):
     #     print(f"{datetime.now()}: Running random walk {i}...")
-    #     simulate_exploration(seed=i, run_time=20, live_display=False)
+    #     run_simulation(seed=i, run_time=20, live_display=False)
 
     # # Initial exploration to establish proprioception-heading relationship with
-    # simulate_exploration(seed=0, run_time=20, live_display=True)
+    # run_simulation(seed=0, run_time=20, live_display=True)
 
     # Try homing with established models
     heading_integration_model = lambda x: 0.12 * x
     displacement_integration_model = lambda x: -0.31 * x - 0.1
-    simulate_exploration(
+    run_simulation(
         comparison_window=0.1,
         heading_model=heading_integration_model,
         displacement_model=displacement_integration_model,
-        seed=1,
-        run_time=20,
+        seed=0,
+        explore_time=5,
+        max_homing_time=20,
         live_display=True,
         output_dir=Path("outputs/path_integration_homing"),
     )
