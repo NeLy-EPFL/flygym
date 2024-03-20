@@ -105,6 +105,7 @@ class CPGNetwork:
 
 def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
     obs, info = nmf.reset()
+    obs_list = []
     for _ in trange(int(run_time / nmf.timestep)):
         cpg_network.step()
         joints_angles = []
@@ -124,6 +125,8 @@ def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
         }
         obs, reward, terminated, truncated, info = nmf.step(action)
         nmf.render()
+        obs_list.append(obs)
+    return obs_list
 
 
 if __name__ == "__main__":
