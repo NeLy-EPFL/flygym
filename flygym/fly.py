@@ -156,7 +156,7 @@ class Fly:
         non_actuated_joint_damping: float = 1.0,
         actuator_kp: float = 50.0,
         tarsus_stiffness: float = 10.0,
-        tarsus_damping: float = 10.0,
+        tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
         contact_solref: Tuple[float, float] = (2e-4, 1e3),
         contact_solimp: Tuple[float, float, float, float, float] = (
@@ -242,10 +242,10 @@ class Fly:
             Position gain of the actuators, by default 18.0.
         tarsus_stiffness : float
             Stiffness of the passive, compliant tarsus joints, by default
-            2.2.
+            7.5.
         tarsus_damping : float
             Damping coefficient of the passive, compliant tarsus joints, by
-            default 0.126.
+            default 1e-2.
         friction : float
             Sliding, torsional, and rolling friction coefficients, by
             default (1, 0.005, 0.0001)
