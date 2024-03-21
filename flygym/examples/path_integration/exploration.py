@@ -179,7 +179,12 @@ def run_simulation(
     )
 
     random_exploration_controller = RandomExplorationController(
-        dt=sim.timestep, lambda_turn=2, seed=seed
+        dt=sim.timestep,
+        lambda_turn=2,
+        seed=seed,
+        forward_dn_drive=(1.0, 1.0),
+        left_turn_dn_drive=(0.2, 1.0) if gait == "wave" else (-0.2, 1.0),
+        right_turn_dn_drive=(1.0, 0.2) if gait == "wave" else (1.0, -0.2),
     )
 
     obs, info = sim.reset(0)
@@ -294,35 +299,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# if __name__ == "__main__":
-#     from datetime import datetime
-#     from sys import argv
-
-#     seed = int(argv[1])
-
-#     print(f"{datetime.now()}: Running random walk {seed}...")
-#     run_simulation(
-#         output_dir=Path("outputs/path_integration/random_exploration"),
-#         seed=seed,
-#         running_time=20,
-#         live_display=False,
-#     )
-
-#     for i in range(1, 10):
-#         print(f"{datetime.now()}: Running random walk {i}...")
-#         run_simulation(
-#             output_dir=Path("outputs/path_integration/random_exploration"),
-#             seed=i,
-#             running_time=20,
-#             live_display=False,
-#         )
-
-#     # Initial exploration to establish proprioception-heading relationship with
-#     run_simulation(
-#         output_dir=Path("outputs/path_integration/random_exploration"),
-#         seed=0,
-#         running_time=20,
-#         live_display=True,
-#     )
