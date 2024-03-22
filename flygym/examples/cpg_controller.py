@@ -89,16 +89,16 @@ class CPGNetwork:
         self.curr_magnitudes += dr_dt * self.timestep
 
     def reset(self, init_phases=None, init_magnitudes=None):
-        """Reset the phases and magnitudes of the oscillators."""
+        """Reset the phases and magnitudes of the oscillators.
+            High magnitudes and unfortunate phases might cause physics error
+        """
         if init_phases is None:
             self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
         else:
             self.curr_phases = init_phases
 
         if init_magnitudes is None:
-            self.curr_magnitudes = (
-                self.random_state.random(self.num_cpgs) * self.intrinsic_amps
-            )
+            self.curr_magnitudes = np.zeros(self.num_cpgs)
         else:
             self.curr_magnitudes = init_magnitudes
 
