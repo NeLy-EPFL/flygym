@@ -91,15 +91,15 @@
 	<worldbody>
 		<body name="Thorax" pos="0.4956452548503876 0.0 1.2966440916061401" quat="1 0 0 0">
 			<geom name="Thorax" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Thorax" mass="0.0003071677023684708"/>
-			<body name="A1A2" pos="-0.861627995967865 0.0 -0.16167950630187988" quat="1 0 0 0">
+			<body name="A1A2" pos="-0.861628 0.0 0.0 " quat="0.991 0.0 -0.131  0.0">
 				<geom name="A1A2" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A1A2" mass="8.5714247167182e-05"/>
-				<body name="A3" pos="-0.3564735949039459 0.0 -0.0007066726684570312" quat="0.9914448608983536 0 -0.13052619583150435 0">
+				<body name="A3" pos="-0.3264735949039459 0.0 0.04" quat="0.999 0.0 -0.043 0.0">
 					<geom name="A3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A3" fluidcoef="0 0 0 0 0" mass="0.00010703994712944607"/>
-					<body name="A4" pos="-0.23758499012713935 0.0 0.00035867633265751486" quat="0.9914448608983536 0 -0.13052619583150435 0">
+					<body name="A4" pos="-0.20758499012713935 0.0 0.025" quat="0.999 0.0 0.043 0.0">
 						<geom name="A4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A4" fluidcoef="0 0 0 0 0" mass="9.75245118031497e-05"/>
-						<body name="A5" pos="-0.21429611215191624 0.0 -9.421345020488303e-05" quat="0.99144486867831938 0 -0.13052613673678537 0">
+						<body name="A5" pos="-0.17429611215191623 0.0 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
 							<geom name="A5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A5" fluidcoef="0 0 0 0 0" mass="9.704502211966751e-05"/>
-							<body name="A6" pos="-0.2680491096907428 0.0 0.0005036708910091114" quat="0.9914448608983536 0 -0.13052619583150435 0">
+							<body name="A6" pos="-0.2280491096907428 0.0 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
 								<geom name="A6" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A6" fluidcoef="0 0 0 0 0" mass="6.267627178055471e-05"/>
 							</body>
 						</body>
