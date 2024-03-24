@@ -137,29 +137,8 @@ class RandomExplorationController:
 
 
 class PathIntegrationNMF(HybridTurningNMF):
-    def __init__(
-        self,
-        time_scale: float = 0.1,
-        do_path_integration: bool = True,
-        heading_model: Optional[Callable] = None,
-        displacement_model: Optional[Callable] = None,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if time_scale is not None:
-            self.comparsion_window_steps = int(time_scale / self.timestep)
-            self.comparsion_window = self.comparsion_window_steps * self.timestep
-        self.do_path_integration = do_path_integration
-        self.heading_model = heading_model
-        self.displacement_model = displacement_model
-        if do_path_integration:
-            if heading_model is None or displacement_model is None:
-                raise ValueError(
-                    "``heading_model`` and ``displacement_model`` "
-                    "must be provided when ``do_path_integration`` is True."
-                )
-
         self._last_end_effector_pos: Union[None, np.ndarray] = None
         self.total_stride_lengths_hist = []
         self.heading_estimate_hist = []
@@ -171,74 +150,16 @@ class PathIntegrationNMF(HybridTurningNMF):
         # Update camera position
         self.arena.update_cam_pos(self.physics, obs["fly"][0, :2])
 
-        # Calculate stride since last step per leg
+        # Calculate stride since last step for each leg
         ee_pos_rel = self.absolute_to_relative_pos(
             obs["end_effectors"][:, :2], obs["fly"][0, :2], obs["fly_orientation"][:2]
         )
         if self._last_end_effector_pos is None:
-            ee_diff_unmasked = np.zeros_like(ee_pos_rel)
+            ee_diff = np.zeros_like(ee_pos_rel)
         else:
-            ee_diff_unmasked = ee_pos_rel - self._last_end_effector_pos
-        ee_diff_masked = ee_diff_unmasked * info["adhesion"][:, None]
+            ee_diff = ee_pos_rel - self._last_end_effector_pos
         self._last_end_effector_pos = ee_pos_rel
-
-        # Update total stride length per leg
-        last_total_stride_lengths = (
-            self.total_stride_lengths_hist[-1] if self.total_stride_lengths_hist else 0
-        )
-        self.total_stride_lengths_hist.append(
-            last_total_stride_lengths + ee_diff_masked[:, 0]
-        )
-
-        # Update path integration if enabled
-        if self.do_path_integration:
-            # Estimate change in heading and position in the past step
-            if len(self.total_stride_lengths_hist) > self.comparsion_window_steps:
-                stride_diff = (
-                    self.total_stride_lengths_hist[-1]
-                    - self.total_stride_lengths_hist[-self.comparsion_window_steps - 1]
-                )
-                lr_asymmetry = stride_diff[:3].sum() - stride_diff[3:].sum()
-                stride_total = stride_diff.sum()
-
-                # Estimate Δheading
-                heading_diff = self.heading_model(lr_asymmetry)
-                heading_diff /= self.comparsion_window_steps
-
-                # Estimate ||Δposition|| in the direction of the fly's heading
-                forward_displacement_diff = self.displacement_model(stride_total)
-                forward_displacement_diff /= self.comparsion_window_steps
-            else:
-                heading_diff = 0  # no update when not enough data
-                forward_displacement_diff = 0
-
-            # Integrate heading and position estimates
-            last_heading_estimate = (
-                self.heading_estimate_hist[-1] if self.heading_estimate_hist else 0
-            )
-            curr_heading_estimate = last_heading_estimate + heading_diff
-            self.heading_estimate_hist.append(curr_heading_estimate)
-            vec_disp_estimate = np.array(
-                [
-                    np.cos(curr_heading_estimate) * forward_displacement_diff,
-                    np.sin(curr_heading_estimate) * forward_displacement_diff,
-                ]
-            )
-            last_pos_estimate = (
-                self.pos_estimate_hist[-1] if self.pos_estimate_hist else np.zeros(2)
-            )
-            curr_pos_estimate = last_pos_estimate + vec_disp_estimate
-            self.pos_estimate_hist.append(curr_pos_estimate)
-        else:
-            self.heading_estimate_hist.append(None)
-            self.pos_estimate_hist.append(None)
-
-        # Write path-integration-related variables to info for debugging/analysis
-        info["ee_diff_masked"] = ee_diff_masked
-        info["ee_diff_unmasked"] = ee_diff_unmasked
-        info["total_stride_lengths"] = self.total_stride_lengths_hist[-1]
-        info["heading_estimate"] = self.heading_estimate_hist[-1]
-        info["position_estimate"] = self.pos_estimate_hist[-1]
+        obs["stride_diff_unmasked"] = ee_diff
 
         return obs, reward, terminated, truncated, info
 
