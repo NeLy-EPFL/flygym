@@ -210,7 +210,7 @@ class Retina:
         )
 
     @staticmethod
-    @nb.njit(parallel=True)
+    @nb.njit(parallel=False)
     def _raw_image_to_hex_pxls(
         raw_img, ommatidia_id_map, num_pixels_per_ommatidia, pale_type_mask
     ):
