@@ -168,14 +168,11 @@ def run_simulation(
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = PathIntegrationNMF(
         phase_biases=gait_phase_biases[gait],
-        time_scale=time_scale,
-        do_path_integration=do_path_integration,
-        heading_model=heading_model,
-        displacement_model=displacement_model,
         fly=fly,
         arena=arena,
         cameras=[cam],
         timestep=1e-4,
+        correction_rates={"retraction": (0, 0), "stumbling": (0, 0)}
     )
 
     random_exploration_controller = RandomExplorationController(
