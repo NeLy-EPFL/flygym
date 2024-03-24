@@ -172,7 +172,7 @@ def run_simulation(
         arena=arena,
         cameras=[cam],
         timestep=1e-4,
-        correction_rates={"retraction": (0, 0), "stumbling": (0, 0)}
+        correction_rates={"retraction": (0, 0), "stumbling": (0, 0)},
     )
 
     random_exploration_controller = RandomExplorationController(
