@@ -674,7 +674,7 @@ class Fly:
                     body2 = self.model.find("geom", geom2).parent
                     simple_body1_name = body1.name.split("_")[0]
                     simple_body2_name = body2.name.split("_")[0]
-                    
+
                     body1_children = self.get_real_children(body1)
                     body2_children = self.get_real_children(body2)
 

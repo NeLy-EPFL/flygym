@@ -90,7 +90,7 @@ class CPGNetwork:
 
     def reset(self, init_phases=None, init_magnitudes=None):
         """Reset the phases and magnitudes of the oscillators.
-            High magnitudes and unfortunate phases might cause physics error
+        High magnitudes and unfortunate phases might cause physics error
         """
         if init_phases is None:
             self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
