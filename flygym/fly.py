@@ -653,7 +653,7 @@ class Fly:
         parent_name = parent.name.split("_")[0]
         for child in parent.get_children("body"):
             if parent_name in child.name:
-                real_children.extend(self.get_real_children(child.name))
+                real_children.extend(self.get_real_children(child))
 
             else:
                 real_children.extend([child.name.split("_")[0]])
@@ -674,7 +674,7 @@ class Fly:
                     body2 = self.model.find("geom", geom2).parent
                     simple_body1_name = body1.name.split("_")[0]
                     simple_body2_name = body2.name.split("_")[0]
-
+                    
                     body1_children = self.get_real_children(body1)
                     body2_children = self.get_real_children(body2)
 
