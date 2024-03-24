@@ -12,7 +12,7 @@ def test_basic_untethered_sinewave():
 
     nmf = NeuroMechFly()
     run_time = 0.01
-    freq = 100
+    freq = 80
     amp = np.pi / 2
 
     obs, _ = nmf.reset()
