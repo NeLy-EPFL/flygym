@@ -282,10 +282,18 @@ class NeuroMechFlyV0(gym.Env):
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
+
+        self._head_stabilization_actuators = [
+            self.model.find("actuator", "actuator_position_joint_Head_yaw"),  # roll
+            self.model.find("actuator", "actuator_position_joint_Head"),  # pitch
+        ]
+
         self._set_actuators_gain()
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
+
+        self._thorax = self.model.find("body", "Thorax")
 
         self._floor_height = self._get_max_floor_height(arena)
 
@@ -395,7 +403,7 @@ class NeuroMechFlyV0(gym.Env):
                 "camera",
                 name=name,
                 dclass="nmf",
-                mode="track",
+                mode="fixed",
                 euler=sensor_config["orientation"],
                 fovy=self._config["vision"]["fovy_per_eye"],
             )
@@ -408,7 +416,7 @@ class NeuroMechFlyV0(gym.Env):
                     rgba=sensor_config["marker_rgba"],
                 )
 
-        self._geoms_to_hide = self._mujoco_config["vision"]["hidden_segments"]
+        self._geoms_to_hide = self._config["vision"]["hidden_segments"]
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -618,6 +626,9 @@ class NeuroMechFlyV0(gym.Env):
     def _set_actuators_gain(self):
         for actuator in self._actuators:
             actuator.kp = self.sim_params.actuator_kp
+
+        for actuator in self._head_stabilization_actuators:
+            actuator.kp = self.sim_params.head_stabilization_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1108,6 +1119,10 @@ class NeuroMechFlyV0(gym.Env):
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
+
+        if self.sim_params.head_stabilization_kp != 0:
+            self._stabilize_head()
+
         if self.sim_params.enable_adhesion:
             self.physics.bind(self._adhesion_actuators).ctrl = action["adhesion"]
             self._last_adhesion = action["adhesion"]
@@ -1678,3 +1693,9 @@ class NeuroMechFlyV0(gym.Env):
         """Close the environment, save data, and release any resources."""
         if self.render_mode == "saved" and self.output_dir is not None:
             self.save_video(self.output_dir / "video.mp4")
+
+    def _stabilize_head(self):
+        quat = self.physics.bind(self._thorax).xquat
+        quat_inv = transformations.quat_inv(quat)
+        roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
+        self.physics.bind(self._head_stabilization_actuators).ctrl = roll, pitch

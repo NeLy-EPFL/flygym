@@ -218,6 +218,7 @@ class Simulation(gym.Env):
         self.arena.step(dt=self.timestep, physics=self.physics)
 
         for fly in self.flies:
+            fly.stabilize_head(self.physics)
             self.physics.bind(fly.actuators).ctrl = action[fly.name]["joints"]
 
         for fly in self.flies:

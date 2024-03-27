@@ -105,6 +105,9 @@ class Fly:
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors.
+    head_stabilization_kp : float
+        Position gain of the head stabilization actuators. Set to 0 to
+        disable head stabilization.
     retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
@@ -174,6 +177,7 @@ class Fly:
         adhesion_force: float = 40,
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
+        head_stabilization_kp: float = 1000.0,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -290,9 +294,11 @@ class Fly:
             If True, colored spheres will be added to the model to indicate
             the positions of the cameras (for vision) and odor sensors. By
             default False.
-
+        head_stabilization_kp : float
+            Position gain of the head stabilization actuators, by default
+            1000.0. Set to 0 to disable head stabilization.
         """
-        self.actuated_joints = actuated_joints
+        self.actuated_joints = list(actuated_joints)
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
@@ -313,6 +319,7 @@ class Fly:
         self.adhesion_force = adhesion_force
         self.draw_adhesion = draw_adhesion
         self.draw_sensor_markers = draw_sensor_markers
+        self.head_stabilization_kp = head_stabilization_kp
 
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
@@ -396,12 +403,20 @@ class Fly:
         # Define list of actuated joints
         self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
-            for joint in actuated_joints
+            for joint in self.actuated_joints
         ]
+
+        self.head_stabilization_actuators = [
+            self.model.find("actuator", "actuator_position_joint_Head_yaw"),  # roll
+            self.model.find("actuator", "actuator_position_joint_Head"),  # pitch
+        ]
+
         self._set_actuators_gain()
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
+
+        self.thorax = self.model.find("body", "Thorax")
 
         # Add self collisions
         self._init_self_contacts()
@@ -480,7 +495,7 @@ class Fly:
                 "camera",
                 name=name,
                 dclass="nmf",
-                mode="track",
+                mode="fixed",
                 euler=sensor_config["orientation"],
                 fovy=self.config["vision"]["fovy_per_eye"],
             )
@@ -620,6 +635,9 @@ class Fly:
     def _set_actuators_gain(self):
         for actuator in self.actuators:
             actuator.kp = self.actuator_kp
+
+        for actuator in self.head_stabilization_actuators:
+            actuator.kp = self.head_stabilization_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1169,3 +1187,11 @@ class Fly:
         self._curr_visual_input = None
         self.vision_update_mask_ = []
         self.flip_counter = 0
+
+    def stabilize_head(self, physics: mjcf.Physics):
+        if self.head_stabilization_kp == 0:
+            return
+        quat = physics.bind(self.thorax).xquat
+        quat_inv = transformations.quat_inv(quat)
+        roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
+        physics.bind(self.head_stabilization_actuators).ctrl = roll, pitch
