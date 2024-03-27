@@ -177,7 +177,7 @@ class Parameters:
     align_camera_with_gravity: bool = False
     camera_follows_fly_orientation: bool = False
     perspective_arrow_length = False
-    head_stabilization_kp: float = 1000.0
+    head_stabilization_kp: float = 0.0
 
     def __post_init__(self):
         if not np.isfinite(self.force_arrow_scaling):
