@@ -177,7 +177,7 @@ class Fly:
         adhesion_force: float = 40,
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
-        head_stabilization_kp: float = 1000.0,
+        head_stabilization_kp: float = 0.0,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
