@@ -176,6 +176,16 @@ class NeuroMechFlyV0(gym.Env):
             arena = FlatTerrain()
         self.sim_params = deepcopy(sim_params)
         self.actuated_joints = actuated_joints
+
+        if self.sim_params.head_stabilization_kp != 0:
+            assert (
+                "joint_Head_yaw" not in self.actuated_joints
+                and "joint_Head" not in self.actuated_joints
+            ), (
+                "Head stabilization is not compatible with head joints "
+                "being in the actuated joints list."
+            )
+
         self.contact_sensor_placements = contact_sensor_placements
         self.timestep = sim_params.timestep
         if output_dir is not None:
@@ -627,8 +637,9 @@ class NeuroMechFlyV0(gym.Env):
         for actuator in self._actuators:
             actuator.kp = self.sim_params.actuator_kp
 
-        for actuator in self._head_stabilization_actuators:
-            actuator.kp = self.sim_params.head_stabilization_kp
+        if self.sim_params.head_stabilization_kp != 0:
+            for actuator in self._head_stabilization_actuators:
+                actuator.kp = self.sim_params.head_stabilization_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
