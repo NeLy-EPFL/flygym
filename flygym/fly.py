@@ -324,6 +324,15 @@ class Fly:
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
 
+        if self.head_stabilization_kp != 0:
+            assert (
+                "joint_Head_yaw" not in self.actuated_joints
+                and "joint_Head" not in self.actuated_joints
+            ), (
+                "Head stabilization is not compatible with head joints "
+                "being in the actuated joints list."
+            )
+
         # Load NMF model
         if isinstance(xml_variant, str):
             xml_variant = (
@@ -636,8 +645,9 @@ class Fly:
         for actuator in self.actuators:
             actuator.kp = self.actuator_kp
 
-        for actuator in self.head_stabilization_actuators:
-            actuator.kp = self.head_stabilization_kp
+        if self.head_stabilization_kp != 0:
+            for actuator in self.head_stabilization_actuators:
+                actuator.kp = self.head_stabilization_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
