@@ -126,6 +126,12 @@ class Parameters:
     camera_follows_fly_orientation : bool
         If True, the camera will be rotated so that it aligns with the
         fly's orientation. By default False.
+    perspective_arrow_length : bool
+        If true, the length of the arrows indicating the contact forces
+        will be determined by the perspective.
+    head_stabilization_kp : float
+        Position gain of the head stabilization actuators, by default
+        1000.0. Set to 0 to disable head stabilization.
     """
 
     timestep: float = 0.0001
@@ -170,7 +176,8 @@ class Parameters:
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
     camera_follows_fly_orientation: bool = False
-    perspective_arrow_length=False
+    perspective_arrow_length = False
+    head_stabilization_kp: float = 1000.0
 
     def __post_init__(self):
         if not np.isfinite(self.force_arrow_scaling):
@@ -361,6 +368,7 @@ class NeuroMechFly(SingleFlySimulation):
             adhesion_force=sim_params.adhesion_force,
             draw_adhesion=sim_params.draw_adhesion,
             draw_sensor_markers=sim_params.draw_sensor_markers,
+            head_stabilization_kp=sim_params.head_stabilization_kp,
         )
 
         if output_dir is not None:
