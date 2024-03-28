@@ -219,7 +219,9 @@ class Simulation(gym.Env):
 
         for fly in self.flies:
             k = fly.name
-            obs[k], reward[k], terminated[k], truncated[k], info[k] = fly.post_step(self)
+            obs[k], reward[k], terminated[k], truncated[k], info[k] = fly.post_step(
+                self
+            )
 
         return (
             obs,
@@ -243,7 +245,7 @@ class Simulation(gym.Env):
 
         for geom in arena.root_element.find_all("geom"):
             name = geom.name
-            
+
             if name is None or (
                 "floor" in name or "ground" in name or "treadmill" in name
             ):
@@ -259,10 +261,10 @@ class Simulation(gym.Env):
                 elif geom.type == "sphere":
                     sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
-        
+
         if np.isinf(max_floor_height):
             max_floor_height = (fly.spawn_pos[2] for fly in self.flies)
-        
+
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):

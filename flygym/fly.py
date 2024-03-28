@@ -1181,7 +1181,7 @@ class Fly:
 
         return obs, info
 
-    def _stabilize_head(self, physics: mjcf.Physics):        
+    def _stabilize_head(self, physics: mjcf.Physics):
         quat = physics.bind(self.thorax).xquat
         quat_inv = transformations.quat_inv(quat)
         roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
@@ -1218,11 +1218,9 @@ class Fly:
             flip_config = self.config["flip_detection"]
             has_passed_init = sim.curr_time > flip_config["ignore_period"]
             contact_lost_time = self._flip_counter * sim.timestep
-            lost_contact_long_enough = (
-                contact_lost_time > flip_config["flip_threshold"]
-            )
+            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
             info["flip"] = has_passed_init and lost_contact_long_enough
             info["flip_counter"] = self._flip_counter
             info["contact_forces"] = obs["contact_forces"].copy()
-        
+
         return obs, reward, terminated, truncated, info
