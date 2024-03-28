@@ -53,10 +53,10 @@ class GappedTerrain(BaseArena):
 
     def __init__(
         self,
-        x_range: Tuple[float, float] = (-10, 20),
-        y_range: Tuple[float, float] = (-10, 10),
+        x_range: Tuple[float, float] = (-10, 25),
+        y_range: Tuple[float, float] = (-20, 20),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.5,
+        gap_width: float = 0.3,
         block_width: float = 1.0,
         gap_depth: float = 2.0,
         ground_alpha: float = 1.0,
@@ -166,10 +166,10 @@ class BlocksTerrain(BaseArena):
 
     def __init__(
         self,
-        x_range: Tuple[float, float] = (-10, 20),
-        y_range: Tuple[float, float] = (-10, 10),
+        x_range: Tuple[float, float] = (-10, 25),
+        y_range: Tuple[float, float] = (-20, 20),
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        block_size: float = 1.5,
+        block_size: float = 1.3,
         height_range: Tuple[float, float] = (0.45, 0.45),
         ground_alpha: float = 1.0,
         rand_seed: int = 0,
@@ -270,7 +270,7 @@ class MixedTerrain(BaseArena):
     def __init__(
         self,
         friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
-        gap_width: float = 0.5,
+        gap_width: float = 0.3,
         gapped_block_width: float = 1.0,
         gap_depth: float = 2,
         block_size: float = 1.3,
@@ -282,7 +282,7 @@ class MixedTerrain(BaseArena):
         super().__init__()
 
         self.friction = friction
-        y_range = (-10, 10)
+        y_range = (-20, 20)
         rand_state = np.random.RandomState(rand_seed)
 
         self._height_expected_value = np.mean([*height_range])
