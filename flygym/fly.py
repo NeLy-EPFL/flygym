@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, TYPE_CHECKING
 
 import numpy as np
 from dm_control import mjcf
@@ -15,6 +15,9 @@ import flygym.util as util
 import flygym.vision as vision
 from flygym.arena import BaseArena
 from flygym.util import get_data_path
+
+if TYPE_CHECKING:
+    from flygym.simulation import Simulation
 
 
 class Fly:
@@ -473,7 +476,7 @@ class Fly:
     def name(self) -> str:
         return self.model.model
 
-    def post_init(self, arena: BaseArena, physics: mjcf.Physics):
+    def post_init(self, sim: "Simulation"):
         """Initialize attributes that depend on the arena or physics of the
         simulation.
 
@@ -486,12 +489,12 @@ class Fly:
         """
         self._adhesion_actuator_geom_id = np.array(
             [
-                physics.model.geom(f"{self.name}/{actuator.body}").id
+                sim.physics.model.geom(f"{self.name}/{actuator.body}").id
                 for actuator in self.adhesion_actuators
             ]
         )
 
-        self.observation_space = self._define_observation_space(arena)
+        self.observation_space = self._define_observation_space(sim.arena)
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -532,43 +535,6 @@ class Fly:
                 "Collision specs must be a string ('legs', 'legs-no-coxa', 'tarsi', "
                 "'none'), or a list of body segment names."
             )
-
-    def _correct_camera_orientation(self, camera_name: str):
-        # Correct the camera orientation by incorporating the spawn rotation
-        # of the arena
-
-        # Get the camera
-        camera = self.model.find("camera", camera_name)
-        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
-            return 0
-        if "head" in camera_name or "front_zoomin" in camera_name:
-            # Don't correct the head camera
-            return camera
-
-        # Add the spawn rotation (keep horizon flat)
-        spawn_quat = np.array(
-            [
-                np.cos(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[0] * np.sin(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[1] * np.sin(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[2] * np.sin(self.spawn_orientation[-1] / 2),
-            ]
-        )
-
-        # Change camera euler to quaternion
-        camera_quat = transformations.euler_to_quat(camera.euler)
-        new_camera_quat = transformations.quat_mul(
-            transformations.quat_inv(spawn_quat), camera_quat
-        )
-        camera.euler = transformations.quat_to_euler(new_camera_quat)
-
-        # Elevate the camera slightly gives a better view of the arena
-        if "zoomin" not in camera_name:
-            camera.pos = camera.pos + [0.0, 0.0, 0.5]
-        if "front" in camera_name:
-            camera.pos[2] = camera.pos[2] + 1.0
-
-        return camera
 
     def _set_geom_colors(self):
         for type_, specs in self.config["appearance"].items():
@@ -676,12 +642,12 @@ class Fly:
         ), f"Real parent not found for {child_name} but this cannot be"
         return real_parent
 
-    def get_real_children(self, parent):
+    def _get_real_children(self, parent):
         real_children = []
         parent_name = parent.name.split("_")[0]
         for child in parent.get_children("body"):
             if parent_name in child.name:
-                real_children.extend(self.get_real_children(child))
+                real_children.extend(self._get_real_children(child))
 
             else:
                 real_children.extend([child.name.split("_")[0]])
@@ -703,8 +669,8 @@ class Fly:
                     simple_body1_name = body1.name.split("_")[0]
                     simple_body2_name = body2.name.split("_")[0]
 
-                    body1_children = self.get_real_children(body1)
-                    body2_children = self.get_real_children(body2)
+                    body1_children = self._get_real_children(body1)
+                    body2_children = self._get_real_children(body2)
 
                     body1_parent = self._get_real_parent(body1)
                     body2_parent = self._get_real_parent(body2)
@@ -964,26 +930,31 @@ class Fly:
             ] = self._base_rgba
         return
 
-    def _update_vision(
-        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
-    ) -> None:
+    def _update_vision(self, sim: "Simulation") -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
         and buffer it to ``self._curr_raw_visual_input``.
         """
+        physics = sim.physics
+
         vision_config = self.config["vision"]
         next_render_time = (
             self.last_vision_update_time + self._eff_visual_render_interval
         )
+
         # avoid floating point errors: when too close, update anyway
-        if curr_time + 0.5 * timestep < next_render_time:
+        if sim.curr_time + 0.5 * sim.timestep < next_render_time:
             return
+
         raw_visual_input = []
         ommatidia_readouts = []
+
         for geom in self._geoms_to_hide:
             physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 0]
-        arena.pre_visual_render_hook(physics)
+
+        sim.arena.pre_visual_render_hook(physics)
+
         for side in ["L", "R"]:
             raw_img = physics.render(
                 width=vision_config["raw_img_width_px"],
@@ -994,13 +965,17 @@ class Fly:
             readouts_per_eye = self.retina.raw_image_to_hex_pxls(fish_img)
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(fish_img)
+
         for geom in self._geoms_to_hide:
             physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 1]
-        arena.post_visual_render_hook(physics)
+
+        sim.arena.post_visual_render_hook(physics)
         self._curr_visual_input = np.array(ommatidia_readouts)
+
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
-        self.last_vision_update_time = curr_time
+
+        self.last_vision_update_time = sim.curr_time
 
     def change_segment_color(self, physics: mjcf.Physics, segment: str, color):
         """Change the color of a segment of the fly.
@@ -1028,9 +1003,7 @@ class Fly:
         """
         return np.array(self.vision_update_mask_)
 
-    def get_observation(
-        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
-    ) -> ObsType:
+    def get_observation(self, sim: "Simulation") -> ObsType:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1038,6 +1011,8 @@ class Fly:
         ObsType
             The observation as defined by the environment.
         """
+        physics = sim.physics
+
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
         joint_sensordata = physics.bind(self._joint_sensors).sensordata
@@ -1129,12 +1104,12 @@ class Fly:
         # olfaction
         if self.enable_olfaction:
             antennae_pos = physics.bind(self._antennae_sensors).sensordata
-            odor_intensity = arena.get_olfaction(antennae_pos.reshape(4, 3))
+            odor_intensity = sim.arena.get_olfaction(antennae_pos.reshape(4, 3))
             obs["odor_intensity"] = odor_intensity.astype(np.float32)
 
         # vision
         if self.enable_vision:
-            self._update_vision(physics, arena, timestep, curr_time)
+            self._update_vision(sim)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
@@ -1191,12 +1166,20 @@ class Fly:
                 info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
         return info
 
-    def reset(self):
+    def reset(self, sim: "Simulation"):
         self.last_vision_update_time = -np.inf
         self._curr_raw_visual_input = None
         self._curr_visual_input = None
         self.vision_update_mask_ = []
         self.flip_counter = 0
+
+        obs = self.get_observation(sim)
+        info = self.get_info()
+
+        if self.enable_vision:
+            info["vision_updated"] = True
+
+        return obs, info
 
     def stabilize_head(self, physics: mjcf.Physics):
         if self.head_stabilization_kp == 0:

@@ -97,7 +97,7 @@ class Simulation(gym.Env):
         self._set_init_pose()
 
         for fly in self.flies:
-            fly.post_init(self.arena, self.physics)
+            fly.post_init(self)
 
     def _set_init_pose(self):
         """Set the initial pose of all flies."""
@@ -173,13 +173,7 @@ class Simulation(gym.Env):
             camera.reset()
 
         for fly in self.flies:
-            fly.reset()
-            obs[fly.name] = fly.get_observation(
-                self.physics, self.arena, self.timestep, self.curr_time
-            )
-            info[fly.name] = fly.get_info()
-            if fly.enable_vision:
-                info[fly.name]["vision_updated"] = True
+            obs[fly.name], info[fly.name] = fly.reset(self)
 
         return obs, info
 
@@ -218,8 +212,8 @@ class Simulation(gym.Env):
         self.arena.step(dt=self.timestep, physics=self.physics)
 
         for fly in self.flies:
-            fly.stabilize_head(self.physics)
             self.physics.bind(fly.actuators).ctrl = action[fly.name]["joints"]
+            fly.stabilize_head(self.physics)
 
         for fly in self.flies:
             if fly.enable_adhesion:
@@ -235,9 +229,7 @@ class Simulation(gym.Env):
 
         for fly in self.flies:
             key = fly.name
-            obs[key] = fly.get_observation(
-                self.physics, self.arena, self.timestep, self.curr_time
-            )
+            obs[key] = fly.get_observation(self)
             reward[key] = fly.get_reward()
             terminated[key] = fly.is_terminated()
             truncated[key] = fly.is_truncated()
