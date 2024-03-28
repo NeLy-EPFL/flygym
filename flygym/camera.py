@@ -8,6 +8,7 @@ import dm_control.mujoco
 import imageio
 import numpy as np
 from dm_control import mjcf
+from dm_control.utils import transformations
 from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
 
@@ -649,3 +650,43 @@ class Camera:
     def reset(self):
         self._frames.clear()
         self._last_render_time = -np.inf
+
+    def _correct_camera_orientation(self, camera_name: str):
+        # Correct the camera orientation by incorporating the spawn rotation
+        # of the arena
+
+        # Get the camera
+        fly = self.fly
+        camera = fly.model.find("camera", camera_name)
+
+        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
+            return 0
+
+        if "head" in camera_name or "front_zoomin" in camera_name:
+            # Don't correct the head camera
+            return camera
+
+        # Add the spawn rotation (keep horizon flat)
+        spawn_quat = np.array(
+            [
+                np.cos(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[0] * np.sin(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[1] * np.sin(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[2] * np.sin(fly.spawn_orientation[-1] / 2),
+            ]
+        )
+
+        # Change camera euler to quaternion
+        camera_quat = transformations.euler_to_quat(camera.euler)
+        new_camera_quat = transformations.quat_mul(
+            transformations.quat_inv(spawn_quat), camera_quat
+        )
+        camera.euler = transformations.quat_to_euler(new_camera_quat)
+
+        # Elevate the camera slightly gives a better view of the arena
+        if "zoomin" not in camera_name:
+            camera.pos = camera.pos + [0.0, 0.0, 0.5]
+        if "front" in camera_name:
+            camera.pos[2] = camera.pos[2] + 1.0
+
+        return camera
