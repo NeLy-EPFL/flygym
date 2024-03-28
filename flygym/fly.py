@@ -380,7 +380,7 @@ class Fly:
         else:
             self._self_collisions = self_collisions
 
-        self.last_adhesion = np.zeros(self.n_legs)
+        self._last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
         if self.draw_adhesion and not self.enable_adhesion:
@@ -405,9 +405,9 @@ class Fly:
         # Add cameras imitating the fly's eyes
         self._curr_visual_input = None
         self._curr_raw_visual_input = None
-        self.last_vision_update_time = -np.inf
+        self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
-        self.vision_update_mask_: List[bool] = []
+        self._vision_update_mask: List[bool] = []
         if self.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -458,7 +458,7 @@ class Fly:
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # flip detection
-        self.flip_counter = 0
+        self._flip_counter = 0
 
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
@@ -916,17 +916,17 @@ class Fly:
 
     def _draw_adhesion(self, physics: mjcf.Physics):
         """Highlight the tarsal segments of the leg having adhesion"""
-        if np.any(self.last_adhesion == 1):
+        if np.any(self._last_adhesion == 1):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self.last_adhesion == 1].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
             physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
             ] = self._active_adhesion_rgba
-        if np.any(self.last_adhesion == 0):
+        if np.any(self._last_adhesion == 0):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self.last_adhesion == 0].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
             ] = self._base_rgba
         return
 
@@ -940,7 +940,7 @@ class Fly:
 
         vision_config = self.config["vision"]
         next_render_time = (
-            self.last_vision_update_time + self._eff_visual_render_interval
+            self._last_vision_update_time + self._eff_visual_render_interval
         )
 
         # avoid floating point errors: when too close, update anyway
@@ -975,7 +975,7 @@ class Fly:
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
 
-        self.last_vision_update_time = sim.curr_time
+        self._last_vision_update_time = sim.curr_time
 
     def change_segment_color(self, physics: mjcf.Physics, segment: str, color):
         """Change the color of a segment of the fly.
@@ -1001,7 +1001,7 @@ class Fly:
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
         """
-        return np.array(self.vision_update_mask_)
+        return np.array(self._vision_update_mask)
 
     def get_observation(self, sim: "Simulation") -> ObsType:
         """Get observation without stepping the physics simulation.
@@ -1075,7 +1075,7 @@ class Fly:
                 adh_actuator_id = (
                     self._adhesion_bodies_with_contact_sensors == contact_sensor_id
                 )
-                if self.last_adhesion[adh_actuator_id] > 0:
+                if self._last_adhesion[adh_actuator_id] > 0:
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
                     contact_forces[contact_sensor_id, :] -= self.adhesion_force * normal
@@ -1167,11 +1167,11 @@ class Fly:
         return info
 
     def reset(self, sim: "Simulation"):
-        self.last_vision_update_time = -np.inf
+        self._last_vision_update_time = -np.inf
         self._curr_raw_visual_input = None
         self._curr_visual_input = None
-        self.vision_update_mask_ = []
-        self.flip_counter = 0
+        self._vision_update_mask = []
+        self._flip_counter = 0
 
         obs = self.get_observation(sim)
         info = self.get_info()
@@ -1181,10 +1181,48 @@ class Fly:
 
         return obs, info
 
-    def stabilize_head(self, physics: mjcf.Physics):
-        if self.head_stabilization_kp == 0:
-            return
+    def _stabilize_head(self, physics: mjcf.Physics):        
         quat = physics.bind(self.thorax).xquat
         quat_inv = transformations.quat_inv(quat)
         roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
         physics.bind(self.head_stabilization_actuators).ctrl = roll, pitch
+
+    def pre_step(self, action, physics: mjcf.Physics):
+        physics.bind(self.actuators).ctrl = action["joints"]
+
+        if self.head_stabilization_kp != 0:
+            self._stabilize_head(physics)
+
+        if self.enable_adhesion:
+            physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
+            self._last_adhesion = action["adhesion"]
+
+    def post_step(self, sim: "Simulation"):
+        obs = self.get_observation(sim)
+        reward = self.get_reward()
+        terminated = self.is_terminated()
+        truncated = self.is_truncated()
+        info = self.get_info()
+
+        if self.enable_vision:
+            vision_updated_this_step = sim.curr_time == self._last_vision_update_time
+            self._vision_update_mask.append(vision_updated_this_step)
+            info["vision_updated"] = vision_updated_this_step
+
+        if self.detect_flip:
+            if obs["contact_forces"].sum() < 1:
+                self._flip_counter += 1
+            else:
+                self._flip_counter = 0
+
+            flip_config = self.config["flip_detection"]
+            has_passed_init = sim.curr_time > flip_config["ignore_period"]
+            contact_lost_time = self._flip_counter * sim.timestep
+            lost_contact_long_enough = (
+                contact_lost_time > flip_config["flip_threshold"]
+            )
+            info["flip"] = has_passed_init and lost_contact_long_enough
+            info["flip_counter"] = self._flip_counter
+            info["contact_forces"] = obs["contact_forces"].copy()
+        
+        return obs, reward, terminated, truncated, info
