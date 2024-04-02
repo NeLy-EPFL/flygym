@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from flygym.state import KinematicPose
 from flygym.util import get_data_path
@@ -96,3 +97,53 @@ def get_collision_geometries(config: str = "all") -> List[str]:
         return []
     else:
         raise ValueError(f"Unknown collision geometry configuration: {config}")
+
+
+def get_cpg_biases(gait: str) -> np.ndarray:
+    """Define CPG biases for different gaits."""
+    if gait.lower() == "tripod":
+        phase_biases = np.array(
+            [
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+            ],
+            dtype=np.float64,
+        )
+        phase_biases *= np.pi
+
+    elif gait.lower() == "tetrapod":
+        phase_biases = np.array(
+            [
+                [0, 1, 2, 2, 0, 1],
+                [2, 0, 1, 1, 2, 0],
+                [1, 2, 0, 0, 1, 2],
+                [1, 2, 0, 0, 1, 2],
+                [0, 1, 2, 2, 0, 1],
+                [2, 0, 1, 1, 2, 0],
+            ],
+            dtype=np.float64,
+        )
+        phase_biases *= 2 * np.pi / 3
+
+    elif gait.lower() == "wave":
+        phase_biases = np.array(
+            [
+                [0, 1, 2, 3, 4, 5],
+                [5, 0, 1, 2, 3, 4],
+                [4, 5, 0, 1, 2, 3],
+                [3, 4, 5, 0, 1, 2],
+                [2, 3, 4, 5, 0, 1],
+                [1, 2, 3, 4, 5, 0],
+            ],
+            dtype=np.float64,
+        )
+        phase_biases *= 2 * np.pi / 6
+
+    else:
+        raise ValueError(f"Unknown gait: {gait}")
+
+    return phase_biases
