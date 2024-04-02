@@ -103,9 +103,10 @@ class CPGNetwork:
             self.curr_magnitudes = init_magnitudes
 
 
-def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
+def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time, range_meth=trange):
     obs, info = nmf.reset()
-    for _ in trange(int(run_time / nmf.timestep)):
+    obs_list = []
+    for _ in range_meth(int(run_time / nmf.timestep)):
         cpg_network.step()
         joints_angles = []
         adhesion_onoff = []
@@ -124,6 +125,8 @@ def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
         }
         obs, reward, terminated, truncated, info = nmf.step(action)
         nmf.render()
+        obs_list.append(obs)
+    return obs_list
 
 
 if __name__ == "__main__":
