@@ -10,58 +10,13 @@ from flygym import Fly, Camera
 from flygym.arena import BaseArena
 from flygym.util import get_data_path
 from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration import (
     PathIntegrationArena,
     WalkingState,
     PathIntegrationNMF,
     RandomExplorationController,
 )
-
-# Define CPG biases for different gaits
-tripod_phase_biases = np.array(
-    [
-        [0, 1, 0, 1, 0, 1],
-        [1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1],
-        [1, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 1],
-        [1, 0, 1, 0, 1, 0],
-    ],
-    dtype=np.float64,
-)
-tripod_phase_biases *= np.pi
-
-tetrapod_phase_biases = np.array(
-    [
-        [0, 1, 2, 2, 0, 1],
-        [2, 0, 1, 1, 2, 0],
-        [1, 2, 0, 0, 1, 2],
-        [1, 2, 0, 0, 1, 2],
-        [0, 1, 2, 2, 0, 1],
-        [2, 0, 1, 1, 2, 0],
-    ],
-    dtype=np.float64,
-)
-tetrapod_phase_biases *= 2 * np.pi / 3
-
-wave_phase_biases = np.array(
-    [
-        [0, 1, 2, 3, 4, 5],
-        [5, 0, 1, 2, 3, 4],
-        [4, 5, 0, 1, 2, 3],
-        [3, 4, 5, 0, 1, 2],
-        [2, 3, 4, 5, 0, 1],
-        [1, 2, 3, 4, 5, 0],
-    ],
-    dtype=np.float64,
-)
-tetrapod_phase_biases *= 2 * np.pi / 6
-
-gait_phase_biases = {
-    "tripod": tripod_phase_biases,
-    "tetrapod": tetrapod_phase_biases,
-    "wave": wave_phase_biases,
-}
 
 
 def get_walking_icons():
@@ -167,7 +122,7 @@ def run_simulation(
     # )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = PathIntegrationNMF(
-        phase_biases=gait_phase_biases[gait],
+        phase_biases=get_cpg_biases(gait),
         fly=fly,
         arena=arena,
         cameras=[cam],
