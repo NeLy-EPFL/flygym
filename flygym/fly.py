@@ -503,12 +503,18 @@ class Fly:
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
             )
+
+            euler = sensor_config["orientation"]
+
+            if self.head_stabilization_kp == 0:
+                euler = (euler[0], euler[1] - 0.14, euler[2])
+
             sensor_body.add(
                 "camera",
                 name=name,
                 dclass="nmf",
                 mode="fixed",
-                euler=sensor_config["orientation"],
+                euler=euler,
                 fovy=self.config["vision"]["fovy_per_eye"],
             )
             if self.draw_sensor_markers:
