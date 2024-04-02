@@ -103,7 +103,9 @@ class CPGNetwork:
             self.curr_magnitudes = init_magnitudes
 
 
-def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time, range_meth=trange):
+def run_cpg_simulation(
+    nmf, cpg_network, preprogrammed_steps, run_time, range_meth=trange
+):
     obs, info = nmf.reset()
     obs_list = []
     for _ in range_meth(int(run_time / nmf.timestep)):
