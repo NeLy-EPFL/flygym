@@ -2,15 +2,12 @@ import argparse
 import numpy as np
 import pickle
 import cv2
-from tqdm import trange, tqdm
+from tqdm import tqdm
 from pathlib import Path
-from typing import Tuple, Union, Optional, Callable, List
-from itertools import product
+from typing import Optional
 from dm_control.utils import transformations
 
 from flygym import Fly, Camera
-from flygym.arena import BaseArena
-from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.turning_controller import HybridTurningNMF
 
@@ -51,8 +48,6 @@ def run_simulation(
 
     obs, info = sim.reset(0)
     obs_hist, info_hist, action_hist = [], [], []
-    _real_heading_buffer = []
-    _estimated_heading_buffer = []
     for dn_drive in tqdm(dn_drive_seq):
         action_hist.append(dn_drive)
         obs, reward, terminated, truncated, info = sim.step(dn_drive)
