@@ -208,7 +208,7 @@ if feature_selection:
             ds.joint_angles[:, ~dof_mask] = 0
 
         # Train model
-        ds_all_gaits = ConcatDataset(list(datasets.values()))
+        ds_all_gaits = ConcatDataset(list(masked_datasets.values()))
         train_ds, val_ds = random_split(ds_all_gaits, [0.8, 0.2])
         train_loader = DataLoader(train_ds, batch_size=256, num_workers=4, shuffle=True)
         val_loader = DataLoader(val_ds, batch_size=1028, num_workers=4)
@@ -303,3 +303,4 @@ if feature_selection:
                 sns.despine(ax=axs[i, j])
         fig.suptitle(f"DoF selection: {dof_subset_tag}", fontweight="bold")
         fig.savefig(base_dir / f"figs/three_layer_mlp_{dof_subset_tag}.pdf")
+        plt.close(fig)
