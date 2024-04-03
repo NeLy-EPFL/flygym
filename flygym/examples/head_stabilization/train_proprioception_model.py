@@ -1,6 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
 import torch
 import lightning as pl
 from torch.utils.data import DataLoader, ConcatDataset, random_split
@@ -8,17 +7,19 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from sklearn.metrics import r2_score
 from pathlib import Path
 from copy import deepcopy
+from tqdm import tqdm
 
 import flygym
 from flygym.examples.head_stabilization import WalkingDataset, ThreeLayerMLP
+import flygym.examples.head_stabilization.viz as viz
 
 
 # Setups
 base_dir = sim_data_dir = Path(
     "/home/sibwang/Projects/flygym/outputs/head_stabilization/"
 )
-retrain = True
-feature_selection = True
+retrain_base = True
+retrain_feature_selection = True
 max_epochs = 3
 
 
@@ -31,11 +32,6 @@ max_epochs = 3
 # Torch setup
 pl.pytorch.seed_everything(0, workers=True)
 torch.set_float32_matmul_precision("medium")
-
-
-# Matplotlib setup
-plt.rcParams["font.family"] = "Arial"
-plt.rcParams["pdf.fonttype"] = 42
 
 
 # Load datasets
@@ -52,7 +48,7 @@ for gait, path in sim_data_pickles.items():
 
 
 # Train model
-if retrain:
+if retrain_base:
     logger = TensorBoardLogger(base_dir / "logs", name="three_layer_mlp")
 
     ds_all_gaits = ConcatDataset(list(datasets.values()))
@@ -89,57 +85,12 @@ for gait, ds in datasets.items():
 
 
 # Visualize predictions
-fig, axs = plt.subplots(
-    3, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True
+viz.make_sample_time_series_plot(
+    predictions=predictions,
+    performances=performances,
+    unmasked_datasets=datasets,
+    output_path=base_dir / "figs/three_layer_mlp.pdf",
 )
-for i, (gait, ds) in enumerate(datasets.items()):
-    t_grid = (np.arange(len(ds)) + ds.ignore_first_n) * 1e-4
-    for j, dof in enumerate(["roll", "pitch"]):
-        axs[i, j].plot(
-            t_grid,
-            np.rad2deg(datasets[gait].roll_pitch_ts[:, j]),
-            lw=1,
-            color="black",
-            label="Actual",
-        )
-        axs[i, j].plot(
-            t_grid,
-            np.rad2deg(predictions[gait][:, j]),
-            lw=1,
-            color="tab:red",
-            label="Predicted",
-            linestyle="--",
-        )
-        axs[i, j].text(
-            1.0,
-            0.01,
-            f"$R^2$={performances[gait][dof]:.2f}",
-            ha="right",
-            va="bottom",
-            transform=axs[i, j].transAxes,
-        )
-        axs[i, j].set_ylim(-15, 15)
-        axs[i, j].set_xlim(51, 52)
-        if i == 0:
-            axs[i, j].set_title(rf"Thorax {dof}", size=12)
-        if j == 0:
-            axs[i, j].text(
-                -0.3,
-                0.5,
-                f"{gait.title()} gait",
-                size=12,
-                va="center",
-                rotation=90,
-                transform=axs[i, j].transAxes,
-            )
-        if i == 2:
-            axs[i, j].set_xlabel("Time [s]")
-        if j == 0:
-            axs[i, j].set_ylabel(r"Angle [$^\circ$]")
-        if i == 0 and j == 0:
-            axs[i, j].legend(frameon=False)
-        sns.despine(ax=axs[i, j])
-fig.savefig(base_dir / f"figs/three_layer_mlp.pdf")
 
 
 # Select features based on importance
@@ -193,21 +144,22 @@ def subset_to_mask(dof_subset):
     return np.array(mask)
 
 
-if feature_selection:
-    models_all = {}
-    predictions_all = {}
-    performances_all = {}
+# Feature selection
+models_all = {}
+predictions_all = {}
+performances_all = {}
 
-    for dof_subset_tag, dofs in dof_subsets.items():
-        print(f"Processing {dof_subset_tag} model...")
+for dof_subset_tag, dofs in dof_subsets.items():
+    print(f"Processing {dof_subset_tag} model...")
 
-        # Load and mask out dataset
-        dof_mask = subset_to_mask(dofs)
-        masked_datasets = deepcopy(datasets)
-        for ds in masked_datasets.values():
-            ds.joint_angles[:, ~dof_mask] = 0
+    # Load and mask out dataset
+    dof_mask = subset_to_mask(dofs)
+    masked_datasets = deepcopy(datasets)
+    for ds in masked_datasets.values():
+        ds.joint_angles[:, ~dof_mask] = 0
 
-        # Train model
+    # Train model
+    if retrain_feature_selection:
         ds_all_gaits = ConcatDataset(list(masked_datasets.values()))
         train_ds, val_ds = random_split(ds_all_gaits, [0.8, 0.2])
         train_loader = DataLoader(train_ds, batch_size=256, num_workers=4, shuffle=True)
@@ -228,79 +180,53 @@ if feature_selection:
             model.state_dict(),
             base_dir / f"models/three_layer_mlp_{dof_subset_tag}.pth",
         )
-        print(f"Done processing {dof_subset_tag} model.")
-
-        # Evaluate model
-        predictions_all[dof_subset_tag] = {}
-        performances_all[dof_subset_tag] = {}
-        for gait, ds in masked_datasets.items():
-            x_all = torch.tensor(
-                np.concatenate([ds.joint_angles, ds.contact_mask], axis=1)
-            )
-            y_pred = model(x_all).detach().numpy()
-            predictions_all[dof_subset_tag][gait] = y_pred
-            y_true = ds.roll_pitch_ts
-            r2_roll = r2_score(y_true[:, 0], y_pred[:, 0])
-            r2_pitch = r2_score(y_true[:, 1], y_pred[:, 1])
-            performances_all[dof_subset_tag][gait] = {
-                "roll": r2_roll,
-                "pitch": r2_pitch,
-            }
-            print(f"  {gait} gait: r2_roll: {r2_roll:.3f}, r2_pitch: {r2_pitch:.3f}")
-
-    # Visualize results
-    for dof_subset_tag in dof_subsets.keys():
-        fig, axs = plt.subplots(
-            3, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True
+        print(f"Done training {dof_subset_tag} model.")
+    else:
+        model = ThreeLayerMLP(input_size=42 + 6, hidden_size=8, output_size=2)
+        model.load_state_dict(
+            torch.load(base_dir / f"models/three_layer_mlp_{dof_subset_tag}.pth")
         )
-        for i, (gait, ds) in enumerate(datasets.items()):
-            t_grid = (np.arange(len(ds)) + ds.ignore_first_n) * 1e-4
-            for j, dof in enumerate(["roll", "pitch"]):
-                axs[i, j].plot(
-                    t_grid,
-                    np.rad2deg(datasets[gait].roll_pitch_ts[:, j]),
-                    lw=1,
-                    color="black",
-                    label="Actual",
-                )
-                axs[i, j].plot(
-                    t_grid,
-                    np.rad2deg(predictions_all[dof_subset_tag][gait][:, j]),
-                    lw=1,
-                    color="tab:red",
-                    label="Predicted",
-                    linestyle="--",
-                )
-                axs[i, j].text(
-                    1.0,
-                    0.01,
-                    f"$R^2$={performances_all[dof_subset_tag][gait][dof]:.2f}",
-                    ha="right",
-                    va="bottom",
-                    transform=axs[i, j].transAxes,
-                )
-                # axs[i, j].set_title(rf"{gait.title()} gait, thorax {dof}")
-                axs[i, j].set_ylim(-15, 15)
-                axs[i, j].set_xlim(51, 52)
-                if i == 0:
-                    axs[i, j].set_title(rf"Thorax {dof}", size=12)
-                if j == 0:
-                    axs[i, j].text(
-                        -0.3,
-                        0.5,
-                        f"{gait.title()} gait",
-                        size=12,
-                        va="center",
-                        rotation=90,
-                        transform=axs[i, j].transAxes,
-                    )
-                if i == 2:
-                    axs[i, j].set_xlabel("Time [s]")
-                if j == 0:
-                    axs[i, j].set_ylabel(r"Angle [$^\circ$]")
-                if i == 0 and j == 0:
-                    axs[i, j].legend(frameon=False)
-                sns.despine(ax=axs[i, j])
-        fig.suptitle(f"DoF selection: {dof_subset_tag}", fontweight="bold")
-        fig.savefig(base_dir / f"figs/three_layer_mlp_{dof_subset_tag}.pdf")
-        plt.close(fig)
+        models_all[dof_subset_tag] = model
+
+    # Evaluate model
+    predictions_all[dof_subset_tag] = {}
+    performances_all[dof_subset_tag] = {}
+    for gait, ds in masked_datasets.items():
+        x_all = torch.tensor(np.concatenate([ds.joint_angles, ds.contact_mask], axis=1))
+        y_pred = model(x_all).detach().numpy()
+        predictions_all[dof_subset_tag][gait] = y_pred
+        y_true = ds.roll_pitch_ts
+        r2_roll = r2_score(y_true[:, 0], y_pred[:, 0])
+        r2_pitch = r2_score(y_true[:, 1], y_pred[:, 1])
+        performances_all[dof_subset_tag][gait] = {
+            "roll": r2_roll,
+            "pitch": r2_pitch,
+        }
+        print(f"  {gait} gait: r2_roll: {r2_roll:.3f}, r2_pitch: {r2_pitch:.3f}")
+
+# Visualize results
+for dof_subset_tag in tqdm(dof_subsets.keys(), desc="Visualizing results"):
+    viz.make_sample_time_series_plot(
+        predictions=predictions_all[dof_subset_tag],
+        performances=performances_all[dof_subset_tag],
+        unmasked_datasets=datasets,
+        output_path=base_dir / f"figs/three_layer_mlp_{dof_subset_tag}.pdf",
+        dof_subset_tag=dof_subset_tag,
+    )
+
+# Make bar plot for feature selection results
+lines = []
+for dof_subset_tag, perf_dict in performances_all.items():
+    for gait, scores in perf_dict.items():
+        for dof in ["roll", "pitch"]:
+            lines.append([dof_subset_tag, gait, dof, scores[dof]])
+performances_df = pd.DataFrame(lines)
+performances_df.columns = ["dof_subset", "gait", "dof", "r2_score"]
+performances_df = performances_df.set_index(["dof_subset", "gait", "dof"])
+
+
+viz.make_feature_selection_summary_plot(
+    performances_df=performances_df,
+    dof_subset_tags=list(dof_subsets.keys()),
+    output_path=base_dir / "figs/feature_ablation.pdf",
+)
