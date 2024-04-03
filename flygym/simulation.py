@@ -256,7 +256,7 @@ class Simulation(gym.Env):
                 has_passed_init = self.curr_time > flip_config["ignore_period"]
                 contact_lost_time = fly.flip_counter * self.timestep
                 lost_contact_long_enough = (
-                    contact_lost_time > flip_config["flip_threshold"]
+                    contact_lost_time > flip_config["min_flip_duration"]
                 )
                 info[key]["flip"] = has_passed_init and lost_contact_long_enough
                 info[key]["flip_counter"] = fly.flip_counter
