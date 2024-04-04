@@ -129,9 +129,10 @@ class Parameters:
     perspective_arrow_length : bool
         If true, the length of the arrows indicating the contact forces
         will be determined by the perspective.
-    head_stabilization_kp : float
-        Position gain of the head stabilization actuators, by default
-        1000.0. Set to 0 to disable head stabilization.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators.
+        Otherwise, ``actuator_kp`` will be used.
     """
 
     timestep: float = 0.0001
@@ -177,7 +178,7 @@ class Parameters:
     align_camera_with_gravity: bool = False
     camera_follows_fly_orientation: bool = False
     perspective_arrow_length = False
-    head_stabilization_kp: float = 0.0
+    neck_kp: Optional[float] = None
 
     def __post_init__(self):
         if not np.isfinite(self.force_arrow_scaling):
@@ -368,7 +369,7 @@ class NeuroMechFly(SingleFlySimulation):
             adhesion_force=sim_params.adhesion_force,
             draw_adhesion=sim_params.draw_adhesion,
             draw_sensor_markers=sim_params.draw_sensor_markers,
-            head_stabilization_kp=sim_params.head_stabilization_kp,
+            neck_kp=sim_params.neck_kp,
         )
 
         if output_dir is not None:

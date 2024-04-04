@@ -177,7 +177,7 @@ class NeuroMechFlyV0(gym.Env):
         self.sim_params = deepcopy(sim_params)
         self.actuated_joints = actuated_joints
 
-        if self.sim_params.head_stabilization_kp != 0:
+        if self.sim_params.neck_kp != 0:
             assert (
                 "joint_Head_yaw" not in self.actuated_joints
                 and "joint_Head" not in self.actuated_joints
@@ -637,9 +637,9 @@ class NeuroMechFlyV0(gym.Env):
         for actuator in self._actuators:
             actuator.kp = self.sim_params.actuator_kp
 
-        if self.sim_params.head_stabilization_kp != 0:
+        if self.sim_params.neck_kp != 0:
             for actuator in self._head_stabilization_actuators:
-                actuator.kp = self.sim_params.head_stabilization_kp
+                actuator.kp = self.sim_params.neck_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1131,7 +1131,7 @@ class NeuroMechFlyV0(gym.Env):
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
 
-        if self.sim_params.head_stabilization_kp != 0:
+        if self.sim_params.neck_kp != 0:
             self._stabilize_head()
 
         if self.sim_params.enable_adhesion:
