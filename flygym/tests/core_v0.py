@@ -1158,7 +1158,9 @@ class NeuroMechFlyV0(gym.Env):
             flip_config = self._config["flip_detection"]
             has_passed_init = self.curr_time > flip_config["ignore_period"]
             contact_lost_time = self._flip_counter * self.timestep
-            lost_contact_long_enough = contact_lost_time > flip_config["flip_threshold"]
+            lost_contact_long_enough = (
+                contact_lost_time > flip_config["min_flip_duration"]
+            )
             info["flip"] = has_passed_init and lost_contact_long_enough
             info["flip_counter"] = self._flip_counter
             info["contact_forces"] = observation["contact_forces"].copy()
