@@ -162,12 +162,12 @@ vision:
     LEye_cam:
       parent: LEye
       rel_pos: [-0.03, 0.38, 0]
-      orientation: [1.57, 0.0, -0.47]
+      orientation: [1.57, -0.14, -0.47]
       marker_rgba: [0.07, 0.45, 0.35, 1]
     REye_cam:
       parent: REye
       rel_pos: [-0.03, -0.38, 0]
-      orientation: [-1.57, 3.14, 0.47]
+      orientation: [-1.57, 3.00, 0.47]
       marker_rgba: [0.07, 0.45, 0.35, 1]
 
 olfaction:

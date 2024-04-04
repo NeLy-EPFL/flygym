@@ -108,9 +108,10 @@ class Fly:
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors.
-    head_stabilization_kp : float
-        Position gain of the head stabilization actuators. Set to 0 to
-        disable head stabilization.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators. Otherwise,
+        ``actuator_kp`` will be used.
     retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
@@ -180,7 +181,7 @@ class Fly:
         adhesion_force: float = 40,
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
-        head_stabilization_kp: float = 0.0,
+        neck_kp: Optional[float] = None,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -297,9 +298,10 @@ class Fly:
             If True, colored spheres will be added to the model to indicate
             the positions of the cameras (for vision) and odor sensors. By
             default False.
-        head_stabilization_kp : float
-            Position gain of the head stabilization actuators, by default
-            1000.0. Set to 0 to disable head stabilization.
+        neck_kp : float, optional
+            Position gain of the neck position actuators. If supplied, this
+            will overwrite ``actuator_kp`` for the neck actuators.
+            Otherwise, ``actuator_kp`` will be used.
         """
         self.actuated_joints = list(actuated_joints)
         self.contact_sensor_placements = contact_sensor_placements
@@ -322,19 +324,9 @@ class Fly:
         self.adhesion_force = adhesion_force
         self.draw_adhesion = draw_adhesion
         self.draw_sensor_markers = draw_sensor_markers
-        self.head_stabilization_kp = head_stabilization_kp
-
+        self.neck_kp = neck_kp
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
-
-        if self.head_stabilization_kp != 0:
-            assert (
-                "joint_Head_yaw" not in self.actuated_joints
-                and "joint_Head" not in self.actuated_joints
-            ), (
-                "Head stabilization is not compatible with head joints "
-                "being in the actuated joints list."
-            )
 
         # Load NMF model
         if isinstance(xml_variant, str):
@@ -418,11 +410,6 @@ class Fly:
             for joint in self.actuated_joints
         ]
 
-        self.head_stabilization_actuators = [
-            self.model.find("actuator", "actuator_position_joint_Head_yaw"),  # roll
-            self.model.find("actuator", "actuator_position_joint_Head"),  # pitch
-        ]
-
         self._set_actuators_gain()
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
@@ -504,17 +491,12 @@ class Fly:
                 "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
             )
 
-            euler = sensor_config["orientation"]
-
-            if self.head_stabilization_kp == 0:
-                euler = (euler[0], euler[1] - 0.14, euler[2])
-
             sensor_body.add(
                 "camera",
                 name=name,
                 dclass="nmf",
                 mode="fixed",
-                euler=euler,
+                euler=sensor_config["orientation"],
                 fovy=self.config["vision"]["fovy_per_eye"],
             )
             if self.draw_sensor_markers:
@@ -617,9 +599,10 @@ class Fly:
         for actuator in self.actuators:
             actuator.kp = self.actuator_kp
 
-        if self.head_stabilization_kp != 0:
-            for actuator in self.head_stabilization_actuators:
-                actuator.kp = self.head_stabilization_kp
+        if self.neck_kp is not None:
+            for dof in ["Head", "Head_roll", "Head_yaw"]:
+                actuator = self.model.find("actuator", f"actuator_position_joint_{dof}")
+                actuator.kp = self.neck_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1187,18 +1170,9 @@ class Fly:
 
         return obs, info
 
-    def _stabilize_head(self, physics: mjcf.Physics):
-        quat = physics.bind(self.thorax).xquat
-        quat_inv = transformations.quat_inv(quat)
-        roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
-        physics.bind(self.head_stabilization_actuators).ctrl = roll, pitch
-
     def pre_step(self, action, sim: "Simulation"):
         physics = sim.physics
         physics.bind(self.actuators).ctrl = action["joints"]
-
-        if self.head_stabilization_kp != 0:
-            self._stabilize_head(physics)
 
         if self.enable_adhesion:
             physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
