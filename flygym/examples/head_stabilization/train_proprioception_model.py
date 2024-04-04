@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import lightning as pl
+import pickle
 from torch.utils.data import DataLoader, ConcatDataset, random_split
 from lightning.pytorch.loggers import TensorBoardLogger
 from sklearn.metrics import r2_score
@@ -45,6 +46,8 @@ for gait, path in sim_data_pickles.items():
     ds = WalkingDataset(path, joint_angle_scaler=joint_angle_scaler)
     joint_angle_scaler = ds.joint_angle_scaler
     datasets[gait] = ds
+with open(sim_data_dir / "models/joint_angle_scaler_params.pkl", "wb") as f:
+    pickle.dump({"mean": joint_angle_scaler.mean, "std": joint_angle_scaler.std}, f)
 
 
 # Train model
