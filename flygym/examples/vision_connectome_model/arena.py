@@ -1,4 +1,4 @@
-from flygym.arena import BaseArena
+from flygym.arena import BaseArena, FlatTerrain
 from flygym import Fly
 import numpy as np
 
@@ -151,3 +151,99 @@ class MovingFlyArena(BaseArena):
         self.curr_time = 0
         self.fly_pos = np.array(self.init_fly_pos, dtype="float32")
         physics.bind(self.object_body).mocap_pos = self.fly_pos
+
+
+def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
+    def func(t):
+        t = t - start_time
+        if t < 0:
+            return start_angle
+        elif t > duration:
+            return end_angle
+        else:
+            return start_angle + (end_angle - start_angle) * t / duration
+
+    return func
+
+
+class MovingBarArena(FlatTerrain):
+    def __init__(
+        self,
+        azimuth_func,
+        visual_angle=(10, 60),
+        distance=12,
+        ang_speed=1,
+        rgba=(0, 0, 0, 1),
+        *args,
+        **kwargs,
+    ):
+        """Creates a circular arena with n cylinders to simulate a grating pattern.
+
+        Parameters
+        ----------
+        n : int
+            Number of cylinders to create.
+        height : float
+            Height of the cylinders.
+        distance : float
+            Distance from the center of the arena to the center of the cylinders.
+        ang_speed : float
+            Angular speed of the cylinders.
+        palette : list of tuples
+            List of RGBA tuples to use as colors for the cylinders.
+        """
+        super().__init__(*args, **kwargs)
+
+        self.ang_speed = ang_speed
+        self.azimuth_func = azimuth_func
+        self.distance = distance
+
+        self.curr_time = 0
+
+        cylinder_material = self.root_element.asset.add(
+            "material", name="cylinder", reflectance=0.1
+        )
+
+        radius = 2 * distance * np.tan(np.deg2rad(visual_angle[0] / 2))
+        half_height = distance * np.tan(np.deg2rad(visual_angle[1] / 2))
+
+        self.cylinder = self.root_element.worldbody.add(
+            "body",
+            name="cylinder",
+            mocap=True,
+            pos=self.get_pos(0),
+        )
+
+        self.cylinder.add(
+            "geom",
+            type="cylinder",
+            size=(radius, half_height),
+            rgba=rgba,
+            material=cylinder_material,
+        )
+
+        self.birdeye_cam = self.root_element.worldbody.add(
+            "camera",
+            name="birdeye_cam",
+            mode="fixed",
+            pos=(0, 0, 25),
+            euler=(0, 0, 0),
+            fovy=45,
+        )
+
+    def reset(self, physics):
+        """Resets the position of the cylinders and the phase of the grating pattern."""
+        self.phase = 0
+        self.curr_time = 0
+
+        physics.bind(self.cylinder).mocap_pos = self.get_pos(0)
+
+    def get_pos(self, t):
+        c = self.distance * np.exp(1j * np.deg2rad(self.azimuth_func(t)))
+        return c.real, c.imag, 0
+
+    def step(self, dt, physics):
+        """Steps the phase of the grating pattern and updates the position of the cylinders."""
+
+        self.curr_time += dt
+        physics.bind(self.cylinder).mocap_pos = self.get_pos(self.curr_time)
