@@ -173,6 +173,7 @@ def construct_rules_graph():
 
 def run_rule_based_simulation(sim, controller, run_time):
     obs, info = sim.reset()
+    obs_list = []
     for _ in trange(int(run_time / sim.timestep)):
         controller.step()
         joint_angles = []
@@ -190,7 +191,10 @@ def run_rule_based_simulation(sim, controller, run_time):
             "adhesion": np.array(adhesion_onoff),
         }
         obs, reward, terminated, truncated, info = sim.step(action)
+        obs_list.append(obs)
         sim.render()
+
+    return obs_list
 
 
 if __name__ == "__main__":
