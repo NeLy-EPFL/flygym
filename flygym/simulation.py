@@ -222,6 +222,30 @@ class Simulation(gym.Env):
             obs[k], reward[k], terminated[k], truncated[k], info[k] = fly.post_step(
                 self
             )
+            reward[key] = fly.get_reward()
+            terminated[key] = fly.is_terminated()
+            truncated[key] = fly.is_truncated()
+            info[key] = fly.get_info()
+
+            if fly.enable_vision:
+                vision_updated_this_step = self.curr_time == fly.last_vision_update_time
+                fly.vision_update_mask_.append(vision_updated_this_step)
+                info[key]["vision_updated"] = vision_updated_this_step
+
+            if fly.detect_flip:
+                if obs[key]["contact_forces"].sum() < 1:
+                    fly.flip_counter += 1
+                else:
+                    fly.flip_counter = 0
+                flip_config = fly.config["flip_detection"]
+                has_passed_init = self.curr_time > flip_config["ignore_period"]
+                contact_lost_time = fly.flip_counter * self.timestep
+                lost_contact_long_enough = (
+                    contact_lost_time > flip_config["min_flip_duration"]
+                )
+                info[key]["flip"] = has_passed_init and lost_contact_long_enough
+                info[key]["flip_counter"] = fly.flip_counter
+                info[key]["contact_forces"] = obs[key]["contact_forces"].copy()
 
         return (
             obs,
