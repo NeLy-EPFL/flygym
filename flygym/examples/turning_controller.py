@@ -243,16 +243,16 @@ class HybridTurningNMF(SingleFlySimulation):
         all_net_corrections = []
         for i, leg in enumerate(self.preprogrammed_steps.legs):
             # update retraction correction amounts
-            self.retraction_correction[i], is_retracted = (
-                self._update_correction_amount(
-                    condition=(
-                        (i == leg_to_correct_retraction) or persistent_retraction[i]
-                    ),  # lift leg
-                    curr_amount=self.retraction_correction[i],
-                    correction_rates=self.correction_rates["retraction"],
-                    viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
-                )
+            retraction_correction, is_retracted = self._update_correction_amount(
+                condition=(
+                    (i == leg_to_correct_retraction) or persistent_retraction[i]
+                ),  # lift leg
+                curr_amount=self.retraction_correction[i],
+                correction_rates=self.correction_rates["retraction"],
+                viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
             )
+            self.retraction_correction[i] = retraction_correction
+
             # update stumbling correction amounts
             self.stumbling_correction[i], is_stumbling = self._update_correction_amount(
                 condition=self._stumbling_rule_check_condition(obs, leg),
@@ -260,6 +260,7 @@ class HybridTurningNMF(SingleFlySimulation):
                 correction_rates=self.correction_rates["stumbling"],
                 viz_segment=f"{leg}Femur" if self.draw_corrections else None,
             )
+
             # get net correction amount
             net_correction, reset_stumbing = self._get_net_correction(
                 self.retraction_correction[i], self.stumbling_correction[i]
@@ -286,6 +287,7 @@ class HybridTurningNMF(SingleFlySimulation):
             my_adhesion_onoff = self.preprogrammed_steps.get_adhesion_onoff(
                 leg, self.cpg_network.curr_phases[i]
             )
+
             # No adhesion in stumbling or retracted
             my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracted)
             adhesion_onoff.append(my_adhesion_onoff)
