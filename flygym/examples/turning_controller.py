@@ -35,6 +35,7 @@ _default_correction_vectors = {
 
 _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 2100)}
 
+
 class HybridTurningNMF(SingleFlySimulation):
     def __init__(
         self,
@@ -52,9 +53,9 @@ class HybridTurningNMF(SingleFlySimulation):
         correction_rates=_default_correction_rates,
         amplitude_range=(-0.5, 1.5),
         draw_corrections=False,
-        max_increment = 80,
-        retraction_perisistance = 20,
-        retraction_persistance_initiation_threshold = 20,
+        max_increment=80,
+        retraction_perisistance=20,
+        retraction_persistance_initiation_threshold=20,
         seed=0,
         **kwargs,
     ):
@@ -77,7 +78,9 @@ class HybridTurningNMF(SingleFlySimulation):
         self.draw_corrections = draw_corrections
         self.max_increment = max_increment
         self.retraction_perisistance = retraction_perisistance
-        self.retraction_persistance_initiation_threshold = retraction_persistance_initiation_threshold
+        self.retraction_persistance_initiation_threshold = (
+            retraction_persistance_initiation_threshold
+        )
         self.retraction_perisitance_counter = np.zeros(6)
         self.right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 
@@ -92,10 +95,10 @@ class HybridTurningNMF(SingleFlySimulation):
             coupling_weights=coupling_weights,
             phase_biases=phase_biases,
             convergence_coefs=convergence_coefs,
+            init_phases=init_phases,
+            init_magnitudes=init_magnitudes,
             seed=seed,
         )
-
-        #self.cpg_network.reset(init_phases, init_magnitudes)
 
         # Initialize variables tracking the correction amount
         self.retraction_correction = np.zeros(6)
@@ -129,17 +132,25 @@ class HybridTurningNMF(SingleFlySimulation):
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.06:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
-            if self.retraction_correction[leg_to_correct_retraction] > self.retraction_persistance_initiation_threshold:
+            if (
+                self.retraction_correction[leg_to_correct_retraction]
+                > self.retraction_persistance_initiation_threshold
+            ):
                 self.retraction_perisitance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
         return leg_to_correct_retraction
-    
+
     def _update_persistance_counter(self):
         # increment every nonzero counter
-        self.retraction_perisitance_counter[self.retraction_perisitance_counter > 0] += 1
+        self.retraction_perisitance_counter[
+            self.retraction_perisitance_counter > 0
+        ] += 1
         # zero the increment when reaching the threshold
-        self.retraction_perisitance_counter[self.retraction_perisitance_counter > self.retraction_persistance_initiation_threshold] = 0
+        self.retraction_perisitance_counter[
+            self.retraction_perisitance_counter
+            > self.retraction_persistance_initiation_threshold
+        ] = 0
 
     def _stumbling_rule_check_condition(self, obs, leg):
         """Return True if the leg is stumbling, False otherwise."""
@@ -232,12 +243,15 @@ class HybridTurningNMF(SingleFlySimulation):
         all_net_corrections = []
         for i, leg in enumerate(self.preprogrammed_steps.legs):
             # update retraction correction amounts
-            self.retraction_correction[i], is_retracted = self._update_correction_amount(
-                condition=(i == leg_to_correct_retraction
-                           or persistent_retraction[i]), # lift leg
-                curr_amount=self.retraction_correction[i],
-                correction_rates=self.correction_rates["retraction"],
-                viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
+            self.retraction_correction[i], is_retracted = (
+                self._update_correction_amount(
+                    condition=(
+                        (i == leg_to_correct_retraction) or persistent_retraction[i]
+                    ),  # lift leg
+                    curr_amount=self.retraction_correction[i],
+                    correction_rates=self.correction_rates["retraction"],
+                    viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
+                )
             )
             # update stumbling correction amounts
             self.stumbling_correction[i], is_stumbling = self._update_correction_amount(
@@ -256,7 +270,7 @@ class HybridTurningNMF(SingleFlySimulation):
             net_correction = np.clip(net_correction, 0, self.max_increment)
             if leg[0] == "R":
                 net_correction *= self.right_leg_inversion[i]
-                
+
             # get target angles from CPGs and apply correction
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
                 leg,
@@ -303,8 +317,15 @@ if __name__ == "__main__":
     )
 
     cam = Camera(fly=fly, camera_id="Animat/camera_right", play_speed=0.1)
-    sim = HybridTurningNMF(fly=fly, cameras=[cam], timestep=1e-4, seed=0, draw_corrections=True, arena = GappedTerrain())
-    #check_env(sim)
+    sim = HybridTurningNMF(
+        fly=fly,
+        cameras=[cam],
+        timestep=1e-4,
+        seed=0,
+        draw_corrections=True,
+        arena=GappedTerrain(),
+    )
+    # check_env(sim)
 
     obs_list = []
 
@@ -317,10 +338,12 @@ if __name__ == "__main__":
             action = np.array([1.2, 0.2])
         else:
             action = np.array([0.2, 1.2])"""
-        
+
         action = np.array([1.0, 1.0])
         try:
-            (obs, reward, terminated, truncated, info), net_correction = sim.step(action)
+            (obs, reward, terminated, truncated, info), net_correction = sim.step(
+                action
+            )
             obs["net_correction"] = net_correction
             obs_list.append(obs)
             sim.render()
