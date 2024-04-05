@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, Union, Optional, Callable, TYPE_CHECKING
 
 import numpy as np
 from dm_control import mjcf
@@ -182,6 +182,7 @@ class Fly:
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
         neck_kp: Optional[float] = None,
+        head_stabilization_model: Optional[Callable] = None,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -243,9 +244,11 @@ class Fly:
         joint_damping : float
             Damping coefficient of actuated joints, by default 0.06.
         non_actuated_joint_stiffness : float
-            Stiffness of non-actuated joints, by default 1.0. (made stiff for better stability)
+            Stiffness of non-actuated joints, by default 1.0. Made stiff
+            for better stability.
         non_actuated_joint_damping : float
-            Damping coefficient of non-actuated joints, by default 1.0. (made stiff for better stability)
+            Damping coefficient of non-actuated joints, by default 1.0.
+            Made stiff for better stability.
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
         tarsus_stiffness : float
@@ -303,6 +306,19 @@ class Fly:
             will overwrite ``actuator_kp`` for the neck actuators.
             Otherwise, ``actuator_kp`` will be used.
         """
+        # Check neck actuation if head stabilization is enabled
+        if head_stabilization_model is not None:
+            if "joint_Head_yaw" in actuated_joints or "joint_Head" in actuated_joints:
+                raise ValueError(
+                    "``HybridTurningNMF`` requires the head joints to be actuated by "
+                    "a preset algorithm. However, the head joints are already included "
+                    "in the provided Fly instance. Please remove the head joints from "
+                    "the list of actuated joints."
+                )
+            actuated_joints += ["joint_Head_yaw", "joint_Head"]
+            self._last_observation = None  # tracked only for head stabilization
+            self._last_neck_actuation = None  # tracked only for head stabilization
+
         self.actuated_joints = list(actuated_joints)
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
@@ -327,6 +343,7 @@ class Fly:
         self.neck_kp = neck_kp
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
+        self.head_stabilization_model = head_stabilization_model
 
         # Load NMF model
         if isinstance(xml_variant, str):
@@ -1171,8 +1188,23 @@ class Fly:
         return obs, info
 
     def pre_step(self, action, sim: "Simulation"):
+        joint_action = action["joints"]
+
+        # estimate necessary neck actuation signals for head stabilization
+        if self.head_stabilization_model is not None:
+            if self._last_observation is not None:
+                leg_joint_angles = self._last_observation["joints"][0, :-2]
+                leg_contact_forces = self._last_observation["contact_forces"]
+                neck_actuation = self.head_stabilization_model(
+                    leg_joint_angles, leg_contact_forces
+                )
+            else:
+                neck_actuation = np.zeros(2)
+            joint_action = np.concatenate((joint_action, neck_actuation))
+            self._last_neck_actuation = neck_actuation
+
         physics = sim.physics
-        physics.bind(self.actuators).ctrl = action["joints"]
+        physics.bind(self.actuators).ctrl = joint_action
 
         if self.enable_adhesion:
             physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
@@ -1205,5 +1237,10 @@ class Fly:
             info["flip"] = has_passed_init and lost_contact_long_enough
             info["flip_counter"] = self._flip_counter
             info["contact_forces"] = obs["contact_forces"].copy()
+
+        if self.head_stabilization_model:
+            # this is tracked to decide neck actuation for the next step
+            self._last_observation = obs
+            info["neck_actuation"] = self._last_neck_actuation
 
         return obs, reward, terminated, truncated, info

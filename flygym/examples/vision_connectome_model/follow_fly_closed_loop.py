@@ -104,11 +104,21 @@ class NMFRealisticVison(HybridTurningNMF):
 
 if __name__ == "__main__":
     enable_head_stabilization = True
-    output_dir = Path("./outputs/closed_loop_control/")
+    output_dir = Path("./outputs/connectome_constrained_vision/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    run_time = 2  # seconds
+    run_time = 2.0  # seconds
     vision_refresh_rate = 500  # Hz
     t3_detection_threshold = 0.15
+
+    # Load head stabilization model if enabled
+    if enable_head_stabilization:
+        model_path = Path("outputs/head_stabilization/models/")
+        head_stabilization_model = HeadStabilizationInferenceWrapper(
+            model_path=model_path / "three_layer_mlp.pth",
+            scaler_param_path=model_path / "joint_angle_scaler_params.pkl",
+        )
+    else:
+        head_stabilization_model = None
 
     # Setup NMF simulation
     arena = MovingFlyArena(move_speed=20, lateral_magnitude=2)
@@ -130,6 +140,7 @@ if __name__ == "__main__":
         enable_vision=True,
         vision_refresh_rate=vision_refresh_rate,
         neck_kp=1000,
+        head_stabilization_model=head_stabilization_model,
     )
     cam = Camera(
         fly=fly,
@@ -146,7 +157,7 @@ if __name__ == "__main__":
     )
 
     # Setup parameters for object following
-    with open("outputs/replay_visual_experience/obs_hist.npy", "rb") as f:
+    with open(output_dir / "vision_simulation_obs_hist.npy", "rb") as f:
         obs_hist = pickle.load(f)
     nn_activities_all = LayerActivity(
         np.array([obs["nn_activities_arr"] for obs in obs_hist]),
@@ -155,16 +166,6 @@ if __name__ == "__main__":
         use_central=False,
     )
     t3_median_response = np.median(nn_activities_all["T3"], axis=0)
-
-    # Load head stabilization model if enabled
-    if enable_head_stabilization:
-        model_path = Path("outputs/head_stabilization/models/")
-        head_stabilization_model = HeadStabilizationInferenceWrapper(
-            model_path=model_path / "three_layer_mlp.pth",
-            scaler_param_path=model_path / "joint_angle_scaler_params.pkl",
-        )
-    else:
-        head_stabilization_model = None
 
     # Run simulation
     obs, info = sim.reset(seed=0)
@@ -200,9 +201,9 @@ if __name__ == "__main__":
             nn_activities_hist.append(obs["nn_activities"])
 
     # Clean up, saving data, and visualization
-    cam.save_video(output_dir / "object_following.mp4")
+    # cam.save_video(output_dir / "social_following.mp4")
     visualize_vision(
-        Path(output_dir / "object_following.mp4"),
+        Path(output_dir / "social_following.mp4"),
         fly.retina,
         sim.retina_mapper,
         rendered_image_hist,

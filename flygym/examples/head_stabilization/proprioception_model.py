@@ -154,14 +154,17 @@ class HeadStabilizationInferenceWrapper:
         # Load model
         self.model = ThreeLayerMLP(
             input_size=input_size, hidden_size=hidden_size, output_size=2
-        )
+        ).cpu()  # it's not worth moving data to the GPU, just run it on the CPU
         self.model.load_state_dict(torch.load(model_path))
         self.contact_force_thr = contact_force_thr
 
-    def __call__(self, obs: spaces.Dict) -> np.ndarray:
-        joint_angles = (obs["joints"][0, :] - self.scaler_mean) / self.scaler_std
-        contact_forces = np.linalg.norm(obs["contact_forces"], axis=1)
-        contact_forces = contact_forces.reshape(6, 6).sum(axis=1)
-        x = np.concatenate([joint_angles, contact_forces], dtype=np.float32)[None, :]
-        y_pred = self.model(torch.tensor(x)).detach().numpy().squeeze()
-        return y_pred
+    def __call__(
+        self, leg_joint_angles: np.ndarray, leg_contact_forces: np.ndarray
+    ) -> np.ndarray:
+        leg_joint_angles = (leg_joint_angles - self.scaler_mean) / self.scaler_std
+        leg_contact_forces = np.linalg.norm(leg_contact_forces, axis=1)
+        leg_contact_forces = leg_contact_forces.reshape(6, 6).sum(axis=1)
+        x = np.concatenate([leg_joint_angles, leg_contact_forces], dtype=np.float32)
+        input_tensor = torch.tensor(x[None, :]).cpu()
+        output_tensor = self.model(input_tensor)
+        return output_tensor.detach().numpy().squeeze()

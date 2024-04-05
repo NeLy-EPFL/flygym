@@ -56,7 +56,6 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     stumbling_sensors = {k: np.array(v) for k, v in stumbling_sensors.items()}
 
     obs, info = sim.reset()
-    print(obs["fly"][0])
 
     target_num_steps = int(run_time / sim.timestep)
     obs_list = []
@@ -157,7 +156,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         }
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
-            obs["net_correction"] = all_net_corrections
+            info["net_corrections"] = all_net_corrections
             obs_list.append(obs)
             sim.render()
         except PhysicsError:

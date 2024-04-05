@@ -3,7 +3,9 @@ from tqdm import trange
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 
+from flygym.fly import Fly
 from flygym.simulation import SingleFlySimulation
+from flygym.preprogrammed import all_leg_dofs
 from flygym.examples.common import PreprogrammedSteps
 from flygym.examples.cpg_controller import CPGNetwork
 
@@ -39,6 +41,7 @@ _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 2100)
 class HybridTurningNMF(SingleFlySimulation):
     def __init__(
         self,
+        fly: Fly,
         preprogrammed_steps=None,
         intrinsic_freqs=np.ones(6) * 12,
         intrinsic_amps=np.ones(6) * 1,
@@ -59,8 +62,16 @@ class HybridTurningNMF(SingleFlySimulation):
         seed=0,
         **kwargs,
     ):
+        # Check if we have the correct list of actuated joints
+        if fly.actuated_joints != all_leg_dofs:
+            raise ValueError(
+                "``HybridTurningNMF`` requires a specific set of DoFs, namely "
+                "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
+                "set of DoFs was provided."
+            )
+
         # Initialize core NMF simulation
-        super().__init__(**kwargs)
+        super().__init__(fly=fly, **kwargs)
 
         if preprogrammed_steps is None:
             preprogrammed_steps = PreprogrammedSteps()
@@ -296,7 +307,9 @@ class HybridTurningNMF(SingleFlySimulation):
             "joints": np.array(np.concatenate(joints_angles)),
             "adhesion": np.array(adhesion_onoff).astype(int),
         }
-        return super().step(action), all_net_corrections
+        obs, reward, terminated, truncated, info = super().step(action)
+        info["net_corrections"] = all_net_corrections
+        return obs, reward, terminated, truncated, info
 
 
 if __name__ == "__main__":
@@ -343,10 +356,7 @@ if __name__ == "__main__":
 
         action = np.array([1.0, 1.0])
         try:
-            (obs, reward, terminated, truncated, info), net_correction = sim.step(
-                action
-            )
-            obs["net_correction"] = net_correction
+            obs, reward, terminated, truncated, info = sim.step(action)
             obs_list.append(obs)
             sim.render()
         except PhysicsError:

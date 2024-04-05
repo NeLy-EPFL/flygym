@@ -87,9 +87,9 @@ class NMFRealisticVison(HybridTurningNMF):
 
 if __name__ == "__main__":
     regenerate_walking = True
-    output_dir = Path("./outputs/replay_visual_experience/")
+    output_dir = Path("./outputs/connectome_constrained_vision/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    run_time = 1  # seconds
+    run_time = 2.0  # seconds
     vision_refresh_rate = 500  # Hz
 
     arena = MovingFlyArena(move_speed=25, lateral_magnitude=2)
@@ -166,5 +166,5 @@ if __name__ == "__main__":
     ]
     for obs in obs_hist:
         del obs["nn_activities"]
-    with open(output_dir / "obs_hist.npy", "wb") as f:
+    with open(output_dir / "vision_simulation_obs_hist.npy", "wb") as f:
         pickle.dump(obs_hist, f)
