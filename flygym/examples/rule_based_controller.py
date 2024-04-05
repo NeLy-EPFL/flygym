@@ -171,10 +171,11 @@ def construct_rules_graph():
     return rules_graph
 
 
-def run_rule_based_simulation(sim, controller, run_time):
+def run_rule_based_simulation(sim, controller, run_time, pbar=True):
     obs, info = sim.reset()
     obs_list = []
-    for _ in trange(int(run_time / sim.timestep)):
+    range_ = trange if pbar else range
+    for _ in range_(int(run_time / sim.timestep)):
         controller.step()
         joint_angles = []
         adhesion_onoff = []
