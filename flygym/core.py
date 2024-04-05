@@ -3,12 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-import cv2
-import dm_control
 import numpy as np
-from dm_control import mjcf
-from dm_control.utils import transformations
-from gymnasium.core import ObsType
 
 import flygym.preprogrammed as preprogrammed
 import flygym.state as state
@@ -131,6 +126,13 @@ class Parameters:
     camera_follows_fly_orientation : bool
         If True, the camera will be rotated so that it aligns with the
         fly's orientation. By default False.
+    perspective_arrow_length : bool
+        If true, the length of the arrows indicating the contact forces
+        will be determined by the perspective.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators.
+        Otherwise, ``actuator_kp`` will be used.
     """
 
     timestep: float = 0.0001
@@ -168,13 +170,19 @@ class Parameters:
     draw_sensor_markers: bool = False
     draw_contacts: bool = False
     decompose_contacts: bool = True
-    force_arrow_scaling: float = 1.0
+    force_arrow_scaling: float = float("nan")
     tip_length: float = 10.0  # number of pixels
     contact_threshold: float = 0.1
     draw_gravity: bool = False
     gravity_arrow_scaling: float = 1e-4
     align_camera_with_gravity: bool = False
     camera_follows_fly_orientation: bool = False
+    perspective_arrow_length = False
+    neck_kp: Optional[float] = None
+
+    def __post_init__(self):
+        if not np.isfinite(self.force_arrow_scaling):
+            self.force_arrow_scaling = 1.0 if self.perspective_arrow_length else 10.0
 
 
 class NeuroMechFly(SingleFlySimulation):
@@ -361,6 +369,7 @@ class NeuroMechFly(SingleFlySimulation):
             adhesion_force=sim_params.adhesion_force,
             draw_adhesion=sim_params.draw_adhesion,
             draw_sensor_markers=sim_params.draw_sensor_markers,
+            neck_kp=sim_params.neck_kp,
         )
 
         if output_dir is not None:

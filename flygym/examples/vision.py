@@ -227,6 +227,7 @@ if __name__ == "__main__":
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
+        neck_kp=1000,
     )
     cam = Camera(
         fly=fly,
