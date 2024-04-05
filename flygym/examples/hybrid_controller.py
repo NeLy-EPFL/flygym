@@ -41,6 +41,7 @@ max_increment = 80
 retraction_persistance = 20
 persistance_init_thr = 20
 
+
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
     retraction_correction = np.zeros(6)
@@ -58,7 +59,6 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     obs, info = sim.reset()
     print(obs["fly"][0])
 
-
     target_num_steps = int(run_time / sim.timestep)
     obs_list = []
 
@@ -74,13 +74,15 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.06:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if retraction_correction[leg_to_correct_retraction] > persistance_init_thr:
-                retraction_perisitance_counter[leg_to_correct_retraction] = 1 
+                retraction_perisitance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
-        
+
         # update persistance counter
         retraction_perisitance_counter[retraction_perisitance_counter > 0] += 1
-        retraction_perisitance_counter[retraction_perisitance_counter > retraction_persistance] = 0
+        retraction_perisitance_counter[
+            retraction_perisitance_counter > retraction_persistance
+        ] = 0
 
         cpg_network.step()
         joints_angles = []
@@ -90,14 +92,18 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
         for i, leg in enumerate(preprogrammed_steps.legs):
             # update amount of retraction correction
-            if i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0:  # lift leg
+            if (
+                i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
+            ):  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[i] += increment
                 sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (1, 0, 0, 1))
             else:  # condition no longer met, lower leg
                 decrement = correction_rates["retraction"][1] * sim.timestep
                 retraction_correction[i] = max(0, retraction_correction[i] - decrement)
-                sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1))
+                sim.fly.change_segment_color(
+                    sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1)
+                )
 
             # update amount of stumbling correction
             contact_forces = obs["contact_forces"][stumbling_sensors[leg], :]
@@ -111,7 +117,9 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             else:
                 decrement = correction_rates["stumbling"][1] * sim.timestep
                 stumbling_correction[i] = max(0, stumbling_correction[i] - decrement)
-                sim.fly.change_segment_color(sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1))
+                sim.fly.change_segment_color(
+                    sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1)
+                )
 
             # retraction correction is prioritized
             if retraction_correction[i] > 0:
@@ -127,7 +135,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             net_correction = np.clip(net_correction, 0, max_increment)
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
-            
+
             my_joints_angles += net_correction * correction_vectors[leg[1]]
             joints_angles.append(my_joints_angles)
 
@@ -138,8 +146,10 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
                 leg, cpg_network.curr_phases[i]
             )
             # No adhesion in stumbling or retracted
-            my_adhesion_onoff *= np.logical_not((force_proj < stumbling_force_threshold).any() or
-                                                 (i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0))
+            is_trembling = (force_proj < stumbling_force_threshold).any()
+            is_retracting = i == leg_to_correct_retraction
+            is_retracting |= retraction_perisitance_counter[i] > 0
+            my_adhesion_onoff *= np.logical_not(is_trembling or is_retracting)
             adhesion_onoff.append(my_adhesion_onoff)
 
         action = {
@@ -151,12 +161,13 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             obs["net_correction"] = all_net_corrections
             obs_list.append(obs)
             sim.render()
-        except PhysicsError:            
+        except PhysicsError:
             physics_error = True
             print("Simulation was interupted because of a physics error")
             break
-        
+
     return obs_list, physics_error
+
 
 if __name__ == "__main__":
 
@@ -176,7 +187,8 @@ if __name__ == "__main__":
     fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
-        contact_sensor_placements=contact_sensor_placements)
+        contact_sensor_placements=contact_sensor_placements,
+    )
 
     cam = Camera(fly=fly, play_speed=0.1, camera_id="Animat/camera_right")
     sim = SingleFlySimulation(
@@ -187,16 +199,18 @@ if __name__ == "__main__":
     )
 
     cpg_network = CPGNetwork(
-    timestep=1e-4,
-    intrinsic_freqs=intrinsic_freqs,
-    intrinsic_amps=intrinsic_amps,
-    coupling_weights=coupling_weights,
-    phase_biases=phase_biases,
-    convergence_coefs=convergence_coefs,
-    seed=0
+        timestep=1e-4,
+        intrinsic_freqs=intrinsic_freqs,
+        intrinsic_amps=intrinsic_amps,
+        coupling_weights=coupling_weights,
+        phase_biases=phase_biases,
+        convergence_coefs=convergence_coefs,
+        seed=0,
     )
 
-    obs_list, had_physics_error = run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time)
+    obs_list, had_physics_error = run_hybrid_simulation(
+        sim, cpg_network, preprogrammed_steps, run_time
+    )
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
@@ -208,5 +222,3 @@ if __name__ == "__main__":
 
     # Save video
     cam.save_video("./outputs/hybrid_controller.mp4", 0)
-
-
