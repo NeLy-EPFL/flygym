@@ -218,10 +218,9 @@ class Simulation(gym.Env):
         obs, reward, terminated, truncated, info = {}, {}, {}, {}, {}
 
         for fly in self.flies:
-            k = fly.name
-            obs[k], reward[k], terminated[k], truncated[k], info[k] = fly.post_step(
-                self
-            )
+            key = fly.name
+
+            obs[key], _, _, _, _ = fly.post_step(self)
             reward[key] = fly.get_reward()
             terminated[key] = fly.is_terminated()
             truncated[key] = fly.is_truncated()
