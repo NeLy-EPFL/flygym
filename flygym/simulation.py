@@ -97,7 +97,7 @@ class Simulation(gym.Env):
         self._set_init_pose()
 
         for fly in self.flies:
-            fly.post_init(self.arena, self.physics)
+            fly.post_init(self)
 
     def _set_init_pose(self):
         """Set the initial pose of all flies."""
@@ -161,25 +161,17 @@ class Simulation(gym.Env):
         """
         super().reset(seed=seed, options=options)
         self.physics.reset()
-
         self.curr_time = 0
-
         self._set_init_pose()
-
-        obs = {}
-        info = {}
 
         for camera in self.cameras:
             camera.reset()
 
+        obs = {}
+        info = {}
+
         for fly in self.flies:
-            fly.reset()
-            obs[fly.name] = fly.get_observation(
-                self.physics, self.arena, self.timestep, self.curr_time
-            )
-            info[fly.name] = fly.get_info()
-            if fly.enable_vision:
-                info[fly.name]["vision_updated"] = True
+            obs[fly.name], info[fly.name] = fly.reset(self)
 
         return obs, info
 
@@ -218,14 +210,7 @@ class Simulation(gym.Env):
         self.arena.step(dt=self.timestep, physics=self.physics)
 
         for fly in self.flies:
-            self.physics.bind(fly.actuators).ctrl = action[fly.name]["joints"]
-
-        for fly in self.flies:
-            if fly.enable_adhesion:
-                self.physics.bind(fly.adhesion_actuators).ctrl = action[fly.name][
-                    "adhesion"
-                ]
-                fly.last_adhesion = action[fly.name]["adhesion"]
+            fly.pre_step(action[fly.name], self)
 
         self.physics.step()
         self.curr_time += self.timestep
@@ -233,9 +218,9 @@ class Simulation(gym.Env):
         obs, reward, terminated, truncated, info = {}, {}, {}, {}, {}
 
         for fly in self.flies:
-            key = fly.name
-            obs[key] = fly.get_observation(
-                self.physics, self.arena, self.timestep, self.curr_time
+            k = fly.name
+            obs[k], reward[k], terminated[k], truncated[k], info[k] = fly.post_step(
+                self
             )
             reward[key] = fly.get_reward()
             terminated[key] = fly.is_terminated()
@@ -273,6 +258,7 @@ class Simulation(gym.Env):
     def render(self):
         for fly in self.flies:
             fly.update_colors(self.physics)
+
         return [
             camera.render(self.physics, self._floor_height, self.curr_time)
             for camera in self.cameras
@@ -280,8 +266,10 @@ class Simulation(gym.Env):
 
     def _get_max_floor_height(self, arena):
         max_floor_height = -1 * np.inf
+
         for geom in arena.root_element.find_all("geom"):
             name = geom.name
+
             if name is None or (
                 "floor" in name or "ground" in name or "treadmill" in name
             ):
@@ -297,8 +285,10 @@ class Simulation(gym.Env):
                 elif geom.type == "sphere":
                     sphere_height = geom.parent.pos[2] + geom.size[0]
                     max_floor_height = max(max_floor_height, sphere_height)
+
         if np.isinf(max_floor_height):
             max_floor_height = (fly.spawn_pos[2] for fly in self.flies)
+
         return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
@@ -497,6 +487,4 @@ class SingleFlySimulation(Simulation):
         return obs[key], reward, terminated, truncated, info[key]
 
     def get_observation(self) -> ObsType:
-        return self.fly.get_observation(
-            self.physics, self.arena, self.timestep, self.curr_time
-        )
+        return self.fly.get_observation(self)

@@ -3,7 +3,7 @@ import tempfile
 import logging
 from pathlib import Path
 
-from flygym import NeuroMechFly
+from flygym import NeuroMechFly, Parameters
 from flygym.util import plot_mujoco_rollout
 
 
@@ -41,7 +41,7 @@ def test_zero_pose():
 
     nmf = NeuroMechFly(init_pose="zero", spawn_pos=(0, 0, 3))
     run_time = 0.01
-    freq = 100
+    freq = 80
     amp = np.pi / 2
 
     obs, _ = nmf.reset()
@@ -66,7 +66,7 @@ def test_tripod_pose():
 
     nmf = NeuroMechFly(init_pose="tripod")
     run_time = 0.01
-    freq = 100
+    freq = 80
     amp = np.pi / 2
 
     obs, _ = nmf.reset()

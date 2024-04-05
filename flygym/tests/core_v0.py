@@ -24,6 +24,9 @@ from flygym.core import Parameters
 from flygym.util import get_data_path
 
 
+_roll_eye = np.roll(np.eye(4, 3), -1)
+
+
 class NeuroMechFlyV0(gym.Env):
     """Deprecated NeuroMechFly environment. Only intended to be used
     for testing purposes.
@@ -173,6 +176,16 @@ class NeuroMechFlyV0(gym.Env):
             arena = FlatTerrain()
         self.sim_params = deepcopy(sim_params)
         self.actuated_joints = actuated_joints
+
+        if self.sim_params.neck_kp != 0:
+            assert (
+                "joint_Head_yaw" not in self.actuated_joints
+                and "joint_Head" not in self.actuated_joints
+            ), (
+                "Head stabilization is not compatible with head joints "
+                "being in the actuated joints list."
+            )
+
         self.contact_sensor_placements = contact_sensor_placements
         self.timestep = sim_params.timestep
         if output_dir is not None:
@@ -279,10 +292,18 @@ class NeuroMechFlyV0(gym.Env):
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in actuated_joints
         ]
+
+        self._head_stabilization_actuators = [
+            self.model.find("actuator", "actuator_position_joint_Head_yaw"),  # roll
+            self.model.find("actuator", "actuator_position_joint_Head"),  # pitch
+        ]
+
         self._set_actuators_gain()
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
+
+        self._thorax = self.model.find("body", "Thorax")
 
         self._floor_height = self._get_max_floor_height(arena)
 
@@ -392,7 +413,7 @@ class NeuroMechFlyV0(gym.Env):
                 "camera",
                 name=name,
                 dclass="nmf",
-                mode="track",
+                mode="fixed",
                 euler=sensor_config["orientation"],
                 fovy=self._config["vision"]["fovy_per_eye"],
             )
@@ -405,7 +426,7 @@ class NeuroMechFlyV0(gym.Env):
                     rgba=sensor_config["marker_rgba"],
                 )
 
-        self._geoms_to_hide = self._mujoco_config["vision"]["hidden_segments"]
+        self._geoms_to_hide = self._config["vision"]["hidden_segments"]
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
@@ -615,6 +636,10 @@ class NeuroMechFlyV0(gym.Env):
     def _set_actuators_gain(self):
         for actuator in self._actuators:
             actuator.kp = self.sim_params.actuator_kp
+
+        if self.sim_params.neck_kp != 0:
+            for actuator in self._head_stabilization_actuators:
+                actuator.kp = self.sim_params.neck_kp
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1105,6 +1130,10 @@ class NeuroMechFlyV0(gym.Env):
         """
         self.arena.step(dt=self.timestep, physics=self.physics)
         self.physics.bind(self._actuators).ctrl = action["joints"]
+
+        if self.sim_params.neck_kp != 0:
+            self._stabilize_head()
+
         if self.sim_params.enable_adhesion:
             self.physics.bind(self._adhesion_actuators).ctrl = action["adhesion"]
             self._last_adhesion = action["adhesion"]
@@ -1290,99 +1319,100 @@ class NeuroMechFlyV0(gym.Env):
 
         return img
 
-    def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
+    def _draw_contacts(self, img: np.ndarray, thickness=2) -> np.ndarray:
         """Draw contacts as arrow which length is proportional to the force
         magnitude. The arrow is drawn at the center of the body. It uses
         the camera matrix to transfer from the global space to the pixels
         space.
         """
-        contact_forces = np.linalg.norm(self._last_contact_force, axis=1)
-        contact_indexes = np.nonzero(
-            contact_forces > self.sim_params.contact_threshold
-        )[0]
 
-        n_contacts = len(contact_indexes)
+        def clip(p_in, p_out, z_clip):
+            t = (z_clip - p_out[-1]) / (p_in[-1] - p_out[-1])
+            return t * p_in + (1 - t) * p_out
+
+        forces = self._last_contact_force
+        pos = self._last_contact_pos
+
+        magnitudes = np.linalg.norm(forces, axis=1)
+        contact_indices = np.nonzero(magnitudes > self.sim_params.contact_threshold)[0]
+
+        n_contacts = len(contact_indices)
         # Build an array of start and end points for the force arrows
-        if n_contacts > 0:
-            if not self.sim_params.decompose_contacts:
-                force_arrow_points = np.tile(
-                    self._last_contact_pos[:, contact_indexes], (1, 2)
-                ).squeeze()
+        if n_contacts == 0:
+            return img
 
-                force_arrow_points[:, n_contacts:] += (
-                    self._last_contact_force[:, contact_indexes]
-                    * self.sim_params.force_arrow_scaling
-                )
+        contact_forces = forces[contact_indices] * self.sim_params.force_arrow_scaling
+
+        if self.sim_params.decompose_contacts:
+            contact_pos = pos[:, None, contact_indices]
+            Xw = contact_pos + (contact_forces[:, None] * _roll_eye).T
+        else:
+            contact_pos = pos[:, contact_indices]
+            Xw = np.stack((contact_pos, contact_pos + contact_forces.T), 1)
+
+        # Convert to homogeneous coordinates
+        Xw = np.concatenate((Xw, np.ones((1, *Xw.shape[1:]))))
+
+        mat = self._dm_camera.matrices()
+
+        # Project to camera space
+        Xc = np.tensordot(mat.rotation @ mat.translation, Xw, 1)
+        Xc = Xc[:3, :] / Xc[-1, :]
+
+        z_near = -self.physics.model.vis.map.znear * self.physics.model.stat.extent
+
+        is_behind_cam = Xc[2] >= z_near
+        is_visible = ~(is_behind_cam[0] & is_behind_cam[1:])
+
+        is_out = is_visible & is_behind_cam[1:]
+        is_in = np.where(is_visible & is_behind_cam[0])
+
+        if self.sim_params.decompose_contacts:
+            lines = np.stack((np.stack([Xc[:, 0]] * 3, axis=1), Xc[:, 1:]), axis=1)
+        else:
+            lines = Xc[:, :, None]
+
+        lines[:, 1, is_out] = clip(lines[:, 0, is_out], lines[:, 1, is_out], z_near)
+        lines[:, 0, is_in] = clip(lines[:, 1, is_in], lines[:, 0, is_in], z_near)
+
+        # Project to pixel space
+        lines = np.tensordot((mat.image @ mat.focal)[:, :3], lines, axes=1)
+        lines2d = lines[:2] / lines[-1]
+        lines2d = lines2d.T
+
+        if not self.sim_params.perspective_arrow_length:
+            unit_vectors = lines2d[:, :, 1] - lines2d[:, :, 0]
+            length = np.linalg.norm(unit_vectors, axis=-1, keepdims=True)
+            length[length == 0] = 1
+            unit_vectors /= length
+            lines2d[:, :, 1] = (
+                lines2d[:, :, 0] + np.abs(contact_forces[:, :, None]) * unit_vectors
+            )
+
+        lines2d = np.rint(lines2d.reshape((-1, 2, 2))).astype(int)
+
+        argsort = lines[2, 0].T.ravel().argsort()
+        color_indices = np.tile(np.arange(3), lines.shape[-1])
+
+        img = img.astype(np.uint8)
+
+        for j in argsort:
+            if not is_visible.ravel()[j]:
+                continue
+
+            color = self._decompose_colors[color_indices[j]]
+            p1, p2 = lines2d[j]
+            arrow_length = np.linalg.norm(p2 - p1)
+
+            if arrow_length > 1e-2:
+                r = self.sim_params.tip_length / arrow_length
             else:
-                force_arrow_points = np.tile(
-                    self._last_contact_pos[:, contact_indexes], (1, 4)
-                ).squeeze()
-                for j in range(3):
-                    force_arrow_points[
-                        j, (j + 1) * n_contacts : (j + 2) * n_contacts
-                    ] += (
-                        self._last_contact_force[contact_indexes, j]
-                        * self.sim_params.force_arrow_scaling
-                    )
+                r = 1e-4
 
-            camera_matrix = self._dm_camera.matrix
-
-            # code sample from dm_control demo notebook
-            xyz_global = force_arrow_points
-
-            # Camera matrices multiply homogenous [x, y, z, 1] vectors.
-            corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
-            corners_homogeneous[:3, :] = xyz_global
-
-            # Project world coordinates into pixel space. See:
-            # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
-            xs, ys, s = camera_matrix @ corners_homogeneous
-
-            # x and y are in the pixel coordinate system.
-            x = np.rint(xs / s).astype(int)
-            y = np.rint(ys / s).astype(int)
-
-            img = img.astype(np.uint8)
-
-            # Draw the contact forces
-            for i in range(n_contacts):
-                pts1 = [x[i], y[i]]
-                if self.sim_params.decompose_contacts:
-                    for j in range(3):
-                        pts2 = np.array(
-                            [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
-                        )
-                        if (
-                            np.linalg.norm(
-                                force_arrow_points[:, i]
-                                - force_arrow_points[:, i + (j + 1) * n_contacts]
-                            )
-                            > self.sim_params.contact_threshold
-                        ):
-                            arrow_length = np.linalg.norm(pts2 - pts1)
-                            if arrow_length > 1e-2:
-                                r = self.sim_params.tip_length / arrow_length
-                            else:
-                                r = 1e-4
-                            img = cv2.arrowedLine(
-                                img,
-                                pts1,
-                                pts2,
-                                color=self._decompose_colors[j],
-                                thickness=2,
-                                tipLength=r,
-                            )
-                else:
-                    pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
-                    r = self.sim_params.tip_length / np.linalg.norm(pts2 - pts1)
-                    img = cv2.arrowedLine(
-                        img,
-                        pts1,
-                        pts2,
-                        color=(255, 0, 0),
-                        thickness=2,
-                        tipLength=r,
-                    )
+            if is_out.ravel()[j] and self.sim_params.perspective_arrow_length:
+                cv2.line(img, p1, p2, color, thickness, cv2.LINE_AA)
+            else:
+                cv2.arrowedLine(img, p1, p2, color, thickness, cv2.LINE_AA, tipLength=r)
         return img
 
     def _update_vision(self) -> None:
@@ -1674,3 +1704,9 @@ class NeuroMechFlyV0(gym.Env):
         """Close the environment, save data, and release any resources."""
         if self.render_mode == "saved" and self.output_dir is not None:
             self.save_video(self.output_dir / "video.mp4")
+
+    def _stabilize_head(self):
+        quat = self.physics.bind(self._thorax).xquat
+        quat_inv = transformations.quat_inv(quat)
+        roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
+        self.physics.bind(self._head_stabilization_actuators).ctrl = roll, pitch
