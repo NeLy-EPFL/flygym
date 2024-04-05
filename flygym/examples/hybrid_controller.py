@@ -43,7 +43,6 @@ persistance_init_thr = 20
 
 
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
-
     retraction_correction = np.zeros(6)
     stumbling_correction = np.zeros(6)
 
@@ -170,7 +169,6 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
 
 if __name__ == "__main__":
-
     run_time = 0.5
     timestep = 1e-4
 
