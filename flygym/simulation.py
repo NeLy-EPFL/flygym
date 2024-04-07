@@ -266,7 +266,7 @@ class Simulation(gym.Env):
                     max_floor_height = max(max_floor_height, sphere_height)
 
         if np.isinf(max_floor_height):
-            max_floor_height = (fly.spawn_pos[2] for fly in self.flies)
+            max_floor_height = min(fly.spawn_pos[2] for fly in self.flies)
 
         return max_floor_height
 
