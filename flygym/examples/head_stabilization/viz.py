@@ -31,7 +31,7 @@ def visualize_one_dataset(
     test_datasets: Dict[str, Dict[str, Dict[str, WalkingDataset]]],
     output_path: Path,
     joint_angles_mask: Optional[np.ndarray] = None,
-    subset_tag: Optional[str] = None,
+    dof_subset_tag: Optional[str] = None,
     dn_drive: str = "0.94_1.02",
 ):
     fig, axs = plt.subplots(
@@ -44,13 +44,14 @@ def visualize_one_dataset(
             joint_angles = ds.joint_angles
             if joint_angles_mask is not None:
                 joint_angles = joint_angles.copy()
-                joint_angles = joint_angles[:, joint_angles_mask]
+                joint_angles[:, ~joint_angles_mask] = 0
             contact_mask = ds.contact_mask
             y_true = ds.roll_pitch_ts
 
             # Make predictions
             x = np.concatenate([joint_angles, contact_mask], axis=1)
-            y_pred = model(torch.tensor(x[None, ...])).detach().cpu().numpy().squeeze()
+            x = torch.tensor(x[None, ...], device=model.device)
+            y_pred = model(x).detach().cpu().numpy().squeeze()
 
             # Evaluate performance
             perf = {}
@@ -108,8 +109,9 @@ def visualize_one_dataset(
             ax.set_xlim(0.5, 1.5)
             ax.set_ylim(-45, 45)
             sns.despine(ax=ax)
-    if subset_tag is not None:
-        fig.suptitle(f"DoF selection: {subset_tag}", fontweight="bold")
+
+    if dof_subset_tag is not None:
+        fig.suptitle(f"DoF selection: {dof_subset_tag}", fontweight="bold")
     fig.savefig(output_path)
     plt.close(fig)
 
