@@ -157,8 +157,8 @@ if __name__ == "__main__":
                     turning_drives = np.linspace(-0.9, 0.9, 10)
                 else:
                     turning_drives = np.linspace(-1, 1, 11)  # staggered from test set
-                amp_lower = np.maximum(1 - 0.6 * turning_drives, 0.4)
-                amp_upper = np.minimum(1 + 0.2 * turning_drives, 1.2)
+                amp_lower = np.maximum(1 - 0.6 * np.abs(turning_drives), 0.4)
+                amp_upper = np.minimum(1 + 0.2 * np.abs(turning_drives), 1.2)
                 dn_drives_left = np.where(turning_drives > 0, amp_upper, amp_lower)
                 dn_drives_right = np.where(turning_drives > 0, amp_lower, amp_upper)
 
@@ -171,7 +171,7 @@ if __name__ == "__main__":
                         / f"{gait}_{terrain}_{set_tag}_{dn_left:.2f}_{dn_right:.2f}"
                     )
                     job_specs.append(
-                        (gait, terrain, spawn_xy, dn_drive, 0.5, False, output_dir)
+                        (gait, terrain, spawn_xy, dn_drive, 1.5, False, output_dir)
                     )
 
     Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
