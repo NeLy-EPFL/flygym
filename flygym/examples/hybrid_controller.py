@@ -56,7 +56,6 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     stumbling_sensors = {k: np.array(v) for k, v in stumbling_sensors.items()}
 
     obs, info = sim.reset()
-    print(obs["fly"][0])
 
     target_num_steps = int(run_time / sim.timestep)
     obs_list = []
@@ -169,7 +168,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
 
 if __name__ == "__main__":
-    run_time = 0.5
+    run_time = 1.0
     timestep = 1e-4
 
     preprogrammed_steps = PreprogrammedSteps()
@@ -206,17 +205,15 @@ if __name__ == "__main__":
         seed=0,
     )
 
+    obs, info = sim.reset()
+    print(f"Spawning fly at {obs['fly'][0]} mm")
+
     obs_list, had_physics_error = run_hybrid_simulation(
         sim, cpg_network, preprogrammed_steps, run_time
     )
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
-
-    # save all joint angles
-    joint_angles = [obs["joints"][0] for obs in obs_list]
-    with open("./outputs/hybrid_controller_joint_angles.pkl", "wb") as f:
-        pickle.dump(obs_list, f)
 
     # Save video
     cam.save_video("./outputs/hybrid_controller.mp4", 0)
