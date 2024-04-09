@@ -80,6 +80,7 @@ class GappedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
+                name=f"ground_element_x{x_pos}",
                 size=box_size,
                 pos=(x_pos, 0, 0),
                 friction=friction,
@@ -91,7 +92,7 @@ class GappedTerrain(BaseArena):
         self.root_element.worldbody.add(
             "geom",
             type="plane",
-            name="ground",
+            name="ground_base",
             pos=(np.mean(x_range), 0, -gap_depth / 2),
             rgba=(0.3, 0.3, 0.3, ground_alpha),
             size=ground_size,
@@ -199,6 +200,7 @@ class BlocksTerrain(BaseArena):
                 self.root_element.worldbody.add(
                     "geom",
                     type="box",
+                    name=f"ground_element_x{x_pos}_y{y_pos}",
                     size=(
                         block_size / 2 + 0.1 * block_size / 2,
                         block_size / 2 + 0.1 * block_size / 2,
@@ -317,6 +319,7 @@ class MixedTerrain(BaseArena):
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
+                        name=f"ground_element_block_x{x_pos}_x{y_pos}",
                         size=box_size,
                         pos=box_pos,
                         rgba=(0.3, 0.3, 0.3, ground_alpha),
@@ -330,6 +333,7 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
+                name=f"ground_element_gap_x{curr_x_pos}",
                 size=(gapped_block_width / 4, arena_width / 2, gap_depth / 2),
                 pos=(curr_x_pos + gapped_block_width / 4, 0, -gap_depth / 2),
                 friction=friction,
@@ -340,6 +344,7 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
+                name=f"ground_element_gap_x{curr_x_pos}",
                 size=(gapped_block_width / 2, arena_width / 2, gap_depth / 2),
                 pos=(curr_x_pos + gapped_block_width / 2, 0, -gap_depth / 2),
                 friction=friction,
@@ -353,6 +358,7 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="box",
+                name=f"ground_element_flat_x{curr_x_pos}",
                 size=(remaining_space / 2, arena_width / 2, gap_depth / 2),
                 pos=(curr_x_pos + remaining_space / 2, 0, -gap_depth / 2),
                 friction=friction,
@@ -364,7 +370,7 @@ class MixedTerrain(BaseArena):
             self.root_element.worldbody.add(
                 "geom",
                 type="plane",
-                name=f"ground_{x_range[0]}",
+                name=f"ground_base_{x_range[0]}",
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
                 rgba=(0.3, 0.3, 0.3, ground_alpha),
                 size=ground_size,
