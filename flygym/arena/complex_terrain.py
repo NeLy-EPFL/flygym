@@ -79,8 +79,8 @@ class GappedTerrain(BaseArena):
         for x_pos in block_centers:
             self.root_element.worldbody.add(
                 "geom",
-                name=f"ground_element_x{x_pos}",
                 type="box",
+                name=f"ground_element_x{x_pos}",
                 size=box_size,
                 pos=(x_pos, 0, 0),
                 friction=friction,
