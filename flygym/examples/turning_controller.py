@@ -307,13 +307,9 @@ class HybridTurningNMF(SingleFlySimulation):
             "joints": np.array(np.concatenate(joints_angles)),
             "adhesion": np.array(adhesion_onoff).astype(int),
         }
-<<<<<<< HEAD
-        return super().step(action)
-=======
         obs, reward, terminated, truncated, info = super().step(action)
         info["net_corrections"] = all_net_corrections
         return obs, reward, terminated, truncated, info
->>>>>>> 7cc92f3f8db10617b4c298a7d220ddf5653d47be
 
 
 if __name__ == "__main__":
@@ -353,20 +349,12 @@ if __name__ == "__main__":
 
     for i in trange(int(run_time / sim.timestep)):
         curr_time = i * sim.timestep
-        """if curr_time < 1:
-            action = np.array([1.2, 0.2])
+        if curr_time < run_time / 2:
+            action = np.array([1.2, 0.4])
         else:
-            action = np.array([0.2, 1.2])"""
-
-        action = np.array([1.0, 1.0])
+            action = np.array([0.4, 1.2])
         try:
-<<<<<<< HEAD
-            obs, reward, terminated, truncated, info = sim.step(
-                action
-            )
-=======
             obs, reward, terminated, truncated, info = sim.step(action)
->>>>>>> 7cc92f3f8db10617b4c298a7d220ddf5653d47be
             obs_list.append(obs)
             sim.render()
         except PhysicsError:

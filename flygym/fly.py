@@ -244,11 +244,13 @@ class Fly:
         joint_damping : float
             Damping coefficient of actuated joints, by default 0.06.
         non_actuated_joint_stiffness : float
-            Stiffness of non-actuated joints, by default 1.0. Made stiff
-            for better stability.
+            Stiffness of non-actuated joints, by default 1.0. If set to 0,
+            the DoF would passivly drift over time. Therefore it is set
+            explicitly here for better stability.
         non_actuated_joint_damping : float
             Damping coefficient of non-actuated joints, by default 1.0.
-            Made stiff for better stability.
+            Similar to ``non_actuated_joint_stiffness``, it is set
+            explicitly here for better stability.
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
         tarsus_stiffness : float

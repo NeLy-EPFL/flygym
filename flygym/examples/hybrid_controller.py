@@ -144,10 +144,10 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
                 leg, cpg_network.curr_phases[i]
             )
             # No adhesion in stumbling or retracted
-            is_trembling = (force_proj < stumbling_force_threshold).any()
+            is_stumbling = (force_proj < stumbling_force_threshold).any()
             is_retracting = i == leg_to_correct_retraction
             is_retracting |= retraction_perisitance_counter[i] > 0
-            my_adhesion_onoff *= np.logical_not(is_trembling or is_retracting)
+            my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracting)
             adhesion_onoff.append(my_adhesion_onoff)
 
         action = {
