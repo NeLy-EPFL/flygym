@@ -87,7 +87,7 @@ class NMFRealisticVison(HybridTurningNMF):
 
 if __name__ == "__main__":
     regenerate_walking = True
-    output_dir = Path("./outputs/connectome_constrained_vision/")
+    output_dir = Path("./outputs/connectome_constrained_vision/complex_terrain/")
     output_dir.mkdir(parents=True, exist_ok=True)
     run_time = 2.0  # seconds
     vision_refresh_rate = 500  # Hz

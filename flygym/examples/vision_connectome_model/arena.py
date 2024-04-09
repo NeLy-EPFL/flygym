@@ -1,6 +1,7 @@
 from flygym.arena import BaseArena
 from flygym import Fly
 import numpy as np
+from typing import Tuple
 
 
 class MovingFlyArena(BaseArena):
@@ -38,7 +39,13 @@ class MovingFlyArena(BaseArena):
 
     def __init__(
         self,
-        size=(300, 300),
+        # size=(300, 300),
+        x_range: Tuple[float, float] = (-10, 25),
+        y_range: Tuple[float, float] = (-20, 20),
+        block_size: float = 1.3,
+        height_range: Tuple[float, float] = (0.45, 0.45),
+        rand_seed: int = 0,
+        ground_alpha: float = 1,
         friction=(1, 0.005, 0.0001),
         obj_radius=1,
         init_fly_pos=(5, 0),
@@ -64,31 +71,67 @@ class MovingFlyArena(BaseArena):
             raise ValueError("Invalid move_direction")
 
         # Add ground
-        ground_size = [*size, 1]
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.8, 0.8, 0.8),
-            rgb2=(0.9, 0.9, 0.9),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(60, 60),
-            reflectance=0.1,
-        )
-        self.root_element.worldbody.add(
-            "geom",
-            type="plane",
-            name="ground",
-            material=grid,
-            size=ground_size,
-            friction=friction,
-        )
+        # ground_size = [*size, 1]
+        # chequered = self.root_element.asset.add(
+        #     "texture",
+        #     type="2d",
+        #     builtin="checker",
+        #     width=300,
+        #     height=300,
+        #     rgb1=(0.8, 0.8, 0.8),
+        #     rgb2=(0.9, 0.9, 0.9),
+        # )
+        # grid = self.root_element.asset.add(
+        #     "material",
+        #     name="grid",
+        #     texture=chequered,
+        #     texrepeat=(60, 60),
+        #     reflectance=0.1,
+        # )
+        # self.root_element.worldbody.add(
+        #     "geom",
+        #     type="plane",
+        #     name="ground",
+        #     material=grid,
+        #     size=ground_size,
+        #     friction=friction,
+        # )
+
+        self.x_range = x_range
+        self.y_range = y_range
+        self.block_size = block_size
+        self.height_range = height_range
+        rand_state = np.random.RandomState(rand_seed)
+
+        x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
+        y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
+        for i, x_pos in enumerate(x_centers):
+            for j, y_pos in enumerate(y_centers):
+                is_i_odd = i % 2 == 1
+                is_j_odd = j % 2 == 1
+
+                if is_i_odd != is_j_odd:
+                    height = 0.1
+                else:
+                    height = 0.1 + rand_state.uniform(*height_range)
+
+                self.root_element.worldbody.add(
+                    "geom",
+                    type="box",
+                    size=(
+                        block_size / 2 + 0.1 * block_size / 2,
+                        block_size / 2 + 0.1 * block_size / 2,
+                        height / 2 + block_size / 2,
+                    ),
+                    pos=(
+                        x_pos,
+                        y_pos,
+                        height / 2 - block_size / 2,
+                    ),
+                    rgba=(0.3, 0.3, 0.3, ground_alpha),
+                    friction=friction,
+                )
+
         self.root_element.worldbody.add("body", name="b_plane")
 
         # Add fly
