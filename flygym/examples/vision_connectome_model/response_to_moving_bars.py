@@ -49,12 +49,11 @@ if __name__ == "__main__":
     ]
 
     fly = Fly(
-        render_raw_vision=True,
         actuator_kp=0,
+        neck_kp=0,
         enable_vision=True,
         vision_refresh_rate=vision_refresh_rate,
         contact_sensor_placements=contact_sensor_placements,
-        neck_kp=0,
         init_pose="zero",
     )
 
@@ -86,6 +85,15 @@ if __name__ == "__main__":
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for speed in speeds:
+        video_path = output_dir / f"bar_simulation_{speed}.mp4"
+        nn_hist_path = output_dir / f"nn_hist_{speed}.npy"
+
+        if video_path.exists() and nn_hist_path.exists():
+            print(f"Skipping simulation for speed {speed}°/s")
+            continue
+        else:
+            print(f"Running simulation for speed {speed}°/s")
+
         run_time = abs(end_angle - start_angle) / speed
         arena.azimuth_func = get_azimuth_func(
             start_angle, end_angle, run_time, time_before
@@ -94,48 +102,29 @@ if __name__ == "__main__":
         run_time += time_before + time_after
         num_physics_steps = int(run_time / sim.timestep)
 
-        obs_hist = []
-        rendered_image_hist = []
-        vision_observation_hist = []
+        vision_hist = []
         nn_activities_hist = []
 
         # Main simulation loop
         for i in trange(num_physics_steps):
             obs, _, _, _, info = sim.step(np.zeros(2))
             rendered_img = sim.render()[0]
-            obs_hist.append(obs)
             if rendered_img is not None:
-                rendered_image_hist.append(rendered_img)
-                vision_observation_hist.append(obs["vision"])
+                vision_hist.append(obs["vision"])
                 nn_activities_hist.append(obs["nn_activities"])
 
-        cam.reset()
-
         visualize_vision(
-            Path(output_dir / f"bar_simulation_{speed}.mp4"),
+            video_path,
             fly.retina,
             sim.retina_mapper,
-            rendered_image_hist,
-            vision_observation_hist,
+            cam._frames,
+            vision_hist,
             nn_activities_hist,
             fps=cam.fps,
         )
 
-        np.save(
-            output_dir / f"nn_hist_{speed}.npy",
-            np.array([i[:] for i in nn_activities_hist]),
-        )
-
-        obs_hist = [
-            obs
-            for obs, vision_updated in zip(obs_hist, fly.vision_update_mask)
-            if vision_updated
-        ]
-        for obs in obs_hist:
-            del obs["nn_activities"]
-
-        with open(output_dir / f"obs_hist_{speed}.npy", "wb") as f:
-            pickle.dump(obs_hist, f)
+        cam.reset()
+        np.save(nn_hist_path, np.array([i[:] for i in nn_activities_hist]))
 
     # Plot the activity of a single neuron type
     def get_activity(x, neuron_type):
