@@ -1,4 +1,5 @@
-from flygym.arena import BaseArena, FlatTerrain
+from flygym.arena import BaseArena
+from flygym.arena.tethered import Tethered
 from flygym import Fly
 import numpy as np
 from typing import Callable
@@ -157,7 +158,7 @@ class MovingFlyArena(BaseArena):
 def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
     """Returns a function that takes time as input and returns the azimuth angle of a
     moving object.
-    
+
     Parameters
     ----------
     start_angle : float
@@ -169,6 +170,7 @@ def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
     start_time : float
         Start time of the movement.
     """
+
     def func(t):
         t = t - start_time
         if t < 0:
@@ -181,7 +183,7 @@ def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
     return func
 
 
-class MovingBarArena(FlatTerrain):
+class MovingBarArena(Tethered):
     def __init__(
         self,
         azimuth_func: Callable[[float], float],
@@ -205,7 +207,7 @@ class MovingBarArena(FlatTerrain):
         rgba : Tuple[float, float, float, float]
             Color of the cylinder.
         kwargs : dict
-            Additional arguments to passed to the FlatTerrain superclass.
+            Additional arguments to passed to the superclass.
         """
         super().__init__(**kwargs)
 

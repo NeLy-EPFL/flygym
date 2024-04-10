@@ -17,7 +17,11 @@ torch.manual_seed(0)
 
 
 if __name__ == "__main__":
-    for speed in 360 * np.power(2.0, np.arange(-7, 5)[::-1]):
+    import matplotlib.pyplot as plt
+
+    plt.rcParams["figure.facecolor"] = (0.95,) * 3
+
+    for speed in 360 * np.power(2.0, np.arange(-7, 5)[::-1][:1]):
         regenerate_walking = True
         output_dir = Path("./outputs/moving_bars_4deg/")
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +58,8 @@ if __name__ == "__main__":
             enable_vision=True,
             vision_refresh_rate=vision_refresh_rate,
             contact_sensor_placements=contact_sensor_placements,
+            neck_kp=0,
+            init_pose="zero",
         )
 
         cam = Camera(
@@ -70,15 +76,16 @@ if __name__ == "__main__":
             cameras=[cam],
             arena=arena,
             timestep=2e-4,
+            gravity=(0, 0, 0),
         )
 
-        for i in fly.model.find_all("geom"):
-            sim.physics.named.model.geom_rgba[f"{fly.name}/{i.name}"] = [
-                0.5,
-                0.5,
-                0.5,
-                0,
-            ]
+        # for i in fly.model.find_all("geom"):
+        #     sim.physics.named.model.geom_rgba[f"{fly.name}/{i.name}"] = [
+        #         0.5,
+        #         0.5,
+        #         0.5,
+        #         0,
+        #     ]
 
         num_physics_steps = int(run_time / sim.timestep)
 
