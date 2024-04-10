@@ -104,7 +104,7 @@ class NMFRealisticVison(HybridTurningNMF):
 
 if __name__ == "__main__":
     enable_head_stabilization = True
-    output_dir = Path("./outputs/connectome_constrained_vision/")
+    output_dir = Path("./outputs/connectome_constrained_vision/complex_terrain")
     output_dir.mkdir(parents=True, exist_ok=True)
     run_time = 2.0  # seconds
     vision_refresh_rate = 500  # Hz
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     if enable_head_stabilization:
         model_path = Path("outputs/head_stabilization/models/")
         head_stabilization_model = HeadStabilizationInferenceWrapper(
-            model_path=model_path / "three_layer_mlp.pth",
+            model_path=model_path / "All.ckpt",
             scaler_param_path=model_path / "joint_angle_scaler_params.pkl",
         )
     else:
@@ -182,7 +182,8 @@ if __name__ == "__main__":
             obj_mask = t3_median_response - nn_activities["T3"] > t3_detection_threshold
             t4a_intensity = np.mean(np.abs(nn_activities["T4a"][obj_mask]))
             t4b_intensity = np.mean(np.abs(nn_activities["T4b"][obj_mask]))
-            diff = t4a_intensity - t4b_intensity
+            print(t4a_intensity - t4b_intensity)
+            diff = (t4a_intensity - t4b_intensity) * 100
             smaller_amp = max(1 - np.abs(diff) * 3, 0.4)
             larger_amp = min(1 + np.abs(diff) * 1, 1.2)
             if diff < 0:
