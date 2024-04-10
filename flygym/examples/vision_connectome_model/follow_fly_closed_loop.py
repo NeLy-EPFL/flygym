@@ -15,6 +15,7 @@ from flygym.examples.vision_connectome_model import (
     MovingFlyArena,
     visualize_vision,
 )
+from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
 
 torch.manual_seed(0)
@@ -102,15 +103,25 @@ class NMFRealisticVison(HybridTurningNMF):
 
 
 if __name__ == "__main__":
-    regenerate_walking = True
-    output_dir = Path("./outputs/closed_loop_control/")
+    enable_head_stabilization = True
+    output_dir = Path("./outputs/connectome_constrained_vision/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    run_time = 2  # seconds
+    run_time = 2.0  # seconds
     vision_refresh_rate = 500  # Hz
     t3_detection_threshold = 0.15
 
-    arena = MovingFlyArena(move_speed=20, lateral_magnitude=2)
+    # Load head stabilization model if enabled
+    if enable_head_stabilization:
+        model_path = Path("outputs/head_stabilization/models/")
+        head_stabilization_model = HeadStabilizationInferenceWrapper(
+            model_path=model_path / "three_layer_mlp.pth",
+            scaler_param_path=model_path / "joint_angle_scaler_params.pkl",
+        )
+    else:
+        head_stabilization_model = None
 
+    # Setup NMF simulation
+    arena = MovingFlyArena(move_speed=20, lateral_magnitude=2)
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
@@ -123,15 +134,14 @@ if __name__ == "__main__":
             "Tarsus5",
         ]
     ]
-
     fly = Fly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=vision_refresh_rate,
         neck_kp=1000,
+        head_stabilization_model=head_stabilization_model,
     )
-
     cam = Camera(
         fly=fly,
         camera_id="birdeye_cam",
@@ -140,14 +150,14 @@ if __name__ == "__main__":
         fps=24,
         play_speed_text=False,
     )
-
     sim = NMFRealisticVison(
         fly=fly,
         cameras=[cam],
         arena=arena,
     )
 
-    with open("outputs/replay_visual_experience/obs_hist.npy", "rb") as f:
+    # Setup parameters for object following
+    with open(output_dir / "vision_simulation_obs_hist.npy", "rb") as f:
         obs_hist = pickle.load(f)
     nn_activities_all = LayerActivity(
         np.array([obs["nn_activities_arr"] for obs in obs_hist]),
@@ -157,17 +167,15 @@ if __name__ == "__main__":
     )
     t3_median_response = np.median(nn_activities_all["T3"], axis=0)
 
+    # Run simulation
     obs, info = sim.reset(seed=0)
-
     num_physics_steps = int(run_time / sim.timestep)
-
     obs_hist = []
     rendered_image_hist = []
     vision_observation_hist = []
     nn_activities_hist = []
     dn_drive = np.array([1, 1])
 
-    # Main simulation loop
     for i in trange(num_physics_steps):
         if info["vision_updated"]:
             nn_activities = obs["nn_activities"]
@@ -192,9 +200,10 @@ if __name__ == "__main__":
             vision_observation_hist.append(obs["vision"])
             nn_activities_hist.append(obs["nn_activities"])
 
-    cam.save_video(output_dir / "object_following.mp4")
+    # Clean up, saving data, and visualization
+    # cam.save_video(output_dir / "social_following.mp4")
     visualize_vision(
-        Path(output_dir / "object_following.mp4"),
+        Path(output_dir / "social_following.mp4"),
         fly.retina,
         sim.retina_mapper,
         rendered_image_hist,

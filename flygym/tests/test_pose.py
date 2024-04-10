@@ -14,7 +14,7 @@ def test_stretched_pose():
 
     nmf = NeuroMechFly(init_pose="stretch")
     run_time = 0.01
-    freq = 80
+    freq = 20
     amp = np.pi / 2
 
     obs, _ = nmf.reset()

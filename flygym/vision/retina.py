@@ -166,8 +166,8 @@ class Retina:
             (self.ommatidia_id_map.size, *ommatidia_reading.shape[1:]), dtype=dtype
         )
         if color_8bit:
-            processed_image_flat += 255
-            ommatidia_reading *= 255
+            processed_image_flat = processed_image_flat + 255
+            ommatidia_reading = ommatidia_reading * 255
 
         # Run JIT'ed resampling function
         self._hex_pxls_to_human_readable(
