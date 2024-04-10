@@ -82,7 +82,7 @@ if __name__ == "__main__":
         gravity=(0, 0, 0),
     )
 
-    output_dir = Path("./outputs/moving_bars_4deg/")
+    output_dir = Path(f"./outputs/moving_bars_{bar_width_deg}deg/")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for speed in speeds:
