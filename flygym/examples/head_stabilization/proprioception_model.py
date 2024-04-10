@@ -40,6 +40,12 @@ class WalkingDataset(Dataset):
         joint_mask=None,
     ) -> None:
         super().__init__()
+        trial_name = sim_data_file.parent.name
+        gait, terrain, subset, _, dn_left, dn_right = trial_name.split("_")
+        self.gait = gait
+        self.terrain = terrain
+        self.subset = subset
+        self.dn_drive = f"{dn_left}_{dn_right}"
         self.contact_force_thr = contact_force_thr
         self.joint_angle_scaler = joint_angle_scaler
         self.ignore_first_n = ignore_first_n
