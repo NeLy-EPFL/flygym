@@ -307,6 +307,10 @@ class Fly:
             Position gain of the neck position actuators. If supplied, this
             will overwrite ``actuator_kp`` for the neck actuators.
             Otherwise, ``actuator_kp`` will be used.
+        head_stabilization_model : Callable, optional
+            A callable object that, given the observation, predicts signals
+            that need to be applied to the neck DoFs to stabilizes the head
+            of the fly. By default None.
         """
         # Check neck actuation if head stabilization is enabled
         if head_stabilization_model is not None:
