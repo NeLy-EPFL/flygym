@@ -128,9 +128,38 @@ def evaluate_model(
                 "r2_pitch": r2_pitch,
                 "rmse_roll": rmse_roll,
                 "rmse_pitch": rmse_pitch,
+                "gait": ds.gait,
+                "terrain": ds.terrain,
+                "subset": ds.subset,
+                "dn_drive": ds.dn_drive,
             }
         )
     return pd.DataFrame.from_dict(stats)
+
+
+def load_datasets(base_dir, excluded_videos, joint_angle_scaler):
+    individual_datasets = {}
+    for subset in ["train", "test"]:
+        individual_datasets[subset] = {}
+        for gait in ["tripod", "tetrapod", "wave"]:
+            individual_datasets[subset][gait] = {}
+            for terrain in ["flat", "blocks"]:
+                individual_datasets[subset][gait][terrain] = {}
+                paths = base_dir.glob(
+                    f"random_exploration/{gait}_{terrain}_{subset}_set_*"
+                )
+                dn_drives = ["_".join(p.name.split("_")[-2:]) for p in paths]
+                for dn_drive in dn_drives:
+                    if (gait, terrain, subset, dn_drive) in excluded_videos:
+                        print("skipping dataset because fly flipped")
+                        continue
+                    sim = f"{gait}_{terrain}_{subset}_set_{dn_drive}"
+                    path = base_dir / f"random_exploration/{sim}/sim_data.pkl"
+                    ds = WalkingDataset(path, joint_angle_scaler=joint_angle_scaler)
+                    if ds.cotains_fly_flip or ds.contains_physics_error:
+                        continue
+                    individual_datasets[subset][gait][terrain][dn_drive] = ds
+    return individual_datasets
 
 
 # fmt: off
@@ -172,8 +201,8 @@ excluded_videos = [
 
 if __name__ == "__main__":
     # Setups
-    retrain_base = True
-    retrain_feature_selection = True
+    retrain_base = False
+    retrain_feature_selection = False
 
     # Setup paths etc
     (base_dir / "logs").mkdir(exist_ok=True, parents=True)
@@ -192,28 +221,7 @@ if __name__ == "__main__":
     joint_angle_scaler = _ds.joint_angle_scaler
 
     # Load datasets
-    individual_datasets = {}
-    for subset in ["train", "test"]:
-        li = []
-        individual_datasets[subset] = {}
-        for gait in ["tripod", "tetrapod", "wave"]:
-            individual_datasets[subset][gait] = {}
-            for terrain in ["flat", "blocks"]:
-                individual_datasets[subset][gait][terrain] = {}
-                paths = base_dir.glob(
-                    f"random_exploration/{gait}_{terrain}_{subset}_set_*"
-                )
-                dn_drives = ["_".join(p.name.split("_")[-2:]) for p in paths]
-                for dn_drive in dn_drives:
-                    if (gait, terrain, subset, dn_drive) in excluded_videos:
-                        print("skipping dataset because fly flipped")
-                        continue
-                    sim = f"{gait}_{terrain}_{subset}_set_{dn_drive}"
-                    path = base_dir / f"random_exploration/{sim}/sim_data.pkl"
-                    ds = WalkingDataset(path, joint_angle_scaler=joint_angle_scaler)
-                    if ds.cotains_fly_flip or ds.contains_physics_error:
-                        continue
-                    individual_datasets[subset][gait][terrain][dn_drive] = ds
+    individual_datasets = load_datasets(base_dir, excluded_videos, joint_angle_scaler)
 
     # Train or load model
     if retrain_base:
@@ -249,9 +257,17 @@ if __name__ == "__main__":
 
     # Feature selection
     for dof_subset_tag, dofs in dof_subsets.items():
-        concat_training_set = make_concat_subdataset(individual_datasets["train"], dofs)
-        model, best_ckpt = train_model(concat_training_set, dofs, dof_subset_tag)
-        copyfile(best_ckpt, base_dir / "models" / f"{dof_subset_tag}.ckpt")
+        if retrain_feature_selection:
+            concat_training_set = make_concat_subdataset(
+                individual_datasets["train"], dofs
+            )
+            model, best_ckpt = train_model(concat_training_set, dofs, dof_subset_tag)
+            copyfile(best_ckpt, base_dir / "models" / f"{dof_subset_tag}.ckpt")
+        else:
+            model = ThreeLayerMLP.load_from_checkpoint(
+                base_dir / "models" / f"{dof_subset_tag}.ckpt"
+            )
+
         viz.visualize_one_dataset(
             model,
             individual_datasets["test"],
@@ -263,18 +279,21 @@ if __name__ == "__main__":
         test_perf = evaluate_model(all_test_datasets, dofs, model)
         test_perf.to_csv(base_dir / f"models/stats/{dof_subset_tag}.csv", index=False)
 
-    # # Make bar plot for feature selection results
-    # lines = []
-    # for dof_subset_tag, perf_dict in performances_all.items():
-    #     for gait, scores in perf_dict.items():
-    #         for dof in ["roll", "pitch"]:
-    #             lines.append([dof_subset_tag, gait, dof, scores[dof]])
-    # performances_df = pd.DataFrame(lines)
-    # performances_df.columns = ["dof_subset", "gait", "dof", "r2_score"]
-    # performances_df = performances_df.set_index(["dof_subset", "gait", "dof"])
-
-    # viz.make_feature_selection_summary_plot(
-    #     performances_df=performances_df,
-    #     dof_subset_tags=list(dof_subsets.keys()),
-    #     output_path=base_dir / "figs/feature_ablation.pdf",
-    # )
+    # Make bar plot for feature selection results
+    perf_dfs = []
+    for dof_subset_tag in dof_subsets.keys():
+        test_perf = pd.read_csv(base_dir / f"models/stats/{dof_subset_tag}.csv")
+        test_perf["dof_subset_tag"] = dof_subset_tag
+        perf_dfs.append(test_perf)
+    all_test_perf = pd.concat(perf_dfs, ignore_index=True)
+    assert (all_test_perf["subset"] == "test").all()  # Ensure this is entirely test set
+    viz.make_feature_selection_summary_plot(
+        all_test_perf[all_test_perf["terrain"] == "flat"],
+        base_dir / "figs/feature_selection_flat.pdf",
+        title="Flat terrain",
+    )
+    viz.make_feature_selection_summary_plot(
+        all_test_perf[all_test_perf["terrain"] == "blocks"],
+        base_dir / "figs/feature_selection_blocks.pdf",
+        title="Blocks terrain",
+    )

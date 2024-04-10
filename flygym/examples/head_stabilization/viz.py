@@ -117,66 +117,78 @@ def visualize_one_dataset(
 
 
 def make_feature_selection_summary_plot(
-    performances_df: DataFrame, dof_subset_tags: List[str], output_path: Path
+    test_performance_df: DataFrame, output_path: Path, title: str = None
 ):
-    fig, ax = plt.subplots(figsize=(6, 3), tight_layout=True)
-    bar_width = 0.4
-    category_base = np.arange(len(dof_subset_tags))
-    for dof in ["roll", "pitch"]:
+    dof_subset_tags = test_performance_df["dof_subset_tag"].unique()
+    dof_subset_tags_basex = {tag: i * 3 for i, tag in enumerate(dof_subset_tags)}
+
+    fig, ax = plt.subplots(figsize=(9, 3), tight_layout=True)
+    ax.axhline(0, color="black", lw=0.5)
+    for i, dof in enumerate(["roll", "pitch"]):
+        df_copy = test_performance_df.copy()
+        x_lookup = {k: v + i for k, v in dof_subset_tags_basex.items()}
+        df_copy["_x"] = df_copy["dof_subset_tag"].map(x_lookup)
         color_light, color_dark = _color_config[dof]
-        xs = category_base + (0.5 * bar_width * (-1 if dof == "roll" else 1))
-        mean_r2s = [
-            performances_df.loc[cat, :, dof]["r2_score"].mean()
-            for cat in dof_subset_tags
-        ]
-        ax.bar(xs, mean_r2s, width=bar_width, color=color_light)
-        for gait in ["tripod", "tetrapod", "wave"]:
-            ys = [
-                performances_df.loc[cat, gait, dof]["r2_score"]
-                for cat in dof_subset_tags
-            ]
-            ax.scatter(xs, ys, color=color_dark, marker=_marker_config[gait], s=5)
-    ax.set_ylabel("$R^2$")
-    ax.set_xlabel("")
-    ax.tick_params(axis="x", labelrotation=90)
-    ax.set_ylim(0, 1)
-    ax.set_xticks(category_base)
-    ax.set_xticklabels(dof_subset_tags)
-    ax.set_xlim(-0.5, category_base[-1] + 0.5)
+        sns.swarmplot(
+            data=df_copy,
+            x="_x",
+            y=f"r2_{dof}",
+            ax=ax,
+            color=color_dark,
+            dodge=True,
+            order=list(range(len(dof_subset_tags) * 3 - 1)),
+            size=1.5,
+        )
+        sns.boxplot(
+            data=df_copy,
+            x="_x",
+            y=f"r2_{dof}",
+            ax=ax,
+            dodge=True,
+            fliersize=0,
+            boxprops={"facecolor": "None", "edgecolor": "k", "linewidth": 0.5},
+            order=list(range(len(dof_subset_tags) * 3 - 1)),
+            linewidth=1,
+        )
     legend_elements = [
-        Patch(facecolor="royalblue", label="Thorax roll"),
-        Patch(facecolor="peru", label="Thorax pitch"),
         Line2D(
             [],
             [],
-            color="black",
-            marker="^",
+            color=_color_config["roll"][1],
+            marker=".",
             markersize=5,
             linestyle="None",
-            label="Tripod gait",
+            label="Roll",
         ),
         Line2D(
             [],
             [],
-            color="black",
-            marker="s",
+            color=_color_config["pitch"][1],
+            marker=".",
             markersize=5,
             linestyle="None",
-            label="Tetrapod gait",
-        ),
-        Line2D(
-            [],
-            [],
-            color="black",
-            marker="d",
-            markersize=5,
-            linestyle="None",
-            label="Wave gait",
+            label="Pitch",
         ),
     ]
     ax.legend(
-        handles=legend_elements, loc="upper left", bbox_to_anchor=(1, 1), frameon=False
+        handles=legend_elements,
+        ncol=2,
+        loc="lower left",
+        bbox_to_anchor=(0, 0.2),
+        frameon=False,
     )
-    sns.despine(ax=ax)
+    if min(df_copy["r2_roll"].min(), df_copy["r2_pitch"].min()) < -0.26:
+        raise ValueError(
+            "Lowest R2 score is below the display limit. Some data not shown in figure."
+        )
+    ax.set_ylim(-0.26, 1)
+    ax.set_xticks(np.array(list(dof_subset_tags_basex.values())) + 0.5)
+    ax.set_xticklabels(dof_subset_tags)
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.set_xlabel("")
+    ax.set_ylabel("$R^2$")
+    if title is not None:
+        ax.set_title(title)
+    sns.despine(ax=ax, bottom=True)
     fig.savefig(output_path)
     plt.close(fig)
