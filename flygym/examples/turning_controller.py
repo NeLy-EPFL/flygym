@@ -349,10 +349,17 @@ if __name__ == "__main__":
 
     for i in trange(int(run_time / sim.timestep)):
         curr_time = i * sim.timestep
+
+        # To demonstrate left and right turns:
         if curr_time < run_time / 2:
             action = np.array([1.2, 0.4])
         else:
             action = np.array([0.4, 1.2])
+
+        # To demonstrate that the result is identical with the hybrid controller without
+        # turning:
+        # action = np.array([1.0, 1.0])
+
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
             obs_list.append(obs)
