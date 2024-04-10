@@ -16,9 +16,7 @@ import flygym.examples.head_stabilization.viz as viz
 
 
 # Setups
-base_dir = sim_data_dir = Path(
-    "/home/sibwang/Projects/flygym/outputs/head_stabilization/"
-)
+base_dir = sim_data_dir = Path("./outputs/head_stabilization/")
 retrain_base = True
 retrain_feature_selection = True
 max_epochs = 3

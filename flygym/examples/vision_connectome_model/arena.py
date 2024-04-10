@@ -41,14 +41,14 @@ class MovingFlyArena(BaseArena):
         self,
         size=(300, 300),
         friction=(1, 0.005, 0.0001),
-        obj_radius=1,
+        leading_fly_height=1,
         init_fly_pos=(5, 0),
         move_speed=10,
         move_direction="right",
         lateral_magnitude=2,
     ):
         super().__init__()
-        self.init_fly_pos = (*init_fly_pos, obj_radius)
+        self.init_fly_pos = (*init_fly_pos, leading_fly_height)
         self.fly_pos = np.array(self.init_fly_pos, dtype="float32")
         self.friction = friction
         self.move_speed = move_speed

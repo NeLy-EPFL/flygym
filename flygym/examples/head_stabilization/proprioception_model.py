@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import lightning as pl
 from torch.utils.data import Dataset
 from torchmetrics.regression import R2Score
+from gymnasium import spaces
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -125,3 +126,45 @@ class ThreeLayerMLP(pl.LightningModule):
         y_hat = self(x)
         loss = F.mse_loss(y_hat, y)
         self.log("test_loss", loss)
+
+
+class HeadStabilizationInferenceWrapper:
+    """
+    Wrapper for the head stabilization model to make predictions on
+    observations. Whereas data are collected in large tensors during
+    training, this class provides a "flat" interface for making predictions
+    one observation (i.e., time step) at a time. This is useful for
+    deploying the model in closed loop.
+    """
+
+    def __init__(
+        self,
+        model_path: Path,
+        scaler_param_path: Path,
+        input_size: int = 42 + 6,
+        hidden_size: int = 8,
+        contact_force_thr: float = 3.0,
+    ):
+        # Load scaler params
+        with open(scaler_param_path, "rb") as f:
+            scaler_params = pickle.load(f)
+        self.scaler_mean = scaler_params["mean"]
+        self.scaler_std = scaler_params["std"]
+
+        # Load model
+        self.model = ThreeLayerMLP(
+            input_size=input_size, hidden_size=hidden_size, output_size=2
+        ).cpu()  # it's not worth moving data to the GPU, just run it on the CPU
+        self.model.load_state_dict(torch.load(model_path))
+        self.contact_force_thr = contact_force_thr
+
+    def __call__(
+        self, leg_joint_angles: np.ndarray, leg_contact_forces: np.ndarray
+    ) -> np.ndarray:
+        leg_joint_angles = (leg_joint_angles - self.scaler_mean) / self.scaler_std
+        leg_contact_forces = np.linalg.norm(leg_contact_forces, axis=1)
+        leg_contact_forces = leg_contact_forces.reshape(6, 6).sum(axis=1)
+        x = np.concatenate([leg_joint_angles, leg_contact_forces], dtype=np.float32)
+        input_tensor = torch.tensor(x[None, :]).cpu()
+        output_tensor = self.model(input_tensor)
+        return output_tensor.detach().numpy().squeeze()
