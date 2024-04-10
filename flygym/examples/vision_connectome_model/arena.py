@@ -1,6 +1,7 @@
 from flygym.arena import BaseArena, FlatTerrain
 from flygym import Fly
 import numpy as np
+from typing import Callable
 
 
 class MovingFlyArena(BaseArena):
@@ -154,6 +155,20 @@ class MovingFlyArena(BaseArena):
 
 
 def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
+    """Returns a function that takes time as input and returns the azimuth angle of a
+    moving object.
+    
+    Parameters
+    ----------
+    start_angle : float
+        Starting azimuth angle of the moving object.
+    end_angle : float
+        Ending azimuth angle of the moving object.
+    duration : float
+        Duration of the movement.
+    start_time : float
+        Start time of the movement.
+    """
     def func(t):
         t = t - start_time
         if t < 0:
@@ -169,35 +184,33 @@ def get_azimuth_func(start_angle=-180, end_angle=180, duration=1, start_time=0):
 class MovingBarArena(FlatTerrain):
     def __init__(
         self,
-        azimuth_func,
+        azimuth_func: Callable[[float], float],
         visual_angle=(10, 60),
         distance=12,
-        ang_speed=1,
         rgba=(0, 0, 0, 1),
-        *args,
         **kwargs,
     ):
-        """Creates a circular arena with n cylinders to simulate a grating pattern.
+        """Flat terrain with a moving cylinder to simulate a moving bar on a
+        circular screen.
 
         Parameters
         ----------
-        n : int
-            Number of cylinders to create.
-        height : float
-            Height of the cylinders.
+        azimuth_func : Callable[[float], float]
+            Function that takes time as input and returns the azimuth angle of the
+            cylinder.
+        visual_angle : Tuple[float, float]
+            Width and height of the cylinder in degrees.
         distance : float
             Distance from the center of the arena to the center of the cylinders.
-        ang_speed : float
-            Angular speed of the cylinders.
-        palette : list of tuples
-            List of RGBA tuples to use as colors for the cylinders.
+        rgba : Tuple[float, float, float, float]
+            Color of the cylinder.
+        kwargs : dict
+            Additional arguments to passed to the FlatTerrain superclass.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
-        self.ang_speed = ang_speed
         self.azimuth_func = azimuth_func
         self.distance = distance
-
         self.curr_time = 0
 
         cylinder_material = self.root_element.asset.add(
@@ -232,18 +245,18 @@ class MovingBarArena(FlatTerrain):
         )
 
     def reset(self, physics):
-        """Resets the position of the cylinders and the phase of the grating pattern."""
-        self.phase = 0
+        """Resets the position of the cylinder."""
         self.curr_time = 0
-
         physics.bind(self.cylinder).mocap_pos = self.get_pos(0)
 
     def get_pos(self, t):
-        c = self.distance * np.exp(1j * np.deg2rad(self.azimuth_func(t)))
-        return c.real, c.imag, 0
+        """Returns the position of the cylinder at time t."""
+        angle = np.deg2rad(self.azimuth_func(t))
+        x = self.distance * np.cos(angle)
+        y = self.distance * np.sin(angle)
+        return x, y, 0
 
     def step(self, dt, physics):
-        """Steps the phase of the grating pattern and updates the position of the cylinders."""
-
+        """Updates the position of the cylinder."""
         self.curr_time += dt
         physics.bind(self.cylinder).mocap_pos = self.get_pos(self.curr_time)
