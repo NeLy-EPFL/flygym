@@ -151,8 +151,6 @@ class HeadStabilizationInferenceWrapper:
         self,
         model_path: Path,
         scaler_param_path: Path,
-        input_size: int = 42 + 6,
-        hidden_size: int = 8,
         contact_force_thr: float = 3.0,
     ):
         # Load scaler params
@@ -162,10 +160,8 @@ class HeadStabilizationInferenceWrapper:
         self.scaler_std = scaler_params["std"]
 
         # Load model
-        self.model = ThreeLayerMLP(
-            input_size=input_size, hidden_size=hidden_size, output_size=2
-        ).cpu()  # it's not worth moving data to the GPU, just run it on the CPU
-        self.model.load_state_dict(torch.load(model_path))
+        # it's not worth moving data to the GPU, just run it on the CPU
+        self.model = ThreeLayerMLP.load_from_checkpoint(model_path).cpu()
         self.contact_force_thr = contact_force_thr
 
     def __call__(

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import lightning as pl
+import pickle
 from torch.utils.data import DataLoader, ConcatDataset, random_split
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -18,9 +19,7 @@ import flygym.examples.head_stabilization.viz as viz
 from flygym.examples.head_stabilization import WalkingDataset, ThreeLayerMLP
 
 
-base_dir = sim_data_dir = Path(
-    "/home/sibwang/Projects/flygym/outputs/head_stabilization/"
-)
+base_dir = sim_data_dir = Path("./outputs/head_stabilization/")
 
 
 def subset_to_mask(dof_subset):
@@ -219,6 +218,8 @@ if __name__ == "__main__":
         base_dir / "random_exploration/tripod_flat_train_set_1.00_1.00/sim_data.pkl"
     )
     joint_angle_scaler = _ds.joint_angle_scaler
+    with open(base_dir / "models/joint_angle_scaler_params.pkl", "wb") as f:
+        pickle.dump({"mean": joint_angle_scaler.mean, "std": joint_angle_scaler.std}, f)
 
     # Load datasets
     individual_datasets = load_datasets(base_dir, excluded_videos, joint_angle_scaler)
