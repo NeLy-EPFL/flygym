@@ -312,6 +312,9 @@ class Fly:
             that need to be applied to the neck DoFs to stabilizes the head
             of the fly. By default None.
         """
+        # Make a copy to avoid modifying the original list
+        actuated_joints = list(actuated_joints)
+
         # Check neck actuation if head stabilization is enabled
         if head_stabilization_model is not None:
             if "joint_Head_yaw" in actuated_joints or "joint_Head" in actuated_joints:
@@ -325,7 +328,7 @@ class Fly:
             self._last_observation = None  # tracked only for head stabilization
             self._last_neck_actuation = None  # tracked only for head stabilization
 
-        self.actuated_joints = list(actuated_joints)
+        self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
