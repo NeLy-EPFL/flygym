@@ -1,4 +1,3 @@
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -24,12 +23,12 @@ if __name__ == "__main__":
     plt.rcParams["font.family"] = "Arial"
     plt.rcParams["pdf.fonttype"] = 42
 
-    # experiment parameters
+    # Experiment parameters
     vision_refresh_rate = 500  # Hz
-    timestep = 1 / vision_refresh_rate
+    timestep = 1 / 500
     start_angle = -180
     end_angle = 180
-    speeds = 360 * np.power(2.0, np.arange(-7, 5)[::-1])
+    speeds = 360 * np.power(2.0, np.arange(-7, 5))
     time_before = 0.2
     time_after = 0.2
     bar_width_deg = 4
@@ -62,7 +61,7 @@ if __name__ == "__main__":
         camera_id="birdeye_cam",
         play_speed=0.2,
         window_size=(800, 608),
-        fps=24,
+        fps=25,
         play_speed_text=False,
     )
 
@@ -84,47 +83,63 @@ if __name__ == "__main__":
     output_dir = Path(f"./outputs/moving_bars_{bar_width_deg}deg/")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for speed in speeds:
-        video_path = output_dir / f"bar_simulation_{speed}.mp4"
-        nn_hist_path = output_dir / f"nn_hist_{speed}.npy"
+    vision_hist = []
 
-        if video_path.exists() and nn_hist_path.exists():
+    for i, speed in enumerate(speeds[::-1]):
+        save_path = output_dir / f"{speed}.npz"
+        save_video = i == 0
+        video_path = output_dir / f"bar_simulation_{speed}.mp4"
+
+        if save_path.exists() and (video_path.exists() or not save_video):
             print(f"Skipping simulation for speed {speed}°/s")
             continue
         else:
             print(f"Running simulation for speed {speed}°/s")
+
+        if save_video:
+            sim.cameras = [cam]
+        else:
+            sim.cameras = []
+
+        nn_activities_hist = []
+        t = []
 
         run_time = abs(end_angle - start_angle) / speed
         arena.azimuth_func = get_azimuth_func(
             start_angle, end_angle, run_time, time_before
         )
         arena.reset(sim.physics)
+        sim.reset(seed=0)
         run_time += time_before + time_after
         num_physics_steps = int(run_time / sim.timestep)
 
-        vision_hist = []
-        nn_activities_hist = []
-
         # Main simulation loop
         for i in trange(num_physics_steps):
-            obs, _, _, _, info = sim.step(np.zeros(2))
-            rendered_img = sim.render()[0]
-            if rendered_img is not None:
-                vision_hist.append(obs["vision"])
+            obs = sim.step(np.zeros(2))[0]
+            sim.render()
+
+            if sim.curr_time >= len(t) * cam._eff_render_interval:
+                t.append(sim.curr_time)
                 nn_activities_hist.append(obs["nn_activities"])
 
-        visualize_vision(
-            video_path,
-            fly.retina,
-            sim.retina_mapper,
-            cam._frames,
-            vision_hist,
-            nn_activities_hist,
-            fps=cam.fps,
+                if save_video:
+                    vision_hist.append(obs["vision"])
+
+        np.savez_compressed(
+            save_path, t=t, nn_activities=np.array([i[:] for i in nn_activities_hist])
         )
 
-        cam.reset()
-        np.save(nn_hist_path, np.array([i[:] for i in nn_activities_hist]))
+        if save_video:
+            visualize_vision(
+                video_path,
+                fly.retina,
+                sim.retina_mapper,
+                cam._frames,
+                vision_hist,
+                nn_activities_hist,
+                fps=cam.fps,
+            )
+            vision_hist.clear()
 
     # Plot the activity of a single neuron type
     def get_activity(x, neuron_type):
@@ -144,15 +159,17 @@ if __name__ == "__main__":
 
     neuron_type = "T4a"
 
+    save_paths = [output_dir / f"{i}.npz" for i in speeds]
+
     nn_activities = [
-        get_activity(np.load(output_dir / f"nn_hist_{i}.npy"), neuron_type)
-        for i in speeds
+        get_activity(np.load(i)["nn_activities"], neuron_type) for i in save_paths
     ]
+    t = [np.load(i)["t"] for i in save_paths]
     steepest_idx = [gaussian_filter1d(i, 2, order=1).argmax() for i in nn_activities]
 
     plt.rcParams["figure.facecolor"] = "none"
 
-    # plot activity over time
+    # Plot activity over time
     n_cols = len(speeds)
     fig, axs = plt.subplots(
         1, n_cols, figsize=(n_cols * 1.2, 1), sharex=False, sharey=True, dpi=300
@@ -167,17 +184,15 @@ if __name__ == "__main__":
             speed = int(speed)
 
         y = nn_activities[i]
-        t = np.arange(len(y)) / 120
-        ax.plot(t, y, color="k")
+
+        ax.plot(t[i], y, color="k")
         j = steepest_idx[i]
-        t0 = t[y[:j].argmin()]
-        t1 = t[y[j:].argmax() + j]
+        t0 = t[i][y[:j].argmin()]
+        t1 = t[i][y[j:].argmax() + j]
         dur = t1 - t0
         ax.set_xlim(t0 - dur * 2, t1 + dur * 2)
         ax.set_title(f"{speed}°/s")
-
         x_trans = ax.get_xaxis_transform()
-
         ax.plot([t0, t1], [0, 0], transform=x_trans, c="k", clip_on=False)
         ax.text(
             (t0 + t1) / 2,
@@ -206,7 +221,7 @@ if __name__ == "__main__":
 
     plt.savefig(output_dir / f"{neuron_type}_activity.pdf", bbox_inches="tight")
 
-    # plot the tuning curve
+    # Plot the tuning curve
     tuning_curve = [nn_activities[i][j:].max() for i, j in enumerate(steepest_idx)]
 
     fig, ax = plt.subplots(1, 1, figsize=(3, 2), dpi=300)
