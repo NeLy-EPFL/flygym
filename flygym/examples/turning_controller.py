@@ -63,7 +63,10 @@ class HybridTurningNMF(SingleFlySimulation):
         **kwargs,
     ):
         # Check if we have the correct list of actuated joints
-        if fly.actuated_joints != all_leg_dofs:
+        if (
+            fly.actuated_joints != all_leg_dofs
+            and fly.actuated_joints != all_leg_dofs + ["joint_Head_yaw", "joint_Head"]
+        ):
             raise ValueError(
                 "``HybridTurningNMF`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
