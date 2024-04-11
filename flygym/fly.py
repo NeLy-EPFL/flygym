@@ -1197,22 +1197,31 @@ class Fly:
         return obs, info
 
     def pre_step(self, action, sim: "Simulation"):
+        physics = sim.physics
         joint_action = action["joints"]
 
         # estimate necessary neck actuation signals for head stabilization
         if self.head_stabilization_model is not None:
-            if self._last_observation is not None:
-                leg_joint_angles = self._last_observation["joints"][0, :-2]
-                leg_contact_forces = self._last_observation["contact_forces"]
-                neck_actuation = self.head_stabilization_model(
-                    leg_joint_angles, leg_contact_forces
-                )
+            if callable(self.head_stabilization_model):
+                if self._last_observation is not None:
+                    leg_joint_angles = self._last_observation["joints"][0, :-2]
+                    leg_contact_forces = self._last_observation["contact_forces"]
+                    neck_actuation = self.head_stabilization_model(
+                        leg_joint_angles, leg_contact_forces
+                    )
+                else:
+                    neck_actuation = np.zeros(2)
             else:
-                neck_actuation = np.zeros(2)
+                quat = physics.bind(self.thorax).xquat
+                quat_inv = transformations.quat_inv(quat)
+                roll, pitch = transformations.quat_to_euler(quat_inv, ordering="XYZ")[
+                    :2
+                ]
+                neck_actuation = np.array([roll, pitch])
+
             joint_action = np.concatenate((joint_action, neck_actuation))
             self._last_neck_actuation = neck_actuation
 
-        physics = sim.physics
         physics.bind(self.actuators).ctrl = joint_action
 
         if self.enable_adhesion:
