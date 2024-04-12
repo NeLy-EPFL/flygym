@@ -1,3 +1,4 @@
+import cv2
 import pickle
 import torch
 import numpy as np
@@ -8,12 +9,14 @@ from tqdm import trange
 from flygym import Fly, Camera
 from flygym.examples.turning_controller import HybridTurningNMF
 from flyvision.utils.activity_utils import LayerActivity
+from dm_control.utils import transformations
 
 from flygym.examples.vision_connectome_model import (
     RealTimeVisionNetworkView,
     RetinaMapper,
     MovingFlyArena,
     visualize_vision,
+    save_single_eye_video,
 )
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
@@ -47,7 +50,7 @@ class NMFRealisticVison(HybridTurningNMF):
             self._nn_activities_buffer = nn_activities
             self._nn_activities_arr_buffer = nn_activities_arr
 
-        obs["nn_activities"] = self._nn_activities_buffer
+        info["nn_activities"] = self._nn_activities_buffer
         obs["nn_activities_arr"] = self._nn_activities_arr_buffer
         return obs, reward, terminated, truncated, info
 
@@ -65,7 +68,7 @@ class NMFRealisticVison(HybridTurningNMF):
         nn_activities, nn_activities_arr = self._get_visual_nn_activities(obs["vision"])
         self._nn_activities_buffer = nn_activities
         self._nn_activities_arr_buffer = nn_activities_arr
-        obs["nn_activities"] = self._nn_activities_buffer
+        info["nn_activities"] = self._nn_activities_buffer
         obs["nn_activities_arr"] = self._nn_activities_arr_buffer
         return obs, info
 
@@ -106,7 +109,7 @@ if __name__ == "__main__":
     enable_head_stabilization = True
     output_dir = Path("./outputs/connectome_constrained_vision/complex_terrain")
     output_dir.mkdir(parents=True, exist_ok=True)
-    run_time = 2.0  # seconds
+    run_time = 3  # seconds
     vision_refresh_rate = 500  # Hz
     t3_detection_threshold = 0.15
 
@@ -139,7 +142,7 @@ if __name__ == "__main__":
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=vision_refresh_rate,
-        neck_kp=1000,
+        neck_kp=50,
         head_stabilization_model=head_stabilization_model,
     )
     cam = Camera(
@@ -157,7 +160,7 @@ if __name__ == "__main__":
     )
 
     # Setup parameters for object following
-    with open(output_dir / "vision_simulation_obs_hist.npy", "rb") as f:
+    with open(output_dir / "response_to_fly_obs_hist.npy", "rb") as f:
         obs_hist = pickle.load(f)
     nn_activities_all = LayerActivity(
         np.array([obs["nn_activities_arr"] for obs in obs_hist]),
@@ -165,7 +168,8 @@ if __name__ == "__main__":
         keepref=True,
         use_central=False,
     )
-    t3_median_response = np.median(nn_activities_all["T3"], axis=0)
+    t3_mean_response = np.mean(nn_activities_all["T3"], axis=0)
+    t3_std = np.std(nn_activities_all["T3"], axis=0)
 
     # Run simulation
     obs, info = sim.reset(seed=0)
@@ -174,37 +178,90 @@ if __name__ == "__main__":
     rendered_image_hist = []
     vision_observation_hist = []
     nn_activities_hist = []
+    neck_actuation_hist = []
+    target_correction_hist = []
     dn_drive = np.array([1, 1])
+    
+    t3_zscore_hist = []
+    
+    import matplotlib.pyplot as plt
+    diff_hist = []
 
     for i in trange(num_physics_steps):
         if info["vision_updated"]:
-            nn_activities = obs["nn_activities"]
-            obj_mask = t3_median_response - nn_activities["T3"] > t3_detection_threshold
+            nn_activities = info["nn_activities"]
+            t3_zscore = (nn_activities["T3"] - t3_mean_response) / t3_std
+            t3_zscore_hist.append(t3_zscore)
+            obj_mask = t3_zscore < -3
+            # _obj_mask = sim.retina_mapper.flyvis_to_flygym(obj_mask[1, :].astype(np.float32))
+            # _t3_zscore = sim.retina_mapper.flyvis_to_flygym(t3_zscore[1, :].astype(np.float32))
+            # _t3_zscore_viz = fly.retina.hex_pxls_to_human_readable(_t3_zscore)
+            # _mask_viz = fly.retina.hex_pxls_to_human_readable(_obj_mask)
+            # _mask_viz = np.repeat(_mask_viz[:, :, None], 3, axis=2).astype("uint8") * 255
+            # print("_mv", _mask_viz.shape)
+            # plt.imshow(_mask_viz)
+            # plt.show()
+            # cv2.imshow("prev", _mask_viz)
+            # cv2.waitKey(1)
+            # if i == 1140:
+            #     plt.imshow(_t3_zscore_viz, vmin=-5, vmax=5, cmap="seismic")
+            #     plt.show()
+            # cv2.imwrite(f"temp/{i}.jpg", _mask_viz)
             t4a_intensity = np.mean(np.abs(nn_activities["T4a"][obj_mask]))
             t4b_intensity = np.mean(np.abs(nn_activities["T4b"][obj_mask]))
-            print(t4a_intensity - t4b_intensity)
-            diff = (t4a_intensity - t4b_intensity) * 100
-            smaller_amp = max(1 - np.abs(diff) * 3, 0.4)
-            larger_amp = min(1 + np.abs(diff) * 1, 1.2)
+            diff = (t4a_intensity - t4b_intensity)
+            diff_hist.append(diff)
+            smoothed_diff = np.nanmedian(diff_hist[-100:])
+            
+            smaller_amp = max(1 - np.abs(smoothed_diff * 5) * 3, 0.4)
+            larger_amp = min(1 + np.abs(smoothed_diff * 5) * 1, 1.2)
             if diff < 0:
                 dn_drive = np.array([larger_amp, smaller_amp])
             else:
                 dn_drive = np.array([smaller_amp, larger_amp])
             if np.any(np.isnan(dn_drive)):
                 dn_drive = np.array([1, 1])
+            # dn_drive = np.array([1, 1])
+            print(smoothed_diff, diff, dn_drive)
+
+        # quat = sim.physics.bind(sim.fly.thorax).xquat
+        # quat_inv = transformations.quat_inv(quat)
+        # roll, pitch, yaw = transformations.quat_to_euler(quat_inv, ordering="XYZ")
+        # target_correction_hist.append([roll, pitch])
 
         obs, _, _, _, info = sim.step(action=dn_drive)
         rendered_img = sim.render()[0]
         obs_hist.append(obs)
+        neck_actuation_hist.append(info["neck_actuation"])
         if rendered_img is not None:
             rendered_image_hist.append(rendered_img)
             vision_observation_hist.append(obs["vision"])
-            nn_activities_hist.append(obs["nn_activities"])
+            nn_activities_hist.append(info["nn_activities"])
+
+    save_single_eye_video(
+        vision_observation_hist,
+        fly.retina,
+        fps=cam.fps / cam.play_speed,
+        output_path=output_dir / "1eye_social_following_with_stabilization.mp4",
+        side="right",
+    )
+
+    with open(output_dir / "fly_tracking_sim_data.pkl", "wb") as f:
+        pickle.dump(
+            {
+                "obs_hist": obs_hist,
+                "neck_actuation_hist": neck_actuation_hist,
+                "target": target_correction_hist,
+                "t3_zscore_hist": t3_zscore_hist,
+                "diff_hist": diff_hist,
+            },
+            f,
+        )
 
     # Clean up, saving data, and visualization
-    # cam.save_video(output_dir / "social_following.mp4")
+    cam.save_video(output_dir / "social_following.mp4")
     visualize_vision(
-        Path(output_dir / "social_following.mp4"),
+        Path(output_dir / "social_following_with_stabilization.mp4"),
         fly.retina,
         sim.retina_mapper,
         rendered_image_hist,
