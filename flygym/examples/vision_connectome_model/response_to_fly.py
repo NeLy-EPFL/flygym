@@ -16,6 +16,7 @@ from flygym.examples.vision_connectome_model import (
     MovingFlyArena,
     visualize_vision,
 )
+from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
 
 torch.manual_seed(0)
@@ -86,6 +87,7 @@ class NMFRealisticVison(HybridTurningNMF):
 
 
 if __name__ == "__main__":
+    enable_head_stabilization = True
     regenerate_walking = True
     output_dir = Path("./outputs/connectome_constrained_vision/complex_terrain/")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -106,13 +108,24 @@ if __name__ == "__main__":
             "Tarsus5",
         ]
     ]
+    
+    # Load head stabilization model if enabled
+    if enable_head_stabilization:
+        model_path = Path("outputs/head_stabilization/models/")
+        head_stabilization_model = HeadStabilizationInferenceWrapper(
+            model_path=model_path / "All.ckpt",
+            scaler_param_path=model_path / "joint_angle_scaler_params.pkl",
+        )
+    else:
+        head_stabilization_model = None
 
     fly = Fly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=vision_refresh_rate,
-        neck_kp=1000,
+        neck_kp=100,
+        head_stabilization_model=head_stabilization_model,
     )
 
     cam = Camera(
@@ -166,5 +179,5 @@ if __name__ == "__main__":
     ]
     for obs in obs_hist:
         del obs["nn_activities"]
-    with open(output_dir / "vision_simulation_obs_hist.npy", "wb") as f:
+    with open(output_dir / "response_to_fly_obs_hist.npy", "wb") as f:
         pickle.dump(obs_hist, f)

@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.style
@@ -157,3 +158,32 @@ def visualize_vision(
 
     video_path.parent.mkdir(exist_ok=True, parents=True)
     animation.save(video_path, writer="ffmpeg", fps=fps, dpi=dpi)
+
+
+def save_single_eye_video(
+    vision_observation_hist: List[np.ndarray],
+    retina: Retina,
+    fps: int,
+    output_path: Path,
+    side: str = "right",
+):
+    i_side = {"left": 0, "right": 1}[side]
+    frames = []
+    for vis_obs in vision_observation_hist:
+        img = retina.hex_pxls_to_human_readable(
+            vis_obs[i_side], color_8bit=True  # right
+        ).max(axis=-1)
+        frames.append(img)
+
+    # Determine the width and height from the first frame
+    height, width = frames[0].shape
+
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # 'mp4v' (or 'avc1') for MP4
+    out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
+    for frame in frames:
+        # Assuming the frames are in BGR color format
+        out.write(np.repeat(frame[:, :, None], 3, axis=2))  # Write out frame to video
+
+    out.release()  # Release the VideoWriter

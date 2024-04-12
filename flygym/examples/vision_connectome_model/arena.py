@@ -49,7 +49,7 @@ class MovingFlyArena(BaseArena):
         friction=(1, 0.005, 0.0001),
         obj_radius=1,
         init_fly_pos=(5, 0),
-        move_speed=10,
+        move_speed=6,
         move_direction="right",
         lateral_magnitude=2,
     ):
