@@ -8,8 +8,12 @@ import dm_control.mujoco
 import imageio
 import numpy as np
 from dm_control import mjcf
+from dm_control.utils import transformations
 from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
+
+
+_roll_eye = np.roll(np.eye(4, 3), -1)
 
 
 class Camera:
@@ -78,7 +82,7 @@ class Camera:
         play_speed_text: bool = True,
         draw_contacts: bool = False,
         decompose_contacts: bool = True,
-        force_arrow_scaling: float = 1.0,
+        force_arrow_scaling: float = float("nan"),
         tip_length: float = 10.0,  # number of pixels
         contact_threshold: float = 0.1,
         draw_gravity: bool = False,
@@ -89,6 +93,7 @@ class Camera:
             Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]
         ] = ((255, 0, 0), (0, 255, 0), (0, 0, 255)),
         output_path: Optional[Union[str, Path]] = None,
+        perspective_arrow_length=False,
     ):
         """Initialize a Camera.
 
@@ -118,9 +123,10 @@ class Camera:
         decompose_contacts : bool
             If True, the arrows visualizing contact forces will be
             decomposed into x-y-z components. By default True.
-        force_arrow_scaling : float
+        force_arrow_scaling : float, optional
             Scaling factor determining the length of arrows visualizing
-            contact forces. By default 1.0.
+            contact forces. By default 1.0 if perspective_arrow_length
+            is True and 10.0 otherwise.
         tip_length : float
             Size of the arrows indicating the contact forces in pixels. By
             default 10.
@@ -147,6 +153,9 @@ class Camera:
         output_path : str or Path, optional
             Path to which the rendered video should be saved. If None, the
             video will not be saved. By default None.
+        perspective_arrow_length : bool
+            If true, the length of the arrows indicating the contact forces
+            will be determined by the perspective.
         """
         self.fly = fly
         self.window_size = window_size
@@ -156,7 +165,6 @@ class Camera:
         self.play_speed_text = play_speed_text
         self.draw_contacts = draw_contacts
         self.decompose_contacts = decompose_contacts
-        self.force_arrow_scaling = force_arrow_scaling
         self.tip_length = tip_length
         self.contact_threshold = contact_threshold
         self.draw_gravity = draw_gravity
@@ -165,6 +173,12 @@ class Camera:
         self.camera_follows_fly_orientation = camera_follows_fly_orientation
         self.decompose_colors = decompose_colors
         self.camera_id = camera_id.replace("Animat", fly.name)
+        self.perspective_arrow_length = perspective_arrow_length
+
+        if not np.isfinite(force_arrow_scaling):
+            self.force_arrow_scaling = 1.0 if perspective_arrow_length else 10.0
+        else:
+            self.force_arrow_scaling = force_arrow_scaling
 
         if output_path is not None:
             self.output_path = Path(output_path)
@@ -397,7 +411,7 @@ class Camera:
         img = physics.render(width=width, height=height, camera_id=self.camera_id)
         img = img.copy()
         if self.draw_contacts:
-            img = self._draw_contacts(img)
+            img = self._draw_contacts(img, physics)
         if self.draw_gravity:
             img = self._draw_gravity(img, physics)
 
@@ -506,15 +520,22 @@ class Camera:
 
         return img
 
-    def _draw_contacts(self, img: np.ndarray) -> np.ndarray:
+    def _draw_contacts(
+        self, img: np.ndarray, physics: mjcf.Physics, thickness=2
+    ) -> np.ndarray:
         """Draw contacts as arrow which length is proportional to the force
         magnitude. The arrow is drawn at the center of the body. It uses
         the camera matrix to transfer from the global space to the pixels
         space.
         """
 
+        def clip(p_in, p_out, z_clip):
+            t = (z_clip - p_out[-1]) / (p_in[-1] - p_out[-1])
+            return t * p_in + (1 - t) * p_out
+
         forces = self.fly.last_obs["contact_forces"]
         pos = self.fly.last_obs["contact_pos"]
+
         magnitudes = np.linalg.norm(forces, axis=1)
         contact_indices = np.nonzero(magnitudes > self.contact_threshold)[0]
 
@@ -523,77 +544,78 @@ class Camera:
         if n_contacts == 0:
             return img
 
-        if not self.decompose_contacts:
-            arrow_points = np.tile(pos[:, contact_indices], (1, 2)).squeeze()
+        contact_forces = forces[contact_indices] * self.force_arrow_scaling
 
-            arrow_points[:, n_contacts:] += (
-                forces[:, contact_indices] * self.force_arrow_scaling
-            )
+        if self.decompose_contacts:
+            contact_pos = pos[:, None, contact_indices]
+            Xw = contact_pos + (contact_forces[:, None] * _roll_eye).T
         else:
-            arrow_points = np.tile(pos[:, contact_indices], (1, 4)).squeeze()
-            for j in range(3):
-                arrow_points[j, (j + 1) * n_contacts : (j + 2) * n_contacts] += (
-                    forces[contact_indices, j] * self.force_arrow_scaling
-                )
+            contact_pos = pos[:, contact_indices]
+            Xw = np.stack((contact_pos, contact_pos + contact_forces.T), 1)
 
-        camera_matrix = self._dm_camera.matrix
+        # Convert to homogeneous coordinates
+        Xw = np.concatenate((Xw, np.ones((1, *Xw.shape[1:]))))
 
-        # code sample from dm_control demo notebook
-        xyz_global = arrow_points
+        mat = self._dm_camera.matrices()
 
-        # Camera matrices multiply homogenous [x, y, z, 1] vectors.
-        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
-        corners_homogeneous[:3, :] = xyz_global
+        # Project to camera space
+        Xc = np.tensordot(mat.rotation @ mat.translation, Xw, 1)
+        Xc = Xc[:3, :] / Xc[-1, :]
 
-        # Project world coordinates into pixel space. See:
-        # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
-        xs, ys, s = camera_matrix @ corners_homogeneous
+        z_near = -physics.model.vis.map.znear * physics.model.stat.extent
 
-        # x and y are in the pixel coordinate system.
-        x = np.rint(xs / s).astype(int)
-        y = np.rint(ys / s).astype(int)
+        is_behind_cam = Xc[2] >= z_near
+        is_visible = ~(is_behind_cam[0] & is_behind_cam[1:])
+
+        is_out = is_visible & is_behind_cam[1:]
+        is_in = np.where(is_visible & is_behind_cam[0])
+
+        if self.decompose_contacts:
+            lines = np.stack((np.stack([Xc[:, 0]] * 3, axis=1), Xc[:, 1:]), axis=1)
+        else:
+            lines = Xc[:, :, None]
+
+        lines[:, 1, is_out] = clip(lines[:, 0, is_out], lines[:, 1, is_out], z_near)
+        lines[:, 0, is_in] = clip(lines[:, 1, is_in], lines[:, 0, is_in], z_near)
+
+        # Project to pixel space
+        lines = np.tensordot((mat.image @ mat.focal)[:, :3], lines, axes=1)
+        lines2d = lines[:2] / lines[-1]
+        lines2d = lines2d.T
+
+        if not self.perspective_arrow_length:
+            unit_vectors = lines2d[:, :, 1] - lines2d[:, :, 0]
+            length = np.linalg.norm(unit_vectors, axis=-1, keepdims=True)
+            length[length == 0] = 1
+            unit_vectors /= length
+            lines2d[:, :, 1] = (
+                lines2d[:, :, 0] + np.abs(contact_forces[:, :, None]) * unit_vectors
+            )
+
+        lines2d = np.rint(lines2d.reshape((-1, 2, 2))).astype(int)
+
+        argsort = lines[2, 0].T.ravel().argsort()
+        color_indices = np.tile(np.arange(3), lines.shape[-1])
 
         img = img.astype(np.uint8)
 
-        # Draw the contact forces
-        for i in range(n_contacts):
-            pts1 = [x[i], y[i]]
-            if self.decompose_contacts:
-                for j in range(3):
-                    pts2 = np.array(
-                        [x[i + (j + 1) * n_contacts], y[i + (j + 1) * n_contacts]]
-                    )
-                    if (
-                        np.linalg.norm(
-                            arrow_points[:, i]
-                            - arrow_points[:, i + (j + 1) * n_contacts]
-                        )
-                        > self.contact_threshold
-                    ):
-                        arrow_length = np.linalg.norm(pts2 - pts1)
-                        if arrow_length > 1e-2:
-                            r = self.tip_length / arrow_length
-                        else:
-                            r = 1e-4
-                        img = cv2.arrowedLine(
-                            img,
-                            pts1,
-                            pts2,
-                            color=self.decompose_colors[j],
-                            thickness=2,
-                            tipLength=r,
-                        )
+        for j in argsort:
+            if not is_visible.ravel()[j]:
+                continue
+
+            color = self.decompose_colors[color_indices[j]]
+            p1, p2 = lines2d[j]
+            arrow_length = np.linalg.norm(p2 - p1)
+
+            if arrow_length > 1e-2:
+                r = self.tip_length / arrow_length
             else:
-                pts2 = np.array([x[i + n_contacts], y[i + n_contacts]])
-                r = self.tip_length / np.linalg.norm(pts2 - pts1)
-                img = cv2.arrowedLine(
-                    img,
-                    pts1,
-                    pts2,
-                    color=(255, 0, 0),
-                    thickness=2,
-                    tipLength=r,
-                )
+                r = 1e-4
+
+            if is_out.ravel()[j] and self.perspective_arrow_length:
+                cv2.line(img, p1, p2, color, thickness, cv2.LINE_AA)
+            else:
+                cv2.arrowedLine(img, p1, p2, color, thickness, cv2.LINE_AA, tipLength=r)
         return img
 
     def save_video(self, path: Union[str, Path], stabilization_time=0.02):
@@ -628,3 +650,43 @@ class Camera:
     def reset(self):
         self._frames.clear()
         self._last_render_time = -np.inf
+
+    def _correct_camera_orientation(self, camera_name: str):
+        # Correct the camera orientation by incorporating the spawn rotation
+        # of the arena
+
+        # Get the camera
+        fly = self.fly
+        camera = fly.model.find("camera", camera_name)
+
+        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
+            return 0
+
+        if "head" in camera_name or "front_zoomin" in camera_name:
+            # Don't correct the head camera
+            return camera
+
+        # Add the spawn rotation (keep horizon flat)
+        spawn_quat = np.array(
+            [
+                np.cos(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[0] * np.sin(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[1] * np.sin(fly.spawn_orientation[-1] / 2),
+                fly.spawn_orientation[2] * np.sin(fly.spawn_orientation[-1] / 2),
+            ]
+        )
+
+        # Change camera euler to quaternion
+        camera_quat = transformations.euler_to_quat(camera.euler)
+        new_camera_quat = transformations.quat_mul(
+            transformations.quat_inv(spawn_quat), camera_quat
+        )
+        camera.euler = transformations.quat_to_euler(new_camera_quat)
+
+        # Elevate the camera slightly gives a better view of the arena
+        if "zoomin" not in camera_name:
+            camera.pos = camera.pos + [0.0, 0.0, 0.5]
+        if "front" in camera_name:
+            camera.pos[2] = camera.pos[2] + 1.0
+
+        return camera
