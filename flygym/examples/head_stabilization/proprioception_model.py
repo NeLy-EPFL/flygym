@@ -165,12 +165,13 @@ class HeadStabilizationInferenceWrapper:
         self.contact_force_thr = contact_force_thr
 
     def __call__(
-        self, leg_joint_angles: np.ndarray, leg_contact_forces: np.ndarray
+        self, joint_angles: np.ndarray, contact_forces: np.ndarray
     ) -> np.ndarray:
-        leg_joint_angles = (leg_joint_angles - self.scaler_mean) / self.scaler_std
-        leg_contact_forces = np.linalg.norm(leg_contact_forces, axis=1)
-        leg_contact_forces = leg_contact_forces.reshape(6, 6).sum(axis=1)
-        x = np.concatenate([leg_joint_angles, leg_contact_forces], dtype=np.float32)
+        joint_angles = (joint_angles - self.scaler_mean) / self.scaler_std
+        contact_forces = np.linalg.norm(contact_forces, axis=1)
+        contact_forces = contact_forces.reshape(6, 6).sum(axis=1)
+        contact_mask = contact_forces >= self.contact_force_thr
+        x = np.concatenate([joint_angles, contact_mask], dtype=np.float32)
         input_tensor = torch.tensor(x[None, :]).cpu()
         output_tensor = self.model(input_tensor)
         return output_tensor.detach().numpy().squeeze()
