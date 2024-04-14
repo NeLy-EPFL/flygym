@@ -309,6 +309,7 @@ class HybridTurningNMF(SingleFlySimulation):
         }
         obs, reward, terminated, truncated, info = super().step(action)
         info["net_corrections"] = all_net_corrections
+        info.update(action)  # add lower-level action to info
         return obs, reward, terminated, truncated, info
 
 
