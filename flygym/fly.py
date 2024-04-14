@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, Callable, TYPE_CHECKING
 
 import numpy as np
 from dm_control import mjcf
@@ -15,6 +15,9 @@ import flygym.util as util
 import flygym.vision as vision
 from flygym.arena import BaseArena
 from flygym.util import get_data_path
+
+if TYPE_CHECKING:
+    from flygym.simulation import Simulation
 
 
 class Fly:
@@ -105,6 +108,10 @@ class Fly:
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators. Otherwise,
+        ``actuator_kp`` will be used.
     retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
@@ -154,9 +161,9 @@ class Fly:
         joint_damping: float = 0.06,
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
-        actuator_kp: float = 50.0,
-        tarsus_stiffness: float = 10.0,
-        tarsus_damping: float = 10.0,
+        actuator_kp: float = 45.0,
+        tarsus_stiffness: float = 7.5,
+        tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
         contact_solref: Tuple[float, float] = (2e-4, 1e3),
         contact_solimp: Tuple[float, float, float, float, float] = (
@@ -174,6 +181,8 @@ class Fly:
         adhesion_force: float = 40,
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
+        neck_kp: Optional[float] = None,
+        head_stabilization_model: Optional[Callable] = None,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -235,17 +244,21 @@ class Fly:
         joint_damping : float
             Damping coefficient of actuated joints, by default 0.06.
         non_actuated_joint_stiffness : float
-            Stiffness of non-actuated joints, by default 1.0. (made stiff for better stability)
+            Stiffness of non-actuated joints, by default 1.0. If set to 0,
+            the DoF would passivly drift over time. Therefore it is set
+            explicitly here for better stability.
         non_actuated_joint_damping : float
-            Damping coefficient of non-actuated joints, by default 1.0. (made stiff for better stability)
+            Damping coefficient of non-actuated joints, by default 1.0.
+            Similar to ``non_actuated_joint_stiffness``, it is set
+            explicitly here for better stability.
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
         tarsus_stiffness : float
             Stiffness of the passive, compliant tarsus joints, by default
-            2.2.
+            7.5.
         tarsus_damping : float
             Damping coefficient of the passive, compliant tarsus joints, by
-            default 0.126.
+            default 1e-2.
         friction : float
             Sliding, torsional, and rolling friction coefficients, by
             default (1, 0.005, 0.0001)
@@ -290,9 +303,29 @@ class Fly:
             If True, colored spheres will be added to the model to indicate
             the positions of the cameras (for vision) and odor sensors. By
             default False.
-
+        neck_kp : float, optional
+            Position gain of the neck position actuators. If supplied, this
+            will overwrite ``actuator_kp`` for the neck actuators.
+            Otherwise, ``actuator_kp`` will be used.
+        head_stabilization_model : Callable, optional
+            A callable object that, given the observation, predicts signals
+            that need to be applied to the neck DoFs to stabilizes the head
+            of the fly. By default None.
         """
-        self.actuated_joints = actuated_joints
+        # Check neck actuation if head stabilization is enabled
+        if head_stabilization_model is not None:
+            if "joint_Head_yaw" in actuated_joints or "joint_Head" in actuated_joints:
+                raise ValueError(
+                    "``HybridTurningNMF`` requires the head joints to be actuated by "
+                    "a preset algorithm. However, the head joints are already included "
+                    "in the provided Fly instance. Please remove the head joints from "
+                    "the list of actuated joints."
+                )
+            actuated_joints += ["joint_Head_yaw", "joint_Head"]
+            self._last_observation = None  # tracked only for head stabilization
+            self._last_neck_actuation = None  # tracked only for head stabilization
+
+        self.actuated_joints = list(actuated_joints)
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
@@ -313,9 +346,10 @@ class Fly:
         self.adhesion_force = adhesion_force
         self.draw_adhesion = draw_adhesion
         self.draw_sensor_markers = draw_sensor_markers
-
+        self.neck_kp = neck_kp
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
+        self.head_stabilization_model = head_stabilization_model
 
         # Load NMF model
         if isinstance(xml_variant, str):
@@ -361,7 +395,7 @@ class Fly:
         else:
             self._self_collisions = self_collisions
 
-        self.last_adhesion = np.zeros(self.n_legs)
+        self._last_adhesion = np.zeros(self.n_legs)
         self._active_adhesion = np.zeros(self.n_legs)
 
         if self.draw_adhesion and not self.enable_adhesion:
@@ -386,9 +420,9 @@ class Fly:
         # Add cameras imitating the fly's eyes
         self._curr_visual_input = None
         self._curr_raw_visual_input = None
-        self.last_vision_update_time = -np.inf
+        self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
-        self.vision_update_mask_: List[bool] = []
+        self._vision_update_mask: List[bool] = []
         if self.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -396,12 +430,15 @@ class Fly:
         # Define list of actuated joints
         self.actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
-            for joint in actuated_joints
+            for joint in self.actuated_joints
         ]
+
         self._set_actuators_gain()
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
+
+        self.thorax = self.model.find("body", "Thorax")
 
         # Add self collisions
         self._init_self_contacts()
@@ -431,7 +468,7 @@ class Fly:
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # flip detection
-        self.flip_counter = 0
+        self._flip_counter = 0
 
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
@@ -449,7 +486,7 @@ class Fly:
     def name(self) -> str:
         return self.model.model
 
-    def post_init(self, arena: BaseArena, physics: mjcf.Physics):
+    def post_init(self, sim: "Simulation"):
         """Initialize attributes that depend on the arena or physics of the
         simulation.
 
@@ -462,12 +499,12 @@ class Fly:
         """
         self._adhesion_actuator_geom_id = np.array(
             [
-                physics.model.geom(f"{self.name}/{actuator.body}").id
+                sim.physics.model.geom(f"{self.name}/{actuator.body}").id
                 for actuator in self.adhesion_actuators
             ]
         )
 
-        self.observation_space = self._define_observation_space(arena)
+        self.observation_space = self._define_observation_space(sim.arena)
 
     def _configure_eyes(self):
         for name in ["LEye_cam", "REye_cam"]:
@@ -476,11 +513,12 @@ class Fly:
             sensor_body = parent_body.add(
                 "body", name=f"{name}_body", pos=sensor_config["rel_pos"]
             )
+
             sensor_body.add(
                 "camera",
                 name=name,
                 dclass="nmf",
-                mode="track",
+                mode="fixed",
                 euler=sensor_config["orientation"],
                 fovy=self.config["vision"]["fovy_per_eye"],
             )
@@ -508,43 +546,6 @@ class Fly:
                 "Collision specs must be a string ('legs', 'legs-no-coxa', 'tarsi', "
                 "'none'), or a list of body segment names."
             )
-
-    def _correct_camera_orientation(self, camera_name: str):
-        # Correct the camera orientation by incorporating the spawn rotation
-        # of the arena
-
-        # Get the camera
-        camera = self.model.find("camera", camera_name)
-        if camera is None or camera.mode in ["targetbody", "targetbodycom"]:
-            return 0
-        if "head" in camera_name or "front_zoomin" in camera_name:
-            # Don't correct the head camera
-            return camera
-
-        # Add the spawn rotation (keep horizon flat)
-        spawn_quat = np.array(
-            [
-                np.cos(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[0] * np.sin(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[1] * np.sin(self.spawn_orientation[-1] / 2),
-                self.spawn_orientation[2] * np.sin(self.spawn_orientation[-1] / 2),
-            ]
-        )
-
-        # Change camera euler to quaternion
-        camera_quat = transformations.euler_to_quat(camera.euler)
-        new_camera_quat = transformations.quat_mul(
-            transformations.quat_inv(spawn_quat), camera_quat
-        )
-        camera.euler = transformations.quat_to_euler(new_camera_quat)
-
-        # Elevate the camera slightly gives a better view of the arena
-        if "zoomin" not in camera_name:
-            camera.pos = camera.pos + [0.0, 0.0, 0.5]
-        if "front" in camera_name:
-            camera.pos[2] = camera.pos[2] + 1.0
-
-        return camera
 
     def _set_geom_colors(self):
         for type_, specs in self.config["appearance"].items():
@@ -621,6 +622,11 @@ class Fly:
         for actuator in self.actuators:
             actuator.kp = self.actuator_kp
 
+        if self.neck_kp is not None:
+            for dof in ["Head", "Head_roll", "Head_yaw"]:
+                actuator = self.model.find("actuator", f"actuator_position_joint_{dof}")
+                actuator.kp = self.neck_kp
+
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
             geom.friction = self.friction
@@ -648,12 +654,12 @@ class Fly:
         ), f"Real parent not found for {child_name} but this cannot be"
         return real_parent
 
-    def get_real_children(self, parent):
+    def _get_real_children(self, parent):
         real_children = []
         parent_name = parent.name.split("_")[0]
         for child in parent.get_children("body"):
             if parent_name in child.name:
-                real_children.extend(self.get_real_children(child.name))
+                real_children.extend(self._get_real_children(child))
 
             else:
                 real_children.extend([child.name.split("_")[0]])
@@ -675,8 +681,8 @@ class Fly:
                     simple_body1_name = body1.name.split("_")[0]
                     simple_body2_name = body2.name.split("_")[0]
 
-                    body1_children = self.get_real_children(body1)
-                    body2_children = self.get_real_children(body2)
+                    body1_children = self._get_real_children(body1)
+                    body2_children = self._get_real_children(body2)
 
                     body1_parent = self._get_real_parent(body1)
                     body2_parent = self._get_real_parent(body2)
@@ -922,40 +928,45 @@ class Fly:
 
     def _draw_adhesion(self, physics: mjcf.Physics):
         """Highlight the tarsal segments of the leg having adhesion"""
-        if np.any(self.last_adhesion == 1):
+        if np.any(self._last_adhesion == 1):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self.last_adhesion == 1].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 1].ravel()
             ] = self._adhesion_rgba
         if np.any(self._active_adhesion):
             physics.named.model.geom_rgba[
                 self._leg_adhesion_drawing_segments[self._active_adhesion].ravel()
             ] = self._active_adhesion_rgba
-        if np.any(self.last_adhesion == 0):
+        if np.any(self._last_adhesion == 0):
             physics.named.model.geom_rgba[
-                self._leg_adhesion_drawing_segments[self.last_adhesion == 0].ravel()
+                self._leg_adhesion_drawing_segments[self._last_adhesion == 0].ravel()
             ] = self._base_rgba
         return
 
-    def _update_vision(
-        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
-    ) -> None:
+    def _update_vision(self, sim: "Simulation") -> None:
         """Check if the visual input needs to be updated (because the
         vision update freq does not necessarily match the physics
         simulation timestep). If needed, update the visual input of the fly
         and buffer it to ``self._curr_raw_visual_input``.
         """
+        physics = sim.physics
+
         vision_config = self.config["vision"]
         next_render_time = (
-            self.last_vision_update_time + self._eff_visual_render_interval
+            self._last_vision_update_time + self._eff_visual_render_interval
         )
+
         # avoid floating point errors: when too close, update anyway
-        if curr_time + 0.5 * timestep < next_render_time:
+        if sim.curr_time + 0.5 * sim.timestep < next_render_time:
             return
+
         raw_visual_input = []
         ommatidia_readouts = []
+
         for geom in self._geoms_to_hide:
             physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 0]
-        arena.pre_visual_render_hook(physics)
+
+        sim.arena.pre_visual_render_hook(physics)
+
         for side in ["L", "R"]:
             raw_img = physics.render(
                 width=vision_config["raw_img_width_px"],
@@ -966,13 +977,17 @@ class Fly:
             readouts_per_eye = self.retina.raw_image_to_hex_pxls(fish_img)
             ommatidia_readouts.append(readouts_per_eye)
             raw_visual_input.append(fish_img)
+
         for geom in self._geoms_to_hide:
             physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 1]
-        arena.post_visual_render_hook(physics)
+
+        sim.arena.post_visual_render_hook(physics)
         self._curr_visual_input = np.array(ommatidia_readouts)
+
         if self.render_raw_vision:
             self._curr_raw_visual_input = np.array(raw_visual_input)
-        self.last_vision_update_time = curr_time
+
+        self._last_vision_update_time = sim.curr_time
 
     def change_segment_color(self, physics: mjcf.Physics, segment: str, color):
         """Change the color of a segment of the fly.
@@ -998,11 +1013,9 @@ class Fly:
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
         """
-        return np.array(self.vision_update_mask_)
+        return np.array(self._vision_update_mask)
 
-    def get_observation(
-        self, physics: mjcf.Physics, arena: BaseArena, timestep: float, curr_time: float
-    ) -> ObsType:
+    def get_observation(self, sim: "Simulation") -> ObsType:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -1010,6 +1023,8 @@ class Fly:
         ObsType
             The observation as defined by the environment.
         """
+        physics = sim.physics
+
         # joint sensors
         joint_obs = np.zeros((3, len(self.actuated_joints)))
         joint_sensordata = physics.bind(self._joint_sensors).sensordata
@@ -1072,7 +1087,7 @@ class Fly:
                 adh_actuator_id = (
                     self._adhesion_bodies_with_contact_sensors == contact_sensor_id
                 )
-                if self.last_adhesion[adh_actuator_id] > 0:
+                if self._last_adhesion[adh_actuator_id] > 0:
                     if len(np.shape(normal)) > 1:
                         normal = np.mean(normal, axis=0)
                     contact_forces[contact_sensor_id, :] -= self.adhesion_force * normal
@@ -1101,12 +1116,12 @@ class Fly:
         # olfaction
         if self.enable_olfaction:
             antennae_pos = physics.bind(self._antennae_sensors).sensordata
-            odor_intensity = arena.get_olfaction(antennae_pos.reshape(4, 3))
+            odor_intensity = sim.arena.get_olfaction(antennae_pos.reshape(4, 3))
             obs["odor_intensity"] = odor_intensity.astype(np.float32)
 
         # vision
         if self.enable_vision:
-            self._update_vision(physics, arena, timestep, curr_time)
+            self._update_vision(sim)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
         return obs
@@ -1163,9 +1178,75 @@ class Fly:
                 info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
         return info
 
-    def reset(self):
-        self.last_vision_update_time = -np.inf
+    def reset(self, sim: "Simulation", **kwargs):
+        self._last_vision_update_time = -np.inf
         self._curr_raw_visual_input = None
         self._curr_visual_input = None
-        self.vision_update_mask_ = []
-        self.flip_counter = 0
+        self._vision_update_mask = []
+        self._flip_counter = 0
+
+        obs = self.get_observation(sim)
+        info = self.get_info()
+
+        if self.enable_vision:
+            info["vision_updated"] = True
+
+        return obs, info
+
+    def pre_step(self, action, sim: "Simulation"):
+        joint_action = action["joints"]
+
+        # estimate necessary neck actuation signals for head stabilization
+        if self.head_stabilization_model is not None:
+            if self._last_observation is not None:
+                leg_joint_angles = self._last_observation["joints"][0, :-2]
+                leg_contact_forces = self._last_observation["contact_forces"]
+                neck_actuation = self.head_stabilization_model(
+                    leg_joint_angles, leg_contact_forces
+                )
+            else:
+                neck_actuation = np.zeros(2)
+            joint_action = np.concatenate((joint_action, neck_actuation))
+            self._last_neck_actuation = neck_actuation
+
+        physics = sim.physics
+        physics.bind(self.actuators).ctrl = joint_action
+
+        if self.enable_adhesion:
+            physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
+            self._last_adhesion = action["adhesion"]
+
+    def post_step(self, sim: "Simulation"):
+        obs = self.get_observation(sim)
+        reward = self.get_reward()
+        terminated = self.is_terminated()
+        truncated = self.is_truncated()
+        info = self.get_info()
+
+        if self.enable_vision:
+            vision_updated_this_step = sim.curr_time == self._last_vision_update_time
+            self._vision_update_mask.append(vision_updated_this_step)
+            info["vision_updated"] = vision_updated_this_step
+
+        if self.detect_flip:
+            if obs["contact_forces"].sum() < 1:
+                self._flip_counter += 1
+            else:
+                self._flip_counter = 0
+
+            flip_config = self.config["flip_detection"]
+            has_passed_init = sim.curr_time > flip_config["ignore_period"]
+            contact_lost_time = self._flip_counter * sim.timestep
+            lost_contact_long_enough = (
+                contact_lost_time > flip_config["min_flip_duration"]
+            )
+            info["flip"] = has_passed_init and lost_contact_long_enough
+            info["flip_counter"] = self._flip_counter
+            info["contact_forces"] = obs["contact_forces"].copy()
+
+        if self.head_stabilization_model:
+            # this is tracked to decide neck actuation for the next step
+            self._last_observation = obs
+            info["neck_actuation"] = self._last_neck_actuation
+
+        return obs, reward, terminated, truncated, info

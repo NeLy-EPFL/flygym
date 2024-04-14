@@ -89,23 +89,26 @@ class CPGNetwork:
         self.curr_magnitudes += dr_dt * self.timestep
 
     def reset(self, init_phases=None, init_magnitudes=None):
-        """Reset the phases and magnitudes of the oscillators."""
+        """
+        Reset the phases and magnitudes of the oscillators. High magnitudes
+        and unfortunate phases might cause physics error.
+        """
         if init_phases is None:
             self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
         else:
             self.curr_phases = init_phases
 
         if init_magnitudes is None:
-            self.curr_magnitudes = (
-                self.random_state.random(self.num_cpgs) * self.intrinsic_amps
-            )
+            self.curr_magnitudes = np.zeros(self.num_cpgs)
         else:
             self.curr_magnitudes = init_magnitudes
 
 
-def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
+def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time, pbar=True):
     obs, info = nmf.reset()
-    for _ in trange(int(run_time / nmf.timestep)):
+    obs_list = []
+    range_ = trange if pbar else range
+    for _ in range_(int(run_time / nmf.timestep)):
         cpg_network.step()
         joints_angles = []
         adhesion_onoff = []
@@ -124,6 +127,8 @@ def run_cpg_simulation(nmf, cpg_network, preprogrammed_steps, run_time):
         }
         obs, reward, terminated, truncated, info = nmf.step(action)
         nmf.render()
+        obs_list.append(obs)
+    return obs_list
 
 
 if __name__ == "__main__":
