@@ -162,6 +162,7 @@ class Fly:
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
         actuator_kp: float = 45.0,
+        actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
@@ -253,6 +254,12 @@ class Fly:
             explicitly here for better stability.
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
+        actuator_forcerange : Union[float, Tuple[float, float], List]
+            The force limit of the actuators. If a single value is
+            provided, it will be symetrically applied to all actuators (-a, a). 
+            If a tuple is provided, the first value is the lower limit and the second
+            value is the upper limit. If a list is provided, it should have the same
+            length as the number of actuators. By default 65.0.
         tarsus_stiffness : float
             Stiffness of the passive, compliant tarsus joints, by default
             7.5.
@@ -434,6 +441,7 @@ class Fly:
         ]
 
         self._set_actuators_gain()
+        self._set_actuators_forcerange(actuator_forcerange)
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
@@ -587,8 +595,10 @@ class Fly:
             )
         }
         if self.enable_adhesion:
-            # 0: no adhesion, 1: adhesion
-            _action_space["adhesion"] = spaces.Discrete(n=2, start=0)
+            # continuous actuation between 0 and 1
+            _action_space["adhesion"] = spaces.Box(
+                low=0, high=1, shape=(len(self.adhesion_actuators),)
+            )
         return spaces.Dict(_action_space)
 
     def _define_observation_space(self, arena: BaseArena):
@@ -626,6 +636,26 @@ class Fly:
             for dof in ["Head", "Head_roll", "Head_yaw"]:
                 actuator = self.model.find("actuator", f"actuator_position_joint_{dof}")
                 actuator.kp = self.neck_kp
+
+    def _set_actuators_forcerange(self, actuator_forcerange):
+        attr_islist = True
+        if isinstance(actuator_forcerange, (int, float)):
+            actuator_forcerange = [-actuator_forcerange, actuator_forcerange]
+            attr_islist = False
+        elif len(actuator_forcerange) == 2:
+            actuator_forcerange = [actuator_forcerange[0], actuator_forcerange[1]]
+            attr_islist = False
+        else:
+            assert len(actuator_forcerange) == len(self.actuators), "The number of actuator_forcerange supplied does" \
+                                                                    "not match the number of actuators." \
+                                                                    f"({len(actuator_forcerange)} != {len(self.actuators)})"
+
+        for i, actuator in enumerate(self.actuators):
+            actuator.forcelimited = True
+            if attr_islist:
+                actuator.forcerange = actuator_forcerange[i]
+            else:
+                actuator.forcerange = actuator_forcerange
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
