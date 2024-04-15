@@ -12,7 +12,8 @@ from flygym.util import get_data_path
 from flygym.examples.turning_controller import HybridTurningNMF
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration import (
-    PathIntegrationArena,
+    PathIntegrationArenaFlat,
+    PathIntegrationArenaBlocks,
     WalkingState,
     PathIntegrationNMF,
     RandomExplorationController,
@@ -95,12 +96,11 @@ def wrap_angle(angle):
 def run_simulation(
     seed: int = 0,
     running_time: float = 20.0,
+    terrain_type: str = "flat",
     gait: str = "tripod",
     live_display: bool = False,
     do_path_integration: bool = False,
     heading_model: Optional[Callable] = None,
-    displacement_model: Optional[Callable] = None,
-    time_scale: Optional[float] = None,
     output_dir: Optional[Path] = None,
 ):
     icons = get_walking_icons()
@@ -116,7 +116,16 @@ def run_simulation(
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(0, 0, 0.25),
     )
-    arena = PathIntegrationArena()
+
+    if terrain_type == "flat":
+        arena = PathIntegrationArenaFlat()
+    elif terrain_type == "blocks":
+        arena = PathIntegrationArenaBlocks(
+            height_range=(0.2, 0.2), x_range=(-50, 50), y_range=(-50, 50)
+        )
+    else:
+        raise ValueError(f"Unknown terrain type: {terrain_type}")
+
     # cam = Camera(
     #     fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     # )
@@ -217,6 +226,13 @@ def main():
         help="Running time in seconds. Defaults to 20.",
     )
     parser.add_argument(
+        "--terrain_type",
+        type=str,
+        choices=["flat", "blocks"],
+        default="flat",
+        help="Terrain type. Choose from ['flat', 'blocks']. Defaults to 'flat'.",
+    )
+    parser.add_argument(
         "--live_display",
         action="store_true",
         help="Enable live display. Defaults to False.",
@@ -242,6 +258,7 @@ def main():
     run_simulation(
         seed=args.seed,
         running_time=args.running_time,
+        terrain_type=args.terrain_type,
         gait=args.gait,
         live_display=args.live_display,
         do_path_integration=False,
