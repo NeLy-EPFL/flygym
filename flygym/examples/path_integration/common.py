@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Tuple, Union, Optional, Callable
 from dm_control import mjcf
 
-from flygym.arena import BaseArena
+from flygym.arena import FlatTerrain, BlocksTerrain
 from flygym.examples.turning_controller import HybridTurningNMF
 
 
@@ -14,36 +14,17 @@ class WalkingState(Enum):
     STOP = 3
 
 
-class PathIntegrationArena(BaseArena):
-    def __init__(self):
-        super().__init__()
-        self.friction = (1, 0.005, 0.0001)
+class PathIntegrationArenaBase:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        # Set up floor
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.7, 0.7, 0.7),
-            rgb2=(0.8, 0.8, 0.8),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-            rgba=(1.0, 1.0, 1.0, 1.0),
-        )
+        # Add plane at the bottom to make sure the floor is rendered correctly
         self.root_element.worldbody.add(
             "geom",
             name="floor",
             type="box",
             size=(300, 300, 1),
             pos=(0, 0, -1),
-            material=grid,
         )
 
         # Add marker at origin
@@ -73,6 +54,18 @@ class PathIntegrationArena(BaseArena):
 
     def update_cam_pos(self, physics: mjcf.Physics, fly_pos: np.ndarray) -> None:
         physics.bind(self.birdeye_cam).pos[:2] = fly_pos / 2
+
+
+class PathIntegrationArenaFlat(PathIntegrationArenaBase, FlatTerrain):
+    pass
+
+
+class PathIntegrationArenaBlocks(PathIntegrationArenaBase, BlocksTerrain):
+    def get_spawn_position(
+        self, rel_pos: np.ndarray, rel_angle: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        adj_pos = rel_pos + np.array([0, 0, 0.1])
+        return adj_pos, rel_angle
 
 
 class RandomExplorationController:
