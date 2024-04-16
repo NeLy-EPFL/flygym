@@ -133,7 +133,7 @@ class HybridTurningNMF(SingleFlySimulation):
             self.preprogrammed_steps.swing_period[leg] = (swing_start, swing_end+swing_extension)
             increment_vals = [0, 0.8, 0, 0.2, 0]
 
-            phasic_multiplier[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate") # CubicSpline(step_points, increment_vals, bc_type="periodic")
+            phasic_multiplier[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate")
         
         return phasic_multiplier
 
@@ -362,7 +362,7 @@ if __name__ == "__main__":
         draw_corrections=True,
         arena=GappedTerrain(),
     )
-    # check_env(sim)
+    check_env(sim)
 
     obs_list = []
 
@@ -373,14 +373,14 @@ if __name__ == "__main__":
         curr_time = i * sim.timestep
 
         # To demonstrate left and right turns:
-        # if curr_time < run_time / 2:
-        #     action = np.array([1.2, 0.4])
-        # else:
-        #     action = np.array([0.4, 1.2])
+        if curr_time < run_time / 2:
+            action = np.array([1.2, 0.4])
+        else:
+            action = np.array([0.4, 1.2])
 
         # To demonstrate that the result is identical with the hybrid controller without
         # turning:
-        action = np.array([1.0, 1.0])
+        #action = np.array([1.0, 1.0])
 
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
