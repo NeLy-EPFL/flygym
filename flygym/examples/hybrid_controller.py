@@ -9,6 +9,11 @@ from dm_control.rl.control import PhysicsError
 from tqdm import trange
 import pickle
 
+
+from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d
+
+
 intrinsic_freqs = np.ones(6) * 12
 intrinsic_amps = np.ones(6) * 1
 phase_biases = np.pi * np.array(
@@ -36,13 +41,26 @@ right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 
 stumbling_force_threshold = -1
 
-correction_rates = {"retraction": (800, 700), "stumbling": (2200, 2100)}
+correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 max_increment = 80
 retraction_persistance = 20
 persistance_init_thr = 20
 
 
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
+
+    step_phase_multipler = {}
+
+    for leg in preprogrammed_steps.legs:
+        swing_start, swing_end = preprogrammed_steps.swing_period[leg]
+
+        step_points = [swing_start, np.mean([swing_start, swing_end]), swing_end+np.pi/4, np.mean([swing_end, 2*np.pi]), 2*np.pi]
+        preprogrammed_steps.swing_period[leg] = (swing_start, swing_end+np.pi/4)
+        increment_vals = [0, 0.8, 0, 0.2, 0]
+
+        step_phase_multipler[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate") # CubicSpline(step_points, increment_vals, bc_type="periodic")
+
+
     retraction_correction = np.zeros(6)
     stumbling_correction = np.zeros(6)
 
@@ -59,49 +77,48 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
     target_num_steps = int(run_time / sim.timestep)
     obs_list = []
+    inf_list = []
 
     retraction_perisitance_counter = np.zeros(6)
 
-    physics_error = False
-
+    retraction_persistance_counter_hist = np.zeros((6, target_num_steps))
+    
     for k in trange(target_num_steps):
         # retraction rule: does a leg need to be retracted from a hole?
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
-        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.06:
+        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if retraction_correction[leg_to_correct_retraction] > persistance_init_thr:
-                retraction_perisitance_counter[leg_to_correct_retraction] = 1
+                retraction_perisitance_counter[leg_to_correct_retraction] = 1 
         else:
             leg_to_correct_retraction = None
-
+        
         # update persistance counter
         retraction_perisitance_counter[retraction_perisitance_counter > 0] += 1
-        retraction_perisitance_counter[
-            retraction_perisitance_counter > retraction_persistance
-        ] = 0
+        retraction_perisitance_counter[retraction_perisitance_counter > retraction_persistance] = 0
+        retraction_persistance_counter_hist[:, k] = retraction_perisitance_counter
 
         cpg_network.step()
         joints_angles = []
         adhesion_onoff = []
 
-        all_net_corrections = []
+        all_net_corrections = np.zeros(6)
+        retraction_rule_on = np.zeros(6)
+        stumbling_rule_on = np.zeros(6)
 
         for i, leg in enumerate(preprogrammed_steps.legs):
+
             # update amount of retraction correction
-            if (
-                i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
-            ):  # lift leg
+            if i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0:  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[i] += increment
                 sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (1, 0, 0, 1))
             else:  # condition no longer met, lower leg
                 decrement = correction_rates["retraction"][1] * sim.timestep
                 retraction_correction[i] = max(0, retraction_correction[i] - decrement)
-                sim.fly.change_segment_color(
-                    sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1)
-                )
+                sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1))
 
             # update amount of stumbling correction
             contact_forces = obs["contact_forces"][stumbling_sensors[leg], :]
@@ -115,9 +132,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             else:
                 decrement = correction_rates["stumbling"][1] * sim.timestep
                 stumbling_correction[i] = max(0, stumbling_correction[i] - decrement)
-                sim.fly.change_segment_color(
-                    sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1)
-                )
+                sim.fly.change_segment_color(sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1))
 
             # retraction correction is prioritized
             if retraction_correction[i] > 0:
@@ -134,42 +149,112 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
 
+            net_correction *= step_phase_multipler[leg](cpg_network.curr_phases[i]%(2*np.pi))
+
             my_joints_angles += net_correction * correction_vectors[leg[1]]
             joints_angles.append(my_joints_angles)
-
-            all_net_corrections.append(net_correction)
 
             # get adhesion on/off signal
             my_adhesion_onoff = preprogrammed_steps.get_adhesion_onoff(
                 leg, cpg_network.curr_phases[i]
             )
-            # No adhesion in stumbling or retracted
-            is_stumbling = (force_proj < stumbling_force_threshold).any()
-            is_retracting = i == leg_to_correct_retraction
-            is_retracting |= retraction_perisitance_counter[i] > 0
-            my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracting)
+
+            all_net_corrections[i] = net_correction
+
+
+            stumbling_rule_leg = (force_proj < stumbling_force_threshold).any() and not(
+                leg_to_correct_retraction == i)
+            
+            retraction_rule_leg = i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
+            retraction_rule_on[i] = retraction_rule_leg
+            stumbling_rule_on[i] = stumbling_rule_leg
+
+
+            # # No adhesion in stumbling or retracted
+            # rule_active = np.logical_not(stumbling_rule_leg or retraction_rule_leg)
+        #     my_adhesion_onoff *= rule_active
+            
+        #     # increment 
+        #     adhesion_on_counter[i] += my_adhesion_onoff
+        #     # reset if adhesion is off
+        #     adhesion_on_counter[i] *= my_adhesion_onoff
+            
+        #     my_adhesion_onoff = min(1, float(adhesion_on_counter[i])/50)
+
             adhesion_onoff.append(my_adhesion_onoff)
+
+        # if k >= 1874:
+        #     adhesion_onoff = [0, 0, 0, 0, 0, 0]
 
         action = {
             "joints": np.array(np.concatenate(joints_angles)),
-            "adhesion": np.array(adhesion_onoff).astype(int),
+            "adhesion": np.array(adhesion_onoff),
         }
+
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
+            obs["qacc"] = sim.physics.data.qacc.copy()
+            obs["qfrc_act"] = sim.physics.data.qfrc_actuator.copy()
             info["net_corrections"] = all_net_corrections
+            info["action_jnts"] = action["joints"]
+            info["phase"] = cpg_network.curr_phases.copy()
+            info["action_adhesion"] = action["adhesion"].copy()
+
+            info["retraction_ruleon"] = retraction_rule_on
+            info["stumbling_ruleon"] = stumbling_rule_on
+            #info["adhesion_on_counter"] = adhesion_on_counter.copy()
             obs_list.append(obs)
+            inf_list.append(info)
+
             sim.render()
         except PhysicsError:
-            physics_error = True
             print("Simulation was interupted because of a physics error")
-            break
+            return obs_list, inf_list, True
 
-    return obs_list, physics_error
+    return obs_list, inf_list, False
 
 
 if __name__ == "__main__":
     run_time = 1.0
     timestep = 1e-4
+
+    # Can be used to reproduce the results in nmf2
+    id = 0
+    
+    # np.random.seed(0)
+
+    # # Generate random positions
+    # max_x = 4.0
+    # shift_x = 2.0
+    # max_y = 4.0
+    # shift_y = 2.0
+    # positions = np.zeros((20, 3))
+    # positions[:, :2] = np.random.rand(20, 2)
+
+    # positions[:, 0] = positions[:, 0] * max_x - shift_x
+    # positions[:, 1] = positions[:, 1] * max_y - shift_y
+    # positions[:, 2] = 0.5
+
+
+# #     # Trial at scaling the fly
+# #     from pathlib import Path
+# #     fly = Fly(
+# #     enable_adhesion=True,
+# #     draw_adhesion=True,
+# #     contact_sensor_placements=contact_sensor_placements,
+# #     xml_variant=Path("/Users/stimpfli/Desktop/flygym_other/flygym/data/mjcf/neuromechfly_seqik_kinorder_ypr_scaledmass.xml"),
+# #     actuator_forcerange=[-65*1000, 65*1000],
+# #     joint_damping= 0.15*1000,
+# #     joint_stiffness= 0.15*1000,
+# #     tarsus_damping=1e-2*1000,
+# #     tarsus_stiffness=7.5*1000,
+# #     non_actuated_joint_damping=1*1000,
+# #     non_actuated_joint_stiffness=1*1000,
+# #     actuator_kp=40*1000,
+# #     adhesion_force=40*1000,
+# #     #contact_solimp=(0.9, 0.95, 0.001, 0.5, 2),
+# #     #contact_solref= (0.02, 1)
+# # )
 
     preprogrammed_steps = PreprogrammedSteps()
 
@@ -177,43 +262,63 @@ if __name__ == "__main__":
         f"{leg}{segment}"
         for leg in preprogrammed_steps.legs
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
-    ]
+        ]
+    
+    np.random.seed(id)
 
-    np.random.seed(0)
-
+    # Initialize the simulation
     fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
+        init_pose="stretch",
+        control="position",
+        # reproduce the results in nmf2
+        #spawn_pos=positions[id],
         contact_sensor_placements=contact_sensor_placements,
+        actuator_forcerange = (-65.0, 65.0),
     )
-
-    cam = Camera(fly=fly, play_speed=0.1, camera_id="Animat/camera_right")
+    cam_right = Camera(fly=fly, play_speed=0.1, camera_id=f"{fly.name}/camera_right")
+    cam_left = Camera(fly=fly,  play_speed=0.1, camera_id=f"{fly.name}/camera_left")
+    cam_top = Camera(fly=fly,  play_speed=0.1, camera_id=f"{fly.name}/camera_top")
+                      
     sim = SingleFlySimulation(
         fly=fly,
-        cameras=[cam],
-        timestep=1e-4,
+        cameras=[cam_right, cam_left, cam_top], 
+        timestep=timestep,
         arena=GappedTerrain(),
-    )
+    )       
 
+    # run cpg simulation
+    #np.random.seed(id)
+    obs, inf = sim.reset()
     cpg_network = CPGNetwork(
-        timestep=1e-4,
+        timestep=timestep,
         intrinsic_freqs=intrinsic_freqs,
         intrinsic_amps=intrinsic_amps,
         coupling_weights=coupling_weights,
         phase_biases=phase_biases,
         convergence_coefs=convergence_coefs,
-        seed=0,
+    #    seed=id,
     )
 
-    obs, info = sim.reset()
     print(f"Spawning fly at {obs['fly'][0]} mm")
 
-    obs_list, had_physics_error = run_hybrid_simulation(
+    obs_list, inf_list, had_physics_error = run_hybrid_simulation(
         sim, cpg_network, preprogrammed_steps, run_time
     )
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
+    print(f"Simulation terminated: {obs_list[-1]['fly'][0] - obs_list[0]['fly'][0]}")
 
     # Save video
-    cam.save_video("./outputs/hybrid_controller.mp4", 0)
+    cam_right.save_video(f"./outputs/hybrid_{id}_controller_right.mp4", 0)
+    cam_top.save_video(f"./outputs/hybrid_{id}_controller_top.mp4", 0)
+    cam_left.save_video(f"./outputs/hybrid_{id}_controller_left.mp4", 0)
+
+    # save the physics error observations
+    with open(f"./outputs/hybrid_{id}_obs_list.pkl", "wb") as f:
+        pickle.dump(obs_list, f)
+    with open(f"./outputs/hybrid_{id}_inf_list.pkl", "wb") as f:
+        pickle.dump(inf_list, f)
+    print("Saved obs_list.pkl")

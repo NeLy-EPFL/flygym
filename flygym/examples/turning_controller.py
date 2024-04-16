@@ -14,6 +14,8 @@ import pickle
 
 from flygym.arena import GappedTerrain
 
+from scipy.interpolate import interp1d
+
 
 _tripod_phase_biases = np.pi * np.array(
     [
@@ -35,7 +37,7 @@ _default_correction_vectors = {
     "H": np.array([0, 0, 0, -0.02, 0, 0.01, -0.02]),
 }
 
-_default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 2100)}
+_default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 
 
 class HybridTurningNMF(SingleFlySimulation):
@@ -118,6 +120,23 @@ class HybridTurningNMF(SingleFlySimulation):
         # Find stumbling sensors
         self.stumbling_sensors = self._find_stumbling_sensor_indices()
 
+        self.phasic_multiplier = self._init_phasic_gain()
+
+    def _init_phasic_gain(self, swing_extension = np.pi/4):
+
+        phasic_multiplier = {}
+
+        for leg in self.preprogrammed_steps.legs:
+            swing_start, swing_end = self.preprogrammed_steps.swing_period[leg]
+
+            step_points = [swing_start, np.mean([swing_start, swing_end]), swing_end+swing_extension, np.mean([swing_end, 2*np.pi]), 2*np.pi]
+            self.preprogrammed_steps.swing_period[leg] = (swing_start, swing_end+swing_extension)
+            increment_vals = [0, 0.8, 0, 0.2, 0]
+
+            phasic_multiplier[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate") # CubicSpline(step_points, increment_vals, bc_type="periodic")
+        
+        return phasic_multiplier
+
     def _find_stumbling_sensor_indices(self):
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
         for i, sensor_name in enumerate(self.fly.contact_sensor_placements):
@@ -141,7 +160,7 @@ class HybridTurningNMF(SingleFlySimulation):
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
-        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.06:
+        if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if (
                 self.retraction_correction[leg_to_correct_retraction]
@@ -283,6 +302,8 @@ class HybridTurningNMF(SingleFlySimulation):
             if leg[0] == "R":
                 net_correction *= self.right_leg_inversion[i]
 
+            net_correction *= self.phasic_multiplier[leg](self.cpg_network.curr_phases[i]%(2*np.pi))
+
             # get target angles from CPGs and apply correction
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
                 leg,
@@ -300,7 +321,7 @@ class HybridTurningNMF(SingleFlySimulation):
             )
 
             # No adhesion in stumbling or retracted
-            my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracted)
+            #my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracted)
             adhesion_onoff.append(my_adhesion_onoff)
 
         action = {
@@ -352,14 +373,14 @@ if __name__ == "__main__":
         curr_time = i * sim.timestep
 
         # To demonstrate left and right turns:
-        if curr_time < run_time / 2:
-            action = np.array([1.2, 0.4])
-        else:
-            action = np.array([0.4, 1.2])
+        # if curr_time < run_time / 2:
+        #     action = np.array([1.2, 0.4])
+        # else:
+        #     action = np.array([0.4, 1.2])
 
         # To demonstrate that the result is identical with the hybrid controller without
         # turning:
-        # action = np.array([1.0, 1.0])
+        action = np.array([1.0, 1.0])
 
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
@@ -371,5 +392,7 @@ if __name__ == "__main__":
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
+    print(f"Simulation terminated: {obs_list[-1]['fly'][0] - obs_list[0]['fly'][0]}")
+
 
     cam.save_video("./outputs/hybrid_turning.mp4", 0)
