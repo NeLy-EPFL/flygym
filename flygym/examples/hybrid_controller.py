@@ -58,7 +58,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         preprogrammed_steps.swing_period[leg] = (swing_start, swing_end+np.pi/4)
         increment_vals = [0, 0.8, 0, 0.2, 0]
 
-        step_phase_multipler[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate") # CubicSpline(step_points, increment_vals, bc_type="periodic")
+        step_phase_multipler[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate")
 
 
     retraction_correction = np.zeros(6)
@@ -84,6 +84,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     retraction_persistance_counter_hist = np.zeros((6, target_num_steps))
     
     for k in trange(target_num_steps):
+
         # retraction rule: does a leg need to be retracted from a hole?
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
@@ -105,8 +106,6 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         adhesion_onoff = []
 
         all_net_corrections = np.zeros(6)
-        retraction_rule_on = np.zeros(6)
-        stumbling_rule_on = np.zeros(6)
 
         for i, leg in enumerate(preprogrammed_steps.legs):
 
@@ -161,30 +160,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
             all_net_corrections[i] = net_correction
 
-
-            stumbling_rule_leg = (force_proj < stumbling_force_threshold).any() and not(
-                leg_to_correct_retraction == i)
-            
-            retraction_rule_leg = i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
-            retraction_rule_on[i] = retraction_rule_leg
-            stumbling_rule_on[i] = stumbling_rule_leg
-
-
-            # # No adhesion in stumbling or retracted
-            # rule_active = np.logical_not(stumbling_rule_leg or retraction_rule_leg)
-        #     my_adhesion_onoff *= rule_active
-            
-        #     # increment 
-        #     adhesion_on_counter[i] += my_adhesion_onoff
-        #     # reset if adhesion is off
-        #     adhesion_on_counter[i] *= my_adhesion_onoff
-            
-        #     my_adhesion_onoff = min(1, float(adhesion_on_counter[i])/50)
-
             adhesion_onoff.append(my_adhesion_onoff)
-
-        # if k >= 1874:
-        #     adhesion_onoff = [0, 0, 0, 0, 0, 0]
 
         action = {
             "joints": np.array(np.concatenate(joints_angles)),
@@ -193,16 +169,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
-            obs["qacc"] = sim.physics.data.qacc.copy()
-            obs["qfrc_act"] = sim.physics.data.qfrc_actuator.copy()
             info["net_corrections"] = all_net_corrections
-            info["action_jnts"] = action["joints"]
-            info["phase"] = cpg_network.curr_phases.copy()
-            info["action_adhesion"] = action["adhesion"].copy()
-
-            info["retraction_ruleon"] = retraction_rule_on
-            info["stumbling_ruleon"] = stumbling_rule_on
-            #info["adhesion_on_counter"] = adhesion_on_counter.copy()
             obs_list.append(obs)
             inf_list.append(info)
 
@@ -218,44 +185,6 @@ if __name__ == "__main__":
     run_time = 1.0
     timestep = 1e-4
 
-    # Can be used to reproduce the results in nmf2
-    id = 0
-    
-    # np.random.seed(0)
-
-    # # Generate random positions
-    # max_x = 4.0
-    # shift_x = 2.0
-    # max_y = 4.0
-    # shift_y = 2.0
-    # positions = np.zeros((20, 3))
-    # positions[:, :2] = np.random.rand(20, 2)
-
-    # positions[:, 0] = positions[:, 0] * max_x - shift_x
-    # positions[:, 1] = positions[:, 1] * max_y - shift_y
-    # positions[:, 2] = 0.5
-
-
-# #     # Trial at scaling the fly
-# #     from pathlib import Path
-# #     fly = Fly(
-# #     enable_adhesion=True,
-# #     draw_adhesion=True,
-# #     contact_sensor_placements=contact_sensor_placements,
-# #     xml_variant=Path("/Users/stimpfli/Desktop/flygym_other/flygym/data/mjcf/neuromechfly_seqik_kinorder_ypr_scaledmass.xml"),
-# #     actuator_forcerange=[-65*1000, 65*1000],
-# #     joint_damping= 0.15*1000,
-# #     joint_stiffness= 0.15*1000,
-# #     tarsus_damping=1e-2*1000,
-# #     tarsus_stiffness=7.5*1000,
-# #     non_actuated_joint_damping=1*1000,
-# #     non_actuated_joint_stiffness=1*1000,
-# #     actuator_kp=40*1000,
-# #     adhesion_force=40*1000,
-# #     #contact_solimp=(0.9, 0.95, 0.001, 0.5, 2),
-# #     #contact_solref= (0.02, 1)
-# # )
-
     preprogrammed_steps = PreprogrammedSteps()
 
     contact_sensor_placements = [
@@ -264,32 +193,24 @@ if __name__ == "__main__":
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
         ]
     
-    np.random.seed(id)
-
     # Initialize the simulation
     fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
         init_pose="stretch",
         control="position",
-        # reproduce the results in nmf2
-        #spawn_pos=positions[id],
         contact_sensor_placements=contact_sensor_placements,
-        actuator_forcerange = (-65.0, 65.0),
     )
-    cam_right = Camera(fly=fly, play_speed=0.1, camera_id=f"{fly.name}/camera_right")
-    cam_left = Camera(fly=fly,  play_speed=0.1, camera_id=f"{fly.name}/camera_left")
-    cam_top = Camera(fly=fly,  play_speed=0.1, camera_id=f"{fly.name}/camera_top")
+    cam = Camera(fly=fly, play_speed=0.1, camera_id=f"{fly.name}/camera_right")
                       
     sim = SingleFlySimulation(
         fly=fly,
-        cameras=[cam_right, cam_left, cam_top], 
+        cameras=[cam], 
         timestep=timestep,
         arena=GappedTerrain(),
     )       
 
     # run cpg simulation
-    #np.random.seed(id)
     obs, inf = sim.reset()
     cpg_network = CPGNetwork(
         timestep=timestep,
@@ -298,7 +219,6 @@ if __name__ == "__main__":
         coupling_weights=coupling_weights,
         phase_biases=phase_biases,
         convergence_coefs=convergence_coefs,
-    #    seed=id,
     )
 
     print(f"Spawning fly at {obs['fly'][0]} mm")
@@ -306,19 +226,7 @@ if __name__ == "__main__":
     obs_list, inf_list, had_physics_error = run_hybrid_simulation(
         sim, cpg_network, preprogrammed_steps, run_time
     )
-
-    x_pos = obs_list[-1]["fly"][0][0]
-    print(f"Final x position: {x_pos:.4f} mm")
     print(f"Simulation terminated: {obs_list[-1]['fly'][0] - obs_list[0]['fly'][0]}")
 
     # Save video
-    cam_right.save_video(f"./outputs/hybrid_{id}_controller_right.mp4", 0)
-    cam_top.save_video(f"./outputs/hybrid_{id}_controller_top.mp4", 0)
-    cam_left.save_video(f"./outputs/hybrid_{id}_controller_left.mp4", 0)
-
-    # save the physics error observations
-    with open(f"./outputs/hybrid_{id}_obs_list.pkl", "wb") as f:
-        pickle.dump(obs_list, f)
-    with open(f"./outputs/hybrid_{id}_inf_list.pkl", "wb") as f:
-        pickle.dump(inf_list, f)
-    print("Saved obs_list.pkl")
+    cam.save_video(f"./outputs/hybrid_controller.mp4", 0)
