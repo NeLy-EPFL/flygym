@@ -335,7 +335,6 @@ class HybridTurningNMF(SingleFlySimulation):
             )
 
             # No adhesion in stumbling or retracted
-            # my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracted)
             adhesion_onoff.append(my_adhesion_onoff)
 
         action = {
