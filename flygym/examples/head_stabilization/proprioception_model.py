@@ -161,7 +161,9 @@ class HeadStabilizationInferenceWrapper:
 
         # Load model
         # it's not worth moving data to the GPU, just run it on the CPU
-        self.model = ThreeLayerMLP.load_from_checkpoint(model_path).cpu()
+        self.model = ThreeLayerMLP.load_from_checkpoint(
+            model_path, map_location=torch.device("cpu")
+        )
         self.contact_force_thr = contact_force_thr
 
     def __call__(
