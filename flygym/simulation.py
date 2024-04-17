@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 import gymnasium as gym
 import numpy as np
