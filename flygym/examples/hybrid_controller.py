@@ -82,8 +82,8 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     obs, info = sim.reset()
 
     target_num_steps = int(run_time / sim.timestep)
-    obs_list = []
-    inf_list = []
+    obs_hist = []
+    info_hist = []
 
     retraction_perisitance_counter = np.zeros(6)
 
@@ -185,15 +185,15 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
             info["net_corrections"] = all_net_corrections
-            obs_list.append(obs)
-            inf_list.append(info)
+            obs_hist.append(obs)
+            info_hist.append(info)
 
             sim.render()
         except PhysicsError:
             print("Simulation was interupted because of a physics error")
-            return obs_list, inf_list, True
+            return obs_hist, info_hist, True
 
-    return obs_list, inf_list, False
+    return obs_hist, info_hist, False
 
 
 if __name__ == "__main__":
