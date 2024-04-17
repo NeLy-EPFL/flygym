@@ -92,7 +92,7 @@ def visualize_vision(
             shrink=0.8,
             aspect=20,
         )
-        cbar.set_ticks([cell_activity_range[0], cell_activity_range[1]])
+        cbar.set_ticks(cell_activity_range)
         cbar.set_ticklabels(["hyperpolarization", "depolarization"])
 
         # Arena birdeye view
@@ -125,7 +125,7 @@ def visualize_vision(
         return list(plot_elements.values())
 
     def update(frame_id):
-        # # Arena birdeye view
+        # Arena birdeye view
         ax_key = cell_panels["birdeye_view"]
         plot_elements[ax_key].set_data(rendered_image_hist[frame_id])
 
