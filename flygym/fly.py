@@ -256,7 +256,7 @@ class Fly:
             Position gain of the actuators, by default 18.0.
         actuator_forcerange : Union[float, Tuple[float, float], List]
             The force limit of the actuators. If a single value is
-            provided, it will be symetrically applied to all actuators (-a, a). 
+            provided, it will be symetrically applied to all actuators (-a, a).
             If a tuple is provided, the first value is the lower limit and the second
             value is the upper limit. If a list is provided, it should have the same
             length as the number of actuators. By default 65.0.
@@ -646,9 +646,11 @@ class Fly:
             actuator_forcerange = [actuator_forcerange[0], actuator_forcerange[1]]
             attr_islist = False
         else:
-            assert len(actuator_forcerange) == len(self.actuators), "The number of actuator_forcerange supplied does" \
-                                                                    "not match the number of actuators." \
-                                                                    f"({len(actuator_forcerange)} != {len(self.actuators)})"
+            assert len(actuator_forcerange) == len(self.actuators), (
+                "The number of actuator_forcerange supplied does"
+                "not match the number of actuators."
+                f"({len(actuator_forcerange)} != {len(self.actuators)})"
+            )
 
         for i, actuator in enumerate(self.actuators):
             actuator.forcelimited = True

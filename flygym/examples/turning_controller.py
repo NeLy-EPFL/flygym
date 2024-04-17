@@ -298,7 +298,9 @@ class HybridTurningNMF(SingleFlySimulation):
                 condition=self._stumbling_rule_check_condition(obs, leg),
                 curr_amount=self.stumbling_correction[i],
                 correction_rates=self.correction_rates["stumbling"],
-                viz_segment=f"{leg}Femur" if self.draw_corrections and retraction_correction <= 0 else None,
+                viz_segment=f"{leg}Femur"
+                if self.draw_corrections and retraction_correction <= 0
+                else None,
             )
 
             # get net correction amount
