@@ -48,18 +48,24 @@ persistance_init_thr = 20
 
 
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
-
     step_phase_multipler = {}
 
     for leg in preprogrammed_steps.legs:
         swing_start, swing_end = preprogrammed_steps.swing_period[leg]
 
-        step_points = [swing_start, np.mean([swing_start, swing_end]), swing_end+np.pi/4, np.mean([swing_end, 2*np.pi]), 2*np.pi]
-        preprogrammed_steps.swing_period[leg] = (swing_start, swing_end+np.pi/4)
-        increment_vals = [0, 0.8, 0, 0.2, 0]
+        step_points = [
+            swing_start,
+            np.mean([swing_start, swing_end]),
+            swing_end + np.pi / 4,
+            np.mean([swing_end, 2 * np.pi]),
+            2 * np.pi,
+        ]
+        preprogrammed_steps.swing_period[leg] = (swing_start, swing_end + np.pi / 4)
+        increment_vals = [0, 0.8, 0, -0.1, 0]
 
-        step_phase_multipler[leg] = interp1d(step_points, increment_vals, kind="linear", fill_value="extrapolate")
-
+        step_phase_multipler[leg] = interp1d(
+            step_points, increment_vals, kind="linear", fill_value="extrapolate"
+        )
 
     retraction_correction = np.zeros(6)
     stumbling_correction = np.zeros(6)
@@ -82,9 +88,8 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     retraction_perisitance_counter = np.zeros(6)
 
     retraction_persistance_counter_hist = np.zeros((6, target_num_steps))
-    
-    for k in trange(target_num_steps):
 
+    for k in trange(target_num_steps):
         # retraction rule: does a leg need to be retracted from a hole?
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
@@ -92,13 +97,15 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if retraction_correction[leg_to_correct_retraction] > persistance_init_thr:
-                retraction_perisitance_counter[leg_to_correct_retraction] = 1 
+                retraction_perisitance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
-        
+
         # update persistance counter
         retraction_perisitance_counter[retraction_perisitance_counter > 0] += 1
-        retraction_perisitance_counter[retraction_perisitance_counter > retraction_persistance] = 0
+        retraction_perisitance_counter[
+            retraction_perisitance_counter > retraction_persistance
+        ] = 0
         retraction_persistance_counter_hist[:, k] = retraction_perisitance_counter
 
         cpg_network.step()
@@ -108,16 +115,19 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         all_net_corrections = np.zeros(6)
 
         for i, leg in enumerate(preprogrammed_steps.legs):
-
             # update amount of retraction correction
-            if i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0:  # lift leg
+            if (
+                i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
+            ):  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[i] += increment
                 sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (1, 0, 0, 1))
             else:  # condition no longer met, lower leg
                 decrement = correction_rates["retraction"][1] * sim.timestep
                 retraction_correction[i] = max(0, retraction_correction[i] - decrement)
-                sim.fly.change_segment_color(sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1))
+                sim.fly.change_segment_color(
+                    sim.physics, f"{leg}Tibia", (0.5, 0.5, 0.5, 1)
+                )
 
             # update amount of stumbling correction
             contact_forces = obs["contact_forces"][stumbling_sensors[leg], :]
@@ -131,7 +141,10 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             else:
                 decrement = correction_rates["stumbling"][1] * sim.timestep
                 stumbling_correction[i] = max(0, stumbling_correction[i] - decrement)
-                sim.fly.change_segment_color(sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1))
+                if retraction_correction[i] <= 0:
+                    sim.fly.change_segment_color(
+                        sim.physics, f"{leg}Femur", (0.5, 0.5, 0.5, 1)
+                    )
 
             # retraction correction is prioritized
             if retraction_correction[i] > 0:
@@ -148,7 +161,9 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
 
-            net_correction *= step_phase_multipler[leg](cpg_network.curr_phases[i]%(2*np.pi))
+            net_correction *= step_phase_multipler[leg](
+                cpg_network.curr_phases[i] % (2 * np.pi)
+            )
 
             my_joints_angles += net_correction * correction_vectors[leg[1]]
             joints_angles.append(my_joints_angles)
@@ -191,8 +206,8 @@ if __name__ == "__main__":
         f"{leg}{segment}"
         for leg in preprogrammed_steps.legs
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
-        ]
-    
+    ]
+
     # Initialize the simulation
     fly = Fly(
         enable_adhesion=True,
@@ -202,13 +217,13 @@ if __name__ == "__main__":
         contact_sensor_placements=contact_sensor_placements,
     )
     cam = Camera(fly=fly, play_speed=0.1, camera_id=f"{fly.name}/camera_right")
-                      
+
     sim = SingleFlySimulation(
         fly=fly,
-        cameras=[cam], 
+        cameras=[cam],
         timestep=timestep,
-        arena=GappedTerrain(),
-    )       
+        arena=MixedTerrain(),
+    )
 
     # run cpg simulation
     obs, inf = sim.reset()
