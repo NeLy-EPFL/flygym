@@ -99,9 +99,13 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
 
     if terrain_type == "flat":
-        arena = MovingFlyArena(move_speed=18, lateral_magnitude=1, terrain="flat")
+        arena = MovingFlyArena(
+            move_speed=18, lateral_magnitude=1, terrain_type=terrain_type
+        )
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(move_speed=13, lateral_magnitude=1, terrain="blocks")
+        arena = MovingFlyArena(
+            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
+        )
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:

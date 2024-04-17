@@ -152,9 +152,13 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         response_stats = pickle.load(f)
 
     if terrain_type == "flat":
-        arena = MovingFlyArena(move_speed=17, lateral_magnitude=1, terrain="flat")
+        arena = MovingFlyArena(
+            move_speed=17, lateral_magnitude=1, terrain_type=terrain_type
+        )
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(move_speed=11, lateral_magnitude=1, terrain="blocks")
+        arena = MovingFlyArena(
+            move_speed=11, lateral_magnitude=1, terrain_type=terrain_type
+        )
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:

@@ -214,12 +214,12 @@ class HybridTurningNMF(SingleFlySimulation):
 
     def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
         obs, info = super().reset(seed=seed)
-        """self.cpg_network.random_state = np.random.RandomState(seed)
+        self.cpg_network.random_state = np.random.RandomState(seed)
         self.cpg_network.intrinsic_amps = self.intrinsic_amps
         self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
         self.cpg_network.reset(init_phases, init_magnitudes)
         self.retraction_correction = np.zeros(6)
-        self.stumbling_correction = np.zeros(6)"""
+        self.stumbling_correction = np.zeros(6)
         return obs, info
 
     def step(self, action):
@@ -309,13 +309,14 @@ class HybridTurningNMF(SingleFlySimulation):
         }
         obs, reward, terminated, truncated, info = super().step(action)
         info["net_corrections"] = all_net_corrections
+        info.update(action)  # add lower-level action to info
         return obs, reward, terminated, truncated, info
 
 
 if __name__ == "__main__":
     from flygym import Fly, Camera
 
-    run_time = 0.5
+    run_time = 1.0
     timestep = 1e-4
     contact_sensor_placements = [
         f"{leg}{segment}"
@@ -344,17 +345,22 @@ if __name__ == "__main__":
 
     obs_list = []
 
-    obs, info = sim.reset()
-    print(obs["fly"][0])
+    obs, info = sim.reset(0)
+    print(f"Spawning fly at {obs['fly'][0]} mm")
 
     for i in trange(int(run_time / sim.timestep)):
         curr_time = i * sim.timestep
-        """if curr_time < 1:
-            action = np.array([1.2, 0.2])
-        else:
-            action = np.array([0.2, 1.2])"""
 
-        action = np.array([1.0, 1.0])
+        # To demonstrate left and right turns:
+        if curr_time < run_time / 2:
+            action = np.array([1.2, 0.4])
+        else:
+            action = np.array([0.4, 1.2])
+
+        # To demonstrate that the result is identical with the hybrid controller without
+        # turning:
+        # action = np.array([1.0, 1.0])
+
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
             obs_list.append(obs)
@@ -365,10 +371,5 @@ if __name__ == "__main__":
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
-
-    # save all joint angles
-    joint_angles = [obs["joints"][0] for obs in obs_list]
-    with open("./outputs/hybrid_turning_controller_joint_angles.pkl", "wb") as f:
-        pickle.dump(obs_list, f)
 
     cam.save_video("./outputs/hybrid_turning.mp4", 0)
