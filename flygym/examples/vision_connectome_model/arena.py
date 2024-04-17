@@ -80,8 +80,8 @@ class MovingFlyArena(BaseArena):
                 builtin="checker",
                 width=300,
                 height=300,
-                rgb1=(0.8, 0.8, 0.8),
-                rgb2=(0.9, 0.9, 0.9),
+                rgb1=(0.4, 0.4, 0.4),
+                rgb2=(0.5, 0.5, 0.5),
             )
             grid = self.root_element.asset.add(
                 "material",
