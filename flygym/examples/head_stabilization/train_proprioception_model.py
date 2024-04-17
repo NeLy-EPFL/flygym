@@ -19,7 +19,7 @@ import flygym.examples.head_stabilization.viz as viz
 from flygym.examples.head_stabilization import WalkingDataset, ThreeLayerMLP
 
 
-base_dir = sim_data_dir = Path("./outputs/head_stabilization/")
+base_dir = Path("./outputs/head_stabilization/")
 
 
 def subset_to_mask(dof_subset):

@@ -144,10 +144,10 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
                 leg, cpg_network.curr_phases[i]
             )
             # No adhesion in stumbling or retracted
-            is_trembling = (force_proj < stumbling_force_threshold).any()
+            is_stumbling = (force_proj < stumbling_force_threshold).any()
             is_retracting = i == leg_to_correct_retraction
             is_retracting |= retraction_perisitance_counter[i] > 0
-            my_adhesion_onoff *= np.logical_not(is_trembling or is_retracting)
+            my_adhesion_onoff *= np.logical_not(is_stumbling or is_retracting)
             adhesion_onoff.append(my_adhesion_onoff)
 
         action = {
@@ -168,7 +168,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
 
 if __name__ == "__main__":
-    run_time = 0.5
+    run_time = 1.0
     timestep = 1e-4
 
     preprogrammed_steps = PreprogrammedSteps()
@@ -205,17 +205,15 @@ if __name__ == "__main__":
         seed=0,
     )
 
+    obs, info = sim.reset()
+    print(f"Spawning fly at {obs['fly'][0]} mm")
+
     obs_list, had_physics_error = run_hybrid_simulation(
         sim, cpg_network, preprogrammed_steps, run_time
     )
 
     x_pos = obs_list[-1]["fly"][0][0]
     print(f"Final x position: {x_pos:.4f} mm")
-
-    # save all joint angles
-    joint_angles = [obs["joints"][0] for obs in obs_list]
-    with open("./outputs/hybrid_controller_joint_angles.pkl", "wb") as f:
-        pickle.dump(obs_list, f)
 
     # Save video
     cam.save_video("./outputs/hybrid_controller.mp4", 0)
