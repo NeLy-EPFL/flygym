@@ -1,11 +1,17 @@
 import numpy as np
 import torch
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib.patches import Patch
+from sys import stderr
+from tqdm import trange
 from matplotlib.lines import Line2D
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.animation import FuncAnimation
 from pathlib import Path
-from typing import Dict, List, Optional, Callable
+from typing import Dict, List, Tuple, Optional, Callable
 from pandas import DataFrame
 from sklearn.metrics import r2_score
 from flygym.examples.head_stabilization import WalkingDataset
@@ -192,3 +198,115 @@ def make_feature_selection_summary_plot(
     sns.despine(ax=ax, bottom=True)
     fig.savefig(output_path)
     plt.close(fig)
+
+
+def closed_loop_comparison_video(
+    data: Dict[str, List[np.ndarray]],
+    cell: str,
+    fps: int,
+    video_path: Path,
+    cell_activity_range: Tuple[float, float] = (-3, 3),
+    cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
+    dpi: int = 300,
+):
+    fig, axs = plt.subplots(
+        2,
+        5,
+        figsize=(11.2, 6.3),
+        gridspec_kw={"width_ratios": [1, 1, 0.85, 0.85, 0.15]},
+        tight_layout=True,
+    )
+    plot_elements = {}
+
+    def init():
+        # Turn off all borders
+        for ax in axs.flat:
+            ax.axis("off")
+
+        # Initialize views
+        for i, stabilization_on in enumerate([True, False]):
+            for j, view in enumerate(
+                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+            ):
+                if view == "cell_response":
+                    vmin, vmax = cell_activity_range
+                    cmap = "seismic"
+                elif view == "raw_vision":
+                    vmin, vmax = 0, 1
+                    cmap = "gray"
+                else:
+                    vmin, vmax = 0, 255
+                    cmap = None
+
+                if view in ["birdeye", "zoomin"]:
+                    img = np.zeros_like(data[(stabilization_on, view)][0])
+                else:
+                    img = np.zeros_like(data[(stabilization_on, view)][0][0, ...])
+
+                ax = axs[i, j]
+                plot_elements[(stabilization_on, view)] = ax.imshow(
+                    img,
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap=cmap,
+                )
+
+        # Colorbars
+        cell_activity_norm = Normalize(*cell_activity_range)
+        cell_activity_scalar_mappable = ScalarMappable(
+            cmap=cell_activity_cmap, norm=cell_activity_norm
+        )
+        cell_activity_scalar_mappable.set_array([])
+        for i, stabilization_on in enumerate([True, False]):
+            cbar = plt.colorbar(cell_activity_scalar_mappable, ax=axs[i, 4], shrink=0.8)
+            cbar.set_ticks(cell_activity_range)
+            cbar.set_ticklabels(["hyperpolarized", "depolarized"])
+
+        # Panel titles
+        axs[0, 0].set_title("Birdeye view")
+        axs[0, 1].set_title("Zoom-in view")
+        axs[0, 2].set_title("Raw vision")
+        axs[0, 3].set_title(f"{cell} activities")
+        axs[0, 0].text(
+            -0.3,
+            0.5,
+            f"Stabilized",
+            size=12,
+            va="center",
+            rotation=90,
+            transform=axs[0, 0].transAxes,
+        )
+        axs[1, 0].text(
+            -0.3,
+            0.5,
+            f"Unstabilized",
+            size=12,
+            va="center",
+            rotation=90,
+            transform=axs[1, 0].transAxes,
+        )
+        return list(plot_elements.values())
+
+    def update(frame_id):
+        for i, stabilization_on in enumerate([True, False]):
+            for j, view in enumerate(
+                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+            ):
+                if view in ["birdeye", "zoomin"]:
+                    img = data[(stabilization_on, view)][frame_id]
+                else:
+                    img = data[(stabilization_on, view)][frame_id][0, ...]
+                    img[img == 0] = np.nan
+                plot_elements[(stabilization_on, view)].set_data(img)
+        return list(plot_elements.values())
+
+    animation = FuncAnimation(
+        fig,
+        update,
+        frames=trange(len(data[True, "birdeye"]), file=stderr),
+        init_func=init,
+        blit=False,
+    )
+
+    video_path.parent.mkdir(exist_ok=True, parents=True)
+    animation.save(video_path, writer="ffmpeg", fps=fps, dpi=dpi)
