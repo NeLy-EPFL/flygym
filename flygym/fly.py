@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from dm_control import mjcf
@@ -112,6 +112,12 @@ class Fly:
         Position gain of the neck position actuators. If supplied, this
         will overwrite ``actuator_kp`` for the neck actuators. Otherwise,
         ``actuator_kp`` will be used.
+    head_stabilization_model : Callable or str optional
+        If callable, it should be a function that, given the observation,
+        predicts signals that need to be applied to the neck DoFs to
+        stabilizes the head of the fly. If "thorax", the rotation (roll
+        and pitch) of the thorax is inverted and applied to the head by
+        the neck actuators. If None, no head stabilization is applied.
     retina : flygym.vision.Retina
         The retina simulation object used to render the fly's visual
         inputs.
@@ -162,6 +168,7 @@ class Fly:
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
         actuator_kp: float = 45.0,
+        actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
@@ -182,7 +189,7 @@ class Fly:
         draw_adhesion: bool = False,
         draw_sensor_markers: bool = False,
         neck_kp: Optional[float] = None,
-        head_stabilization_model: Optional[Callable] = None,
+        head_stabilization_model: Optional[Union[Callable, str]] = None,
     ) -> None:
         """Initialize a NeuroMechFly environment.
 
@@ -253,6 +260,12 @@ class Fly:
             explicitly here for better stability.
         actuator_kp : float
             Position gain of the actuators, by default 18.0.
+        actuator_forcerange : Union[float, Tuple[float, float], List]
+            The force limit of the actuators. If a single value is
+            provided, it will be symetrically applied to all actuators (-a, a).
+            If a tuple is provided, the first value is the lower limit and the second
+            value is the upper limit. If a list is provided, it should have the same
+            length as the number of actuators. By default 65.0.
         tarsus_stiffness : float
             Stiffness of the passive, compliant tarsus joints, by default
             7.5.
@@ -307,25 +320,29 @@ class Fly:
             Position gain of the neck position actuators. If supplied, this
             will overwrite ``actuator_kp`` for the neck actuators.
             Otherwise, ``actuator_kp`` will be used.
-        head_stabilization_model : Callable, optional
-            A callable object that, given the observation, predicts signals
-            that need to be applied to the neck DoFs to stabilizes the head
-            of the fly. By default None.
+        head_stabilization_model : Callable or str optional
+            If callable, it should be a function that, given the observation,
+            predicts signals that need to be applied to the neck DoFs to
+            stabilizes the head of the fly. If "thorax", the rotation (roll
+            and pitch) of the thorax is inverted and applied to the head by
+            the neck actuators. If None (default), no head stabilization is
+            applied.
         """
+        actuated_joints = list(actuated_joints)
+
         # Check neck actuation if head stabilization is enabled
         if head_stabilization_model is not None:
             if "joint_Head_yaw" in actuated_joints or "joint_Head" in actuated_joints:
                 raise ValueError(
-                    "``HybridTurningNMF`` requires the head joints to be actuated by "
-                    "a preset algorithm. However, the head joints are already included "
-                    "in the provided Fly instance. Please remove the head joints from "
+                    "The head joints are actuated by a preset algorithm. "
+                    "However, the head joints are already included in the "
+                    "provided Fly instance. Please remove the head joints from "
                     "the list of actuated joints."
                 )
-            actuated_joints += ["joint_Head_yaw", "joint_Head"]
             self._last_observation = None  # tracked only for head stabilization
             self._last_neck_actuation = None  # tracked only for head stabilization
 
-        self.actuated_joints = list(actuated_joints)
+        self.actuated_joints = actuated_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
@@ -432,8 +449,13 @@ class Fly:
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in self.actuated_joints
         ]
+        self.neck_actuators = [
+            self.model.find("actuator", f"actuator_{control}_{joint}")
+            for joint in ["joint_Head_yaw", "joint_Head"]
+        ]
 
         self._set_actuators_gain()
+        self._set_actuators_forcerange(actuator_forcerange)
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
@@ -587,8 +609,10 @@ class Fly:
             )
         }
         if self.enable_adhesion:
-            # 0: no adhesion, 1: adhesion
-            _action_space["adhesion"] = spaces.Discrete(n=2, start=0)
+            # continuous actuation between 0 and 1
+            _action_space["adhesion"] = spaces.Box(
+                low=0, high=1, shape=(len(self.adhesion_actuators),)
+            )
         return spaces.Dict(_action_space)
 
     def _define_observation_space(self, arena: BaseArena):
@@ -623,9 +647,30 @@ class Fly:
             actuator.kp = self.actuator_kp
 
         if self.neck_kp is not None:
-            for dof in ["Head", "Head_roll", "Head_yaw"]:
-                actuator = self.model.find("actuator", f"actuator_position_joint_{dof}")
+            for actuator in self.neck_actuators:
                 actuator.kp = self.neck_kp
+
+    def _set_actuators_forcerange(self, actuator_forcerange):
+        attr_islist = True
+        if isinstance(actuator_forcerange, (int, float)):
+            actuator_forcerange = [-actuator_forcerange, actuator_forcerange]
+            attr_islist = False
+        elif len(actuator_forcerange) == 2:
+            actuator_forcerange = [actuator_forcerange[0], actuator_forcerange[1]]
+            attr_islist = False
+        else:
+            assert len(actuator_forcerange) == len(self.actuators), (
+                "The number of actuator_forcerange supplied does"
+                "not match the number of actuators."
+                f"({len(actuator_forcerange)} != {len(self.actuators)})"
+            )
+
+        for i, actuator in enumerate(self.actuators):
+            actuator.forcelimited = True
+            if attr_islist:
+                actuator.forcerange = actuator_forcerange[i]
+            else:
+                actuator.forcerange = actuator_forcerange
 
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
@@ -1194,23 +1239,38 @@ class Fly:
         return obs, info
 
     def pre_step(self, action, sim: "Simulation"):
+        physics = sim.physics
         joint_action = action["joints"]
 
         # estimate necessary neck actuation signals for head stabilization
         if self.head_stabilization_model is not None:
-            if self._last_observation is not None:
-                leg_joint_angles = self._last_observation["joints"][0, :-2]
-                leg_contact_forces = self._last_observation["contact_forces"]
-                neck_actuation = self.head_stabilization_model(
-                    leg_joint_angles, leg_contact_forces
-                )
+            if callable(self.head_stabilization_model):
+                if self._last_observation is not None:
+                    leg_joint_angles = self._last_observation["joints"][0, :-2]
+                    leg_contact_forces = self._last_observation["contact_forces"]
+                    neck_actuation = self.head_stabilization_model(
+                        leg_joint_angles, leg_contact_forces
+                    )
+                else:
+                    neck_actuation = np.zeros(2)
+            elif self.head_stabilization_model == "thorax":
+                quat = physics.bind(self.thorax).xquat
+                quat_inv = transformations.quat_inv(quat)
+                roll, pitch = transformations.quat_to_euler(quat_inv, ordering="XYZ")[
+                    :2
+                ]
+                neck_actuation = np.array([roll, pitch])
             else:
-                neck_actuation = np.zeros(2)
+                raise NotImplementedError(
+                    "Unknown head stabilization model"
+                    "Available options are 'thorax' or a callable function."
+                )
+
             joint_action = np.concatenate((joint_action, neck_actuation))
             self._last_neck_actuation = neck_actuation
-
-        physics = sim.physics
-        physics.bind(self.actuators).ctrl = joint_action
+            physics.bind(self.actuators + self.neck_actuators).ctrl = joint_action
+        else:
+            physics.bind(self.actuators).ctrl = joint_action
 
         if self.enable_adhesion:
             physics.bind(self.adhesion_actuators).ctrl = action["adhesion"]
