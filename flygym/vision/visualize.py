@@ -64,9 +64,9 @@ def add_insets(retina, viz_frame, visual_input, panel_height=150):
     vision_inset[:, : vision_inset_size[1], :] = img_l
     vision_inset[:, vision_inset_size[1] + 10 :, :] = img_r
     col_start = int((viz_frame.shape[1] - vision_inset.shape[1]) / 2)
-    final_frame[
-        -panel_height:, col_start : col_start + vision_inset.shape[1], :
-    ] = vision_inset
+    final_frame[-panel_height:, col_start : col_start + vision_inset.shape[1], :] = (
+        vision_inset
+    )
 
     cv2.putText(
         final_frame,
