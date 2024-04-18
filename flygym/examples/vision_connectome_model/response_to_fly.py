@@ -8,7 +8,7 @@ from dm_control.rl.control import PhysicsError
 
 from flygym.examples.vision_connectome_model import (
     MovingFlyArena,
-    NMFRealisticVison,
+    NMFRealisticVision,
     visualize_vision,
 )
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
@@ -57,7 +57,7 @@ def run_simulation(
         play_speed_text=False,
     )
 
-    sim = NMFRealisticVison(
+    sim = NMFRealisticVision(
         fly=fly,
         cameras=[cam],
         arena=arena,
@@ -109,16 +109,16 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:
-        stablization_model = HeadStabilizationInferenceWrapper(
+        stabilization_model = HeadStabilizationInferenceWrapper(
             model_path=stabilization_model_dir / "All.ckpt",
             scaler_param_path=stabilization_model_dir / "joint_angle_scaler_params.pkl",
         )
     else:
-        stablization_model = None
+        stabilization_model = None
 
     # Run simulation
     res = run_simulation(
-        arena=arena, run_time=2.0, head_stabilization_model=stablization_model
+        arena=arena, run_time=2.0, head_stabilization_model=stabilization_model
     )
 
     # Save visualization
