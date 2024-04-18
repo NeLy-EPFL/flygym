@@ -41,7 +41,7 @@ class MovingFlyArena(BaseArena):
     def __init__(
         self,
         terrain_type: str = "flat",
-        x_range: Optional[Tuple[float, float]] = (-10, 25),
+        x_range: Optional[Tuple[float, float]] = (-10, 35),
         y_range: Optional[Tuple[float, float]] = (-20, 20),
         block_size: Optional[float] = 1.3,
         height_range: Optional[Tuple[float, float]] = (0.2, 0.2),
