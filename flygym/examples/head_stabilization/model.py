@@ -174,6 +174,6 @@ class HeadStabilizationInferenceWrapper:
         contact_forces = contact_forces.reshape(6, 6).sum(axis=1)
         contact_mask = contact_forces >= self.contact_force_thr
         x = np.concatenate([joint_angles, contact_mask], dtype=np.float32)
-        input_tensor = torch.tensor(x[None, :]).cpu()
+        input_tensor = torch.tensor(x[None, :], device=torch.device("cpu"))
         output_tensor = self.model(input_tensor)
         return output_tensor.detach().numpy().squeeze()

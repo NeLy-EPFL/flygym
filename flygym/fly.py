@@ -1246,7 +1246,7 @@ class Fly:
         if self.head_stabilization_model is not None:
             if callable(self.head_stabilization_model):
                 if self._last_observation is not None:
-                    leg_joint_angles = self._last_observation["joints"][0, :-2]
+                    leg_joint_angles = self._last_observation["joints"][0, :]
                     leg_contact_forces = self._last_observation["contact_forces"]
                     neck_actuation = self.head_stabilization_model(
                         leg_joint_angles, leg_contact_forces
@@ -1256,9 +1256,7 @@ class Fly:
             elif self.head_stabilization_model == "thorax":
                 quat = physics.bind(self.thorax).xquat
                 quat_inv = transformations.quat_inv(quat)
-                roll, pitch = transformations.quat_to_euler(quat_inv, ordering="XYZ")[
-                    :2
-                ]
+                roll, pitch, _ = transformations.quat_to_euler(quat_inv, ordering="XYZ")
                 neck_actuation = np.array([roll, pitch])
             else:
                 raise NotImplementedError(
@@ -1304,7 +1302,7 @@ class Fly:
             info["flip_counter"] = self._flip_counter
             info["contact_forces"] = obs["contact_forces"].copy()
 
-        if self.head_stabilization_model:
+        if self.head_stabilization_model is not None:
             # this is tracked to decide neck actuation for the next step
             self._last_observation = obs
             info["neck_actuation"] = self._last_neck_actuation
