@@ -12,7 +12,6 @@ from typing import List
 from sklearn.metrics import r2_score, mean_squared_error
 from pathlib import Path
 from copy import deepcopy
-from tqdm import tqdm
 
 import flygym
 import flygym.examples.head_stabilization.viz as viz
@@ -155,7 +154,7 @@ def load_datasets(base_dir, excluded_videos, joint_angle_scaler):
                     sim = f"{gait}_{terrain}_{subset}_set_{dn_drive}"
                     path = base_dir / f"random_exploration/{sim}/sim_data.pkl"
                     ds = WalkingDataset(path, joint_angle_scaler=joint_angle_scaler)
-                    if ds.cotains_fly_flip or ds.contains_physics_error:
+                    if ds.contains_fly_flip or ds.contains_physics_error:
                         continue
                     individual_datasets[subset][gait][terrain][dn_drive] = ds
     return individual_datasets

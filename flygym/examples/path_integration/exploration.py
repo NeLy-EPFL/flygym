@@ -4,12 +4,10 @@ import pickle
 import cv2
 from tqdm import trange
 from pathlib import Path
-from typing import Tuple, Union, Optional, Callable
+from typing import Optional, Callable
 
 from flygym import Fly, Camera
-from flygym.arena import BaseArena
 from flygym.util import get_data_path
-from flygym.examples.turning_controller import HybridTurningNMF
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration import (
     PathIntegrationArena,
