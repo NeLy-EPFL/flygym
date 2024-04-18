@@ -44,7 +44,7 @@ def run_simulation(
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=500,
-        neck_kp=100,
+        neck_kp=1000,
         head_stabilization_model=head_stabilization_model,
     )
 

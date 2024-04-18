@@ -35,7 +35,7 @@ def run_simulation(
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=500,
-        neck_kp=100,
+        neck_kp=500,
         head_stabilization_model=head_stabilization_model,
     )
 
@@ -160,7 +160,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
 
     # Run simulation
     sim_res = run_simulation(
-        arena=arena, run_time=2.0, head_stabilization_model=stablization_model
+        arena=arena, run_time=1.0, head_stabilization_model=stablization_model
     )
     print(
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
