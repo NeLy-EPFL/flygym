@@ -7,6 +7,8 @@ from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
+from sklearn.metrics import r2_score
+from dm_control.utils import transformations
 
 import flygym.examples.head_stabilization.viz as viz
 from flygym.examples.vision_connectome_model import NMFRealisticVison, RetinaMapper
@@ -67,6 +69,8 @@ def run_simulation(
     zoomin_snapshots = []
     raw_vision_snapshots = []
     nn_activities_snapshots = []
+    neck_actuation_pred_hist = []
+    neck_actuation_true_hist = []
 
     # Main simulation loop
     for i in trange(int(run_time / sim.timestep)):
@@ -75,6 +79,15 @@ def run_simulation(
         except PhysicsError:
             print("Physics error, ending simulation early")
             break
+
+        # Record neck actuation for stats at the end of the simulation
+        if head_stabilization_model is not None:
+            neck_actuation_pred_hist.append(info["neck_actuation"])
+            quat = sim.physics.bind(fly.thorax).xquat
+            quat_inv = transformations.quat_inv(quat)
+            roll, pitch, _ = transformations.quat_to_euler(quat_inv, ordering="XYZ")
+            neck_actuation_true_hist.append(np.array([roll, pitch]))
+
         rendered_images = sim.render()
         if rendered_images[0] is not None:
             birdeye_snapshots.append(rendered_images[0])
@@ -82,12 +95,28 @@ def run_simulation(
             raw_vision_snapshots.append(obs["vision"])
             nn_activities_snapshots.append(info["nn_activities"])
 
+    # Generate performance stats on head stabilization
+    if head_stabilization_model is not None:
+        neck_actuation_true_hist = np.array(neck_actuation_true_hist)
+        neck_actuation_pred_hist = np.array(neck_actuation_pred_hist)
+        r2_scores = {
+            "roll": r2_score(
+                neck_actuation_true_hist[:, 0], neck_actuation_pred_hist[:, 0]
+            ),
+            "pitch": r2_score(
+                neck_actuation_true_hist[:, 1], neck_actuation_pred_hist[:, 1]
+            ),
+        }
+    else:
+        r2_scores = None
+
     return {
         "sim": sim,
         "birdeye": birdeye_snapshots,
         "zoomin": zoomin_snapshots,
         "raw_vision": raw_vision_snapshots,
         "nn_activities": nn_activities_snapshots,
+        "r2_scores": r2_scores,
     }
 
 
@@ -131,7 +160,11 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
 
     # Run simulation
     sim_res = run_simulation(
-        arena=arena, run_time=1.0, head_stabilization_model=stablization_model
+        arena=arena, run_time=2.0, head_stabilization_model=stablization_model
+    )
+    print(
+        f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
+        f"with R2 scores: {sim_res['r2_scores']}"
     )
     sim: NMFRealisticVison = sim_res["sim"]
     raw_vision_hist = [
