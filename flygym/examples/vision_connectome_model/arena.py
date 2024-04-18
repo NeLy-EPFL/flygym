@@ -10,20 +10,33 @@ class MovingFlyArena(BaseArena):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
-        The arena object that the terrain is built on.
     fly_pos : Tuple[float,float,float]
         The position of the floating fly in the arena.
 
     Parameters
     ----------
-    size : Tuple[int, int]
-        The size of the terrain in (x, y) dimensions.
+    terrain_type : str
+        Type of terrain. Can be "flat" or "blocks". By default "flat".
+    x_range : Tuple[float, float], optional
+        Range of the arena in the x direction (anterior-posterior axis of
+        the fly) over which the block-gap pattern should span, by default
+        (-10, 35).
+    y_range : Tuple[float, float], optional
+        Same as above in y, by default (-20, 20).
+    block_size : float, optional
+        The side length of the rectangular blocks forming the terrain in
+        mm, by default 1.3.
+    height_range : Tuple[float, float], optional
+        Range from which the height of the extruding blocks should be
+        sampled. Only half of the blocks arranged in a diagonal pattern are
+        extruded, by default (0.2, 0.2).
+    rand_seed : int, optional
+        Seed for generating random block heights, by default 0.
+    ground_alpha : float, optional
+        Opacity of the ground, by default 1 (fully opaque).
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    obj_radius : float
-        Radius of the spherical floating fly in mm.
     init_fly_pos : Tuple[float,float]
         Initial position of the fly, by default (5, 0).
     move_speed : float

@@ -64,7 +64,7 @@ class RealTimeVisionNetwork(Network):
             ]
         )
 
-        # Save parameters that will be used throught the simulation or at cleanup
+        # Save parameters that will be used throughout the simulation or at cleanup
         self._step_by_step_sim_params = {
             "dt": dt,
             "is_training": is_training,
@@ -176,7 +176,6 @@ class RetinaMapper:
         coords_rightmost_col = receptor_centers[receptor_centers[:, 1] == col_max]
         flyvis_a_coords = np.array([coords_leftmost_col[:, 0].min(), col_min])
         flyvis_b_coords = np.array([coords_rightmost_col[:, 0].max(), col_max])
-        flyvis_a_coords, flyvis_b_coords
 
         # Now, do the same for flygym.mujoco.vision.Retina
         retina = Retina()
@@ -186,7 +185,6 @@ class RetinaMapper:
         is_cell_b = retina.ommatidia_id_map == retina.ommatidia_id_map.max()
         b_rows, b_cols = np.where(is_cell_b)
         flygym_b_coord = np.array([b_rows.mean(), b_cols.mean()])
-        flygym_a_coords, flygym_b_coord
 
         # Establish linear mapping in row & col coordinates FROM flyvis TO flygym
         row_k = (flygym_b_coord[0] - flygym_a_coords[0]) / (

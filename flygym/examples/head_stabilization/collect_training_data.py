@@ -113,7 +113,6 @@ def run_simulation(
 
         if info["flip"]:
             print("Flip detected!")
-            fly_flipped
             break
 
         # Live display

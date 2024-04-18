@@ -9,7 +9,7 @@ from dm_control.rl.control import PhysicsError
 
 from flygym.examples.vision_connectome_model import (
     MovingFlyArena,
-    NMFRealisticVison,
+    NMFRealisticVision,
     visualize_vision,
 )
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
@@ -62,7 +62,7 @@ def run_simulation(
         fps=24,
         play_speed_text=False,
     )
-    sim = NMFRealisticVison(fly=fly, cameras=[cam], arena=arena)
+    sim = NMFRealisticVision(fly=fly, cameras=[cam], arena=arena)
 
     # Calculate center-of-mass of each ommatidium
     ommatidia_coms = np.empty((fly.retina.num_ommatidia_per_eye, 2))
@@ -162,12 +162,12 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:
-        stablization_model = HeadStabilizationInferenceWrapper(
+        stabilization_model = HeadStabilizationInferenceWrapper(
             model_path=stabilization_model_dir / "All.ckpt",
             scaler_param_path=stabilization_model_dir / "joint_angle_scaler_params.pkl",
         )
     else:
-        stablization_model = None
+        stabilization_model = None
 
     # Run simulation
     res = run_simulation(
@@ -178,7 +178,7 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         response_std=response_stats["T3"]["std"],
         z_score_threshold=-4,
         tracking_gain=4,
-        head_stabilization_model=stablization_model,
+        head_stabilization_model=stabilization_model,
     )
 
     # Save visualization

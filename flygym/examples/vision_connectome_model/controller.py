@@ -8,7 +8,7 @@ from flygym.examples.vision_connectome_model import (
 )
 
 
-class NMFRealisticVison(HybridTurningNMF):
+class NMFRealisticVision(HybridTurningNMF):
     def __init__(self, vision_network_dir=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if vision_network_dir is None:
