@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import lightning as pl
 from torch.utils.data import Dataset
 from torchmetrics.regression import R2Score
-from gymnasium import spaces
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -54,7 +53,7 @@ class WalkingDataset(Dataset):
         with open(sim_data_file, "rb") as f:
             sim_data = pickle.load(f)
 
-        self.cotains_fly_flip = sim_data["errors"]["fly_flipped"]
+        self.contains_fly_flip = sim_data["errors"]["fly_flipped"]
         self.contains_physics_error = sim_data["errors"]["physics_error"]
 
         # Extract the roll and pitch angles

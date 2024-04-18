@@ -201,7 +201,7 @@ def make_feature_selection_summary_plot(
 
 
 def closed_loop_comparison_video(
-    data: Dict[str, List[np.ndarray]],
+    data: Dict[Tuple[bool, str], List[np.ndarray]],
     cell: str,
     fps: int,
     video_path: Path,

@@ -1,4 +1,3 @@
-import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
@@ -151,16 +150,16 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
 
     # Set up head stabilization model
     if stabilization_on:
-        stablization_model = HeadStabilizationInferenceWrapper(
+        stabilization_model = HeadStabilizationInferenceWrapper(
             model_path=stabilization_model_dir / "All.ckpt",
             scaler_param_path=stabilization_model_dir / "joint_angle_scaler_params.pkl",
         )
     else:
-        stablization_model = None
+        stabilization_model = None
 
     # Run simulation
     sim_res = run_simulation(
-        arena=arena, run_time=1.0, head_stabilization_model=stablization_model
+        arena=arena, run_time=1.0, head_stabilization_model=stabilization_model
     )
     print(
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
