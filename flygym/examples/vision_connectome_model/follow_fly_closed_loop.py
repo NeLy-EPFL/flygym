@@ -153,11 +153,11 @@ def process_trial(terrain_type: str, stabilization_on: bool):
 
     if terrain_type == "flat":
         arena = MovingFlyArena(
-            move_speed=17, lateral_magnitude=1, terrain_type=terrain_type
+            move_speed=16, lateral_magnitude=1, terrain_type=terrain_type
         )
     elif terrain_type == "blocks":
         arena = MovingFlyArena(
-            move_speed=11, lateral_magnitude=1, terrain_type=terrain_type
+            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
         )
     else:
         raise ValueError("Invalid terrain type")
@@ -177,7 +177,7 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         response_mean=response_stats["T3"]["mean"],
         response_std=response_stats["T3"]["std"],
         z_score_threshold=-4,
-        tracking_gain=5,
+        tracking_gain=4,
         head_stabilization_model=stablization_model,
     )
 
@@ -216,5 +216,4 @@ if __name__ == "__main__":
         for stabilization_on in [True, False]
     ]
 
-    # wrapper(*configs[0])
     Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
