@@ -51,7 +51,7 @@ def run_simulation(
         enable_adhesion=True,
         enable_vision=True,
         vision_refresh_rate=500,
-        neck_kp=50,
+        neck_kp=500,
         head_stabilization_model=head_stabilization_model,
     )
     cam = Camera(
