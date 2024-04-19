@@ -1,6 +1,6 @@
 import numpy as np
 from enum import Enum
-from typing import Tuple, Union, Optional, Callable
+from typing import Tuple, Union
 from dm_control import mjcf
 
 from flygym.arena import FlatTerrain, BlocksTerrain

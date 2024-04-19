@@ -15,14 +15,14 @@ from tqdm import tqdm, trange
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
 
-data_basedir = Path("/home/sibwang/Projects/flygym/outputs/path_integration/")
+data_basedir = Path("./outputs/path_integration/")
 model_basedir = data_basedir / "models"
 model_basedir.mkdir(exist_ok=True, parents=True)
 gaits = ["tripod", "tetrapod", "wave"]
 num_trials_per_gait = 15
 
 
-## Load random exploration data
+# Load random exploration data
 def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     with open(trial_dir / "sim_data.pkl", "rb") as f:
         sim_data = pickle.load(f)
@@ -67,7 +67,7 @@ for gait in gaits:
         trial_data[(gait, seed)] = load_trial_data(trial_dir)
 
 
-## Plot example exploration trials
+# Plot example exploration trials
 fig, axs = plt.subplots(1, 3, figsize=(9, 3), tight_layout=True)
 for gait, ax in zip(gaits, axs):
     for seed in range(num_trials_per_gait):
@@ -80,7 +80,7 @@ for gait, ax in zip(gaits, axs):
     ax.set_aspect("equal")
 
 
-## Visualize contact forces for each pair of legs
+# Visualize contact forces for each pair of legs
 seed = 0
 force_thresholds = (3, 3, 3)
 fig, axs = plt.subplots(3, 1, figsize=(6, 6), tight_layout=True, sharex=True)
@@ -99,7 +99,7 @@ for i, pos in enumerate(["fore", "mid", "hind"]):
     sns.despine(ax=ax)
 
 
-## Extract input/output variables and train models
+# Extract input/output variables and train models
 def get_leg_mask(legs: str) -> np.ndarray:
     legs = legs.upper()
     leg_mask = np.zeros(3, dtype=bool)
@@ -282,7 +282,7 @@ fit_models(
 )
 
 
-## Let's fit a lot of models with different parameters to do a sensitivity
+# Let's fit a lot of models with different parameters to do a sensitivity
 # analysis. We will do it in parallel because there are lots of models.
 trial_variables = {}
 time_scales = [0.64]
@@ -494,8 +494,7 @@ for col, gait in enumerate(gaits):
 fig.savefig(model_basedir / "sensitivity_analysis_3.pdf")
 
 
-# ## Demonstrate final model
-
+# Demonstrate final model
 # It looks like the best model parameters are the following:
 # - Contact force threshold: (3, 3, 6) mN
 # - Time scale: 0.64s
@@ -506,7 +505,6 @@ fig.savefig(model_basedir / "sensitivity_analysis_3.pdf")
 #
 # First, let's build an ensemble model of the 5 trained models. Since the
 # models are linear, we can simply average the weights and biases.
-
 
 ensemble_models_df = model_df3.groupby(
     [
