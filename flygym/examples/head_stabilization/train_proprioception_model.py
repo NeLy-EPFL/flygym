@@ -32,7 +32,6 @@ def subset_to_mask(dof_subset):
         "TiTa_pitch": "Tarsus1",
     }
     dof_subset = [_dof_name_lookup[dof] for dof in dof_subset]
-    mask = [dof in dof_subset for dof in flygym.preprogrammed.all_leg_dofs]
     mask = []
     for dof in flygym.preprogrammed.all_leg_dofs:
         to_include = False
