@@ -1,58 +1,103 @@
 import numpy as np
+import torch
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib.patches import Patch
+from sys import stderr
+from tqdm import trange
 from matplotlib.lines import Line2D
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.animation import FuncAnimation
 from pathlib import Path
-from typing import Dict, List, Optional
-from torch.utils.data import Dataset
+from typing import Dict, List, Tuple, Optional, Callable
 from pandas import DataFrame
+from sklearn.metrics import r2_score
+from flygym.examples.head_stabilization import WalkingDataset
 
 
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
 
 
-def make_sample_time_series_plot(
-    predictions: Dict[str, np.ndarray],
-    performances: Dict[str, Dict[str, float]],
-    unmasked_datasets: Dict[str, Dataset],
+_color_config = {
+    "roll": ("royalblue", "midnightblue"),
+    "pitch": ("peru", "saddlebrown"),
+}
+_marker_config = {
+    "tripod": "^",
+    "tetrapod": "s",
+    "wave": "d",
+}
+
+
+def visualize_one_dataset(
+    model: Callable,
+    test_datasets: Dict[str, Dict[str, Dict[str, WalkingDataset]]],
     output_path: Path,
+    joint_angles_mask: Optional[np.ndarray] = None,
     dof_subset_tag: Optional[str] = None,
+    dn_drive: str = "0.94_1.02",
 ):
     fig, axs = plt.subplots(
-        3, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True
+        3, 2, figsize=(9, 6), tight_layout=True, sharex=True, sharey=True
     )
-    for i, (gait, ds) in enumerate(unmasked_datasets.items()):
-        t_grid = (np.arange(len(ds)) + ds.ignore_first_n) * 1e-4
-        for j, dof in enumerate(["roll", "pitch"]):
-            axs[i, j].plot(
-                t_grid,
-                np.rad2deg(unmasked_datasets[gait].roll_pitch_ts[:, j]),
-                lw=1,
-                color="black",
-                label="Actual",
-            )
-            axs[i, j].plot(
-                t_grid,
-                np.rad2deg(predictions[gait][:, j]),
-                lw=1,
-                color="tab:red",
-                label="Predicted",
-                linestyle="--",
-            )
-            axs[i, j].text(
-                1.0,
-                0.01,
-                f"$R^2$={performances[gait][dof]:.2f}",
-                ha="right",
-                va="bottom",
-                transform=axs[i, j].transAxes,
-            )
-            axs[i, j].set_ylim(-15, 15)
-            axs[i, j].set_xlim(51, 52)
+    for i, gait in enumerate(["tripod", "tetrapod", "wave"]):
+        for j, terrain in enumerate(["flat", "blocks"]):
+            # Collect data
+            ds = test_datasets[gait][terrain][dn_drive]
+            joint_angles = ds.joint_angles
+            if joint_angles_mask is not None:
+                joint_angles = joint_angles.copy()
+                joint_angles[:, ~joint_angles_mask] = 0
+            contact_mask = ds.contact_mask
+            y_true = ds.roll_pitch_ts
+
+            # Make predictions
+            x = np.concatenate([joint_angles, contact_mask], axis=1)
+            x = torch.tensor(x[None, ...], device=model.device)
+            y_pred = model(x).detach().cpu().numpy().squeeze()
+
+            # Evaluate performance
+            perf = {}
+            for k, dof in enumerate(["roll", "pitch"]):
+                perf[dof] = r2_score(y_true[:, k], y_pred[:, k])
+
+            # Visualize
+            ax = axs[i, j]
+            t_grid = (np.arange(len(ds)) + ds.ignore_first_n) * 1e-4
+            for k, dof in enumerate(["roll", "pitch"]):
+                color_light, color_dark = _color_config[dof]
+                ax.plot(
+                    t_grid,
+                    np.rad2deg(y_true[:, k]),
+                    linestyle="--",
+                    lw=1,
+                    color=color_light,
+                    label=f"Actual {dof}",
+                )
+                ax.plot(
+                    t_grid,
+                    np.rad2deg(y_pred[:, k]),
+                    linestyle="-",
+                    lw=1,
+                    color=color_dark,
+                    label=f"Predicted {dof}",
+                )
+                axs[i, j].text(
+                    1.0,
+                    0.01 if k == 0 else 0.1,
+                    f"{dof.title()}: $R^2$={perf[dof]:.2f}",
+                    ha="right",
+                    va="bottom",
+                    transform=axs[i, j].transAxes,
+                    color=color_dark,
+                )
+            if i == 0 and j == 1:
+                ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
             if i == 0:
-                axs[i, j].set_title(rf"Thorax {dof}", size=12)
+                axs[i, j].set_title(rf"{terrain.title()} terrain", size=12)
             if j == 0:
                 axs[i, j].text(
                     -0.3,
@@ -67,9 +112,10 @@ def make_sample_time_series_plot(
                 axs[i, j].set_xlabel("Time [s]")
             if j == 0:
                 axs[i, j].set_ylabel(r"Angle [$^\circ$]")
-            if i == 0 and j == 0:
-                axs[i, j].legend(frameon=False)
-            sns.despine(ax=axs[i, j])
+            ax.set_xlim(0.5, 1.5)
+            ax.set_ylim(-45, 45)
+            sns.despine(ax=ax)
+
     if dof_subset_tag is not None:
         fig.suptitle(f"DoF selection: {dof_subset_tag}", fontweight="bold")
     fig.savefig(output_path)
@@ -77,75 +123,190 @@ def make_sample_time_series_plot(
 
 
 def make_feature_selection_summary_plot(
-    performances_df: DataFrame, dof_subset_tags: List[str], output_path: Path
+    test_performance_df: DataFrame, output_path: Path, title: str = None
 ):
-    fig, ax = plt.subplots(figsize=(6, 3), tight_layout=True)
-    bar_width = 0.4
-    category_base = np.arange(len(dof_subset_tags))
-    color_config = {
-        "roll": ("royalblue", "midnightblue"),
-        "pitch": ("peru", "saddlebrown"),
-    }
-    marker_config = {
-        "tripod": "^",
-        "tetrapod": "s",
-        "wave": "d",
-    }
-    for dof in ["roll", "pitch"]:
-        color_light, color_dark = color_config[dof]
-        xs = category_base + (0.5 * bar_width * (-1 if dof == "roll" else 1))
-        mean_r2s = [
-            performances_df.loc[cat, :, dof]["r2_score"].mean()
-            for cat in dof_subset_tags
-        ]
-        ax.bar(xs, mean_r2s, width=bar_width, color=color_light)
-        for gait in ["tripod", "tetrapod", "wave"]:
-            ys = [
-                performances_df.loc[cat, gait, dof]["r2_score"]
-                for cat in dof_subset_tags
-            ]
-            ax.scatter(xs, ys, color=color_dark, marker=marker_config[gait], s=5)
-    ax.set_ylabel("$R^2$")
-    ax.set_xlabel("")
-    ax.tick_params(axis="x", labelrotation=90)
-    ax.set_ylim(0, 1)
-    ax.set_xticks(category_base)
-    ax.set_xticklabels(dof_subset_tags)
-    ax.set_xlim(-0.5, category_base[-1] + 0.5)
+    dof_subset_tags = test_performance_df["dof_subset_tag"].unique()
+    dof_subset_tags_basex = {tag: i * 3 for i, tag in enumerate(dof_subset_tags)}
+
+    fig, ax = plt.subplots(figsize=(9, 3), tight_layout=True)
+    ax.axhline(0, color="black", lw=0.5)
+    for i, dof in enumerate(["roll", "pitch"]):
+        df_copy = test_performance_df.copy()
+        x_lookup = {k: v + i for k, v in dof_subset_tags_basex.items()}
+        df_copy["_x"] = df_copy["dof_subset_tag"].map(x_lookup)
+        color_light, color_dark = _color_config[dof]
+        sns.swarmplot(
+            data=df_copy,
+            x="_x",
+            y=f"r2_{dof}",
+            ax=ax,
+            color=color_dark,
+            dodge=True,
+            order=list(range(len(dof_subset_tags) * 3 - 1)),
+            size=1.5,
+        )
+        sns.boxplot(
+            data=df_copy,
+            x="_x",
+            y=f"r2_{dof}",
+            ax=ax,
+            dodge=True,
+            fliersize=0,
+            boxprops={"facecolor": "None", "edgecolor": "k", "linewidth": 0.5},
+            order=list(range(len(dof_subset_tags) * 3 - 1)),
+            linewidth=1,
+        )
     legend_elements = [
-        Patch(facecolor="royalblue", label="Thorax roll"),
-        Patch(facecolor="peru", label="Thorax pitch"),
         Line2D(
             [],
             [],
-            color="black",
-            marker="^",
+            color=_color_config["roll"][1],
+            marker=".",
             markersize=5,
             linestyle="None",
-            label="Tripod gait",
+            label="Roll",
         ),
         Line2D(
             [],
             [],
-            color="black",
-            marker="s",
+            color=_color_config["pitch"][1],
+            marker=".",
             markersize=5,
             linestyle="None",
-            label="Tetrapod gait",
-        ),
-        Line2D(
-            [],
-            [],
-            color="black",
-            marker="d",
-            markersize=5,
-            linestyle="None",
-            label="Wave gait",
+            label="Pitch",
         ),
     ]
     ax.legend(
-        handles=legend_elements, loc="upper left", bbox_to_anchor=(1, 1), frameon=False
+        handles=legend_elements,
+        ncol=2,
+        loc="lower left",
+        bbox_to_anchor=(0, 0.2),
+        frameon=False,
     )
-    sns.despine(ax=ax)
+    if min(df_copy["r2_roll"].min(), df_copy["r2_pitch"].min()) < -0.26:
+        raise ValueError(
+            "Lowest R2 score is below the display limit. Some data not shown in figure."
+        )
+    ax.set_ylim(-0.26, 1)
+    ax.set_xticks(np.array(list(dof_subset_tags_basex.values())) + 0.5)
+    ax.set_xticklabels(dof_subset_tags)
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.set_xlabel("")
+    ax.set_ylabel("$R^2$")
+    if title is not None:
+        ax.set_title(title)
+    sns.despine(ax=ax, bottom=True)
     fig.savefig(output_path)
     plt.close(fig)
+
+
+def closed_loop_comparison_video(
+    data: Dict[Tuple[bool, str], List[np.ndarray]],
+    cell: str,
+    fps: int,
+    video_path: Path,
+    cell_activity_range: Tuple[float, float] = (-3, 3),
+    cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
+    dpi: int = 300,
+):
+    fig, axs = plt.subplots(
+        2,
+        5,
+        figsize=(11.2, 6.3),
+        gridspec_kw={"width_ratios": [1, 1, 0.85, 0.85, 0.15]},
+        tight_layout=True,
+    )
+    plot_elements = {}
+
+    def init():
+        # Turn off all borders
+        for ax in axs.flat:
+            ax.axis("off")
+
+        # Initialize views
+        for i, stabilization_on in enumerate([True, False]):
+            for j, view in enumerate(
+                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+            ):
+                if view == "cell_response":
+                    vmin, vmax = cell_activity_range
+                    cmap = "seismic"
+                elif view == "raw_vision":
+                    vmin, vmax = 0, 1
+                    cmap = "gray"
+                else:
+                    vmin, vmax = 0, 255
+                    cmap = None
+
+                if view in ["birdeye", "zoomin"]:
+                    img = np.zeros_like(data[(stabilization_on, view)][0])
+                else:
+                    img = np.zeros_like(data[(stabilization_on, view)][0][0, ...])
+
+                ax = axs[i, j]
+                plot_elements[(stabilization_on, view)] = ax.imshow(
+                    img,
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap=cmap,
+                )
+
+        # Colorbars
+        cell_activity_norm = Normalize(*cell_activity_range)
+        cell_activity_scalar_mappable = ScalarMappable(
+            cmap=cell_activity_cmap, norm=cell_activity_norm
+        )
+        cell_activity_scalar_mappable.set_array([])
+        for i, stabilization_on in enumerate([True, False]):
+            cbar = plt.colorbar(cell_activity_scalar_mappable, ax=axs[i, 4], shrink=0.8)
+            cbar.set_ticks(cell_activity_range)
+            cbar.set_ticklabels(["hyperpolarized", "depolarized"])
+
+        # Panel titles
+        axs[0, 0].set_title("Birdeye view")
+        axs[0, 1].set_title("Zoom-in view")
+        axs[0, 2].set_title("Raw vision")
+        axs[0, 3].set_title(f"{cell} activities")
+        axs[0, 0].text(
+            -0.3,
+            0.5,
+            f"Stabilized",
+            size=12,
+            va="center",
+            rotation=90,
+            transform=axs[0, 0].transAxes,
+        )
+        axs[1, 0].text(
+            -0.3,
+            0.5,
+            f"Unstabilized",
+            size=12,
+            va="center",
+            rotation=90,
+            transform=axs[1, 0].transAxes,
+        )
+        return list(plot_elements.values())
+
+    def update(frame_id):
+        for i, stabilization_on in enumerate([True, False]):
+            for j, view in enumerate(
+                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+            ):
+                if view in ["birdeye", "zoomin"]:
+                    img = data[(stabilization_on, view)][frame_id]
+                else:
+                    img = data[(stabilization_on, view)][frame_id][0, ...]
+                    img[img == 0] = np.nan
+                plot_elements[(stabilization_on, view)].set_data(img)
+        return list(plot_elements.values())
+
+    animation = FuncAnimation(
+        fig,
+        update,
+        frames=trange(len(data[True, "birdeye"]), file=stderr),
+        init_func=init,
+        blit=False,
+    )
+
+    video_path.parent.mkdir(exist_ok=True, parents=True)
+    animation.save(video_path, writer="ffmpeg", fps=fps, dpi=dpi)
