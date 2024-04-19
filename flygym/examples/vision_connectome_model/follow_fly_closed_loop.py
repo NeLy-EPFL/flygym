@@ -13,6 +13,7 @@ from flygym.examples.vision_connectome_model import (
     visualize_vision,
 )
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
+from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
 
 contact_sensor_placements = [
@@ -30,9 +31,21 @@ cells = [
 ]
 # fmt: on
 
-stabilization_model_dir = Path("./outputs/head_stabilization/models/")
 baseline_dir = Path("./outputs/connectome_constrained_vision/baseline_response/")
 output_dir = Path("./outputs/connectome_constrained_vision/closed_loop_control/")
+
+# If you trained the models yourself (by running ``collect_training_data.py``
+# followed by ``train_proprioception_model.py``), you can use the following
+# paths to load the models that you trained. Modify the paths if saved the
+# model checkpoints elsewhere.
+stabilization_model_dir = Path("./outputs/head_stabilization/models/")
+stabilization_model_path = stabilization_model_dir / "All.ckpt"
+scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
+
+# Alternatively, you can use the pre-trained models that come with the
+# package. To do so, comment out the three lines above and uncomment the
+# following line.
+# stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
 
 def run_simulation(
@@ -163,8 +176,8 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         raise ValueError("Invalid terrain type")
     if stabilization_on:
         stabilization_model = HeadStabilizationInferenceWrapper(
-            model_path=stabilization_model_dir / "All.ckpt",
-            scaler_param_path=stabilization_model_dir / "joint_angle_scaler_params.pkl",
+            model_path=stabilization_model_path,
+            scaler_param_path=scaler_param_path,
         )
     else:
         stabilization_model = None
