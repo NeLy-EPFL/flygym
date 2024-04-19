@@ -82,7 +82,7 @@ for gait, ax in zip(gaits, axs):
 
 # Visualize contact forces for each pair of legs
 seed = 0
-force_thresholds = (3, 3, 3)
+force_thresholds = (0.5, 1, 3)
 fig, axs = plt.subplots(3, 1, figsize=(6, 6), tight_layout=True, sharex=True)
 t_grid = np.arange(trial_data[("tripod", 0)]["contact_force"].shape[0]) * 1e-4
 for i, pos in enumerate(["fore", "mid", "hind"]):
@@ -91,7 +91,7 @@ for i, pos in enumerate(["fore", "mid", "hind"]):
     ax.plot(t_grid, trial_data[("tripod", 0)]["contact_force"][:, 3 + i], lw=1)
     ax.axhline(force_thresholds[i], color="black", lw=1)
     ax.set_xlim(10, 10.5)
-    ax.set_ylim(0, 50)
+    ax.set_ylim(0, 20)
     ax.set_ylabel("Contact force [mN]")
     ax.set_title(f"{pos.title()} legs")
     if i == 2:
@@ -248,46 +248,46 @@ def fit_models(
 variables = extract_variables(
     trial_data=trial_data[("tripod", 0)],
     time_scale=0.64,
-    contact_force_thr=(3, 3, 10),
+    contact_force_thr=(0.5, 1, 3),
     legs="FMH",
 )
 
 # scale some variables just so they look visually aligned
+fig, ax = plt.subplots()
 t_grid = np.arange(variables["heading_diff"].shape[0]) * 1e-4 + 0.64
-plt.axhline(0, color="black", lw=1)
-plt.plot(
+ax.axhline(0, color="black", lw=1)
+ax.plot(
     t_grid, variables["stride_total_diff_lrdiff"][:, 0] * 0.4, label="Fore legs prop."
 )
-plt.plot(
+ax.plot(
     t_grid, variables["stride_total_diff_lrdiff"][:, 1] * 0.2, label="Mid legs prop."
 )
-plt.plot(
+ax.plot(
     t_grid, variables["stride_total_diff_lrdiff"][:, 2] * 0.6, label="Hind legs prop."
 )
-plt.plot(t_grid, variables["diff_dn_drive"] * -0.8, label="Descending")
-plt.plot(t_grid, variables["heading_diff"] * 1, color="black", label="Heading change")
-plt.xlim(6, 10)
-plt.yticks([])
-plt.ylim(-1.3, 1.3)
-plt.xlabel("Time [s]")
-plt.ylabel("Signal [AU]")
-plt.legend(ncol=2)
-sns.despine()
-plt.savefig(model_basedir / "input_variables.pdf")
+ax.plot(t_grid, variables["diff_dn_drive"] * -0.8, label="Descending")
+ax.plot(t_grid, variables["heading_diff"] * 1, color="black", label="Heading change")
+ax.set_xlim(6, 10)
+ax.set_yticks([])
+ax.set_ylim(-1.3, 1.3)
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Signal [AU]")
+ax.legend(ncol=2)
+sns.despine(ax=ax)
+fig.savefig(model_basedir / "input_variables.pdf")
 
 fit_models(
     trial_data=trial_data[("tripod", 0)],
     time_scale=0.64,
-    contact_force_thr=(3, 3, 10),
+    contact_force_thr=(0.5, 1, 3),
     legs="FMH",
 )
 
 
-# Let's fit a lot of models with different parameters to do a sensitivity
-# analysis. We will do it in parallel because there are lots of models.
+# First sensitivity analysis: Find optimal contact force threshold
 trial_variables = {}
 time_scales = [0.64]
-contact_force_thresholds = [2, 4, 6, 8, 10, 12]
+contact_force_thresholds = [0.1, 0.5, 1, 1.5, 2, 2.5, 3.5, 5, 7]
 trials = list(range(5))  # use only the first 5 trials for training
 configs = []
 for gait in gaits:
@@ -345,7 +345,7 @@ for i, target in enumerate(["heading", "disp"]):
             thr_to_r2 = model_df1_sub.groupby(f"contact_force_thr_{leg}")[
                 f"r2_prop2{target}"
             ].mean()
-            ax.plot(thr_to_r2, label=f"{leg} legs", marker="o")
+            ax.plot(thr_to_r2, label=f"{leg} legs", marker="o", markersize=3)
         ax.set_ylim(0, 1)
         target_str = {"heading": "heading", "disp": "displacement"}[target]
         ax.set_title(f"{gait.title()} gait, {target_str} prediction")
@@ -356,14 +356,15 @@ for i, target in enumerate(["heading", "disp"]):
         if j == 0:
             ax.set_ylabel("$R^2$")
         sns.despine(ax=ax)
+fig.savefig(model_basedir / "sensitivity_analysis_1.pdf")
 
 
-# Let's do another sensitivity analysis, this time just focusing on the time scale
+# Second sensitivity analysis: Find the optima ltime scale
 trial_variables = {}
 time_scales = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12]
 # legs_combi = ["F", "M", "H", "FM", "FH", "MH", "FMH"]
 trials = list(range(10))  # use only the first 5 trials for training
-configs = list(itertools.product(gaits, trials, time_scales, [(3, 3, 6)], ["FMH"]))
+configs = list(itertools.product(gaits, trials, time_scales, [(0.5, 1, 3)], ["FMH"]))
 
 
 def wrapper(config):
@@ -424,11 +425,11 @@ for col, gait in enumerate(gaits):
 fig.savefig(model_basedir / "sensitivity_analysis_2.pdf")
 
 
-# Finally, let's check which legs provide the most information for path integration
+# Third sensitivity analysis: Evaluate contribution of each leg
 trial_variables = {}
 legs_combi = ["F", "M", "H", "FM", "FH", "MH", "FMH"]
 trials = list(range(10))  # use only the first 5 trials for training
-configs = list(itertools.product(gaits, trials, [0.64], [(3, 3, 6)], legs_combi))
+configs = list(itertools.product(gaits, trials, [0.64], [(0.5, 1, 3)], legs_combi))
 
 
 def wrapper(config):
@@ -497,7 +498,7 @@ fig.savefig(model_basedir / "sensitivity_analysis_3.pdf")
 
 # Demonstrate final model
 # It looks like the best model parameters are the following:
-# - Contact force threshold: (3, 3, 6) mN
+# - Contact force threshold: (0.5, 1, 3) mN
 # - Time scale: 0.64s
 # - Legs: forelegs and midlegs
 #
@@ -571,7 +572,7 @@ class LinearModel:
 
 
 legs = "FMH"
-contact_force_thr = (3, 3, 6)
+contact_force_thr = (0.5, 1, 3)
 time_scale = 0.64
 
 
