@@ -2,7 +2,7 @@ from flygym.arena import BaseArena
 from flygym.arena.tethered import Tethered
 from flygym import Fly
 import numpy as np
-from typing import Callable
+from typing import Tuple, Optional, Callable
 
 
 class MovingFlyArena(BaseArena):
@@ -10,20 +10,33 @@ class MovingFlyArena(BaseArena):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
-        The arena object that the terrain is built on.
     fly_pos : Tuple[float,float,float]
         The position of the floating fly in the arena.
 
     Parameters
     ----------
-    size : Tuple[int, int]
-        The size of the terrain in (x, y) dimensions.
+    terrain_type : str
+        Type of terrain. Can be "flat" or "blocks". By default "flat".
+    x_range : Tuple[float, float], optional
+        Range of the arena in the x direction (anterior-posterior axis of
+        the fly) over which the block-gap pattern should span, by default
+        (-10, 35).
+    y_range : Tuple[float, float], optional
+        Same as above in y, by default (-20, 20).
+    block_size : float, optional
+        The side length of the rectangular blocks forming the terrain in
+        mm, by default 1.3.
+    height_range : Tuple[float, float], optional
+        Range from which the height of the extruding blocks should be
+        sampled. Only half of the blocks arranged in a diagonal pattern are
+        extruded, by default (0.2, 0.2).
+    rand_seed : int, optional
+        Seed for generating random block heights, by default 0.
+    ground_alpha : float, optional
+        Opacity of the ground, by default 1 (fully opaque).
     friction : Tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    obj_radius : float
-        Radius of the spherical floating fly in mm.
     init_fly_pos : Tuple[float,float]
         Initial position of the fly, by default (5, 0).
     move_speed : float
@@ -40,11 +53,17 @@ class MovingFlyArena(BaseArena):
 
     def __init__(
         self,
-        size=(300, 300),
+        terrain_type: str = "flat",
+        x_range: Optional[Tuple[float, float]] = (-10, 35),
+        y_range: Optional[Tuple[float, float]] = (-20, 20),
+        block_size: Optional[float] = 1.3,
+        height_range: Optional[Tuple[float, float]] = (0.2, 0.2),
+        rand_seed: int = 0,
+        ground_alpha: float = 1,
         friction=(1, 0.005, 0.0001),
         leading_fly_height=1,
         init_fly_pos=(5, 0),
-        move_speed=10,
+        move_speed=6,
         move_direction="right",
         lateral_magnitude=2,
     ):
@@ -66,32 +85,71 @@ class MovingFlyArena(BaseArena):
             raise ValueError("Invalid move_direction")
 
         # Add ground
-        ground_size = [*size, 1]
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.8, 0.8, 0.8),
-            rgb2=(0.9, 0.9, 0.9),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(60, 60),
-            reflectance=0.1,
-        )
-        self.root_element.worldbody.add(
-            "geom",
-            type="plane",
-            name="ground",
-            material=grid,
-            size=ground_size,
-            friction=friction,
-        )
-        self.root_element.worldbody.add("body", name="b_plane")
+        if terrain_type == "flat":
+            ground_size = [300, 300, 1]
+            chequered = self.root_element.asset.add(
+                "texture",
+                type="2d",
+                builtin="checker",
+                width=300,
+                height=300,
+                rgb1=(0.4, 0.4, 0.4),
+                rgb2=(0.5, 0.5, 0.5),
+            )
+            grid = self.root_element.asset.add(
+                "material",
+                name="grid",
+                texture=chequered,
+                texrepeat=(60, 60),
+                reflectance=0.1,
+            )
+            self.root_element.worldbody.add(
+                "geom",
+                type="plane",
+                name="ground",
+                material=grid,
+                size=ground_size,
+                friction=friction,
+            )
+        elif terrain_type == "blocks":
+            self.x_range = x_range
+            self.y_range = y_range
+            self.block_size = block_size
+            self.height_range = height_range
+            rand_state = np.random.RandomState(rand_seed)
+
+            x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
+            y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
+            for i, x_pos in enumerate(x_centers):
+                for j, y_pos in enumerate(y_centers):
+                    is_i_odd = i % 2 == 1
+                    is_j_odd = j % 2 == 1
+
+                    if is_i_odd != is_j_odd:
+                        height = 0.1
+                    else:
+                        height = 0.1 + rand_state.uniform(*height_range)
+
+                    self.root_element.worldbody.add(
+                        "geom",
+                        type="box",
+                        size=(
+                            block_size / 2 + 0.1 * block_size / 2,
+                            block_size / 2 + 0.1 * block_size / 2,
+                            height / 2 + block_size / 2,
+                        ),
+                        pos=(
+                            x_pos,
+                            y_pos,
+                            height / 2 - block_size / 2,
+                        ),
+                        rgba=(0.3, 0.3, 0.3, ground_alpha),
+                        friction=friction,
+                    )
+
+            self.root_element.worldbody.add("body", name="base_plane")
+        else:
+            raise ValueError(f"Invalid terrain '{terrain_type}'")
 
         # Add fly
         self._prev_pos = complex(*self.init_fly_pos[:2])
@@ -192,18 +250,19 @@ class MovingBarArena(Tethered):
         rgba=(0, 0, 0, 1),
         **kwargs,
     ):
-        """Flat terrain with a moving cylinder to simulate a moving bar on a
-        circular screen.
+        """Flat or blocks terrain with a moving cylinder to simulate a
+        moving bar on a circular screen.
 
         Parameters
         ----------
         azimuth_func : Callable[[float], float]
-            Function that takes time as input and returns the azimuth angle of the
-            cylinder.
+            Function that takes time as input and returns the azimuth angle
+            of the cylinder.
         visual_angle : Tuple[float, float]
             Width and height of the cylinder in degrees.
         distance : float
-            Distance from the center of the arena to the center of the cylinders.
+            Distance from the center of the arena to the center of the
+            cylinders.
         rgba : Tuple[float, float, float, float]
             Color of the cylinder.
         kwargs : dict
