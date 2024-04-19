@@ -97,6 +97,7 @@ for i, pos in enumerate(["fore", "mid", "hind"]):
     if i == 2:
         ax.set_xlabel("Time [s]")
     sns.despine(ax=ax)
+fig.savefig(model_basedir / "contact_forces.pdf")
 
 
 # Extract input/output variables and train models
