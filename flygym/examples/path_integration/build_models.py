@@ -39,9 +39,6 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     )
     contact_force_ts = np.linalg.norm(contact_force_ts, axis=2)  # calc force magnitude
     contact_force_ts = contact_force_ts.reshape(-1, 6, 6).sum(axis=2)  # total per leg
-    contact_force_ts = np.array(
-        [medfilt(arr, kernel_size=11) for arr in contact_force_ts.T]
-    ).T
 
     dn_drive_ts = np.array(action_hist, dtype=np.float32)
 
