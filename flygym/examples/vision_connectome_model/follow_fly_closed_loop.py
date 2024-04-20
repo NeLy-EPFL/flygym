@@ -190,7 +190,7 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         response_mean=response_stats["T3"]["mean"],
         response_std=response_stats["T3"]["std"],
         z_score_threshold=-4,
-        tracking_gain=4,
+        tracking_gain=5,
         head_stabilization_model=stabilization_model,
     )
 
