@@ -5,6 +5,7 @@ import gc
 import itertools
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.signal import medfilt
 from sklearn.linear_model import LinearRegression
 from multiprocessing import Pool
 from scipy.signal import convolve2d
@@ -27,7 +28,6 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     with open(trial_dir / "sim_data.pkl", "rb") as f:
         sim_data = pickle.load(f)
     obs_hist = sim_data["obs_hist"]
-    info_hist = sim_data["info_hist"]
     action_hist = sim_data["action_hist"]
 
     end_effector_pos_ts = np.array(
@@ -39,6 +39,9 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     )
     contact_force_ts = np.linalg.norm(contact_force_ts, axis=2)  # calc force magnitude
     contact_force_ts = contact_force_ts.reshape(-1, 6, 6).sum(axis=2)  # total per leg
+    contact_force_ts = np.array(
+        [medfilt(arr, kernel_size=11) for arr in contact_force_ts.T]
+    ).T
 
     dn_drive_ts = np.array(action_hist, dtype=np.float32)
 
