@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from typing import Optional
+from typing import Optional, Tuple
 from flygym import Fly, Camera
 from dm_control.rl.control import PhysicsError
 
@@ -57,6 +57,7 @@ def run_simulation(
     z_score_threshold: float,
     tracking_gain: float,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
+    spawn_xy: Tuple[float, float] = (0, 0),
 ):
     # Setup NMF simulation
     fly = Fly(
@@ -66,6 +67,7 @@ def run_simulation(
         vision_refresh_rate=500,
         neck_kp=500,
         head_stabilization_model=head_stabilization_model,
+        spawn_pos=(*spawn_xy, 0.3),
     )
     cam = Camera(
         fly=fly,
@@ -158,8 +160,11 @@ def run_simulation(
     }
 
 
-def process_trial(terrain_type: str, stabilization_on: bool):
+def process_trial(
+    terrain_type: str, stabilization_on: bool, spawn_xy: Tuple[float, float]
+):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
+    trial_name = f"x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
 
     with open(baseline_dir / f"{variation_name}_response_stats.pkl", "rb") as f:
         response_stats = pickle.load(f)
@@ -192,11 +197,12 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         z_score_threshold=-4,
         tracking_gain=5,
         head_stabilization_model=stabilization_model,
+        spawn_xy=spawn_xy,
     )
 
     # Save visualization
     visualize_vision(
-        Path(output_dir / f"{variation_name}_vision_simulation.mp4"),
+        Path(output_dir / f"{variation_name}_{trial_name}_vision_simulation.mp4"),
         res["sim"].fly.retina,
         res["sim"].retina_mapper,
         rendered_image_hist=res["rendered_image_snapshots"],
@@ -207,7 +213,9 @@ def process_trial(terrain_type: str, stabilization_on: bool):
 
     # Save sim data for diagnostics
     try:
-        with open(output_dir / f"{variation_name}_sim_data.pkl", "wb") as f:
+        with open(
+            output_dir / f"{variation_name}_{trial_name}_sim_data.pkl", "wb"
+        ) as f:
             # Remove sim, and remove LayerResponse from info_hist. They
             # work poorly with pickle
             del res["sim"]
@@ -215,7 +223,7 @@ def process_trial(terrain_type: str, stabilization_on: bool):
                 del info["nn_activities"]
             pickle.dump(res, f)
     except Exception as e:
-        print(f"Failed to save sim data for {variation_name}: {e}")
+        print(f"Failed to save sim data for {variation_name}_{trial_name}: {e}")
 
 
 if __name__ == "__main__":
@@ -224,9 +232,10 @@ if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True, parents=True)
 
     configs = [
-        (terrain_type, stabilization_on)
+        (terrain_type, stabilization_on, (0, y_pos))
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
+        for y_pos in np.linspace(-0.13, 0.13, 11)
     ]
 
-    Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
+    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
