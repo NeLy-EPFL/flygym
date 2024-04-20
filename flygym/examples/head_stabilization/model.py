@@ -33,7 +33,7 @@ class WalkingDataset(Dataset):
     def __init__(
         self,
         sim_data_file: Path,
-        contact_force_thr: float = 3,
+        contact_force_thr: float = 1,
         joint_angle_scaler: Optional[Callable] = None,
         ignore_first_n: int = 200,
         joint_mask=None,
