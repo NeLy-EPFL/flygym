@@ -219,6 +219,7 @@ def process_trial(
             # Remove sim, and remove LayerResponse from info_hist. They
             # work poorly with pickle
             del res["sim"]
+            del res["nn_activities_snapshots"]
             for info in res["info_hist"]:
                 del info["nn_activities"]
             pickle.dump(res, f)
