@@ -393,6 +393,7 @@ class Fly:
         # spawn_orient = [0, 0, 0]
         self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
         self.control = control
+
         if isinstance(init_pose, str):
             self.init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
         else:
@@ -412,27 +413,12 @@ class Fly:
         else:
             self._self_collisions = self_collisions
 
-        self._last_adhesion = np.zeros(self.n_legs)
-        self._active_adhesion = np.zeros(self.n_legs)
-
-        if self.draw_adhesion and not self.enable_adhesion:
-            logging.warning(
-                "Overriding `draw_adhesion` to False because adhesion is not enabled."
-            )
-            self.draw_adhesion = False
-
-        if self.draw_adhesion:
-            self._leg_adhesion_drawing_segments = np.array(
-                [
-                    [f"{self.name}/{tarsus5.replace('5', str(i))}" for i in range(1, 6)]
-                    for tarsus5 in self._last_tarsal_seg_names
-                ]
-            ).astype("U64")
-            self._adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
-            self._active_adhesion_rgba = [0.0, 0.0, 1.0, 0.8]
-            self._base_rgba = [0.5, 0.5, 0.5, 1.0]
-
+        # Make it possible to add geoms
+        self._add_geometries()
         self._set_geom_colors()
+
+        # Make it possible to add new joints
+        self._add_joints()
 
         # Add cameras imitating the fly's eyes
         self._curr_visual_input = None
@@ -454,6 +440,42 @@ class Fly:
             for joint in ["joint_Head_yaw", "joint_Head"]
         ]
 
+        
+
+        self._last_adhesion = np.zeros(self.n_legs)
+        self._active_adhesion = np.zeros(self.n_legs)
+
+        if self.draw_adhesion and not self.enable_adhesion:
+            logging.warning(
+                "Overriding `draw_adhesion` to False because adhesion is not enabled."
+            )
+            self.draw_adhesion = False
+
+        if self.draw_adhesion:
+            self._leg_adhesion_drawing_segments = np.array(
+                [
+                    [f"{self.name}/{tarsus5.replace('5', str(i))}" for i in range(1, 6)]
+                    for tarsus5 in self._last_tarsal_seg_names
+                ]
+            ).astype("U64")
+            self._adhesion_rgba = [1.0, 0.0, 0.0, 0.8]
+            self._active_adhesion_rgba = [0.0, 0.0, 1.0, 0.8]
+            self._base_rgba = [0.5, 0.5, 0.5, 1.0]
+        
+         #Add actuators
+        self._add_actuators()
+        # Those need to be in the same order as the adhesion sensor
+        # (due to comparison with the last adhesion_signal)
+        adhesion_sensor_indices = []
+        for adhesion_actuator in self.adhesion_actuators:
+            for index, contact_sensor in enumerate(self.contact_sensor_placements):
+                if (
+                    f"{contact_sensor}_adhesion"
+                    in f"{self.name}/{adhesion_actuator.name}"
+                ):
+                    adhesion_sensor_indices.append(index)
+        self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
+
         self._set_actuators_gain()
         self._set_actuators_forcerange(actuator_forcerange)
         self._set_geoms_friction()
@@ -466,28 +488,10 @@ class Fly:
         self._init_self_contacts()
 
         # Add sensors
-        self._joint_sensors = self._add_joint_sensors()
-        self._body_sensors = self._add_body_sensors()
-        self._end_effector_sensors = self._add_end_effector_sensors()
-        self._antennae_sensors = (
-            self._add_odor_sensors() if self.enable_olfaction else None
-        )
-        self._add_force_sensors()
+        self._add_sensors()
         self.contact_sensor_placements = [
             f"{self.name}/{body}" for body in self.contact_sensor_placements
         ]
-        self.adhesion_actuators = self._add_adhesion_actuators(self.adhesion_force)
-        # Those need to be in the same order as the adhesion sensor
-        # (due to comparison with the last adhesion_signal)
-        adhesion_sensor_indices = []
-        for adhesion_actuator in self.adhesion_actuators:
-            for index, contact_sensor in enumerate(self.contact_sensor_placements):
-                if (
-                    f"{contact_sensor}_adhesion"
-                    in f"{self.name}/{adhesion_actuator.name}"
-                ):
-                    adhesion_sensor_indices.append(index)
-        self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
 
         # flip detection
         self._flip_counter = 0
@@ -555,6 +559,28 @@ class Fly:
 
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = self.config["vision"]["hidden_segments"]
+
+    def _add_geometries(self):
+        pass
+    
+    def _add_actuators(self):
+        self.adhesion_actuators = self._add_adhesion_actuators(self.adhesion_force)
+        return
+        
+    def _add_joints(self):
+        pass
+    
+    def _add_sensors(self):
+        
+        self._joint_sensors = self._add_joint_sensors()
+        self._body_sensors = self._add_body_sensors()
+        self._end_effector_sensors = self._add_end_effector_sensors()
+        self._antennae_sensors = (
+            self._add_odor_sensors() if self.enable_olfaction else None
+        )
+        self._add_force_sensors()
+        
+        return
 
     def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
         if collision_spec == "all":
