@@ -184,7 +184,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
-            info["net_corrections"] = all_net_corrections
+            info["net_corrections"] = np.array(all_net_corrections)
             obs_hist.append(obs)
             info_hist.append(info)
 
