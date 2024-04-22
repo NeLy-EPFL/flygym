@@ -402,7 +402,7 @@
 		<!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
 		<camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 -3 1" euler="1.57 0 0.72" fovy="30"/>
 		<camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 0 1.57" fovy="15"/>
-		<camera name="camera_neck_zoomin" class="nmf" mode="targetbodycom" ipd="0.068" pos="0.5 2 0.7" euler="-1.57 3.14 0" target="Thorax"/>
+		<camera name="camera_neck_zoomin" class="nmf" mode="fixed" ipd="0.068" pos="0.5 2 0.7" euler="-1.57 3.14 0"/>
 	</worldbody>
 	<actuator>
 		<position name="actuator_position_joint_Head_yaw" class="nmf" forcelimited="true" ctrlrange="-1000000 1000000" forcerange="-inf inf" joint="joint_Head_yaw" kp="0.9"/>
