@@ -150,7 +150,7 @@ class HeadStabilizationInferenceWrapper:
         self,
         model_path: Path,
         scaler_param_path: Path,
-        contact_force_thr: float = 3.0,
+        contact_force_thr: float = 1.0,
     ):
         # Load scaler params
         with open(scaler_param_path, "rb") as f:
