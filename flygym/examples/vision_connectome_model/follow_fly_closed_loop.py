@@ -242,4 +242,4 @@ if __name__ == "__main__":
     ]
 
     # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
-    process_trial("blocks", True, (-5, -10))
+    process_trial("blocks", True, (-5, 10))
