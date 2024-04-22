@@ -240,12 +240,11 @@ class Camera:
             "Animat/camera_back",
             "Animat/camera_right",
             "Animat/camera_left",
-            "Animat/camera_neck_zoomin"
+            "Animat/camera_neck_zoomin",
         ]
 
         # always add pos update if it is a head camera
         if is_animat and not is_visualization_camera:
-            
             self.update_camera_pos = True
             self.cam_offset = self._cam.pos
             if is_compound_camera and self.camera_follows_fly_orientation:
@@ -701,7 +700,6 @@ class NeckCamera(Camera):
         super().__init__(**kwargs)
 
     def _update_cam_rot(self, physics: mjcf.Physics):
-        
         cam = physics.bind(self._cam)
 
         fly_z_rot_euler = (
@@ -713,7 +711,9 @@ class NeckCamera(Camera):
         # [0, 0, 0] in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly
         # orientation is already taken into account in the base_camera_rot (see below)
         # camera is always looking along its -z axis
-        cam_matrix = R.from_euler("yxz", fly_z_rot_euler).as_matrix() #apply the rotation along the y axis of the cameras
+        cam_matrix = R.from_euler(
+            "yxz", fly_z_rot_euler
+        ).as_matrix()  # apply the rotation along the y axis of the cameras
         cam_matrix = self.base_camera_rot @ cam_matrix
         cam.xmat = cam_matrix.flatten()
 
