@@ -7,7 +7,7 @@ import lightning as pl
 from torch.utils.data import Dataset
 from torchmetrics.regression import R2Score
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Tuple, Optional, Callable
 
 
 class JointAngleScaler:
@@ -33,7 +33,7 @@ class WalkingDataset(Dataset):
     def __init__(
         self,
         sim_data_file: Path,
-        contact_force_thr: float = 1,
+        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
         joint_angle_scaler: Optional[Callable] = None,
         ignore_first_n: int = 200,
         joint_mask=None,
@@ -45,7 +45,7 @@ class WalkingDataset(Dataset):
         self.terrain = terrain
         self.subset = subset
         self.dn_drive = f"{dn_left}_{dn_right}"
-        self.contact_force_thr = contact_force_thr
+        self.contact_force_thr = np.array([*contact_force_thr, *contact_force_thr])
         self.joint_angle_scaler = joint_angle_scaler
         self.ignore_first_n = ignore_first_n
         self.joint_mask = joint_mask
@@ -150,7 +150,7 @@ class HeadStabilizationInferenceWrapper:
         self,
         model_path: Path,
         scaler_param_path: Path,
-        contact_force_thr: float = 1.0,
+        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
     ):
         # Load scaler params
         with open(scaler_param_path, "rb") as f:
@@ -163,7 +163,7 @@ class HeadStabilizationInferenceWrapper:
         self.model = ThreeLayerMLP.load_from_checkpoint(
             model_path, map_location=torch.device("cpu")
         )
-        self.contact_force_thr = contact_force_thr
+        self.contact_force_thr = np.array([*contact_force_thr, *contact_force_thr])
 
     def __call__(
         self, joint_angles: np.ndarray, contact_forces: np.ndarray
