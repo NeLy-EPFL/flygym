@@ -1,6 +1,7 @@
 import cv2
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import trange
 from typing import Optional, Tuple
@@ -101,8 +102,13 @@ def run_simulation(
             t3_activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
             t3_zscore = (t3_activities - response_mean) / response_std
             obj_mask = t3_zscore < z_score_threshold
-            _mask_viz = fly.retina.hex_pxls_to_human_readable(obj_mask[1])
-            cv2.imwrite(f"temp/{i}.jpg", _mask_viz.astype(np.uint8) * 255)
+            # _mask_viz = fly.retina.hex_pxls_to_human_readable(obj_mask[1])
+            # zs_disp = fly.retina.hex_pxls_to_human_readable(t3_zscore[0])
+            # plt.imshow(zs_disp, cmap="seismic", vmin=-5, vmax=5)
+            # plt.colorbar()
+            # plt.savefig(f"temp/zs_disp_{i:05d}.png")
+            # plt.close(plt.gcf())
+            # cv2.imwrite(f"temp/{i}.jpg", _mask_viz.astype(np.uint8) * 255)
 
             # Calculate turning bias based on object mask
             size_per_eye = obj_mask.sum(axis=1)
@@ -170,13 +176,9 @@ def process_trial(
         response_stats = pickle.load(f)
 
     if terrain_type == "flat":
-        arena = MovingFlyArena(
-            move_speed=16, lateral_magnitude=1, terrain_type=terrain_type
-        )
+        arena = MovingFlyArena(move_speed=15, radius=10, terrain_type=terrain_type)
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(
-            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
-        )
+        arena = MovingFlyArena(move_speed=11, radius=10, terrain_type=terrain_type)
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:
@@ -191,7 +193,7 @@ def process_trial(
     res = run_simulation(
         arena=arena,
         cell="T3",
-        run_time=2.0,
+        run_time=3.0,
         response_mean=response_stats["T3"]["mean"],
         response_std=response_stats["T3"]["std"],
         z_score_threshold=-4,
@@ -233,10 +235,11 @@ if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True, parents=True)
 
     configs = [
-        (terrain_type, stabilization_on, (0, y_pos))
-        for terrain_type in ["flat", "blocks"]
+        (terrain_type, stabilization_on, (-5, y_pos))
+        for terrain_type in ["blocks"]  # ["flat", "blocks"]
         for stabilization_on in [True, False]
-        for y_pos in np.linspace(-0.13, 0.13, 11)
+        for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
 
-    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    process_trial("blocks", True, (-5, -10))
