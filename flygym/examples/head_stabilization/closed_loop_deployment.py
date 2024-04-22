@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Fly, Camera
+from flygym import Fly, Camera, NeckCamera
 from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
@@ -68,6 +68,13 @@ def run_simulation(
             fps=24,
             play_speed_text=False,
         ),
+        # NeckCamera(
+        #     fly=fly,
+        #     play_speed=0.2,
+        #     fps=24,
+        #     window_size=(600, 600),
+        #     camera_follows_fly_orientation=True,
+        # ),
     ]
 
     sim = NMFRealisticVision(
