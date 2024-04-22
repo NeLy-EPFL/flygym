@@ -700,6 +700,12 @@ class NeckCamera(Camera):
         kwargs["camera_id"] = "Animat/camera_neck_zoomin"
         super().__init__(**kwargs)
 
+    def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float):
+        cam = physics.bind(self._cam)
+        cam_pos = cam.xpos.copy()
+        cam_pos[2] += floor_height
+        cam.xpos = cam_pos
+
     def _update_cam_rot(self, physics: mjcf.Physics):
         
         cam = physics.bind(self._cam)
