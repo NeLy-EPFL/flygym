@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import lightning as pl
 from torch.utils.data import Dataset
 from torchmetrics.regression import R2Score
-from gymnasium import spaces
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -37,14 +36,25 @@ class WalkingDataset(Dataset):
         contact_force_thr: float = 3,
         joint_angle_scaler: Optional[Callable] = None,
         ignore_first_n: int = 200,
+        joint_mask=None,
     ) -> None:
         super().__init__()
+        trial_name = sim_data_file.parent.name
+        gait, terrain, subset, _, dn_left, dn_right = trial_name.split("_")
+        self.gait = gait
+        self.terrain = terrain
+        self.subset = subset
+        self.dn_drive = f"{dn_left}_{dn_right}"
         self.contact_force_thr = contact_force_thr
         self.joint_angle_scaler = joint_angle_scaler
         self.ignore_first_n = ignore_first_n
+        self.joint_mask = joint_mask
 
         with open(sim_data_file, "rb") as f:
             sim_data = pickle.load(f)
+
+        self.contains_fly_flip = sim_data["errors"]["fly_flipped"]
+        self.contains_physics_error = sim_data["errors"]["physics_error"]
 
         # Extract the roll and pitch angles
         roll = np.array([info["roll"] for info in sim_data["info_hist"]])
@@ -74,16 +84,22 @@ class WalkingDataset(Dataset):
         return self.roll_pitch_ts.shape[0]
 
     def __getitem__(self, idx):
+        joint_angles = self.joint_angles[idx].astype(np.float32, copy=True)
+        if self.joint_mask is not None:
+            joint_angles[~self.joint_mask] = 0
         return {
             "roll_pitch": self.roll_pitch_ts[idx].astype(np.float32),
-            "joint_angles": self.joint_angles[idx].astype(np.float32),
+            "joint_angles": joint_angles,
             "contact_mask": self.contact_mask[idx].astype(np.float32),
         }
 
 
 class ThreeLayerMLP(pl.LightningModule):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self):
         super().__init__()
+        input_size = 42 + 6
+        hidden_size = 32
+        output_size = 2
         self.layer1 = nn.Linear(input_size, hidden_size)
         self.layer2 = nn.Linear(hidden_size, hidden_size)
         self.layer3 = nn.Linear(hidden_size, output_size)
@@ -120,13 +136,6 @@ class ThreeLayerMLP(pl.LightningModule):
         self.log("val_r2_roll", r2_roll)
         self.log("val_r2_pitch", r2_pitch)
 
-    def test_step(self, batch, batch_idx):
-        x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
-        y = batch["roll_pitch"]
-        y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
-        self.log("test_loss", loss)
-
 
 class HeadStabilizationInferenceWrapper:
     """
@@ -141,8 +150,6 @@ class HeadStabilizationInferenceWrapper:
         self,
         model_path: Path,
         scaler_param_path: Path,
-        input_size: int = 42 + 6,
-        hidden_size: int = 8,
         contact_force_thr: float = 3.0,
     ):
         # Load scaler params
@@ -152,19 +159,20 @@ class HeadStabilizationInferenceWrapper:
         self.scaler_std = scaler_params["std"]
 
         # Load model
-        self.model = ThreeLayerMLP(
-            input_size=input_size, hidden_size=hidden_size, output_size=2
-        ).cpu()  # it's not worth moving data to the GPU, just run it on the CPU
-        self.model.load_state_dict(torch.load(model_path))
+        # it's not worth moving data to the GPU, just run it on the CPU
+        self.model = ThreeLayerMLP.load_from_checkpoint(
+            model_path, map_location=torch.device("cpu")
+        )
         self.contact_force_thr = contact_force_thr
 
     def __call__(
-        self, leg_joint_angles: np.ndarray, leg_contact_forces: np.ndarray
+        self, joint_angles: np.ndarray, contact_forces: np.ndarray
     ) -> np.ndarray:
-        leg_joint_angles = (leg_joint_angles - self.scaler_mean) / self.scaler_std
-        leg_contact_forces = np.linalg.norm(leg_contact_forces, axis=1)
-        leg_contact_forces = leg_contact_forces.reshape(6, 6).sum(axis=1)
-        x = np.concatenate([leg_joint_angles, leg_contact_forces], dtype=np.float32)
-        input_tensor = torch.tensor(x[None, :]).cpu()
+        joint_angles = (joint_angles - self.scaler_mean) / self.scaler_std
+        contact_forces = np.linalg.norm(contact_forces, axis=1)
+        contact_forces = contact_forces.reshape(6, 6).sum(axis=1)
+        contact_mask = contact_forces >= self.contact_force_thr
+        x = np.concatenate([joint_angles, contact_mask], dtype=np.float32)
+        input_tensor = torch.tensor(x[None, :], device=torch.device("cpu"))
         output_tensor = self.model(input_tensor)
         return output_tensor.detach().numpy().squeeze()

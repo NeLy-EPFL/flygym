@@ -1,118 +1,63 @@
 import pickle
-import torch
 import numpy as np
-import flyvision
-from torch import Tensor
 from pathlib import Path
 from tqdm import trange
 from flygym import Fly, Camera
-from flygym.examples.turning_controller import HybridTurningNMF
-from flygym.examples.vision import MovingObjArena
-from flyvision.utils.activity_utils import LayerActivity
+from typing import Optional
+from dm_control.rl.control import PhysicsError
 
 from flygym.examples.vision_connectome_model import (
-    RealTimeVisionNetworkView,
-    RetinaMapper,
     MovingFlyArena,
+    NMFRealisticVision,
     visualize_vision,
 )
+from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
+from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
 
-torch.manual_seed(0)
+contact_sensor_placements = [
+    f"{leg}{segment}"
+    for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
+    for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
+]
+
+# fmt: off
+cells = [
+    "T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d",
+    "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
+    "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
+    "TmY18"
+]
+# fmt: on
+
+output_dir = Path("./outputs/connectome_constrained_vision/baseline_response/")
+
+# If you trained the models yourself (by running ``collect_training_data.py``
+# followed by ``train_proprioception_model.py``), you can use the following
+# paths to load the models that you trained. Modify the paths if saved the
+# model checkpoints elsewhere.
+stabilization_model_dir = Path("./outputs/head_stabilization/models/")
+stabilization_model_path = stabilization_model_dir / "All.ckpt"
+scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
+
+# Alternatively, you can use the pre-trained models that come with the
+# package. To do so, comment out the three lines above and uncomment the
+# following line.
+# stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
 
-class NMFRealisticVison(HybridTurningNMF):
-    def __init__(self, vision_network_dir=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if vision_network_dir is None:
-            vision_network_dir = flyvision.results_dir / "opticflow/000/0000"
-        vision_network_view = RealTimeVisionNetworkView(vision_network_dir)
-        self.vision_network = vision_network_view.init_network(chkpt="best_chkpt")
-        self.retina_mapper = RetinaMapper()
-        self._vision_network_initialized = False
-        self._nn_activities_buffer = None
-
-    def step(self, action):
-        obs, reward, terminated, truncated, info = super().step(action)
-
-        # If first frame, initialize vision network
-        if not self._vision_network_initialized:
-            vision_obs_grayscale = obs["vision"].max(axis=-1)
-            visual_input = self.retina_mapper.flygym_to_flyvis(vision_obs_grayscale)
-            visual_input = Tensor(visual_input).to(flyvision.device)
-            initial_state = self.vision_network.fade_in_state(
-                t_fade_in=1.0,
-                dt=1 / self.fly.vision_refresh_rate,
-                initial_frames=visual_input.unsqueeze(1),
-            )
-            self.vision_network.setup_step_by_step_simulation(
-                dt=1 / self.fly.vision_refresh_rate,
-                initial_state=initial_state,
-                as_states=False,
-                num_samples=2,
-            )
-            self._initial_state = initial_state
-            self._vision_network_initialized = True
-
-        # Step vision network if updated
-        if info["vision_updated"] or self._nn_activities_buffer is None:
-            vision_obs_grayscale = obs["vision"].max(axis=-1)
-            visual_input = self.retina_mapper.flygym_to_flyvis(vision_obs_grayscale)
-            visual_input = Tensor(visual_input).to(flyvision.device)
-            nn_activities_arr = self.vision_network.forward_one_step(visual_input)
-            self._nn_activities_arr_buffer = nn_activities_arr.cpu().numpy()
-            self._nn_activities_buffer = LayerActivity(
-                self._nn_activities_arr_buffer,
-                self.vision_network.connectome,
-                keepref=True,
-                use_central=False,
-            )
-
-        obs["nn_activities"] = self._nn_activities_buffer
-        obs["nn_activities_arr"] = self._nn_activities_arr_buffer
-        return obs, reward, terminated, truncated, info
-
-    def close(self):
-        self.vision_network.cleanup_step_by_step_simulation()
-        self._vision_network_initialized = False
-        return super().close()
-
-    def reset(self, *args, **kwargs):
-        if self._vision_network_initialized:
-            self.vision_network.cleanup_step_by_step_simulation()
-            self._vision_network_initialized = False
-
-        return super().reset(*args, **kwargs)
-
-
-if __name__ == "__main__":
-    regenerate_walking = True
-    output_dir = Path("./outputs/connectome_constrained_vision/")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    run_time = 2.0  # seconds
-    vision_refresh_rate = 500  # Hz
-
-    arena = MovingFlyArena(move_speed=25, lateral_magnitude=2)
-
-    contact_sensor_placements = [
-        f"{leg}{segment}"
-        for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
-        for segment in [
-            "Tibia",
-            "Tarsus1",
-            "Tarsus2",
-            "Tarsus3",
-            "Tarsus4",
-            "Tarsus5",
-        ]
-    ]
-
+def run_simulation(
+    arena: MovingFlyArena,
+    run_time: float = 1.0,
+    head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
+):
     fly = Fly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
-        vision_refresh_rate=vision_refresh_rate,
+        vision_refresh_rate=500,
         neck_kp=1000,
+        head_stabilization_model=head_stabilization_model,
     )
 
     cam = Camera(
@@ -124,47 +69,106 @@ if __name__ == "__main__":
         play_speed_text=False,
     )
 
-    sim = NMFRealisticVison(
+    sim = NMFRealisticVision(
         fly=fly,
         cameras=[cam],
         arena=arena,
     )
 
     sim.reset(seed=0)
-
-    num_physics_steps = int(run_time / sim.timestep)
-
     obs_hist = []
-    rendered_image_hist = []
-    vision_observation_hist = []
-    nn_activities_hist = []
+    info_hist = []
+    rendered_image_snapshots = []
+    vision_observation_snapshots = []
+    nn_activities_snapshots = []
 
     # Main simulation loop
-    for i in trange(num_physics_steps):
-        obs, _, _, _, info = sim.step(action=np.array([1, 1]))
-        rendered_img = sim.render()[0]
+    for i in trange(int(run_time / sim.timestep)):
+        try:
+            obs, _, _, _, info = sim.step(action=np.array([1, 1]))
+        except PhysicsError:
+            print("Physics error, ending simulation early")
+            break
         obs_hist.append(obs)
+        info_hist.append(info)
+        rendered_img = sim.render()[0]
         if rendered_img is not None:
-            rendered_image_hist.append(rendered_img)
-            vision_observation_hist.append(obs["vision"])
-            nn_activities_hist.append(obs["nn_activities"])
+            rendered_image_snapshots.append(rendered_img)
+            vision_observation_snapshots.append(obs["vision"])
+            nn_activities_snapshots.append(info["nn_activities"])
 
-    visualize_vision(
-        Path(output_dir / "vision_simulation.mp4"),
-        fly.retina,
-        sim.retina_mapper,
-        rendered_image_hist,
-        vision_observation_hist,
-        nn_activities_hist,
-        fps=cam.fps,
+    return {
+        "sim": sim,
+        "obs_hist": obs_hist,
+        "info_hist": info_hist,
+        "rendered_image_snapshots": rendered_image_snapshots,
+        "vision_observation_snapshots": vision_observation_snapshots,
+        "nn_activities_snapshots": nn_activities_snapshots,
+    }
+
+
+def process_trial(terrain_type: str, stabilization_on: bool):
+    variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
+
+    if terrain_type == "flat":
+        arena = MovingFlyArena(
+            move_speed=18, lateral_magnitude=1, terrain_type=terrain_type
+        )
+    elif terrain_type == "blocks":
+        arena = MovingFlyArena(
+            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
+        )
+    else:
+        raise ValueError("Invalid terrain type")
+    if stabilization_on:
+        stabilization_model = HeadStabilizationInferenceWrapper(
+            model_path=stabilization_model_path,
+            scaler_param_path=scaler_param_path,
+        )
+    else:
+        stabilization_model = None
+
+    # Run simulation
+    res = run_simulation(
+        arena=arena, run_time=2.0, head_stabilization_model=stabilization_model
     )
 
-    obs_hist = [
-        obs
-        for obs, vision_updated in zip(obs_hist, fly.vision_update_mask)
-        if vision_updated
+    # Save visualization
+    visualize_vision(
+        Path(output_dir / f"{variation_name}_vision_simulation.mp4"),
+        res["sim"].fly.retina,
+        res["sim"].retina_mapper,
+        rendered_image_hist=res["rendered_image_snapshots"],
+        vision_observation_hist=res["vision_observation_snapshots"],
+        nn_activities_hist=res["nn_activities_snapshots"],
+        fps=res["sim"].cameras[0].fps,
+    )
+
+    # Save median and std of response for each cell
+    response_stats = {}
+    for cell in cells:
+        response_all = np.array(
+            [info["nn_activities"][cell] for info in res["info_hist"]]
+        )
+        response_mean = np.mean(response_all, axis=0)
+        response_std = np.std(response_all, axis=0)
+        response_stats[cell] = {
+            "mean": res["sim"].retina_mapper.flyvis_to_flygym(response_mean),
+            "std": res["sim"].retina_mapper.flyvis_to_flygym(response_std),
+        }
+    with open(output_dir / f"{variation_name}_response_stats.pkl", "wb") as f:
+        pickle.dump(response_stats, f)
+
+
+if __name__ == "__main__":
+    from joblib import Parallel, delayed
+
+    output_dir.mkdir(exist_ok=True, parents=True)
+
+    configs = [
+        (terrain_type, stabilization_on)
+        for terrain_type in ["flat", "blocks"]
+        for stabilization_on in [True, False]
     ]
-    for obs in obs_hist:
-        del obs["nn_activities"]
-    with open(output_dir / "vision_simulation_obs_hist.npy", "wb") as f:
-        pickle.dump(obs_hist, f)
+
+    Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
