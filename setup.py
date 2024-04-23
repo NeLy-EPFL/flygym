@@ -54,6 +54,7 @@ setup(
             "scikit-learn",
             "seaborn",
             "torch",
+            "phiflow",
             "flyvision @ https://github.com/TuragaLab/flyvis/archive/refs/heads/main.zip",
         ],
     },
