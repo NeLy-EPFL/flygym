@@ -39,7 +39,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 def run_simulation(
     arena: BaseArena,
-    run_time: float = 1.0,
+    run_time: float = 0.5,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
 ):
     fly = Fly(
@@ -60,21 +60,21 @@ def run_simulation(
             fps=24,
             play_speed_text=False,
         ),
-        Camera(
-            fly=fly,
-            camera_id="Animat/camera_neck_zoomin",
-            play_speed=0.2,
-            window_size=(600, 600),
-            fps=24,
-            play_speed_text=False,
-        ),
-        # NeckCamera(
+        # Camera(
         #     fly=fly,
+        #     camera_id="Animat/camera_neck_zoomin",
         #     play_speed=0.2,
-        #     fps=24,
         #     window_size=(600, 600),
-        #     camera_follows_fly_orientation=True,
+        #     fps=24,
+        #     play_speed_text=False,
         # ),
+        NeckCamera(
+            fly=fly,
+            play_speed=0.2,
+            fps=24,
+            window_size=(600, 600),
+            camera_follows_fly_orientation=True,
+        ),
     ]
 
     sim = NMFRealisticVision(
@@ -179,7 +179,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
 
     # Run simulation
     sim_res = run_simulation(
-        arena=arena, run_time=1.0, head_stabilization_model=stabilization_model
+        arena=arena, run_time=0.5, head_stabilization_model=stabilization_model
     )
     print(
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
