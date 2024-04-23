@@ -289,7 +289,7 @@ fit_models(
 trial_variables = {}
 time_scales = [0.64]
 contact_force_thresholds = [0.1, 0.5, 1, 1.5, 2, 2.5, 3.5, 5, 7]
-trials = list(range(5))  # use only the first 5 trials for training
+trials = list(range(10))  # use only the first 10 trials for training
 configs = []
 for gait in gaits:
     for seed in trials:
@@ -364,7 +364,7 @@ fig.savefig(model_basedir / "sensitivity_analysis_1.pdf")
 trial_variables = {}
 time_scales = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12]
 # legs_combi = ["F", "M", "H", "FM", "FH", "MH", "FMH"]
-trials = list(range(10))  # use only the first 5 trials for training
+trials = list(range(10))  # use only the first 10 trials for training
 configs = list(itertools.product(gaits, trials, time_scales, [(0.5, 1, 3)], ["FMH"]))
 
 
@@ -429,7 +429,7 @@ fig.savefig(model_basedir / "sensitivity_analysis_2.pdf")
 # Third sensitivity analysis: Evaluate contribution of each leg
 trial_variables = {}
 legs_combi = ["F", "M", "H", "FM", "FH", "MH", "FMH"]
-trials = list(range(10))  # use only the first 5 trials for training
+trials = list(range(10))  # use only the first 10 trials for training
 configs = list(itertools.product(gaits, trials, [0.64], [(0.5, 1, 3)], legs_combi))
 
 
@@ -579,7 +579,7 @@ time_scale = 0.64
 
 fig, axs = plt.subplots(5, 3, figsize=(9, 15), tight_layout=True)
 for col, gait in enumerate(gaits):
-    for row, seed in enumerate(trange(0, 5, desc=f"Processing {gait} gait")):
+    for row, seed in enumerate(trange(10, 15, desc=f"Processing {gait} gait")):
         ax = axs[row, col]
         model_info = ensemble_models_df.loc[gait, time_scale, *contact_force_thr, legs]
         prop2heading_coefs = model_info[
