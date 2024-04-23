@@ -602,8 +602,8 @@ for col, gait in enumerate(gaits):
             dt=1e-4,
         )
         pos_real = trial_data[(gait, seed)]["fly_pos"]
-        ax.plot(pos_real[:, 0], pos_real[:, 1], color="tab:red", label="Actual")
-        ax.plot(pos_pred[:, 0], pos_pred[:, 1], color="black", label="Estimated")
+        ax.plot(pos_real[:, 0], pos_real[:, 1], color="black", label="Actual")
+        ax.plot(pos_pred[:, 0], pos_pred[:, 1], color="tab:red", label="Estimated")
         ax.plot([0], [0], "o", color="black")
         ax.set_title(f"{gait.title()} gait, trial {seed}")
         # ax.set_xlim(-150, 150)
