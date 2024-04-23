@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import pickle
+import sys
 from datetime import datetime
 from pathlib import Path
 from multiprocessing import Pool, shared_memory
@@ -87,7 +88,10 @@ def run_simulation(
     for i in range(int(run_time / sim.timestep)):
         if i % int(1 / sim.timestep) == 0:
             sec = i * sim.timestep
-            print(f"{datetime.now()} - seed {seed}: {sec:.1f} / {run_time:.1f} sec")
+            print(
+                f"{datetime.now()} - seed {seed}: {sec:.1f} / {run_time:.1f} sec",
+                file=sys.stderr,  # Avoid buffer flushing issue if run in parallel
+            )
         obs = sim.get_observation()
         walking_state, dn_drive, debug_str = controller.decide_state(
             encounter_flag=obs["odor_intensity"].max() > encounter_threshold,
@@ -170,7 +174,6 @@ if __name__ == "__main__":
         results = Parallel(n_jobs=-2)(
             delayed(process_trial)(*config) for config in configs
         )
-        # process_trial(*configs[0])
     finally:
         # Clean up the shared memory
         plume_dataset_shm_path.unlink()
