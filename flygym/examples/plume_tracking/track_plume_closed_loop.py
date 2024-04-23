@@ -1,10 +1,9 @@
 import numpy as np
 import cv2
 import pickle
-import sys
+from sys import stderr
 from datetime import datetime
 from pathlib import Path
-from multiprocessing import Pool, shared_memory
 
 from flygym.util import get_data_path
 from flygym import Fly, Camera
@@ -14,6 +13,11 @@ from flygym.examples.plume_tracking import (
     OdorPlumeArena,
     PlumeNavigationTask,
 )
+
+
+def eprint(*args, **kwargs):
+    """Print log to stderr so that the buffer gets flushed immediately."""
+    print(*args, file=stderr, **kwargs)
 
 
 def get_walking_icons():
@@ -88,10 +92,7 @@ def run_simulation(
     for i in range(int(run_time / sim.timestep)):
         if i % int(1 / sim.timestep) == 0:
             sec = i * sim.timestep
-            print(
-                f"{datetime.now()} - seed {seed}: {sec:.1f} / {run_time:.1f} sec",
-                file=sys.stderr,  # Avoid buffer flushing issue if run in parallel
-            )
+            eprint(f"{datetime.now()} - seed {seed}: {sec:.1f} / {run_time:.1f} sec")
         obs = sim.get_observation()
         walking_state, dn_drive, debug_str = controller.decide_state(
             encounter_flag=obs["odor_intensity"].max() > encounter_threshold,
@@ -147,7 +148,7 @@ def process_trial(plume_dataset_path, output_dir, seed, initial_position, is_con
             live_display=False,
         )
     except Exception as e:
-        print(f"Error in seed {seed}: {e}")
+        eprint(f"Error in seed {seed}: {e}")
         raise e
 
 
