@@ -1,11 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
+
+_metric_configs = {
+    "r2_prop2heading": ("Δheading estimator", "tab:green"),
+    "r2_prop2disp": ("Δforward displacement estimator", "tab:purple"),
+}
 
 
 def plot_example_trials(gaits, num_trials_per_gait, trial_data, output_path):
@@ -70,12 +76,8 @@ def plot_time_scale_sensitivity_analysis(
     model_info_df, gaits, time_scales, output_path
 ):
     fig, axs = plt.subplots(2, 3, figsize=(12, 6), tight_layout=True)
-    metric_configs = {
-        "r2_prop2heading": ("Δheading estimator", "tab:green"),
-        "r2_prop2disp": ("Δforward displacement estimator", "tab:purple"),
-    }
     for col, gait in enumerate(gaits):
-        for row, (metric, (title, color)) in enumerate(metric_configs.items()):
+        for row, (metric, (title, color)) in enumerate(_metric_configs.items()):
             ax = axs[row, col]
             mean_r2s = []
             for i, time_scale in enumerate(time_scales):
@@ -95,12 +97,8 @@ def plot_time_scale_sensitivity_analysis(
 
 def leg_combination_sensitivity_analysis(model_info_df, gaits, output_path):
     fig, axs = plt.subplots(2, 3, figsize=(12, 6), tight_layout=True)
-    metric_configs = {
-        "r2_prop2heading": ("Δheading estimator", "tab:green"),
-        "r2_prop2disp": ("Δforward displacement estimator", "tab:purple"),
-    }
     for col, gait in enumerate(gaits):
-        for row, (metric, (title, color)) in enumerate(metric_configs.items()):
+        for row, (metric, (title, color)) in enumerate(_metric_configs.items()):
             ax = axs[row, col]
             sns.boxplot(
                 data=model_info_df.loc[gait].reset_index(),
@@ -147,4 +145,63 @@ def plot_all_path_integration_trials(
             ax.axis("square")
             ax.set_aspect("equal")
             ax.legend()
+    fig.savefig(output_path)
+
+
+def make_model_prediction_scatte_plot(
+    path_integration_results, output_path, sample_rate=0.01
+):
+    sample_interval = int(1 / sample_rate)
+    heading_diff_pred_all = []
+    heading_diff_real_all = []
+    disp_diff_pred_all = []
+    disp_diff_real_all = []
+    for res in path_integration_results.values():
+        heading_diff_pred_all.append(res["heading_diff_pred"])
+        heading_diff_real_all.append(res["heading_diff_actual"])
+        disp_diff_pred_all.append(res["displacement_diff_pred"])
+        disp_diff_real_all.append(res["displacement_diff_actual"])
+    heading_diff_pred_all = np.concatenate(heading_diff_pred_all)
+    heading_diff_real_all = np.concatenate(heading_diff_real_all)
+    disp_diff_pred_all = np.concatenate(disp_diff_pred_all)
+    disp_diff_real_all = np.concatenate(disp_diff_real_all)
+
+    fig, axs = plt.subplots(1, 2, figsize=(5, 2.5), tight_layout=True)
+
+    axs[0].axhline(0, color="black", lw=1)
+    axs[0].axvline(0, color="black", lw=1)
+    axs[0].scatter(
+        np.rad2deg(heading_diff_real_all[::sample_interval]),
+        np.rad2deg(heading_diff_pred_all[::sample_interval]),
+        s=0.1,
+        color=_metric_configs["r2_prop2heading"][1],
+        alpha=0.05,
+    )
+    axs[0].plot([-180, 180], [-180, 180], "--", color="black", lw=1, zorder=1e9)
+    r2 = r2_score(heading_diff_real_all, heading_diff_pred_all)
+    axs[0].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[0].transAxes)
+    axs[0].set_xlabel(r"Actual Δheading [$^\circ$]")
+    axs[0].set_ylabel(r"Predicted Δheading [$^\circ$]")
+    axs[0].set_xlim(-120, 120)
+    axs[0].set_ylim(-120, 120)
+    axs[0].set_aspect("equal")
+    sns.despine(ax=axs[0], bottom=True, left=True)
+
+    axs[1].scatter(
+        disp_diff_real_all[::sample_interval],
+        disp_diff_pred_all[::sample_interval],
+        s=1,
+        color=_metric_configs["r2_prop2disp"][1],
+        alpha=0.05,
+    )
+    axs[1].plot([0, 20], [0, 20], "--", color="black", lw=1, zorder=1e9)
+    r2 = r2_score(disp_diff_real_all, disp_diff_pred_all)
+    axs[1].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[1].transAxes)
+    axs[1].set_xlabel(r"Actual Δdisplacement [mm]")
+    axs[1].set_ylabel(r"Predicted Δdisplacement [mm]")
+    axs[1].set_xlim(3, 11)
+    axs[1].set_ylim(3, 11)
+    axs[1].set_aspect("equal")
+    sns.despine(ax=axs[1])
+
     fig.savefig(output_path)
