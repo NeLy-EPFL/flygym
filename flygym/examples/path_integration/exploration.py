@@ -8,12 +8,14 @@ from typing import Optional
 from flygym import Fly, Camera
 from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
-from flygym.examples.path_integration import (
+from flygym.examples.path_integration.arena import (
     PathIntegrationArenaFlat,
     PathIntegrationArenaBlocks,
+)
+from flygym.examples.path_integration.controller import (
     WalkingState,
-    PathIntegrationNMF,
     RandomExplorationController,
+    PathIntegrationNMF,
 )
 
 
