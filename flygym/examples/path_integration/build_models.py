@@ -355,6 +355,7 @@ ensemble_models_df.to_pickle(models_dir / "ensemble_models_df.pkl")
 
 legs = "FMH"
 contact_force_thr = (0.5, 1, 3)
+time_scale = 0.64
 path_integration_results = {}
 for col, gait in enumerate(gaits):
     for row, seed in enumerate(tqdm(testing_trials, desc=f"Processing {gait} gait")):
@@ -388,4 +389,8 @@ viz.plot_all_path_integration_trials(
     gaits,
     testing_trials,
     output_path=figs_dir / "all_path_integration_trials.pdf",
+)
+
+viz.make_model_prediction_scatte_plot(
+    path_integration_results, figs_dir / "scatter.pdf"
 )
