@@ -78,6 +78,7 @@ for gait, ax in zip(gaits, axs):
     ax.set_xlim(-150, 150)
     ax.set_ylim(-150, 150)
     ax.set_aspect("equal")
+fig.savefig(model_basedir / "example_trials.pdf")
 
 
 # Visualize contact forces for each pair of legs
