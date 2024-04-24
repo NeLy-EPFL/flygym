@@ -390,3 +390,34 @@ def plot_rotation_time_series(
             if idof == 0 and iterrain == 1:
                 ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
     fig.savefig(output_path)
+
+
+def plot_activities_std(
+    activities_std_data, output_path, vmin=0, vmax=0.4, cmap="inferno"
+):
+    fig, axs = plt.subplots(
+        2, 3, figsize=(7, 6), tight_layout=True, gridspec_kw={"width_ratios": [3, 3, 1]}
+    )
+    for i, stabilization_on in enumerate([False, True]):
+        for j, terrain_type in enumerate(["flat", "blocks"]):
+            std_img = activities_std_data[(terrain_type, stabilization_on)][:, :, 0]
+            std_img[std_img == 0] = np.nan
+            ax = axs[i, j]
+            ax.imshow(std_img, cmap=cmap, vmin=vmin, vmax=vmax)
+            ax.axis("off")
+            stab_str = "on" if stabilization_on else "off"
+            ax.set_title(f"{terrain_type.title()} terrain, stabilization {stab_str}")
+            ax.set_aspect("equal")
+
+    # Draw colorbar manually
+    sm = ScalarMappable(norm=Normalize(vmin=vmin, vmax=vmax), cmap=cmap)
+    fig.colorbar(
+        sm,
+        ax=axs[0, 2],
+        shrink=0.6,
+        aspect=5,
+        label="Standard deviation (AU)",
+    )
+    axs[0, 2].axis("off")
+    axs[1, 2].axis("off")
+    fig.savefig(output_path)
