@@ -124,8 +124,9 @@ def leg_combination_sensitivity_analysis(model_info_df, gaits, output_path):
 
 
 def plot_all_path_integration_trials(
-    path_integration_results, trial_data, gaits, seeds, output_path
+    path_integration_results, trial_data, gaits, seeds, output_path, sample_rate=0.001
 ):
+    sample_interval = int(1 / sample_rate)
     fig, axs = plt.subplots(
         len(seeds), 3, figsize=(9, 3 * len(seeds)), tight_layout=True
     )
@@ -136,8 +137,18 @@ def plot_all_path_integration_trials(
             pos_pred = trial_res["pos_pred"]
 
             ax = axs[row, col]
-            ax.plot(pos_real[:, 0], pos_real[:, 1], color="black", label="Actual")
-            ax.plot(pos_pred[:, 0], pos_pred[:, 1], color="tab:red", label="Estimated")
+            ax.plot(
+                pos_real[::sample_interval, 0],
+                pos_real[::sample_interval, 1],
+                color="black",
+                label="Actual",
+            )
+            ax.plot(
+                pos_pred[::sample_interval, 0],
+                pos_pred[::sample_interval, 1],
+                color="tab:red",
+                label="Estimated",
+            )
             ax.plot([0], [0], "o", color="black")
             ax.set_title(f"{gait.title()} gait, trial {seed}")
             # ax.set_xlim(-150, 150)
@@ -149,7 +160,7 @@ def plot_all_path_integration_trials(
 
 
 def make_model_prediction_scatte_plot(
-    path_integration_results, output_path, sample_rate=0.01
+    path_integration_results, output_path, sample_rate=0.001
 ):
     sample_interval = int(1 / sample_rate)
     heading_diff_pred_all = []
@@ -175,7 +186,7 @@ def make_model_prediction_scatte_plot(
         np.rad2deg(heading_diff_pred_all[::sample_interval]),
         s=0.1,
         color=_metric_configs["r2_prop2heading"][1],
-        alpha=0.05,
+        alpha=0.5,
     )
     axs[0].plot([-180, 180], [-180, 180], "--", color="black", lw=1, zorder=1e9)
     r2 = r2_score(heading_diff_real_all, heading_diff_pred_all)
@@ -192,7 +203,7 @@ def make_model_prediction_scatte_plot(
         disp_diff_pred_all[::sample_interval],
         s=1,
         color=_metric_configs["r2_prop2disp"][1],
-        alpha=0.05,
+        alpha=0.5,
     )
     axs[1].plot([0, 20], [0, 20], "--", color="black", lw=1, zorder=1e9)
     r2 = r2_score(disp_diff_real_all, disp_diff_pred_all)
