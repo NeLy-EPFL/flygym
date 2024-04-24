@@ -213,7 +213,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
     if terrain_type == "flat":
         arena = FlatTerrain()
     elif terrain_type == "blocks":
-        arena = BlocksTerrain(height_range=(0.2, 0.2), y_range=(-5, 35))
+        arena = BlocksTerrain(height_range=(0.2, 0.2), x_range=(-5, 35))
     else:
         raise ValueError("Invalid terrain type")
 
