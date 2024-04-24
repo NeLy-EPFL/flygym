@@ -61,7 +61,7 @@ class MovingFlyArena(BaseArena):
         rand_seed: int = 0,
         ground_alpha: float = 1,
         friction=(1, 0.005, 0.0001),
-        leading_fly_height=1,
+        leading_fly_height=0.5,
         init_fly_pos=(5, 0),
         move_speed=10,
         radius=10,
@@ -192,6 +192,7 @@ class MovingFlyArena(BaseArena):
         q = np.exp(1j * np.angle(curr_pos - self._prev_pos) / 2)
         qpos = (*self.fly_pos, q.real, 0, 0, q.imag)
         physics.bind(self.freejoint).qpos = qpos
+        physics.bind(self.freejoint).qvel[:] = 0
         self._prev_pos = curr_pos
 
         self.curr_time += dt
