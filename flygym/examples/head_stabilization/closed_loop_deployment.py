@@ -81,15 +81,25 @@ def run_simulation(
     )
 
     sim.reset(seed=0)
+
+    # These are only updated when a frame is rendered. They are used for
+    # generating the summary video at the end of the simulation. Each
+    # element in the list corresponds to a frame in the video.
     birdeye_snapshots = []
     zoomin_snapshots = []
     raw_vision_snapshots = []
     nn_activities_snapshots = []
-    neck_actuation_pred_hist = []
-    neck_actuation_true_hist = []
     neck_actuation_viz_vars = []
+
+    # These are updated at every time step and are used for generating
+    # statistics and plts (except nn_activities_all, which is updated every
+    # time step where the visual input is updated. Visual updates are less
+    # frequent than physics steps).
     head_rotation_hist = []
     thorax_rotation_hist = []
+    neck_actuation_pred_hist = []
+    neck_actuation_true_hist = []
+    nn_activities_all = []  # (only updated when visual input is updated)
 
     throax_body = fly.model.find("body", "Thorax")
     head_body = fly.model.find("body", "Head")
@@ -136,6 +146,9 @@ def run_simulation(
             )
             neck_actuation_viz_vars.append(neck_signals)
 
+        if info["vision_updated"]:
+            nn_activities_all.append(info["nn_activities"])
+
     # Generate performance stats on head stabilization
     if head_stabilization_model is not None:
         neck_actuation_true_hist = np.array(neck_actuation_true_hist)
@@ -153,6 +166,12 @@ def run_simulation(
         neck_actuation_true_hist = np.array(neck_actuation_true_hist)
         neck_actuation_pred_hist = np.zeros_like(neck_actuation_true_hist)
 
+    # Compute standard deviation of each ommatidium's response to T4a
+    t4a_activities_all = np.array([x["T4a"] for x in nn_activities_all])
+    t4a_activities_all = sim.retina_mapper.flyvis_to_flygym(t4a_activities_all)
+    t4a_std = np.std(t4a_activities_all, axis=0)
+    t4a_std_raster = fly.retina.hex_pxls_to_human_readable(t4a_std.T)
+
     return {
         "sim": sim,
         "birdeye": birdeye_snapshots,
@@ -165,6 +184,7 @@ def run_simulation(
         "r2_scores": r2_scores,
         "head_rotation_hist": np.array(head_rotation_hist),
         "thorax_rotation_hist": np.array(thorax_rotation_hist),
+        "t4a_activities_std": t4a_std_raster,
     }
 
 
@@ -193,7 +213,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
     if terrain_type == "flat":
         arena = FlatTerrain()
     elif terrain_type == "blocks":
-        arena = BlocksTerrain(height_range=(0.2, 0.2))
+        arena = BlocksTerrain(height_range=(0.2, 0.2), y_range=(-5, 35))
     else:
         raise ValueError("Invalid terrain type")
 
@@ -231,6 +251,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
         "head_rotation": sim_res["head_rotation_hist"],
         "thorax_rotation": sim_res["thorax_rotation_hist"],
         "neck_actuation": sim_res["neck_actuation"],
+        "t4a_activities_std": sim_res["t4a_activities_std"],
     }
 
 
@@ -274,3 +295,13 @@ if __name__ == "__main__":
     viz.plot_rotation_time_series(
         rotation_data, output_dir / "figs/rotation_time_series.pdf"
     )
+
+    # Plot standard deviation of T4a activities per ommatidia with and
+    # without head stabilization
+    std_data = {}
+    for terrain_type in ["flat", "blocks"]:
+        for stabilization_on in [True, False]:
+            std_data[(terrain_type, stabilization_on)] = res_all[
+                (terrain_type, stabilization_on)
+            ]["t4a_activities_std"]
+    viz.plot_activities_std(std_data, output_dir / "figs/t4a_std.pdf")
