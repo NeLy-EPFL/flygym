@@ -182,8 +182,8 @@ def make_model_prediction_scatte_plot(
     axs[0].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[0].transAxes)
     axs[0].set_xlabel(r"Actual Δheading [$^\circ$]")
     axs[0].set_ylabel(r"Predicted Δheading [$^\circ$]")
-    axs[0].set_xlim(-120, 120)
-    axs[0].set_ylim(-120, 120)
+    axs[0].set_xlim(-130, 130)
+    axs[0].set_ylim(-130, 130)
     axs[0].set_aspect("equal")
     sns.despine(ax=axs[0], bottom=True, left=True)
 
@@ -199,8 +199,8 @@ def make_model_prediction_scatte_plot(
     axs[1].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[1].transAxes)
     axs[1].set_xlabel(r"Actual Δdisplacement [mm]")
     axs[1].set_ylabel(r"Predicted Δdisplacement [mm]")
-    axs[1].set_xlim(3, 11)
-    axs[1].set_ylim(3, 11)
+    axs[1].set_xlim(2, 12)
+    axs[1].set_ylim(2, 12)
     axs[1].set_aspect("equal")
     sns.despine(ax=axs[1])
 
