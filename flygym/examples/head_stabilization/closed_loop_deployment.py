@@ -38,7 +38,8 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 # Simulation parameters
 
-RUN_TIME = 2.0
+run_time = 1.5
+
 
 def run_simulation(
     arena: BaseArena,
@@ -53,26 +54,25 @@ def run_simulation(
         neck_kp=500,
         head_stabilization_model=head_stabilization_model,
     )
-    
+
     birdeye_camera = Camera(
-                        fly=fly,
-                        camera_id="Animat/camera_top_zoomout",
-                        play_speed=0.2,
-                        window_size=(600, 600),
-                        fps=24,
-                        play_speed_text=False,
-                    )
+        fly=fly,
+        camera_id="Animat/camera_top_zoomout",
+        play_speed=0.2,
+        window_size=(600, 600),
+        fps=24,
+        play_speed_text=False,
+    )
     birdeye_camera._cam.pos -= np.array([0, 0, 20.0])
 
     neck_camera = NeckCamera(
-                        fly=fly,
-                        play_speed=0.2,
-                        fps=24,
-                        window_size=(600, 600),
-                        camera_follows_fly_orientation =True,
-                        play_speed_text=False,
-                    )
-
+        fly=fly,
+        play_speed=0.2,
+        fps=24,
+        window_size=(600, 600),
+        camera_follows_fly_orientation=True,
+        play_speed_text=False,
+    )
 
     sim = NMFRealisticVision(
         fly=fly,
@@ -131,7 +131,9 @@ def run_simulation(
             neck_act = np.zeros(2)
             if head_stabilization_model is not None:
                 neck_act = info["neck_actuation"]
-            neck_signals = np.hstack([np.rad2deg([roll, pitch]), np.rad2deg(neck_act), [sim.curr_time]])
+            neck_signals = np.hstack(
+                [np.rad2deg([roll, pitch]), np.rad2deg(neck_act), [sim.curr_time]]
+            )
             neck_actuation_viz_vars.append(neck_signals)
 
     # Generate performance stats on head stabilization
@@ -158,7 +160,7 @@ def run_simulation(
         "raw_vision": raw_vision_snapshots,
         "nn_activities": nn_activities_snapshots,
         "neck_true": neck_actuation_true_hist,
-        "neck_pred":neck_actuation_pred_hist,
+        "neck_pred": neck_actuation_pred_hist,
         "neck_actuation": neck_actuation_viz_vars,
         "r2_scores": r2_scores,
         "head_rotation_hist": np.array(head_rotation_hist),
@@ -206,7 +208,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
 
     # Run simulation
     sim_res = run_simulation(
-        arena=arena, run_time=RUN_TIME, head_stabilization_model=stabilization_model
+        arena=arena, run_time=run_time, head_stabilization_model=stabilization_model
     )
     print(
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
@@ -259,7 +261,7 @@ if __name__ == "__main__":
             frames += res_all[("blocks", stabilization_on)][view]
             data[(stabilization_on, view)] = frames
     viz.closed_loop_comparison_video(
-        data, "T4a", 24, output_dir / "videos/closed_loop_comparison.mp4", RUN_TIME
+        data, 24, output_dir / "videos/closed_loop_comparison.mp4", run_time
     )
 
     # Plot example head and thorax rotation time series
@@ -269,3 +271,6 @@ if __name__ == "__main__":
             body: res_all[(terrain_type, True)][f"{body}_rotation"]
             for body in ["head", "thorax"]
         }
+    viz.plot_rotation_time_series(
+        rotation_data, output_dir / "figs/rotation_time_series.pdf"
+    )
