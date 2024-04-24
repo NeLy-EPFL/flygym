@@ -212,14 +212,12 @@ def closed_loop_comparison_video(
         2,
         4,
         figsize=(11.2, 6.3),
-        gridspec_kw={"width_ratios": [1, 1, 0.85, 1.5]},# 'wspace':0.1, 'hspace':0.1},
+        gridspec_kw={"width_ratios": [1, 1, 0.85, 1.5]},  # 'wspace':0.1, 'hspace':0.1},
         layout="compressed",
-        #tight_layout=True,
+        # tight_layout=True,
     )
 
     plot_elements = {}
-
-    colors = plt.get_cmap("tab10").colors[:2]
 
     def init():
         # Turn off all
@@ -250,16 +248,29 @@ def closed_loop_comparison_video(
 
                 if view == "neck_actuation":
                     ax.axis("on")  # Enable axis for actuation data
-                    ax.set_xlim(0-0.05, run_time+0.05)
-                    ax.set_ylim(action_range)  # Assuming actuation ranges, adjust as necessary
+                    ax.set_xlim(0 - 0.05, run_time + 0.05)
+                    ax.set_ylim(
+                        action_range
+                    )  # Assuming actuation ranges, adjust as necessary
                     ax.set_xlabel("Time [s]")
                     ax.set_ylabel(r"Actuation signal [$^\circ$]")
-                    plot_elements[(stabilization_on, view, 'roll_true')] = ax.plot([], [], label='Roll optimal', color=colors[0], ls="--", lw=0.5)[0]
-                    plot_elements[(stabilization_on, view, 'pitch_true')] = ax.plot([], [], label='Pitched optimal', color=colors[1], ls="--", lw=0.5)[0]
-                    plot_elements[(stabilization_on, view, 'roll_pred')] = ax.plot([], [], label='Roll predicted', color=colors[0], lw=0.5)[0]
-                    plot_elements[(stabilization_on, view, 'pitch_pred')] = ax.plot([], [], label='Pitch predicted', color=colors[1], lw=0.5)[0]
+                    for dof in ["roll", "pitch"]:
+                        for version in ["true", "pred"]:
+                            key = (stabilization_on, view, f"{dof}_{version}")
+                            label = (
+                                f"{'Predicted' if version == 'pred' else 'Optimal'} "
+                                f"{dof}"
+                            )
+                            plot_elements[key] = ax.plot(
+                                [],
+                                [],
+                                label=label,
+                                color=_color_config[dof][0 if version == "true" else 1],
+                                ls="--" if version == "true" else "-",
+                                lw=1,
+                            )[0]
                     if i == 0:
-                        ax.legend(frameon=False, loc='upper right', fontsize=7, ncols=2)
+                        ax.legend(frameon=False, loc="upper right", fontsize=7, ncols=2)
                         ax.set_title(f"Neck actuation")
                     sns.despine(ax=ax)
                 else:
@@ -305,24 +316,32 @@ def closed_loop_comparison_video(
                     img = data[(stabilization_on, view)][frame_id]
                 elif view == "neck_actuation":
                     # Update line data for pitch and yaw
-                    (roll_data_true, pitch_data_true,
-                      roll_data_pred, pitch_data_pred, t) = data[(stabilization_on, view)][frame_id]
-                    last_x = plot_elements[(stabilization_on, view, 'roll_true')].get_xdata()
+                    frame_data = data[(stabilization_on, view)][frame_id]
+                    roll_true, pitch_true, roll_pred, pitch_pred, t = frame_data
+                    last_x = plot_elements[
+                        (stabilization_on, view, "roll_true")
+                    ].get_xdata()
                     if len(last_x) > 0 and t < last_x[-1]:
                         # reset all the plot elements
-                        plot_elements[(stabilization_on, view, 'roll_true')].set_data([], [])
-                        plot_elements[(stabilization_on, view, 'pitch_true')].set_data([], [])
-                        plot_elements[(stabilization_on, view, 'roll_pred')].set_data([], [])
-                        plot_elements[(stabilization_on, view, 'pitch_pred')].set_data([], [])
+                        for dof in ["roll", "pitch"]:
+                            for version in ["true", "pred"]:
+                                key = (stabilization_on, view, f"{dof}_{version}")
+                                plot_elements[key].set_data([], [])
 
-                    plot_elements[(stabilization_on, view, 'roll_true')].set_data(np.append(plot_elements[(stabilization_on, view, 'roll_true')].get_xdata(), t),
-                                                                                np.append(plot_elements[(stabilization_on, view, 'roll_true')].get_ydata(), roll_data_true))
-                    plot_elements[(stabilization_on, view, 'pitch_true')].set_data(np.append(plot_elements[(stabilization_on, view, 'pitch_true')].get_xdata(), t),
-                                                                                np.append(plot_elements[(stabilization_on, view, 'pitch_true')].get_ydata(), pitch_data_true))
-                    plot_elements[(stabilization_on, view, 'roll_pred')].set_data(np.append(plot_elements[(stabilization_on, view, 'roll_pred')].get_xdata(), t),
-                                                                                np.append(plot_elements[(stabilization_on, view, 'roll_pred')].get_ydata(), roll_data_pred))
-                    plot_elements[(stabilization_on, view, 'pitch_pred')].set_data(np.append(plot_elements[(stabilization_on, view, 'pitch_pred')].get_xdata(), t),
-                                                                                np.append(plot_elements[(stabilization_on, view, 'pitch_pred')].get_ydata(), pitch_data_pred))
+                    data_to_add = {
+                        "roll_true": roll_true,
+                        "pitch_true": pitch_true,
+                        "roll_pred": roll_pred,
+                        "pitch_pred": pitch_pred,
+                    }
+                    for dof in ["roll", "pitch"]:
+                        for version in ["true", "pred"]:
+                            key = (stabilization_on, view, f"{dof}_{version}")
+                            new_y_val = data_to_add[f"{dof}_{version}"]
+                            plot_elements[key].set_data(
+                                np.append(plot_elements[key].get_xdata(), t),
+                                np.append(plot_elements[key].get_ydata(), new_y_val),
+                            )
                 else:
                     img = data[(stabilization_on, view)][frame_id][0, ...]
                     img[img == 0] = np.nan
