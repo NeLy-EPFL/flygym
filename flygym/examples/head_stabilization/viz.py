@@ -310,3 +310,34 @@ def closed_loop_comparison_video(
 
     video_path.parent.mkdir(exist_ok=True, parents=True)
     animation.save(video_path, writer="ffmpeg", fps=fps, dpi=dpi)
+
+
+def plot_rotation_time_series(
+    rotation_data: Dict[str, np.ndarray], output_path: Path, dt: float = 1e-4
+):
+    fig, axs = plt.subplots(
+        2, 2, figsize=(6, 3), tight_layout=True, sharex=True, sharey=True
+    )
+    for idof, dof in enumerate(["roll", "pitch"]):
+        for iterrain, terrain_type in enumerate(["flat", "blocks"]):
+            ax = axs[idof, iterrain]
+            head_angle = rotation_data[terrain_type]["head"][:, idof]
+            thorax_angle = rotation_data[terrain_type]["thorax"][:, idof]
+            t_grid = np.arange(len(head_angle)) * dt
+            ax.axhline(0, color="black", lw=1)
+            ax.plot(t_grid, np.rad2deg(head_angle), label="Head", color="tab:red", lw=1)
+            ax.plot(
+                t_grid, np.rad2deg(thorax_angle), label="Thorax", color="tab:blue", lw=1
+            )
+            ax.set_xlim(0.5, 1)
+            ax.set_ylim(-20, 20)
+            sns.despine(ax=ax, bottom=True)
+            if idof == 0:
+                ax.set_title(f"{terrain_type.title()} terrain")
+            if idof == 1:
+                ax.set_xlabel("Time [s]")
+            if iterrain == 0:
+                ax.set_ylabel(rf"{dof.title()} [$^\circ$]")
+            if idof == 0 and iterrain == 1:
+                ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
+    fig.savefig(output_path)

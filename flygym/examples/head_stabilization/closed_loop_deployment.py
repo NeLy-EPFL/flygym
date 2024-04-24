@@ -20,8 +20,8 @@ contact_sensor_placements = [
     for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
     for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
 ]
-output_dir = Path("./outputs/head_stabilization/videos/")
-output_dir.mkdir(exist_ok=True, parents=True)
+output_dir = Path("./outputs/head_stabilization/")
+(output_dir / "videos").mkdir(exist_ok=True, parents=True)
 
 # If you trained the models yourself (by running ``collect_training_data.py``
 # followed by ``train_proprioception_model.py``), you can use the following
@@ -90,6 +90,11 @@ def run_simulation(
     nn_activities_snapshots = []
     neck_actuation_pred_hist = []
     neck_actuation_true_hist = []
+    head_rotation_hist = []
+    thorax_rotation_hist = []
+
+    throax_body = fly.model.find("body", "Thorax")
+    head_body = fly.model.find("body", "Head")
 
     # Main simulation loop
     for i in trange(int(run_time / sim.timestep)):
@@ -106,6 +111,18 @@ def run_simulation(
             quat_inv = transformations.quat_inv(quat)
             roll, pitch, _ = transformations.quat_to_euler(quat_inv, ordering="XYZ")
             neck_actuation_true_hist.append(np.array([roll, pitch]))
+
+        # Record head and throax orientation
+        thorax_rotation_quat = sim.physics.bind(throax_body).xquat
+        thorax_roll, thorax_pitch, _ = transformations.quat_to_euler(
+            thorax_rotation_quat, ordering="XYZ"
+        )
+        thorax_rotation_hist.append([thorax_roll, thorax_pitch])
+        head_rotation_quat = sim.physics.bind(head_body).xquat
+        head_roll, head_pitch, _ = transformations.quat_to_euler(
+            head_rotation_quat, ordering="XYZ"
+        )
+        head_rotation_hist.append([head_roll, head_pitch])
 
         rendered_images = sim.render()
         if rendered_images[0] is not None:
@@ -136,6 +153,8 @@ def run_simulation(
         "raw_vision": raw_vision_snapshots,
         "nn_activities": nn_activities_snapshots,
         "r2_scores": r2_scores,
+        "head_rotation_hist": np.array(head_rotation_hist),
+        "thorax_rotation_hist": np.array(thorax_rotation_hist),
     }
 
 
@@ -199,6 +218,8 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
         "zoomin": sim_res["zoomin"],
         "raw_vision": raw_vision_hist,
         "cell_response": cell_response_hist,
+        "head_rotation": sim_res["head_rotation_hist"],
+        "thorax_rotation": sim_res["thorax_rotation_hist"],
     }
 
 
@@ -230,5 +251,13 @@ if __name__ == "__main__":
 
             data[(stabilization_on, view)] = frames
     viz.closed_loop_comparison_video(
-        data, "T4a", 24, output_dir / "closed_loop_comparison.mp4"
+        data, "T4a", 24, output_dir / "videos/closed_loop_comparison.mp4"
     )
+
+    # Plot example head and thorax rotation time series
+    rotation_data = {}
+    for terrain_type in ["flat", "blocks"]:
+        rotation_data[terrain_type] = {
+            body: res_all[(terrain_type, True)][f"{body}_rotation"]
+            for body in ["head", "thorax"]
+        }
