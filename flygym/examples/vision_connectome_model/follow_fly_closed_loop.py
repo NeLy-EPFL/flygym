@@ -178,7 +178,7 @@ def process_trial(
     if terrain_type == "flat":
         arena = MovingFlyArena(move_speed=15, radius=10, terrain_type=terrain_type)
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(move_speed=11, radius=10, terrain_type=terrain_type)
+        arena = MovingFlyArena(move_speed=13, radius=10, terrain_type=terrain_type)
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:
@@ -241,5 +241,5 @@ if __name__ == "__main__":
         for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
 
-    # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
-    process_trial("blocks", True, (-5, 10))
+    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    # process_trial("blocks", True, (-5, 10))
