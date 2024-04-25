@@ -289,7 +289,7 @@ def closed_loop_comparison_video(
         axs[0, 0].text(
             -0.2,
             0.5,
-            f"No gaze stabilization",
+            f"No head stabilization",
             size=12,
             va="center",
             rotation=90,
@@ -298,7 +298,7 @@ def closed_loop_comparison_video(
         axs[1, 0].text(
             -0.2,
             0.5,
-            f"Gaze stabilization",
+            f"Head stabilization",
             size=12,
             va="center",
             rotation=90,
@@ -393,7 +393,7 @@ def plot_rotation_time_series(
 
 
 def plot_activities_std(
-    activities_std_data, output_path, vmin=0, vmax=0.4, cmap="inferno"
+    activities_std_data, output_path, vmin=0, vmax=0.3, cmap="inferno"
 ):
     fig, axs = plt.subplots(
         2, 3, figsize=(7, 6), tight_layout=True, gridspec_kw={"width_ratios": [3, 3, 1]}
@@ -401,12 +401,14 @@ def plot_activities_std(
     for i, stabilization_on in enumerate([False, True]):
         for j, terrain_type in enumerate(["flat", "blocks"]):
             std_img = activities_std_data[(terrain_type, stabilization_on)][:, :, 0]
-            std_img[std_img == 0] = np.nan
             ax = axs[i, j]
             ax.imshow(std_img, cmap=cmap, vmin=vmin, vmax=vmax)
             ax.axis("off")
-            stab_str = "on" if stabilization_on else "off"
-            ax.set_title(f"{terrain_type.title()} terrain, stabilization {stab_str}")
+            if stabilization_on:
+                stab_str = "Head stabilization"
+            else:
+                stab_str = "No head stabilization"
+            ax.set_title(f"{terrain_type.title()} terrain, {stab_str}")
             ax.set_aspect("equal")
 
     # Draw colorbar manually
