@@ -40,7 +40,7 @@ class GappedTerrain(BaseArena):
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001).
     gap_width : float, optional
-        Width of each gap, by default 0.4.
+        Width of each gap, by default 0.3.
     block_width : float, optional
         Width of each block (piece of floor), by default 1.
     gap_depth : float, optional
@@ -137,7 +137,7 @@ class BlocksTerrain(BaseArena):
     height_range : Tuple[float, float]
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (0.45, 0.45).
+        extruded, by default (0.35, 0.35).
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ class BlocksTerrain(BaseArena):
     height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (0.45, 0.45).
+        extruded, by default (0.35, 0.35).
     ground_alpha : float, optional
         Opacity of the ground, by default 1 (fully opaque).
     rand_seed : int, optional
@@ -260,7 +260,7 @@ class MixedTerrain(BaseArena):
     height_range : Tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
-        extruded, by default (0.45, 0.45).
+        extruded, by default (0.35, 0.35).
     ground_alpha : float, optional
         Opacity of the ground, by default 1 (fully opaque).
     rand_seed : int, optional
