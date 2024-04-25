@@ -202,36 +202,35 @@ def make_feature_selection_summary_plot(
 
 def closed_loop_comparison_video(
     data: Dict[Tuple[bool, str], List[np.ndarray]],
-    cell: str,
     fps: int,
     video_path: Path,
-    cell_activity_range: Tuple[float, float] = (-3, 3),
-    cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
+    run_time: float,
+    action_range: Tuple[float, float] = (-20, 20),
     dpi: int = 300,
 ):
     fig, axs = plt.subplots(
         2,
-        5,
+        4,
         figsize=(11.2, 6.3),
-        gridspec_kw={"width_ratios": [1, 1, 0.85, 0.85, 0.15]},
-        tight_layout=True,
+        gridspec_kw={"width_ratios": [1, 1, 0.85, 1.5]},  # 'wspace':0.1, 'hspace':0.1},
+        layout="compressed",
+        # tight_layout=True,
     )
+
     plot_elements = {}
 
     def init():
-        # Turn off all borders
+        # Turn off all
+        #  borders
         for ax in axs.flat:
             ax.axis("off")
 
         # Initialize views
-        for i, stabilization_on in enumerate([True, False]):
+        for i, stabilization_on in enumerate([False, True]):
             for j, view in enumerate(
-                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+                ["birdeye", "zoomin", "raw_vision", "neck_actuation"]
             ):
-                if view == "cell_response":
-                    vmin, vmax = cell_activity_range
-                    cmap = "seismic"
-                elif view == "raw_vision":
+                if view == "raw_vision":
                     vmin, vmax = 0, 1
                     cmap = "gray"
                 else:
@@ -240,64 +239,114 @@ def closed_loop_comparison_video(
 
                 if view in ["birdeye", "zoomin"]:
                     img = np.zeros_like(data[(stabilization_on, view)][0])
+                elif view == "neck_actuation":
+                    pass
                 else:
                     img = np.zeros_like(data[(stabilization_on, view)][0][0, ...])
 
                 ax = axs[i, j]
-                plot_elements[(stabilization_on, view)] = ax.imshow(
-                    img,
-                    vmin=vmin,
-                    vmax=vmax,
-                    cmap=cmap,
-                )
 
-        # Colorbars
-        cell_activity_norm = Normalize(*cell_activity_range)
-        cell_activity_scalar_mappable = ScalarMappable(
-            cmap=cell_activity_cmap, norm=cell_activity_norm
-        )
-        cell_activity_scalar_mappable.set_array([])
-        for i, stabilization_on in enumerate([True, False]):
-            cbar = plt.colorbar(cell_activity_scalar_mappable, ax=axs[i, 4], shrink=0.8)
-            cbar.set_ticks(cell_activity_range)
-            cbar.set_ticklabels(["hyperpolarized", "depolarized"])
+                if view == "neck_actuation":
+                    ax.axis("on")  # Enable axis for actuation data
+                    ax.set_xlim(0 - 0.05, run_time + 0.05)
+                    ax.set_ylim(
+                        action_range
+                    )  # Assuming actuation ranges, adjust as necessary
+                    ax.set_xlabel("Time [s]")
+                    ax.set_ylabel(r"Actuation signal [$^\circ$]")
+                    for dof in ["roll", "pitch"]:
+                        for version in ["true", "pred"]:
+                            key = (stabilization_on, view, f"{dof}_{version}")
+                            label = (
+                                f"{'Predicted' if version == 'pred' else 'Optimal'} "
+                                f"{dof}"
+                            )
+                            plot_elements[key] = ax.plot(
+                                [],
+                                [],
+                                label=label,
+                                color=_color_config[dof][0 if version == "true" else 1],
+                                ls="--" if version == "true" else "-",
+                                lw=1,
+                            )[0]
+                    if i == 0:
+                        ax.legend(frameon=False, loc="upper right", fontsize=7, ncols=2)
+                        ax.set_title(f"Neck actuation")
+                    sns.despine(ax=ax)
+                else:
+                    plot_elements[(stabilization_on, view)] = ax.imshow(
+                        img,
+                        vmin=vmin,
+                        vmax=vmax,
+                        cmap=cmap,
+                    )
 
         # Panel titles
-        axs[0, 0].set_title("Birdeye view")
-        axs[0, 1].set_title("Zoom-in view")
-        axs[0, 2].set_title("Raw vision")
-        axs[0, 3].set_title(f"{cell} activities")
+        axs[0, 0].set_title("Bird’s-eye view")
+        axs[0, 1].set_title("Zoomed-in view")
+        axs[0, 2].set_title("Left eye raw vision")
+        axs[0, 3].set_title(f"Neck actuation")
         axs[0, 0].text(
-            -0.3,
+            -0.2,
             0.5,
-            f"Stabilized",
+            f"No gaze stabilization",
             size=12,
             va="center",
             rotation=90,
             transform=axs[0, 0].transAxes,
         )
         axs[1, 0].text(
-            -0.3,
+            -0.2,
             0.5,
-            f"Unstabilized",
+            f"Gaze stabilization",
             size=12,
             va="center",
             rotation=90,
             transform=axs[1, 0].transAxes,
         )
+
         return list(plot_elements.values())
 
     def update(frame_id):
-        for i, stabilization_on in enumerate([True, False]):
+        for i, stabilization_on in enumerate([False, True]):
             for j, view in enumerate(
-                ["birdeye", "zoomin", "raw_vision", "cell_response"]
+                ["birdeye", "zoomin", "raw_vision", "neck_actuation"]
             ):
                 if view in ["birdeye", "zoomin"]:
                     img = data[(stabilization_on, view)][frame_id]
+                elif view == "neck_actuation":
+                    # Update line data for pitch and yaw
+                    frame_data = data[(stabilization_on, view)][frame_id]
+                    roll_true, pitch_true, roll_pred, pitch_pred, t = frame_data
+                    last_x = plot_elements[
+                        (stabilization_on, view, "roll_true")
+                    ].get_xdata()
+                    if len(last_x) > 0 and t < last_x[-1]:
+                        # reset all the plot elements
+                        for dof in ["roll", "pitch"]:
+                            for version in ["true", "pred"]:
+                                key = (stabilization_on, view, f"{dof}_{version}")
+                                plot_elements[key].set_data([], [])
+
+                    data_to_add = {
+                        "roll_true": roll_true,
+                        "pitch_true": pitch_true,
+                        "roll_pred": roll_pred,
+                        "pitch_pred": pitch_pred,
+                    }
+                    for dof in ["roll", "pitch"]:
+                        for version in ["true", "pred"]:
+                            key = (stabilization_on, view, f"{dof}_{version}")
+                            new_y_val = data_to_add[f"{dof}_{version}"]
+                            plot_elements[key].set_data(
+                                np.append(plot_elements[key].get_xdata(), t),
+                                np.append(plot_elements[key].get_ydata(), new_y_val),
+                            )
                 else:
                     img = data[(stabilization_on, view)][frame_id][0, ...]
                     img[img == 0] = np.nan
-                plot_elements[(stabilization_on, view)].set_data(img)
+                if not view == "neck_actuation":
+                    plot_elements[(stabilization_on, view)].set_data(img)
         return list(plot_elements.values())
 
     animation = FuncAnimation(
@@ -310,3 +359,65 @@ def closed_loop_comparison_video(
 
     video_path.parent.mkdir(exist_ok=True, parents=True)
     animation.save(video_path, writer="ffmpeg", fps=fps, dpi=dpi)
+
+
+def plot_rotation_time_series(
+    rotation_data: Dict[str, np.ndarray], output_path: Path, dt: float = 1e-4
+):
+    fig, axs = plt.subplots(
+        2, 2, figsize=(6, 3), tight_layout=True, sharex=True, sharey=True
+    )
+    for idof, dof in enumerate(["roll", "pitch"]):
+        for iterrain, terrain_type in enumerate(["flat", "blocks"]):
+            ax = axs[idof, iterrain]
+            head_angle = rotation_data[terrain_type]["head"][:, idof]
+            thorax_angle = rotation_data[terrain_type]["thorax"][:, idof]
+            t_grid = np.arange(len(head_angle)) * dt
+            ax.axhline(0, color="black", lw=1)
+            ax.plot(t_grid, np.rad2deg(head_angle), label="Head", color="tab:red", lw=1)
+            ax.plot(
+                t_grid, np.rad2deg(thorax_angle), label="Thorax", color="tab:blue", lw=1
+            )
+            ax.set_xlim(0.5, 1)
+            ax.set_ylim(-20, 20)
+            sns.despine(ax=ax, bottom=True)
+            if idof == 0:
+                ax.set_title(f"{terrain_type.title()} terrain")
+            if idof == 1:
+                ax.set_xlabel("Time [s]")
+            if iterrain == 0:
+                ax.set_ylabel(rf"{dof.title()} [$^\circ$]")
+            if idof == 0 and iterrain == 1:
+                ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
+    fig.savefig(output_path)
+
+
+def plot_activities_std(
+    activities_std_data, output_path, vmin=0, vmax=0.4, cmap="inferno"
+):
+    fig, axs = plt.subplots(
+        2, 3, figsize=(7, 6), tight_layout=True, gridspec_kw={"width_ratios": [3, 3, 1]}
+    )
+    for i, stabilization_on in enumerate([False, True]):
+        for j, terrain_type in enumerate(["flat", "blocks"]):
+            std_img = activities_std_data[(terrain_type, stabilization_on)][:, :, 0]
+            std_img[std_img == 0] = np.nan
+            ax = axs[i, j]
+            ax.imshow(std_img, cmap=cmap, vmin=vmin, vmax=vmax)
+            ax.axis("off")
+            stab_str = "on" if stabilization_on else "off"
+            ax.set_title(f"{terrain_type.title()} terrain, stabilization {stab_str}")
+            ax.set_aspect("equal")
+
+    # Draw colorbar manually
+    sm = ScalarMappable(norm=Normalize(vmin=vmin, vmax=vmax), cmap=cmap)
+    fig.colorbar(
+        sm,
+        ax=axs[0, 2],
+        shrink=0.6,
+        aspect=5,
+        label="Standard deviation (AU)",
+    )
+    axs[0, 2].axis("off")
+    axs[1, 2].axis("off")
+    fig.savefig(output_path)

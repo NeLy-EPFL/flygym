@@ -1,3 +1,7 @@
+import matplotlib
+
+matplotlib.use("Agg")
+
 import numpy as np
 import pandas as pd
 import torch
@@ -253,6 +257,7 @@ if __name__ == "__main__":
     # Feature selection
     for dof_subset_tag, dofs in dof_subsets.items():
         if retrain_feature_selection:
+            print(f"Training model for {dof_subset_tag}")
             concat_training_set = make_concat_subdataset(
                 individual_datasets["train"], dofs
             )
