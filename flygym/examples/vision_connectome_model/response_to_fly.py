@@ -3,11 +3,11 @@ import numpy as np
 from pathlib import Path
 from tqdm import trange
 from flygym import Fly, Camera
+from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
 
 from flygym.examples.vision_connectome_model import (
-    MovingFlyArena,
     NMFRealisticVision,
     visualize_vision,
 )
@@ -47,7 +47,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 
 def run_simulation(
-    arena: MovingFlyArena,
+    arena: BaseArena,
     run_time: float = 1.0,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
 ):
@@ -62,7 +62,7 @@ def run_simulation(
 
     cam = Camera(
         fly=fly,
-        camera_id="birdeye_cam",
+        camera_id="Animat/camera_top",
         play_speed=0.2,
         window_size=(800, 608),
         fps=24,
@@ -111,13 +111,9 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
 
     if terrain_type == "flat":
-        arena = MovingFlyArena(
-            move_speed=18, lateral_magnitude=1, terrain_type=terrain_type
-        )
+        arena = FlatTerrain()
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(
-            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
-        )
+        arena = BlocksTerrain(height_range=(0.2, 0.2))
     else:
         raise ValueError("Invalid terrain type")
     if stabilization_on:
