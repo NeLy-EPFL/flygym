@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "./outputs/connectome_constrained_vision/closed_loop_control/"
+cd "./outputs/connectome_constrained_vision/closed_loop_control/videos/"
 for terrain_type in "flat" "blocks"
 do
     for stabilization_on in "True" "False"

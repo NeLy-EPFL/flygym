@@ -186,3 +186,72 @@ def save_single_eye_video(
         out.write(np.repeat(frame[:, :, None], 3, axis=2))  # Write out frame to video
 
     out.release()  # Release the VideoWriter
+
+
+def plot_fly_following_trajectories(
+    trajectories_all, radius, leading_fly_speeds, output_path, dt=1e-4
+):
+    num_steps = np.max([x.shape[0] for x in trajectories_all[("flat", True)]])
+    fig, axs = plt.subplots(2, 2, figsize=(6, 6), tight_layout=True)
+    for i, stabilization_on in enumerate([False, True]):
+        for j, terrain_type in enumerate(["flat", "blocks"]):
+            ax = axs[i, j]
+            trajectories = trajectories_all[(terrain_type, stabilization_on)]
+
+            # Draw leading fly
+            angular_vel = leading_fly_speeds[terrain_type] / radius
+            t_grid = np.arange(num_steps) * dt
+            xs = radius * np.sin(angular_vel * t_grid)
+            ys = radius * np.cos(angular_vel * t_grid)
+            ax.plot(xs, ys, lw=2, color="black", ls="-", label="Leading fly")
+
+            # Draw following flies
+            for traj in trajectories:
+                ax.plot(traj[:, 0], traj[:, 1], lw=1)
+
+            # Other plot elements
+            if stabilization_on:
+                stabilization_str = "Head stabilization"
+            else:
+                stabilization_str = "No head stabilization"
+            ax.set_title(f"{terrain_type.title()} terrain\n{stabilization_str}")
+            ax.set_aspect("equal")
+            ax.set_xlabel("x (mm)")
+            ax.set_ylabel("y (mm)")
+            ax.set_xlim(-12.5, 17.5)
+            ax.set_ylim(-15, 15)
+            if i == 0 and j == 1:
+                ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
+
+    fig.savefig(output_path)
+
+
+def plot_visual_system_snapshot(images, cells, output_path):
+    fig = plt.figure(figsize=(16, 9))
+    fig.subplots_adjust(
+        hspace=0.05, wspace=0.05, left=0.05, right=0.95, top=0.95, bottom=0.05
+    )
+    axd = fig.subplot_mosaic("XXabcdZ\nXXefghZ")
+    panel_to_cell = {panel: cell for panel, cell in zip("abcdefgh", cells)}
+    panel_to_cell["X"] = "raw"
+    for panel, cell in panel_to_cell.items():
+        ax = axd[panel]
+        if cell == "raw":
+            ax.imshow(images[cell][:, :, 1], cmap="gray", vmin=0, vmax=1)
+            ax.set_title("Retina image")
+        else:
+            ax.imshow(images[cell][:, :, 1], cmap="seismic", vmin=-3, vmax=3)
+            ax.set_title(cell)
+        ax.axis("off")
+        ax.set_aspect("equal")
+
+    # Draw colorbar manually
+    ax = axd["Z"]
+    ax.axis("off")
+    norm = plt.Normalize(vmin=-3, vmax=3)
+    sm = plt.cm.ScalarMappable(cmap="seismic", norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation="horizontal")
+    cbar.set_label("Cell activity")
+
+    fig.savefig(output_path, dpi=300)
