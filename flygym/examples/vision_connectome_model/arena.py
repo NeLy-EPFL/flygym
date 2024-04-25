@@ -54,35 +54,27 @@ class MovingFlyArena(BaseArena):
     def __init__(
         self,
         terrain_type: str = "flat",
-        x_range: Optional[Tuple[float, float]] = (-10, 35),
+        x_range: Optional[Tuple[float, float]] = (-10, 20),
         y_range: Optional[Tuple[float, float]] = (-20, 20),
         block_size: Optional[float] = 1.3,
         height_range: Optional[Tuple[float, float]] = (0.2, 0.2),
         rand_seed: int = 0,
         ground_alpha: float = 1,
         friction=(1, 0.005, 0.0001),
-        leading_fly_height=1,
+        leading_fly_height=0.5,
         init_fly_pos=(5, 0),
-        move_speed=6,
-        move_direction="right",
-        lateral_magnitude=2,
+        move_speed=10,
+        radius=10,
     ):
         super().__init__()
         self.init_fly_pos = (*init_fly_pos, leading_fly_height)
         self.fly_pos = np.array(self.init_fly_pos, dtype="float32")
         self.friction = friction
         self.move_speed = move_speed
+        self.angular_speed = move_speed / radius
         self.curr_time = 0
-        self.move_direction = move_direction
-        self.lateral_magnitude = lateral_magnitude
-        if move_direction == "left":
-            self.y_mult = 1
-        elif move_direction == "right":
-            self.y_mult = -1
-        elif move_direction == "random":
-            self.y_mult = np.random.choice([-1, 1])
-        else:
-            raise ValueError("Invalid move_direction")
+        self.radius = radius
+        self.terrain_type = terrain_type
 
         # Add ground
         if terrain_type == "flat":
@@ -172,7 +164,7 @@ class MovingFlyArena(BaseArena):
             "camera",
             name="birdeye_cam",
             mode="fixed",
-            pos=(15, 0, 35),
+            pos=(5, 0, 35),
             euler=(0, 0, 0),
             fovy=45,
         )
@@ -180,7 +172,7 @@ class MovingFlyArena(BaseArena):
             "camera",
             name="birdeye_cam_zoom",
             mode="fixed",
-            pos=(15, 0, 20),
+            pos=(5, 0, 20),
             euler=(0, 0, 0),
             fovy=45,
         )
@@ -189,16 +181,19 @@ class MovingFlyArena(BaseArena):
         return rel_pos, rel_angle
 
     def step(self, dt, physics):
-        heading_vec = np.array(
-            [1, self.lateral_magnitude * np.cos(self.curr_time * 3) * self.y_mult]
+        theta = self.angular_speed * self.curr_time
+        self.fly_pos = np.array(
+            [
+                self.radius * np.sin(theta),
+                self.radius * np.cos(theta),
+                self.init_fly_pos[2],
+            ]
         )
-        heading_vec /= np.linalg.norm(heading_vec)
-        self.fly_pos[:2] += self.move_speed * heading_vec * dt
-
         curr_pos = complex(*self.fly_pos[:2])
         q = np.exp(1j * np.angle(curr_pos - self._prev_pos) / 2)
         qpos = (*self.fly_pos, q.real, 0, 0, q.imag)
         physics.bind(self.freejoint).qpos = qpos
+        physics.bind(self.freejoint).qvel[:] = 0
         self._prev_pos = curr_pos
 
         self.curr_time += dt
