@@ -74,6 +74,7 @@ class MovingFlyArena(BaseArena):
         self.angular_speed = move_speed / radius
         self.curr_time = 0
         self.radius = radius
+        self.terrain_type = terrain_type
 
         # Add ground
         if terrain_type == "flat":
