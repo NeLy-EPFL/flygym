@@ -47,6 +47,7 @@ def run_simulation(
     initial_position=(180, 80),
     live_display=False,
     is_control=False,
+    run_time=60,
 ):
     arena = OdorPlumeArena(plume_dataset_path)
 
@@ -85,8 +86,6 @@ def run_simulation(
     encounter_threshold = 0.001
 
     # Run the simulation
-    run_time = 60
-
     obs_hist = []
     obs, _ = sim.reset()
     for i in range(int(run_time / sim.timestep)):
@@ -135,6 +134,7 @@ def run_simulation(
     cam.save_video(output_dir / (filename_stem + ".mp4"))
     with open(output_dir / (filename_stem + ".pkl"), "wb") as f:
         pickle.dump({"obs_hist": obs_hist, "reward": reward}, f)
+    return sim
 
 
 def process_trial(plume_dataset_path, output_dir, seed, initial_position, is_control):
