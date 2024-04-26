@@ -94,11 +94,11 @@ class OdorPlumeArena(BaseArena):
         Returns
         -------
         pos_display: np.ndarray
-            Array of shape (n_row_pxls_plume, n_row_pxls_plume, 2)
+            Array of shape (n_row_pxls_plume, n_col_pxls_plume, 2)
             containing the row-col coordinates of each plume simulation
             cell on the **display** image (in pixels).
         pos_physical: np.ndarray
-            Array of shape (n_row_pxls_plume, n_row_pxls_plume, 2)
+            Array of shape (n_row_pxls_plume, n_col_pxls_plume, 2)
             containing the row-col coordinates of each plume simulation
             cell on the **physical** simulated grid (in mm). This is a
             regular lattice grid marking the physical position of the
