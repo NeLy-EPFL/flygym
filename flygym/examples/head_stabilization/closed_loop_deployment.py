@@ -12,7 +12,6 @@ from dm_control.utils import transformations
 import flygym.examples.head_stabilization.viz as viz
 from flygym.examples.vision_connectome_model import NMFRealisticVision, RetinaMapper
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
 
 contact_sensor_placements = [
@@ -92,7 +91,7 @@ def run_simulation(
     neck_actuation_viz_vars = []
 
     # These are updated at every time step and are used for generating
-    # statistics and plts (except vision_all, which is updated every
+    # statistics and plots (except vision_all, which is updated every
     # time step where the visual input is updated. Visual updates are less
     # frequent than physics steps).
     head_rotation_hist = []
@@ -101,7 +100,7 @@ def run_simulation(
     neck_actuation_true_hist = []
     vision_all = []  # (only updated when visual input is updated)
 
-    throax_body = fly.model.find("body", "Thorax")
+    thorax_body = fly.model.find("body", "Thorax")
     head_body = fly.model.find("body", "Head")
 
     # Main simulation loop
@@ -120,8 +119,8 @@ def run_simulation(
         roll, pitch, _ = transformations.quat_to_euler(quat_inv, ordering="XYZ")
         neck_actuation_true_hist.append(np.array([roll, pitch]))
 
-        # Record head and throax orientation
-        thorax_rotation_quat = sim.physics.bind(throax_body).xquat
+        # Record head and thorax orientation
+        thorax_rotation_quat = sim.physics.bind(thorax_body).xquat
         thorax_roll, thorax_pitch, _ = transformations.quat_to_euler(
             thorax_rotation_quat, ordering="XYZ"
         )
@@ -297,7 +296,7 @@ if __name__ == "__main__":
         rotation_data, output_dir / "figs/rotation_time_series.pdf"
     )
 
-    # Plot standard deviation of intensity per ommatidia with and
+    # Plot standard deviation of intensity per ommatidium with and
     # without head stabilization
     std_data = {}
     for terrain_type in ["flat", "blocks"]:
