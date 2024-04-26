@@ -1,1 +1,1 @@
-from flygym.examples.path_integration.common import *
+from flygym.examples.path_integration import arena, controller, model, util, viz

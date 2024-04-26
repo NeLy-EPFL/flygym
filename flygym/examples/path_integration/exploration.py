@@ -1,19 +1,21 @@
-import argparse
 import numpy as np
 import pickle
 import cv2
 from tqdm import trange
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional
 
 from flygym import Fly, Camera
 from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
-from flygym.examples.path_integration import (
-    PathIntegrationArena,
+from flygym.examples.path_integration.arena import (
+    PathIntegrationArenaFlat,
+    PathIntegrationArenaBlocks,
+)
+from flygym.examples.path_integration.controller import (
     WalkingState,
-    PathIntegrationNMF,
     RandomExplorationController,
+    PathIntegrationNMF,
 )
 
 
@@ -93,12 +95,9 @@ def wrap_angle(angle):
 def run_simulation(
     seed: int = 0,
     running_time: float = 20.0,
+    terrain_type: str = "flat",
     gait: str = "tripod",
     live_display: bool = False,
-    do_path_integration: bool = False,
-    heading_model: Optional[Callable] = None,
-    displacement_model: Optional[Callable] = None,
-    time_scale: Optional[float] = None,
     output_dir: Optional[Path] = None,
 ):
     icons = get_walking_icons()
@@ -114,7 +113,16 @@ def run_simulation(
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(0, 0, 0.25),
     )
-    arena = PathIntegrationArena()
+
+    if terrain_type == "flat":
+        arena = PathIntegrationArenaFlat()
+    elif terrain_type == "blocks":
+        arena = PathIntegrationArenaBlocks(
+            height_range=(0.2, 0.2), x_range=(-50, 50), y_range=(-50, 50)
+        )
+    else:
+        raise ValueError(f"Unknown terrain type: {terrain_type}")
+
     # cam = Camera(
     #     fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     # )
@@ -152,28 +160,9 @@ def run_simulation(
         real_heading = np.arctan2(orientation_y, orientation_x)
         _real_heading_buffer.append(real_heading)
 
-        # Get estimated heading
-        if heading_model is not None:
-            estimated_heading = info["heading_estimate"]
-            _estimated_heading_buffer.append(wrap_angle(estimated_heading))
-
         if rendered_img is not None:
             # Add walking state icon
             add_icon_to_image(rendered_img, icons[walking_state])
-
-            # Add heading info
-            if do_path_integration:
-                real_heading = np.mean(_real_heading_buffer)
-                estimated_heading = np.mean(_estimated_heading_buffer)
-                _real_heading_buffer = []
-                _estimated_heading_buffer = []
-                add_heading_to_image(
-                    rendered_img,
-                    real_heading=real_heading,
-                    estimated_heading=estimated_heading,
-                    real_position=obs["fly"][0, :2],
-                    estimated_position=info["position_estimate"],
-                )
 
             # Display rendered image live
             if live_display:
@@ -196,56 +185,23 @@ def run_simulation(
             pickle.dump(data, f)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Run path integration experiment with random exploration."
-    )
-
-    # Adding arguments
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=0,
-        help="Seed for random exploration. Defaults to 0.",
-    )
-    parser.add_argument(
-        "--running_time",
-        type=float,
-        default=20.0,
-        help="Running time in seconds. Defaults to 20.",
-    )
-    parser.add_argument(
-        "--live_display",
-        action="store_true",
-        help="Enable live display. Defaults to False.",
-    )
-    parser.add_argument(
-        "--gait",
-        type=str,
-        choices=["tripod", "tetrapod", "wave"],
-        default="tripod",
-        help=(
-            "Hexapod gait type. Choose from ['tripod', 'tetrapod', 'wave']. "
-            "Defaults to 'tripod'."
-        ),
-    )
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        default=".",
-        help="Directory to which output files are saved. Defaults to '.'.",
-    )
-    args = parser.parse_args()
-
-    run_simulation(
-        seed=args.seed,
-        running_time=args.running_time,
-        gait=args.gait,
-        live_display=args.live_display,
-        do_path_integration=False,
-        output_dir=Path(args.output_dir),
-    )
-
-
 if __name__ == "__main__":
-    main()
+    from joblib import Parallel, delayed
+
+    root_output_dir = Path("./outputs/path_integration/random_exploration")
+    gaits = ["tripod", "tetrapod", "wave"]
+    seeds = list(range(15))
+
+    configs = [(gait, seed) for gait in gaits for seed in seeds]
+
+    def wrapper(gait, seed):
+        run_simulation(
+            seed=seed,
+            running_time=20.0,
+            terrain_type="flat",
+            gait=gait,
+            live_display=False,
+            output_dir=root_output_dir / f"seed={seed}_gait={gait}",
+        )
+
+    Parallel(n_jobs=-2)(delayed(wrapper)(*config) for config in configs)

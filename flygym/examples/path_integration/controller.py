@@ -1,9 +1,7 @@
 import numpy as np
 from enum import Enum
 from typing import Tuple, Union
-from dm_control import mjcf
 
-from flygym.arena import BaseArena
 from flygym.examples.turning_controller import HybridTurningNMF
 
 
@@ -12,67 +10,6 @@ class WalkingState(Enum):
     TURN_LEFT = 1
     TURN_RIGHT = 2
     STOP = 3
-
-
-class PathIntegrationArena(BaseArena):
-    def __init__(self):
-        super().__init__()
-        self.friction = (1, 0.005, 0.0001)
-
-        # Set up floor
-        chequered = self.root_element.asset.add(
-            "texture",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.7, 0.7, 0.7),
-            rgb2=(0.8, 0.8, 0.8),
-        )
-        grid = self.root_element.asset.add(
-            "material",
-            name="grid",
-            texture=chequered,
-            texrepeat=(10, 10),
-            reflectance=0.1,
-            rgba=(1.0, 1.0, 1.0, 1.0),
-        )
-        self.root_element.worldbody.add(
-            "geom",
-            name="floor",
-            type="box",
-            size=(300, 300, 1),
-            pos=(0, 0, -1),
-            material=grid,
-        )
-
-        # Add marker at origin
-        self.root_element.worldbody.add(
-            "geom",
-            name="origin_marker",
-            type="sphere",
-            size=(1,),
-            pos=(0, 0, 5),
-            rgba=(1, 0, 0, 1),
-        )
-
-        # Add birdeye camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(0, 0, 150),
-            euler=(0, 0, 0),
-            fovy=60,
-        )
-
-    def get_spawn_position(
-        self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        return rel_pos, rel_angle
-
-    def update_cam_pos(self, physics: mjcf.Physics, fly_pos: np.ndarray) -> None:
-        physics.bind(self.birdeye_cam).pos[:2] = fly_pos / 2
 
 
 class RandomExplorationController:
