@@ -1,13 +1,12 @@
 import numpy as np
 import h5py
 from dm_control.mujoco import Camera
-from typing import Tuple, Optional, Union
+from typing import Tuple
 from dm_control import mjcf
 from pathlib import Path
-from multiprocessing import shared_memory
 
 from flygym.arena import BaseArena
-from flygym import NeuroMechFly
+from flygym import Simulation
 
 
 class OdorPlumeArena(BaseArena):
@@ -31,8 +30,8 @@ class OdorPlumeArena(BaseArena):
         self.plume_update_interval = 1 / plume_simulation_fps
 
         # Load plume data
-        self.plume_datset = h5py.File(plume_data_path, "r")
-        self.plume_grid = self.plume_datset["plume"]
+        self.plume_dataset = h5py.File(plume_data_path, "r")
+        self.plume_grid = self.plume_dataset["plume"]
         self.arena_size = (
             np.array(self.plume_grid.shape[1:][::-1]) * dimension_scale_factor
         )
@@ -80,15 +79,15 @@ class OdorPlumeArena(BaseArena):
         # )
 
     def get_position_mapping(
-        self, sim: NeuroMechFly, camera_id: str = "birdeye_cam"
+        self, sim: Simulation, camera_id: str = "birdeye_cam"
     ) -> np.ndarray:
         """Get the display location (row-col coordinates) of each pixel on
         the fluid dynamics simulation.
 
         Parameters
         ----------
-        sim : NeuroMechFly
-            NeuroMechFly simulation object.
+        sim : Simulation
+            Simulation simulation object.
         camera_id : str, optional
             Camera to build position mapping for, by default "birdeye_cam"
 
@@ -164,4 +163,4 @@ class OdorPlumeArena(BaseArena):
         self.curr_time += dt
 
     def __del__(self):
-        self.plume_datset.close()
+        self.plume_dataset.close()

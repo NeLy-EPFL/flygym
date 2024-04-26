@@ -29,7 +29,7 @@ class PlumeNavigationController:
         tau_s: float = 0.2,  # s
         alpha: float = 0.8,  # 0.6,  # 0.242,  # Hz^-1
         tau_freq_conv: float = 2,  # s
-        cummulative_evidence_window: float = 2.0,  # s
+        cumulative_evidence_window: float = 2.0,  # s
         lambda_sw_0: float = 0.5,  # 0.29,  # s^-1
         delta_lambda_sw: float = 1,  # 0.41,  # s^-1
         tau_w=0.52,  # s
@@ -57,13 +57,13 @@ class PlumeNavigationController:
         self.encounter_history = []
 
         # Stopping->walking transition parameters
-        self.cummulative_evidence_window = cummulative_evidence_window
-        self.cummulative_evidence_len = int(cummulative_evidence_window / dt)
+        self.cumulative_evidence_window = cumulative_evidence_window
+        self.cumulative_evidence_len = int(cumulative_evidence_window / dt)
         self.lambda_sw_0 = lambda_sw_0
         self.delta_lambda_sw = delta_lambda_sw
         self.tau_w = tau_w
         self.encounter_weights = (
-            -np.arange(self.cummulative_evidence_len)[::-1] * self.dt
+            -np.arange(self.cumulative_evidence_len)[::-1] * self.dt
         )
 
         # Turning related parameters
@@ -88,7 +88,7 @@ class PlumeNavigationController:
             p_nochange = np.exp(-self.lambda_turn * self.dt)
             if self.random_state.rand() > p_nochange:
                 encounter_hist = np.array(
-                    self.encounter_history[-self.cummulative_evidence_len :]
+                    self.encounter_history[-self.cumulative_evidence_len :]
                 )
                 kernel = self.freq_kernel[-len(encounter_hist) :]
                 w_freq = np.sum(kernel * encounter_hist) * self.dt
@@ -147,7 +147,7 @@ class PlumeNavigationController:
         # Stop -> forward transition
         if self.curr_state == WalkingState.STOP:
             encounter_hist = np.array(
-                self.encounter_history[-self.cummulative_evidence_len :]
+                self.encounter_history[-self.cumulative_evidence_len :]
             )
             time_diff = self.encounter_weights[-len(encounter_hist) :]
             cumm_evidence_integral = (
@@ -183,8 +183,8 @@ class PlumeNavigationController:
         Parameters
         ----------
         window : float
-            Window size for cummulative evidence in seconds.
+            Window size for cumulative evidence in seconds.
         """
         if window <= 0:
-            raise ValueError("Window size must be positive for cummulative evidence")
+            raise ValueError("Window size must be positive for cumulative evidence")
         return 1 / (1 - np.exp(-window / tau))
