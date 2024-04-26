@@ -224,34 +224,3 @@ def plot_fly_following_trajectories(
                 ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
 
     fig.savefig(output_path)
-
-
-def plot_visual_system_snapshot(images, cells, output_path):
-    fig = plt.figure(figsize=(16, 9))
-    fig.subplots_adjust(
-        hspace=0.05, wspace=0.05, left=0.05, right=0.95, top=0.95, bottom=0.05
-    )
-    axd = fig.subplot_mosaic("XXabcdZ\nXXefghZ")
-    panel_to_cell = {panel: cell for panel, cell in zip("abcdefgh", cells)}
-    panel_to_cell["X"] = "raw"
-    for panel, cell in panel_to_cell.items():
-        ax = axd[panel]
-        if cell == "raw":
-            ax.imshow(images[cell][:, :, 1], cmap="gray", vmin=0, vmax=1)
-            ax.set_title("Retina image")
-        else:
-            ax.imshow(images[cell][:, :, 1], cmap="seismic", vmin=-3, vmax=3)
-            ax.set_title(cell)
-        ax.axis("off")
-        ax.set_aspect("equal")
-
-    # Draw colorbar manually
-    ax = axd["Z"]
-    ax.axis("off")
-    norm = plt.Normalize(vmin=-3, vmax=3)
-    sm = plt.cm.ScalarMappable(cmap="seismic", norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(sm, ax=ax, orientation="horizontal")
-    cbar.set_label("Cell activity")
-
-    fig.savefig(output_path, dpi=300)
