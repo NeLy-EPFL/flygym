@@ -65,7 +65,14 @@ cv2.imwrite(
 # Plot the system activities
 nn_activities = res["nn_activities_snapshots"][-1]
 retina = res["sim"].flies[0].retina
-cells = ["T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d"]
+cell_order_str = """
+    T1    T2    T2a   T3    T4a   T4b   T4c   T4d
+    T5a   T5b   T5c   T5d   Tm1   Tm2   Tm3   Tm4
+    Tm5Y  Tm5a  Tm5b  Tm5c  Tm9   Tm16  Tm20  Tm28
+    Tm30  TmY3  TmY4  TmY5a TmY9  TmY10 TmY13 TmY14
+    TmY15 TmY18
+    """
+cells = cell_order_str.split()
 images = {}
 images["raw"] = retina.hex_pxls_to_human_readable(
     res["vision_observation_snapshots"][-1].sum(axis=-1).T
@@ -77,26 +84,28 @@ for cell in cells:
     img[retina.ommatidia_id_map == 0] = np.nan
     images[cell] = img
 
-fig = plt.figure(figsize=(16, 9))
-fig.subplots_adjust(
-    hspace=0.05, wspace=0.05, left=0.05, right=0.95, top=0.95, bottom=0.05
-)
-axd = fig.subplot_mosaic("XXabcdZ\nXXefghZ")
-panel_to_cell = {panel: cell for panel, cell in zip("abcdefgh", cells)}
-panel_to_cell["X"] = "raw"
-for panel, cell in panel_to_cell.items():
-    ax = axd[panel]
+fig, axs = plt.subplots(8, 5, figsize=(11, 16), tight_layout=True)
+for i, (cell, img) in enumerate(images.items()):
+    ax = axs.flat[i]
     if cell == "raw":
-        ax.imshow(images[cell][:, :, 1], cmap="gray", vmin=0, vmax=1)
-        ax.set_title("Retina image")
+        ax.imshow(img[:, :, 1], cmap="gray", vmin=0, vmax=1)
     else:
-        ax.imshow(images[cell][:, :, 1], cmap="seismic", vmin=-3, vmax=3)
-        ax.set_title(cell)
+        ax.imshow(img[:, :, 1], cmap="seismic", vmin=-3, vmax=3)
+    ax.text(
+        0,
+        1,
+        "Raw" if cell == "raw" else cell,
+        size=20,
+        va="center",
+        transform=ax.transAxes,
+    )
     ax.axis("off")
     ax.set_aspect("equal")
 
-ax = axd["Z"]
-ax.axis("off")
+for i in range(5):
+    axs[7, i].axis("off")
+
+ax = axs[7, 4]
 norm = plt.Normalize(vmin=-3, vmax=3)
 sm = plt.cm.ScalarMappable(cmap="seismic", norm=norm)
 sm.set_array([])
