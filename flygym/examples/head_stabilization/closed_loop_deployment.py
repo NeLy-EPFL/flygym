@@ -32,7 +32,8 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 # Alternatively, you can use the pre-trained models that come with the
 # package. To do so, comment out the three lines above and uncomment the
-# following line.
+# following 2 lines.
+# from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 # stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
 # Simulation parameters
