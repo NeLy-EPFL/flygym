@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sys import stderr
@@ -8,7 +7,6 @@ from tqdm import trange
 from matplotlib.lines import Line2D
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.animation import FuncAnimation
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Callable
