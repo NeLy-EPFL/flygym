@@ -24,19 +24,15 @@ with h5py.File(plume_data_path, "r") as f:
     inflow_pos = f["inflow_pos"][:] / dimension_scale_factor
 
 # Load fly trajectories
-# all_res_files = list(data_dir.glob("sim_results/plume_navigation_*_controlFalse.pkl"))
-# trajectories_all = {}
-# for file in tqdm(all_res_files, desc="Loading trajectories"):
-#     with open(file, "rb") as f:
-#         data = pickle.load(f)
-#     traj = np.array([obs["fly"][0, :2] for obs in data["obs_hist"]])
-#     trajectories_all[file.stem] = traj
-#     del data
-#     gc.collect()  # Force garbage collection to avoid memory fragmentation
-# with open("temp_traj.pkl", "wb") as f:
-#     pickle.dump(trajectories_all, f)
-with open("temp_traj.pkl", "rb") as f:
-    trajectories_all = pickle.load(f)
+all_res_files = list(data_dir.glob("sim_results/plume_navigation_*_controlFalse.pkl"))
+trajectories_all = {}
+for file in tqdm(all_res_files, desc="Loading trajectories"):
+    with open(file, "rb") as f:
+        data = pickle.load(f)
+    traj = np.array([obs["fly"][0, :2] for obs in data["obs_hist"]])
+    trajectories_all[file.stem] = traj
+    del data
+    gc.collect()  # Force garbage collection to avoid memory fragmentation
 
 # Check which trials are successful
 successful_trials = {}
