@@ -21,7 +21,7 @@ class OdorPlumeArena(BaseArena):
         num_sensors: int = 4,
     ):
         super().__init__()
-        
+
         self.dimension_scale_factor = dimension_scale_factor
         self.plume_simulation_fps = plume_simulation_fps
         self.intensity_scale_factor = intensity_scale_factor
@@ -33,7 +33,6 @@ class OdorPlumeArena(BaseArena):
         # Load plume data
         self.plume_datset = h5py.File(plume_data_path, "r")
         self.plume_grid = self.plume_datset["plume"]
-        self.inflow_pos = self.plume_datset["inflow_pos"][:] * dimension_scale_factor
         self.arena_size = (
             np.array(self.plume_grid.shape[1:][::-1]) * dimension_scale_factor
         )
@@ -163,11 +162,6 @@ class OdorPlumeArena(BaseArena):
 
     def step(self, dt: float, physics: mjcf.Physics = None, *args, **kwargs) -> None:
         self.curr_time += dt
-
-    # def is_in_target(self, x: float, y: float) -> bool:
-    #     x_in_range = self.inflow_pos[0] <= x <= self.inflow_pos[0] + 20
-    #     y_in_range = self.inflow_pos[1] - 20 <= y <= self.inflow_pos[1] + 20
-    #     return x_in_range and y_in_range
 
     def __del__(self):
         self.plume_datset.close()
