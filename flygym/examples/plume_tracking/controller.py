@@ -1,0 +1,190 @@
+import numpy as np
+from enum import Enum
+from typing import Tuple
+
+
+class WalkingState(Enum):
+    FORWARD = 0
+    TURN_LEFT = 1
+    TURN_RIGHT = 2
+    STOP = 3
+
+
+class TurningObjective(Enum):
+    UPWIND = 0
+    DOWNWIND = 1
+
+
+class PlumeNavigationController:
+    def __init__(
+        self,
+        dt: float,
+        forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
+        left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
+        right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
+        stop_dn_drive: Tuple[float, float] = (0.0, 0.0),
+        turn_duration: float = 0.25,  # 0.3,
+        lambda_ws_0: float = 0.78,  # s^-1
+        delta_lambda_ws: float = -0.8,  # -0.61,  # s^-1
+        tau_s: float = 0.2,  # s
+        alpha: float = 0.8,  # 0.6,  # 0.242,  # Hz^-1
+        tau_freq_conv: float = 2,  # s
+        cumulative_evidence_window: float = 2.0,  # s
+        lambda_sw_0: float = 0.5,  # 0.29,  # s^-1
+        delta_lambda_sw: float = 1,  # 0.41,  # s^-1
+        tau_w=0.52,  # s
+        lambda_turn: float = 1.33,  # s^-1
+        random_seed: int = 0,
+    ) -> None:
+        self.dt = dt
+        # DN drives
+        self.dn_drives = {
+            WalkingState.FORWARD: np.array(forward_dn_drive),
+            WalkingState.TURN_LEFT: np.array(left_turn_dn_drive),
+            WalkingState.TURN_RIGHT: np.array(right_turn_dn_drive),
+            WalkingState.STOP: np.array(stop_dn_drive),
+        }
+
+        # Walking->stopping transition parameters
+        self.lambda_ws_0 = lambda_ws_0
+        self.delta_lambda_ws = delta_lambda_ws
+        self.tau_s = tau_s
+
+        self.curr_time = 0.0
+        self.curr_state = WalkingState.FORWARD
+        self.curr_state_start_time = 0.0
+        self.last_encounter_time = -np.inf
+        self.encounter_history = []
+
+        # Stopping->walking transition parameters
+        self.cumulative_evidence_window = cumulative_evidence_window
+        self.cumulative_evidence_len = int(cumulative_evidence_window / dt)
+        self.lambda_sw_0 = lambda_sw_0
+        self.delta_lambda_sw = delta_lambda_sw
+        self.tau_w = tau_w
+        self.encounter_weights = (
+            -np.arange(self.cumulative_evidence_len)[::-1] * self.dt
+        )
+
+        # Turning related parameters
+        self.turn_duration = turn_duration
+        self.alpha = alpha
+        self.tau_freq_conv = tau_freq_conv
+        self.freq_kernel = np.exp(self.encounter_weights / tau_freq_conv)
+        self.lambda_turn = lambda_turn
+
+        self._turn_debug_str_buffer = ""
+        self.random_state = np.random.RandomState(random_seed)
+
+    def decide_state(self, encounter_flag: bool, fly_heading: np.ndarray):
+        self.encounter_history.append(encounter_flag)
+        if encounter_flag:
+            self.last_encounter_time = self.curr_time
+
+        debug_str = ""
+
+        # Forward -> turn transition
+        if self.curr_state == WalkingState.FORWARD:
+            p_nochange = np.exp(-self.lambda_turn * self.dt)
+            if self.random_state.rand() > p_nochange:
+                encounter_hist = np.array(
+                    self.encounter_history[-self.cumulative_evidence_len :]
+                )
+                kernel = self.freq_kernel[-len(encounter_hist) :]
+                w_freq = np.sum(kernel * encounter_hist) * self.dt
+                correction_factor = self.exp_integral_norm_factor(
+                    window=len(encounter_hist) * self.dt, tau=self.tau_freq_conv
+                )
+                w_freq *= correction_factor
+                p_upwind = 1 / (1 + np.exp(-self.alpha * w_freq))
+                if self.random_state.rand() < p_upwind:
+                    turn_objective = TurningObjective.UPWIND
+                    debug_str = (
+                        f"Wfreq={w_freq:.2f}  "
+                        f"P(upwind)={p_upwind:.2f}, turning UPWIND"
+                    )
+                else:
+                    turn_objective = TurningObjective.DOWNWIND
+                    debug_str = (
+                        f"Wfreq={w_freq:.2f}  "
+                        f"P(upwind)={p_upwind:.2f}, turning DOWNWIND"
+                    )
+                self._turn_debug_str_buffer = debug_str
+
+                if fly_heading[1] >= 0:  # upwind == left turn
+                    if turn_objective == TurningObjective.UPWIND:
+                        self.curr_state = WalkingState.TURN_LEFT
+                    else:
+                        self.curr_state = WalkingState.TURN_RIGHT
+                else:
+                    if turn_objective == TurningObjective.UPWIND:
+                        self.curr_state = WalkingState.TURN_RIGHT
+                    else:
+                        self.curr_state = WalkingState.TURN_LEFT
+                self.curr_state_start_time = self.curr_time
+
+        # Forward -> stop transition
+        if self.curr_state == WalkingState.FORWARD:
+            lambda_ws = self.lambda_ws_0 + self.delta_lambda_ws * np.exp(
+                -(self.curr_time - self.last_encounter_time) / self.tau_s
+            )
+            p_nochange = np.exp(-lambda_ws * self.dt)
+            p_stop_1s = 1 - np.exp(-lambda_ws)
+            debug_str = (
+                f"lambda(w->s)={lambda_ws:.2f}  P(stop within 1s)={p_stop_1s:.2f}"
+            )
+            if self.random_state.rand() > p_nochange:
+                self.curr_state = WalkingState.STOP
+                self.curr_state_start_time = self.curr_time
+
+        # Turn -> forward transition
+        if self.curr_state in (WalkingState.TURN_LEFT, WalkingState.TURN_RIGHT):
+            debug_str = self._turn_debug_str_buffer
+            if self.curr_time - self.curr_state_start_time > self.turn_duration:
+                self.curr_state = WalkingState.FORWARD
+                self.curr_state_start_time = self.curr_time
+
+        # Stop -> forward transition
+        if self.curr_state == WalkingState.STOP:
+            encounter_hist = np.array(
+                self.encounter_history[-self.cumulative_evidence_len :]
+            )
+            time_diff = self.encounter_weights[-len(encounter_hist) :]
+            cumm_evidence_integral = (
+                np.sum(np.exp(time_diff / self.tau_w) * encounter_hist) * self.dt
+            )
+            correction_factor = self.exp_integral_norm_factor(
+                window=len(encounter_hist) * self.dt, tau=self.tau_w
+            )
+            # print("s->w", correction_factor)
+            cumm_evidence_integral *= correction_factor
+            lambda_sw = self.lambda_sw_0 + self.delta_lambda_sw * cumm_evidence_integral
+            p_nochange = np.exp(-lambda_sw * self.dt)
+            p_walk_1s = 1 - np.exp(-lambda_sw)
+            debug_str = (
+                f"lambda(s->w)={lambda_sw:.2f}  P(walk within 1s)={p_walk_1s:.2f}"
+            )
+            if self.curr_time > 2:
+                pass
+            if self.random_state.rand() > p_nochange:
+                self.curr_state = WalkingState.FORWARD
+                self.curr_state_start_time = self.curr_time
+
+        self.curr_time += self.dt
+        return self.curr_state, self.dn_drives[self.curr_state], debug_str
+
+    def exp_integral_norm_factor(self, window: float, tau: float):
+        """_summary_
+               int_{-inf}^0 exp(t / tau) dt
+        k(w) = ----------------------------
+                int_{-w}^0 exp(t / tau) dt
+             = 1 / (1 - exp(-w / tau))
+
+        Parameters
+        ----------
+        window : float
+            Window size for cumulative evidence in seconds.
+        """
+        if window <= 0:
+            raise ValueError("Window size must be positive for cumulative evidence")
+        return 1 / (1 - np.exp(-window / tau))
