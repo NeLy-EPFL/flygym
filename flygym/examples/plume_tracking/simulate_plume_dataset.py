@@ -58,7 +58,7 @@ def converging_brownian_step(
     Parameters
     ----------
     value_curr : np.ndarray
-        Current value of variables (ie. noise) in Brownian motion.
+        Current value of variables (i.e., noise) in Brownian motion.
     center : np.ndarray
         Center towards which the Brownian motion converges.
     gaussian_scale : float, optional
@@ -70,7 +70,7 @@ def converging_brownian_step(
     Returns
     -------
     np.ndarray
-        Next value of variables (ie. noise) in Brownian motion.
+        Next value of variables (i.e., noise) in Brownian motion.
     """
     gaussian_center = (center - value_curr) * convergence
     value_diff = np.random.normal(
