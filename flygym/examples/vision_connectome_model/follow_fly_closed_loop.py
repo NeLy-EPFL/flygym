@@ -91,6 +91,7 @@ def run_simulation(
     rendered_image_snapshots = []
     vision_observation_snapshots = []
     nn_activities_snapshots = []
+    t3_masks = []
 
     dn_drive = np.array([1, 1])
     for i in trange(int(run_time / sim.timestep)):
@@ -155,6 +156,10 @@ def run_simulation(
             rendered_image_snapshots.append(rendered_img)
             vision_observation_snapshots.append(obs["vision"])
             nn_activities_snapshots.append(info["nn_activities"])
+            t3_mask = np.zeros_like(t3_zscore, dtype=int)
+            t3_mask[obj_mask] = 1           
+            #t3_masks.append(t3_mask)   
+            t3_masks.append(nn_activities["TmY4"]-nn_activities["TmY3"])
 
     return {
         "sim": sim,
@@ -163,6 +168,7 @@ def run_simulation(
         "rendered_image_snapshots": rendered_image_snapshots,
         "vision_observation_snapshots": vision_observation_snapshots,
         "nn_activities_snapshots": nn_activities_snapshots,
+        "T3_masks": t3_masks,
     }
 
 
@@ -201,7 +207,7 @@ def process_trial(
     res = run_simulation(
         arena=arena,
         cell="T3",
-        run_time=3.0,
+        run_time=0.01,
         response_mean=response_stats["T3"]["mean"],
         response_std=response_stats["T3"]["std"],
         z_score_threshold=-4,
@@ -218,6 +224,7 @@ def process_trial(
         rendered_image_hist=res["rendered_image_snapshots"],
         vision_observation_hist=res["vision_observation_snapshots"],
         nn_activities_hist=res["nn_activities_snapshots"],
+        focus_masks_hist = res["T3_masks"],
         fps=res["sim"].cameras[0].fps,
     )
 
@@ -246,13 +253,19 @@ if __name__ == "__main__":
     (output_dir / "figs").mkdir(exist_ok=True)
 
     # Run trials in parallel
+    # configs = [
+    #     (terrain_type, stabilization_on, (-5, y_pos))
+    #     for terrain_type in ["flat", "blocks"]
+    #     for stabilization_on in [True, False]
+    #     for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
+    # ]
     configs = [
         (terrain_type, stabilization_on, (-5, y_pos))
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
-        for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
+        for y_pos in [0]
     ]
-    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
 
     # Visualize trajectories
     trajectories = {
