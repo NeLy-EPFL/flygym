@@ -152,10 +152,21 @@ class MovingFlyArena(BaseArena):
         for light in fly.find_all(namespace="light"):
             light.remove()
 
+        self.fly_pos = np.array(
+            [
+                self.radius * np.sin(0),
+                self.radius * np.cos(0),
+                self.init_fly_pos[2],
+            ]
+        )
+        curr_pos = complex(*self.fly_pos[:2])
+        q = np.exp(1j * np.angle(curr_pos - self._prev_pos) / 2)
+        self._prev_pos = curr_pos
+
         spawn_site = self.root_element.worldbody.add(
             "site",
             pos=self.fly_pos,
-            euler=(0, 0, 0),
+            quat=(q.real, 0, 0, q.imag),
         )
         self.freejoint = spawn_site.attach(fly).add("freejoint")
 
