@@ -226,9 +226,6 @@ def process_trial(
         Path(output_dir / f"videos/{variation_name}_{trial_name}.mp4"),
         res["sim"].fly.retina,
         res["sim"].retina_mapper,
-        # rendered_image_hist=res["rendered_image_snapshots"],
-        # vision_observation_hist=res["vision_observation_snapshots"],
-        # nn_activities_hist=res["nn_activities_snapshots"],
         viz_snapshots=res["viz_snapshots"],
         fps=res["sim"].cameras[0].fps,
     )
