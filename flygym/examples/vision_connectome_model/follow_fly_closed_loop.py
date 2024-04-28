@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from flygym import Fly, Camera
 from dm_control.rl.control import PhysicsError
 
@@ -19,12 +19,13 @@ contact_sensor_placements = [
 ]
 
 # fmt: off
-cells = [
+cells_to_viz = [
     "T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d",
     "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
     "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
     "TmY18"
 ]
+# tracking_cells = ["T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d"]
 # fmt: on
 
 leading_fly_speeds = {"blocks": 13, "flat": 15}
@@ -49,10 +50,9 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 def run_simulation(
     arena: MovingFlyArena,
-    cell: str,
+    tracking_cells: List[str],
     run_time: float,
-    response_mean: np.ndarray,
-    response_std: np.ndarray,
+    baseline_response: np.ndarray,
     z_score_threshold: float,
     tracking_gain: float,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
@@ -91,15 +91,24 @@ def run_simulation(
     rendered_image_snapshots = []
     vision_observation_snapshots = []
     nn_activities_snapshots = []
+    viz_snapshots = []
 
     dn_drive = np.array([1, 1])
     for i in trange(int(run_time / sim.timestep)):
         if info["vision_updated"]:
             # Estimate object mask
             nn_activities = info["nn_activities"]
-            t3_activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
-            t3_zscore = (t3_activities - response_mean) / response_std
-            obj_mask = t3_zscore < z_score_threshold
+            zscores = []
+            for cell in tracking_cells:
+                activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
+                response_mean = baseline_response[cell]["mean"]
+                response_std = baseline_response[cell]["std"]
+                abs_zscore = np.abs((activities - response_mean) / response_std)
+                zscores.append(abs_zscore)
+            zscores = np.array(zscores)
+            obj_mask = zscores.mean(axis=0) > z_score_threshold
+            if i == 10000:
+                1
 
             # Calculate turning bias based on object mask
             size_per_eye = obj_mask.sum(axis=1)
@@ -152,17 +161,20 @@ def run_simulation(
         obs_hist.append(obs)
         info_hist.append(info)
         if rendered_img is not None:
-            rendered_image_snapshots.append(rendered_img)
-            vision_observation_snapshots.append(obs["vision"])
-            nn_activities_snapshots.append(info["nn_activities"])
+            viz_snapshots.append(
+                {
+                    "rendered_image": rendered_img,
+                    "vision_observation": obs["vision"],
+                    "nn_activities": info["nn_activities"],
+                    "zscores": zscores,
+                }
+            )
 
     return {
         "sim": sim,
         "obs_hist": obs_hist,
         "info_hist": info_hist,
-        "rendered_image_snapshots": rendered_image_snapshots,
-        "vision_observation_snapshots": vision_observation_snapshots,
-        "nn_activities_snapshots": nn_activities_snapshots,
+        "viz_snapshots": viz_snapshots,
     }
 
 
@@ -200,11 +212,10 @@ def process_trial(
     # Run simulation
     res = run_simulation(
         arena=arena,
-        cell="T3",
+        tracking_cells=cells_to_viz,
         run_time=3.0,
-        response_mean=response_stats["T3"]["mean"],
-        response_std=response_stats["T3"]["std"],
-        z_score_threshold=-4,
+        baseline_response=response_stats,
+        z_score_threshold=5,
         tracking_gain=5,
         head_stabilization_model=stabilization_model,
         spawn_xy=spawn_xy,
@@ -215,9 +226,10 @@ def process_trial(
         Path(output_dir / f"videos/{variation_name}_{trial_name}.mp4"),
         res["sim"].fly.retina,
         res["sim"].retina_mapper,
-        rendered_image_hist=res["rendered_image_snapshots"],
-        vision_observation_hist=res["vision_observation_snapshots"],
-        nn_activities_hist=res["nn_activities_snapshots"],
+        # rendered_image_hist=res["rendered_image_snapshots"],
+        # vision_observation_hist=res["vision_observation_snapshots"],
+        # nn_activities_hist=res["nn_activities_snapshots"],
+        viz_snapshots=res["viz_snapshots"],
         fps=res["sim"].cameras[0].fps,
     )
 
@@ -252,8 +264,9 @@ if __name__ == "__main__":
         for stabilization_on in [True, False]
         for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
-    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
-
+    # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    process_trial(*configs[0])
+    
     # Visualize trajectories
     trajectories = {
         (terrain_type, stabilization_on): []
