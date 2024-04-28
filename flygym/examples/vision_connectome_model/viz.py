@@ -30,7 +30,8 @@ def visualize_vision(
     dpi: int = 300,
     cell_activity_range: Tuple[float, float] = (-3, 3),
     cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
-    focused_cell:str = "T3",
+    object_score_range: Tuple[float, float] = (0, 20),
+    object_score_cmap: LinearSegmentedColormap = matplotlib.colormaps["viridis"],
 ) -> FuncAnimation:
     viz_mosaic_pattern = """
     ((([[[+++++]]])))
@@ -40,7 +41,7 @@ def visualize_vision(
     ijklmnop.IJKLMNOP
     qrstuvwx.QRSTUVWX
     yz012345.YZ!@#$%^
-    67.......&*...///
+    67.......&*.||.//
     """
     cell_panels = {
         "left_cells": "abcdefghijklmnopqrstuvwxyz01234567",
@@ -48,9 +49,10 @@ def visualize_vision(
         "left_input": "(",
         "right_input": ")",
         "birdeye_view": "+",
-        "legend": "/",
-        "cellfocus_left_input":"[",
-        "cellfocus_right_input":"]"
+        "cell_activity_legend": "/",
+        "object_score_legend": "|",
+        "left_summary": "[",
+        "right_summary": "]",
     }
     cell_order_str = """
     T1    T2    T2a   T3    T4a   T4b   T4c   T4d
@@ -68,6 +70,7 @@ def visualize_vision(
         hspace=0.05, wspace=0.05, left=0.05, right=0.95, top=0.95, bottom=0.05
     )
     axd = fig.subplot_mosaic(viz_mosaic_pattern)
+    object_score_cmap.set_bad("white")
 
     # Cached references to plot elements
     plot_elements = {}
@@ -79,7 +82,7 @@ def visualize_vision(
             ax.axis("off")
 
         # Draw legend
-        ax_key = cell_panels["legend"]
+        ax_key = cell_panels["cell_activity_legend"]
         ax = axd[ax_key]
         cell_activity_norm = Normalize(*cell_activity_range)
         cell_activity_scalar_mappable = ScalarMappable(
@@ -94,7 +97,24 @@ def visualize_vision(
             aspect=20,
         )
         cbar.set_ticks(cell_activity_range)
-        cbar.set_ticklabels(["hyperpolarization", "depolarization"])
+        cbar.set_ticklabels(["hyperpolarized", "depolarized"])
+        cbar.set_label("Cell activity")
+
+        ax_key = cell_panels["object_score_legend"]
+        ax = axd[ax_key]
+        nn_summary_norm = Normalize(*object_score_range)
+        nn_summary_scalar_mappable = ScalarMappable(
+            cmap=object_score_cmap, norm=nn_summary_norm
+        )
+        nn_summary_scalar_mappable.set_array([])
+        cbar = plt.colorbar(
+            nn_summary_scalar_mappable,
+            ax=ax,
+            orientation="horizontal",
+            shrink=0.8,
+            aspect=20,
+        )
+        cbar.set_label("Object score [AU]")
 
         # Arena birdeye view
         ax_key = cell_panels["birdeye_view"]
@@ -114,16 +134,6 @@ def visualize_vision(
                 cmap="gray",
             )
             ax.set_title(f"{side.title()} eye input")
-            # setup the focused view
-            ax_focus = cell_panels[f"cellfocus_{side}_input"]
-            ax = axd[ax_focus]
-            plot_elements[ax_focus] = ax.imshow(
-                np.zeros((retina.nrows, retina.ncols)),
-                vmin=0.0,
-                vmax=1.0,
-                cmap="gray",
-                )
-            ax.set_title(f"{side.title()} {focused_cell} neuron mask")
 
             # Cell activities
             for ax_key, cell_type in zip(cell_panels[f"{side}_cells"], cell_order):
@@ -134,13 +144,18 @@ def visualize_vision(
                     vmax=cell_activity_range[1],
                     cmap=cell_activity_cmap,
                 )
-                if cell_type == focused_cell:
-                    # bold and underline the title of the focused cell
-                    ax.set_title(cell_type, fontweight="bold", fontsize=15)
-                    # draw a rectangle around the cell
-                    #ax.add_patch(Rectangle((-2, -2), retina.ncols+4, retina.nrows+15, edgecolor="lightgreen", facecolor="none", linewidth=4))
-                else:
-                    ax.set_title(cell_type)
+                ax.set_title(cell_type)
+
+            # Neural summary view
+            ax_key = cell_panels[f"{side}_summary"]
+            ax = axd[ax_key]
+            plot_elements[ax_key] = ax.imshow(
+                np.zeros((retina.nrows, retina.ncols), dtype=np.float32),
+                vmin=object_score_range[0],
+                vmax=object_score_range[1],
+                cmap=object_score_cmap,
+            )
+            ax.set_title(f"{side.title()} object score")
 
         return list(plot_elements.values())
 
@@ -165,17 +180,18 @@ def visualize_vision(
                 cell_response_human_readable = retina.hex_pxls_to_human_readable(
                     cell_response, color_8bit=False
                 )
+                cell_response_human_readable[retina.ommatidia_id_map == 0] = np.nan
                 plot_elements[ax_key].set_data(cell_response_human_readable)
 
-                # Focus cell
-                # if cell_type == focused_cell:
-                #     focus_processed_input_raw = focus_masks_hist[frame_id][i_side, :]
-                #     focus_processed_input_raw = retina_mapper.flyvis_to_flygym(focus_processed_input_raw)
-                #     focus_processed_input_human_readable = retina.hex_pxls_to_human_readable(
-                #         focus_processed_input_raw, color_8bit=True
-                #     )
-                #     ax_focus = cell_panels[f"cellfocus_{side}_input"]
-                #     plot_elements[ax_focus].set_data(focus_processed_input_human_readable)            
+            # Neural summary view
+            ax_key = cell_panels[f"{side}_summary"]
+            ax = axd[ax_key]
+            mean_zscore = viz_data["mean_zscore"][i_side]
+            mean_zscore_human_readable = retina.hex_pxls_to_human_readable(
+                mean_zscore, color_8bit=False
+            )
+            mean_zscore_human_readable[retina.ommatidia_id_map == 0] = np.nan
+            plot_elements[ax_key].set_data(mean_zscore_human_readable)
 
         return list(plot_elements.values())
 
