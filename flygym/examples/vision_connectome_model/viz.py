@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.style
 from tqdm import trange
 from sys import stderr
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from pathlib import Path
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
@@ -23,9 +23,10 @@ def visualize_vision(
     video_path: Path,
     retina: Retina,
     retina_mapper: RetinaMapper,
-    rendered_image_hist: List[np.ndarray],
-    vision_observation_hist: List[np.ndarray],
-    nn_activities_hist: List[np.ndarray],
+    # rendered_image_hist: List[np.ndarray],
+    # vision_observation_hist: List[np.ndarray],
+    # nn_activities_hist: List[np.ndarray],
+    viz_data_all: Tuple[Dict[str, np.ndarray]],
     fps: int,
     figsize: Tuple[float, float] = (12, 9),
     dpi: int = 300,
@@ -97,7 +98,9 @@ def visualize_vision(
         # Arena birdeye view
         ax_key = cell_panels["birdeye_view"]
         ax = axd[ax_key]
-        plot_elements[ax_key] = ax.imshow(np.zeros_like(rendered_image_hist[0]))
+        plot_elements[ax_key] = ax.imshow(
+            np.zeros_like(viz_data_all[0]["rendered_image"])
+        )
 
         for side in ("left", "right"):
             # Retina input
@@ -126,11 +129,12 @@ def visualize_vision(
     def update(frame_id):
         # Arena birdeye view
         ax_key = cell_panels["birdeye_view"]
-        plot_elements[ax_key].set_data(rendered_image_hist[frame_id])
+        viz_data = viz_data_all[frame_id]
+        plot_elements[ax_key].set_data(viz_data["rendered_image"])
 
         for i_side, side in enumerate(["left", "right"]):
             # Retina input
-            visual_input_raw = vision_observation_hist[frame_id][i_side]
+            visual_input_raw = viz_data["vision_observation"][i_side]
             visual_input_human_readable = retina.hex_pxls_to_human_readable(
                 visual_input_raw, color_8bit=True
             ).max(axis=-1)
@@ -138,7 +142,7 @@ def visualize_vision(
             plot_elements[ax_key].set_data(visual_input_human_readable)
             # Cell activities
             for ax_key, cell_type in zip(cell_panels[f"{side}_cells"], cell_order):
-                cell_response = nn_activities_hist[frame_id][cell_type][i_side, :]
+                cell_response = viz_data["nn_activities"][cell_type][i_side, :]
                 cell_response = retina_mapper.flyvis_to_flygym(cell_response)
                 cell_response_human_readable = retina.hex_pxls_to_human_readable(
                     cell_response, color_8bit=False
@@ -150,7 +154,7 @@ def visualize_vision(
     animation = FuncAnimation(
         fig,
         update,
-        frames=trange(len(rendered_image_hist), file=stderr),
+        frames=trange(len(viz_data_all), file=stderr),
         init_func=init,
         blit=False,
     )
