@@ -10,6 +10,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Rectangle
 
 from flygym.vision import Retina
 from flygym.examples.vision_connectome_model import RetinaMapper
@@ -23,20 +24,18 @@ def visualize_vision(
     video_path: Path,
     retina: Retina,
     retina_mapper: RetinaMapper,
-    # rendered_image_hist: List[np.ndarray],
-    # vision_observation_hist: List[np.ndarray],
-    # nn_activities_hist: List[np.ndarray],
     viz_data_all: Tuple[Dict[str, np.ndarray]],
     fps: int,
     figsize: Tuple[float, float] = (12, 9),
     dpi: int = 300,
     cell_activity_range: Tuple[float, float] = (-3, 3),
     cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
+    focused_cell:str = "T3",
 ) -> FuncAnimation:
     viz_mosaic_pattern = """
-    (((...+++++...)))
-    (((...+++++...)))
-    (((...+++++...)))
+    ((([[[+++++]]])))
+    ((([[[+++++]]])))
+    ((([[[+++++]]])))
     abcdefgh.ABCDEFGH
     ijklmnop.IJKLMNOP
     qrstuvwx.QRSTUVWX
@@ -50,6 +49,8 @@ def visualize_vision(
         "right_input": ")",
         "birdeye_view": "+",
         "legend": "/",
+        "cellfocus_left_input":"[",
+        "cellfocus_right_input":"]"
     }
     cell_order_str = """
     T1    T2    T2a   T3    T4a   T4b   T4c   T4d
@@ -112,7 +113,18 @@ def visualize_vision(
                 vmax=255,
                 cmap="gray",
             )
-            ax.set_title(f"Visual Input ({side.title()})")
+            ax.set_title(f"{side.title()} eye input")
+            # setup the focused view
+            ax_focus = cell_panels[f"cellfocus_{side}_input"]
+            ax = axd[ax_focus]
+            plot_elements[ax_focus] = ax.imshow(
+                np.zeros((retina.nrows, retina.ncols)),
+                vmin=0.0,
+                vmax=1.0,
+                cmap="gray",
+                )
+            ax.set_title(f"{side.title()} {focused_cell} neuron mask")
+
             # Cell activities
             for ax_key, cell_type in zip(cell_panels[f"{side}_cells"], cell_order):
                 ax = axd[ax_key]
@@ -122,7 +134,13 @@ def visualize_vision(
                     vmax=cell_activity_range[1],
                     cmap=cell_activity_cmap,
                 )
-                ax.set_title(cell_type)
+                if cell_type == focused_cell:
+                    # bold and underline the title of the focused cell
+                    ax.set_title(cell_type, fontweight="bold", fontsize=15)
+                    # draw a rectangle around the cell
+                    #ax.add_patch(Rectangle((-2, -2), retina.ncols+4, retina.nrows+15, edgecolor="lightgreen", facecolor="none", linewidth=4))
+                else:
+                    ax.set_title(cell_type)
 
         return list(plot_elements.values())
 
@@ -148,6 +166,16 @@ def visualize_vision(
                     cell_response, color_8bit=False
                 )
                 plot_elements[ax_key].set_data(cell_response_human_readable)
+
+                # Focus cell
+                # if cell_type == focused_cell:
+                #     focus_processed_input_raw = focus_masks_hist[frame_id][i_side, :]
+                #     focus_processed_input_raw = retina_mapper.flyvis_to_flygym(focus_processed_input_raw)
+                #     focus_processed_input_human_readable = retina.hex_pxls_to_human_readable(
+                #         focus_processed_input_raw, color_8bit=True
+                #     )
+                #     ax_focus = cell_panels[f"cellfocus_{side}_input"]
+                #     plot_elements[ax_focus].set_data(focus_processed_input_human_readable)            
 
         return list(plot_elements.values())
 
