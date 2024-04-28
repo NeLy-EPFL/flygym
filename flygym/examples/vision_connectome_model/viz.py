@@ -239,9 +239,9 @@ def save_single_eye_video(
 def plot_fly_following_trajectories(
     trajectories_all, radius, leading_fly_speeds, output_path, dt=1e-4
 ):
-
     num_steps = np.max([x.shape[0] for x in trajectories_all[("flat", True, "txall")]])
     fig, axs = plt.subplots(4, 2, figsize=(6, 12), tight_layout=True)
+
     for i, stabilization_on in enumerate([False, True]):
         for j, terrain_type in enumerate(["flat", "blocks"]):
             for k, cells_selections in enumerate(["txall", "lc910_inputs"]):
