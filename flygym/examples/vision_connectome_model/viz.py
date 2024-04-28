@@ -239,36 +239,43 @@ def save_single_eye_video(
 def plot_fly_following_trajectories(
     trajectories_all, radius, leading_fly_speeds, output_path, dt=1e-4
 ):
-    num_steps = np.max([x.shape[0] for x in trajectories_all[("flat", True)]])
-    fig, axs = plt.subplots(2, 2, figsize=(6, 6), tight_layout=True)
+
+    num_steps = np.max([x.shape[0] for x in trajectories_all[("flat", True, "txall")]])
+    fig, axs = plt.subplots(4, 2, figsize=(6, 12), tight_layout=True)
     for i, stabilization_on in enumerate([False, True]):
         for j, terrain_type in enumerate(["flat", "blocks"]):
-            ax = axs[i, j]
-            trajectories = trajectories_all[(terrain_type, stabilization_on)]
+            for k, cells_selections in enumerate(["txall", "lc910_inputs"]):
+                ax = axs[2 * k + i, j]
+                key = (terrain_type, stabilization_on, cells_selections)
+                trajectories = trajectories_all[key]
 
-            # Draw leading fly
-            angular_vel = leading_fly_speeds[terrain_type] / radius
-            t_grid = np.arange(num_steps) * dt
-            xs = radius * np.sin(angular_vel * t_grid)
-            ys = radius * np.cos(angular_vel * t_grid)
-            ax.plot(xs, ys, lw=2, color="black", ls="-", label="Leading fly")
+                # Draw leading fly
+                angular_vel = leading_fly_speeds[terrain_type] / radius
+                t_grid = np.arange(num_steps) * dt
+                xs = radius * np.sin(angular_vel * t_grid)
+                ys = radius * np.cos(angular_vel * t_grid)
+                ax.plot(xs, ys, lw=2, color="black", ls="-", label="Leading fly")
 
-            # Draw following flies
-            for traj in trajectories:
-                ax.plot(traj[:, 0], traj[:, 1], lw=1)
+                # Draw following flies
+                for traj in trajectories:
+                    ax.plot(traj[:, 0], traj[:, 1], lw=1)
 
-            # Other plot elements
-            if stabilization_on:
-                stabilization_str = "Head stabilization"
-            else:
-                stabilization_str = "No head stabilization"
-            ax.set_title(f"{terrain_type.title()} terrain\n{stabilization_str}")
-            ax.set_aspect("equal")
-            ax.set_xlabel("x (mm)")
-            ax.set_ylabel("y (mm)")
-            ax.set_xlim(-12.5, 17.5)
-            ax.set_ylim(-15, 15)
-            if i == 0 and j == 1:
-                ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
+                # Other plot elements
+                if stabilization_on:
+                    stabilization_str = "Head stabilization"
+                else:
+                    stabilization_str = "No head stabilization"
+                ax.set_title(
+                    f"{terrain_type.title()} terrain\n"
+                    f"{stabilization_str}\n"
+                    f"{cells_selections}"
+                )
+                ax.set_aspect("equal")
+                ax.set_xlabel("x (mm)")
+                ax.set_ylabel("y (mm)")
+                ax.set_xlim(-12.5, 17.5)
+                ax.set_ylim(-15, 15)
+                if i == 0 and j == 1 and k == 0:
+                    ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
 
     fig.savefig(output_path)
