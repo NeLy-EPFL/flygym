@@ -224,7 +224,7 @@ def process_trial(
     res = run_simulation(
         arena=arena,
         tracking_cells=cells,
-        run_time=0.05,
+        run_time=3.0,
         baseline_response=response_stats,
         z_score_threshold=10,
         tracking_gain=5,
@@ -277,24 +277,25 @@ if __name__ == "__main__":
     # process_trial("flat", True, "lc910_inputs", (-5, 10))
 
     # Visualize trajectories
-    for cells_selection in ["txall", "lc910_inputs"]:
-        trajectories = {
-            (terrain_type, stabilization_on): []
-            for terrain_type in ["flat", "blocks"]
-            for stabilization_on in [True, False]
-        }
-        for terrain_type, stabilization_on, spawn_xy in configs:
-            variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
-            trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
-            data_path = output_dir / f"sim_data/{variation_name}_{trial_name}.pkl"
-            with open(data_path, "rb") as f:
-                sim_data = pickle.load(f)
-                fly_traj = np.array([obs["fly"][0, :2] for obs in sim_data["obs_hist"]])
-            trajectories[(terrain_type, stabilization_on)].append(fly_traj.copy())
+    trajectories = {
+        (terrain_type, stabilization_on, cells_selection): []
+        for terrain_type in ["flat", "blocks"]
+        for stabilization_on in [True, False]
+        for cells_selection in ["txall", "lc910_inputs"]
+    }
+    for terrain_type, stabilization_on, cells_selection, spawn_xy in configs:
+        variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
+        trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
+        data_path = output_dir / f"sim_data/{variation_name}_{trial_name}.pkl"
+        with open(data_path, "rb") as f:
+            sim_data = pickle.load(f)
+            fly_traj = np.array([obs["fly"][0, :2] for obs in sim_data["obs_hist"]])
+        key = (terrain_type, stabilization_on, cells_selection)
+        trajectories[key].append(fly_traj.copy())
 
-        viz.plot_fly_following_trajectories(
-            trajectories,
-            leading_fly_radius,
-            leading_fly_speeds,
-            output_dir / f"figs/trajectories_{cells_selection}.pdf",
-        )
+    viz.plot_fly_following_trajectories(
+        trajectories,
+        leading_fly_radius,
+        leading_fly_speeds,
+        output_dir / f"figs/trajectories.pdf",
+    )
