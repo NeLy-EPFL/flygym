@@ -5,15 +5,9 @@ import pickle
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from pathlib import Path
-from tqdm import trange
-from typing import Optional, Tuple
-from flygym import Fly, Camera
-from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision_connectome_model import MovingFlyArena, NMFRealisticVision
+from flygym.examples.vision_connectome_model import MovingFlyArena
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 from flygym.examples.vision_connectome_model.follow_fly_closed_loop import (
     leading_fly_speeds,
     leading_fly_radius,
@@ -27,6 +21,15 @@ from flygym.examples.vision_connectome_model.follow_fly_closed_loop import (
 
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
+
+# fmt: off
+neurons_txall = [
+    "T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d",
+    "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
+    "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
+    "TmY18"
+]
+# fmt: on
 
 
 # Run a very short simulation
@@ -44,10 +47,10 @@ with open(baseline_dir / f"{variation_name}_response_stats.pkl", "rb") as f:
     response_stats = pickle.load(f)
 res = run_simulation(
     arena,
-    cell="T3",
+    tracking_cells=neurons_txall,
     run_time=0.1,
-    baseline_response=response_stats["T3"]["mean"],
-    z_score_threshold=-4,
+    baseline_response=response_stats,
+    z_score_threshold=10,
     tracking_gain=5,
     head_stabilization_model=stabilization_model,
     spawn_xy=(-5, 10),
@@ -55,14 +58,14 @@ res = run_simulation(
 
 
 # Plot the arena
-img = res["rendered_image_snapshots"][-1]
+img = res["viz_data_all"][-1]["rendered_image"]
 cv2.imwrite(
     str(output_dir / "figs/arena_snapshot.png"), cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 )
 
 
 # Plot the system activities
-nn_activities = res["nn_activities_snapshots"][-1]
+nn_activities = res["viz_data_all"][-1]["nn_activities"]
 retina = res["sim"].flies[0].retina
 cell_order_str = """
     T1    T2    T2a   T3    T4a   T4b   T4c   T4d
@@ -74,7 +77,7 @@ cell_order_str = """
 cells = cell_order_str.split()
 images = {}
 images["raw"] = retina.hex_pxls_to_human_readable(
-    res["vision_observation_snapshots"][-1].sum(axis=-1).T
+    res["viz_data_all"][-1]["vision_observation"].sum(axis=-1).T
 )
 images["raw"][retina.ommatidia_id_map == 0] = np.nan
 for cell in cells:
