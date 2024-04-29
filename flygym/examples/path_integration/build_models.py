@@ -6,8 +6,8 @@ import itertools
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
-from multiprocessing import Pool
 from pathlib import Path
+from joblib import Parallel, delayed
 from typing import Dict, Tuple
 from tqdm import tqdm, trange
 from flygym.examples.path_integration import model, util, viz
@@ -216,8 +216,7 @@ def wrapper(config):
     return model_info
 
 
-with Pool(15) as pool:
-    results = list(tqdm(pool.imap(wrapper, configs), total=len(configs)))
+results = Parallel(n_jobs=-2)(delayed(wrapper)(config) for config in tqdm(configs))
 
 model_df1 = pd.DataFrame(results)
 model_df1 = model_df1.set_index(
@@ -264,8 +263,7 @@ def wrapper(config):
     return model_info
 
 
-with Pool(15) as pool:
-    results = list(tqdm(pool.imap(wrapper, configs), total=len(configs)))
+results = Parallel(n_jobs=-2)(delayed(wrapper)(config) for config in tqdm(configs))
 
 model_df2 = pd.DataFrame(results)
 model_df2 = model_df2.set_index(
@@ -308,8 +306,7 @@ def wrapper(config):
     return model_info
 
 
-with Pool(15) as pool:
-    results = list(tqdm(pool.imap(wrapper, configs), total=len(configs)))
+results = Parallel(n_jobs=-2)(delayed(wrapper)(config) for config in tqdm(configs))
 
 model_df3 = pd.DataFrame(results)
 model_df3 = model_df3.set_index(
