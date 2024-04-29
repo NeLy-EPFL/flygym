@@ -226,7 +226,7 @@ def process_trial(
         tracking_cells=cells,
         run_time=3.0,
         baseline_response=response_stats,
-        z_score_threshold=10,
+        z_score_threshold=7,
         tracking_gain=5,
         head_stabilization_model=stabilization_model,
         spawn_xy=spawn_xy,
