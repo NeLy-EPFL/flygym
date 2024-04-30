@@ -15,7 +15,7 @@ data_dir = Path("./outputs/plume_tracking/")
 
 dimension_scale_factor = 0.5
 plume_simulation_fps = 200
-success_radius = 10
+success_radius = 15
 
 # Load the plume data
 plume_data_path = data_dir / "plume_dataset/plume.hdf5"
@@ -33,6 +33,10 @@ for file in tqdm(all_res_files, desc="Loading trajectories"):
     trajectories_all[file.stem] = traj
     del data
     gc.collect()  # Force garbage collection to avoid memory fragmentation
+with open(data_dir / "all_trajectories.pkl", "wb") as f:
+    pickle.dump(trajectories_all, f)
+# with open(data_dir / "all_trajectories.pkl", "rb") as f:
+#     trajectories_all = pickle.load(f)
 
 # Check which trials are successful
 successful_trials = {}
@@ -69,7 +73,9 @@ ax.plot(
 
 for trial, traj in successful_trials.items():
     ax.plot(traj[:, 0], traj[:, 1], label=trial, lw=1)
-# ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.04, 1))
+# ax.legend(frameon=False)
+ax.set_xlim(0, arena_width)
+ax.set_ylim(0, arena_height)
 fig.savefig(data_dir / "figs/trajectory_plot.pdf", dpi=300)
 
 
@@ -99,7 +105,7 @@ def trim_video_by_fraction(input_file: Path, output_file: Path, fraction: float)
     out.release()
 
 
-chosen_trial = "plume_navigation_seed12_controlFalse"
+chosen_trial = "plume_navigation_seed42_controlFalse"
 assert chosen_trial in successful_trials, "Chosen trial is not successful"
 trimmed_len = successful_trials[chosen_trial].shape[0]
 total_len = trajectories_all[chosen_trial].shape[0]
