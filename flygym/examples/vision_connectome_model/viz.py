@@ -147,15 +147,16 @@ def visualize_vision(
                 ax.set_title(cell_type)
 
             # Neural summary view
-            ax_key = cell_panels[f"{side}_summary"]
-            ax = axd[ax_key]
-            plot_elements[ax_key] = ax.imshow(
-                np.zeros((retina.nrows, retina.ncols), dtype=np.float32),
-                vmin=object_score_range[0],
-                vmax=object_score_range[1],
-                cmap=object_score_cmap,
-            )
-            ax.set_title(f"{side.title()} object score")
+            if "mean_zscore" in viz_data_all[0]:
+                ax_key = cell_panels[f"{side}_summary"]
+                ax = axd[ax_key]
+                plot_elements[ax_key] = ax.imshow(
+                    np.zeros((retina.nrows, retina.ncols), dtype=np.float32),
+                    vmin=object_score_range[0],
+                    vmax=object_score_range[1],
+                    cmap=object_score_cmap,
+                )
+                ax.set_title(f"{side.title()} object score")
 
         return list(plot_elements.values())
 
@@ -184,14 +185,14 @@ def visualize_vision(
                 plot_elements[ax_key].set_data(cell_response_human_readable)
 
             # Neural summary view
-            ax_key = cell_panels[f"{side}_summary"]
-            ax = axd[ax_key]
-            mean_zscore = viz_data["mean_zscore"][i_side]
-            mean_zscore_human_readable = retina.hex_pxls_to_human_readable(
-                mean_zscore, color_8bit=False
-            )
-            mean_zscore_human_readable[retina.ommatidia_id_map == 0] = np.nan
-            plot_elements[ax_key].set_data(mean_zscore_human_readable)
+            if "mean_zscore" in viz_data:
+                ax_key = cell_panels[f"{side}_summary"]
+                mean_zscore = viz_data["mean_zscore"][i_side]
+                mean_zscore_human_readable = retina.hex_pxls_to_human_readable(
+                    mean_zscore, color_8bit=False
+                )
+                mean_zscore_human_readable[retina.ommatidia_id_map == 0] = np.nan
+                plot_elements[ax_key].set_data(mean_zscore_human_readable)
 
         return list(plot_elements.values())
 
