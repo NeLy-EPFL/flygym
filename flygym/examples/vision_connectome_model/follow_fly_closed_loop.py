@@ -187,6 +187,16 @@ def process_trial(
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
     trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
 
+    output_path = output_dir / f"sim_data/{variation_name}_{trial_name}.pkl"
+    if output_path.is_file():
+        with open(output_path, "rb") as f:
+            try:
+                _ = pickle.load(f)
+                print(f"Skipping {variation_name}_{trial_name}")
+                return
+            except Exception as e:
+                print(f"Failed to load {output_path} Rerunning.")
+
     with open(baseline_dir / f"{variation_name}_response_stats.pkl", "rb") as f:
         response_stats = pickle.load(f)
 
@@ -243,9 +253,7 @@ def process_trial(
 
     # Save sim data for diagnostics
     try:
-        with open(
-            output_dir / f"sim_data/{variation_name}_{trial_name}.pkl", "wb"
-        ) as f:
+        with open(output_path, "wb") as f:
             # Remove items that work poorly with pickle
             del res["sim"]
             for viz_data in res["viz_data_all"]:
