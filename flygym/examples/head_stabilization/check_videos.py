@@ -21,7 +21,7 @@ def get_last_frame(video_file: Path):
 if __name__ == "__main__":
     base_dir = Path("./outputs/head_stabilization/random_exploration/")
     last_frames = {
-        path.parent.name: get_last_frame(path) for (path) in base_dir.glob("*/*.mp4")
+        path.parent.name: get_last_frame(path) for path in base_dir.glob("*/*.mp4")
     }
 
     num_images = len(last_frames)

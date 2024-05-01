@@ -240,6 +240,7 @@ class Camera:
             "Animat/camera_back",
             "Animat/camera_right",
             "Animat/camera_left",
+            "Animat/camera_neck_zoomin",
         ]
 
         # always add pos update if it is a head camera
@@ -690,3 +691,39 @@ class Camera:
             camera.pos[2] = camera.pos[2] + 1.0
 
         return camera
+
+
+class NeckCamera(Camera):
+    def __init__(self, **kwargs):
+        assert "camera_id" not in kwargs, "camera_id should not be passed to NeckCamera"
+        kwargs["camera_id"] = "Animat/camera_neck_zoomin"
+        super().__init__(**kwargs)
+
+    def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float):
+        pass
+        # cam = physics.bind(self._cam)
+        # cam_pos = cam.xpos.copy()
+        # cam_pos[2] += floor_height
+        # cam.xpos = cam_pos
+
+    def _update_cam_rot(self, physics: mjcf.Physics):
+        pass
+        # cam = physics.bind(self._cam)
+
+        # fly_z_rot_euler = (
+        #     np.array([self.fly.last_obs["rot"][0], 0.0, 0.0])
+        #     - self.fly.spawn_orientation[::-1]
+        #     - [np.pi / 2, 0, 0]
+        # )
+        # # This compensates both for the scipy to mujoco transform (align with y is
+        # # [0, 0, 0] in mujoco but [pi/2, 0, 0] in scipy) and the fact that the fly
+        # # orientation is already taken into account in the base_camera_rot (see below)
+        # # camera is always looking along its -z axis
+        # cam_matrix = R.from_euler(
+        #     "yxz", fly_z_rot_euler
+        # ).as_matrix()  # apply the rotation along the y axis of the cameras
+        # cam_matrix = self.base_camera_rot @ cam_matrix
+        # cam.xmat = cam_matrix.flatten()
+
+    def render(self, physics: mjcf.Physics, floor_height: float, curr_time: float):
+        return super().render(physics, floor_height, curr_time)
