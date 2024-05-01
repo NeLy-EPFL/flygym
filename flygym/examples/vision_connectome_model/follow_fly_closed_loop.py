@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from flygym import Fly, Camera
 from dm_control.rl.control import PhysicsError
 
@@ -19,8 +19,14 @@ contact_sensor_placements = [
 ]
 
 # fmt: off
-cells = [
+neurons_txall = [
     "T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d",
+    "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
+    "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
+    "TmY18"
+]
+neurons_lc910_inputs = [
+    "T2", "T2a", "T3",
     "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
     "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
     "TmY18"
@@ -49,10 +55,9 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 def run_simulation(
     arena: MovingFlyArena,
-    cell: str,
+    tracking_cells: List[str],
     run_time: float,
-    response_mean: np.ndarray,
-    response_std: np.ndarray,
+    baseline_response: np.ndarray,
     z_score_threshold: float,
     tracking_gain: float,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
@@ -88,19 +93,23 @@ def run_simulation(
     obs, info = sim.reset(seed=0)
     obs_hist = []
     info_hist = []
-    rendered_image_snapshots = []
-    vision_observation_snapshots = []
-    nn_activities_snapshots = []
-    t3_masks = []
+    viz_data_all = []
 
     dn_drive = np.array([1, 1])
     for i in trange(int(run_time / sim.timestep)):
         if info["vision_updated"]:
             # Estimate object mask
             nn_activities = info["nn_activities"]
-            t3_activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
-            t3_zscore = (t3_activities - response_mean) / response_std
-            obj_mask = t3_zscore < z_score_threshold
+            zscores = []
+            for cell in tracking_cells:
+                activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
+                response_mean = baseline_response[cell]["mean"]
+                response_std = baseline_response[cell]["std"]
+                abs_zscore = np.abs((activities - response_mean) / response_std)
+                zscores.append(abs_zscore)
+            zscores = np.array(zscores)
+            mean_zscore = zscores.mean(axis=0)
+            obj_mask = zscores.mean(axis=0) > z_score_threshold
 
             # Calculate turning bias based on object mask
             size_per_eye = obj_mask.sum(axis=1)
@@ -153,30 +162,40 @@ def run_simulation(
         obs_hist.append(obs)
         info_hist.append(info)
         if rendered_img is not None:
-            rendered_image_snapshots.append(rendered_img)
-            vision_observation_snapshots.append(obs["vision"])
-            nn_activities_snapshots.append(info["nn_activities"])
-            t3_mask = np.zeros_like(t3_zscore, dtype=int)
-            t3_mask[obj_mask] = 1           
-            #t3_masks.append(t3_mask)   
-            t3_masks.append(nn_activities["TmY4"]-nn_activities["TmY3"])
+            viz_data = {
+                "rendered_image": rendered_img,
+                "vision_observation": obs["vision"],
+                "nn_activities": info["nn_activities"],
+                "mean_zscore": mean_zscore,
+            }
+            viz_data_all.append(viz_data)
 
     return {
         "sim": sim,
         "obs_hist": obs_hist,
         "info_hist": info_hist,
-        "rendered_image_snapshots": rendered_image_snapshots,
-        "vision_observation_snapshots": vision_observation_snapshots,
-        "nn_activities_snapshots": nn_activities_snapshots,
-        "T3_masks": t3_masks,
+        "viz_data_all": viz_data_all,
     }
 
 
 def process_trial(
-    terrain_type: str, stabilization_on: bool, spawn_xy: Tuple[float, float]
+    terrain_type: str,
+    stabilization_on: bool,
+    cells_selection: str,
+    spawn_xy: Tuple[float, float],
 ):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
-    trial_name = f"x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
+    trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
+
+    output_path = output_dir / f"sim_data/{variation_name}_{trial_name}.pkl"
+    if output_path.is_file():
+        with open(output_path, "rb") as f:
+            try:
+                _ = pickle.load(f)
+                print(f"Skipping {variation_name}_{trial_name}")
+                return
+            except Exception as e:
+                print(f"Failed to load {output_path} Rerunning.")
 
     with open(baseline_dir / f"{variation_name}_response_stats.pkl", "rb") as f:
         response_stats = pickle.load(f)
@@ -195,6 +214,7 @@ def process_trial(
         )
     else:
         raise ValueError("Invalid terrain type")
+
     if stabilization_on:
         stabilization_model = HeadStabilizationInferenceWrapper(
             model_path=stabilization_model_path,
@@ -203,15 +223,21 @@ def process_trial(
     else:
         stabilization_model = None
 
+    if cells_selection == "txall":
+        cells = neurons_txall
+    elif cells_selection == "lc910_inputs":
+        cells = neurons_lc910_inputs
+    else:
+        raise ValueError("Invalid cell selection")
+
     # Run simulation
     res = run_simulation(
         arena=arena,
-        cell="T3",
-        run_time=0.01,
-        response_mean=response_stats["T3"]["mean"],
-        response_std=response_stats["T3"]["std"],
-        z_score_threshold=-4,
-        tracking_gain=5,
+        tracking_cells=cells,
+        run_time=3.0,
+        baseline_response=response_stats,
+        z_score_threshold=5,
+        tracking_gain=6,
         head_stabilization_model=stabilization_model,
         spawn_xy=spawn_xy,
     )
@@ -221,22 +247,17 @@ def process_trial(
         Path(output_dir / f"videos/{variation_name}_{trial_name}.mp4"),
         res["sim"].fly.retina,
         res["sim"].retina_mapper,
-        rendered_image_hist=res["rendered_image_snapshots"],
-        vision_observation_hist=res["vision_observation_snapshots"],
-        nn_activities_hist=res["nn_activities_snapshots"],
-        focus_masks_hist = res["T3_masks"],
+        viz_data_all=res["viz_data_all"],
         fps=res["sim"].cameras[0].fps,
     )
 
     # Save sim data for diagnostics
     try:
-        with open(
-            output_dir / f"sim_data/{variation_name}_{trial_name}.pkl", "wb"
-        ) as f:
-            # Remove sim, and remove LayerResponse from info_hist. They
-            # work poorly with pickle
+        with open(output_path, "wb") as f:
+            # Remove items that work poorly with pickle
             del res["sim"]
-            del res["nn_activities_snapshots"]
+            for viz_data in res["viz_data_all"]:
+                del viz_data["nn_activities"]
             for info in res["info_hist"]:
                 del info["nn_activities"]
             pickle.dump(res, f)
@@ -253,38 +274,36 @@ if __name__ == "__main__":
     (output_dir / "figs").mkdir(exist_ok=True)
 
     # Run trials in parallel
-    # configs = [
-    #     (terrain_type, stabilization_on, (-5, y_pos))
-    #     for terrain_type in ["flat", "blocks"]
-    #     for stabilization_on in [True, False]
-    #     for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
-    # ]
     configs = [
-        (terrain_type, stabilization_on, (-5, y_pos))
+        (terrain_type, stabilization_on, cells_selection, (-5, y_pos))
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
-        for y_pos in [0]
+        for cells_selection in ["txall", "lc910_inputs"]
+        for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
-    Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
+    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    # process_trial("flat", True, "lc910_inputs", (-5, 10))
 
     # Visualize trajectories
     trajectories = {
-        (terrain_type, stabilization_on): []
+        (terrain_type, stabilization_on, cells_selection): []
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
+        for cells_selection in ["txall", "lc910_inputs"]
     }
-    for terrain_type, stabilization_on, spawn_xy in configs:
+    for terrain_type, stabilization_on, cells_selection, spawn_xy in configs:
         variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
-        trial_name = f"x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
+        trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"
         data_path = output_dir / f"sim_data/{variation_name}_{trial_name}.pkl"
         with open(data_path, "rb") as f:
             sim_data = pickle.load(f)
             fly_traj = np.array([obs["fly"][0, :2] for obs in sim_data["obs_hist"]])
-        trajectories[(terrain_type, stabilization_on)].append(fly_traj.copy())
+        key = (terrain_type, stabilization_on, cells_selection)
+        trajectories[key].append(fly_traj.copy())
 
     viz.plot_fly_following_trajectories(
         trajectories,
         leading_fly_radius,
         leading_fly_speeds,
-        output_dir / "figs/trajectories.pdf",
+        output_dir / f"figs/trajectories.pdf",
     )
