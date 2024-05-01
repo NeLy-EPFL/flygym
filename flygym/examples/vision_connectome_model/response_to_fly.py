@@ -3,14 +3,11 @@ import numpy as np
 from pathlib import Path
 from tqdm import trange
 from flygym import Fly, Camera
+from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision_connectome_model import (
-    MovingFlyArena,
-    NMFRealisticVision,
-    visualize_vision,
-)
+from flygym.examples.vision_connectome_model import NMFRealisticVision, viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
@@ -47,7 +44,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 
 def run_simulation(
-    arena: MovingFlyArena,
+    arena: BaseArena,
     run_time: float = 1.0,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
 ):
@@ -62,7 +59,7 @@ def run_simulation(
 
     cam = Camera(
         fly=fly,
-        camera_id="birdeye_cam",
+        camera_id="Animat/camera_top",
         play_speed=0.2,
         window_size=(800, 608),
         fps=24,
@@ -78,9 +75,7 @@ def run_simulation(
     sim.reset(seed=0)
     obs_hist = []
     info_hist = []
-    rendered_image_snapshots = []
-    vision_observation_snapshots = []
-    nn_activities_snapshots = []
+    viz_data_all = []
 
     # Main simulation loop
     for i in trange(int(run_time / sim.timestep)):
@@ -93,17 +88,18 @@ def run_simulation(
         info_hist.append(info)
         rendered_img = sim.render()[0]
         if rendered_img is not None:
-            rendered_image_snapshots.append(rendered_img)
-            vision_observation_snapshots.append(obs["vision"])
-            nn_activities_snapshots.append(info["nn_activities"])
+            viz_data = {
+                "rendered_image": rendered_img,
+                "vision_observation": obs["vision"],
+                "nn_activities": info["nn_activities"],
+            }
+            viz_data_all.append(viz_data)
 
     return {
         "sim": sim,
         "obs_hist": obs_hist,
         "info_hist": info_hist,
-        "rendered_image_snapshots": rendered_image_snapshots,
-        "vision_observation_snapshots": vision_observation_snapshots,
-        "nn_activities_snapshots": nn_activities_snapshots,
+        "viz_data_all": viz_data_all,
     }
 
 
@@ -111,12 +107,10 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
 
     if terrain_type == "flat":
-        arena = MovingFlyArena(
-            move_speed=18, lateral_magnitude=1, terrain_type=terrain_type
-        )
+        arena = FlatTerrain()
     elif terrain_type == "blocks":
-        arena = MovingFlyArena(
-            move_speed=13, lateral_magnitude=1, terrain_type=terrain_type
+        arena = BlocksTerrain(
+            height_range=(0.2, 0.2), x_range=(-5, 45), y_range=(-40, 40)
         )
     else:
         raise ValueError("Invalid terrain type")
@@ -130,17 +124,15 @@ def process_trial(terrain_type: str, stabilization_on: bool):
 
     # Run simulation
     res = run_simulation(
-        arena=arena, run_time=2.0, head_stabilization_model=stabilization_model
+        arena=arena, run_time=3.0, head_stabilization_model=stabilization_model
     )
 
     # Save visualization
-    visualize_vision(
+    viz.visualize_vision(
         Path(output_dir / f"{variation_name}_vision_simulation.mp4"),
         res["sim"].fly.retina,
         res["sim"].retina_mapper,
-        rendered_image_hist=res["rendered_image_snapshots"],
-        vision_observation_hist=res["vision_observation_snapshots"],
-        nn_activities_hist=res["nn_activities_snapshots"],
+        viz_data_all=res["viz_data_all"],
         fps=res["sim"].cameras[0].fps,
     )
 
