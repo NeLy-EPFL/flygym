@@ -5,15 +5,9 @@ import pickle
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from pathlib import Path
-from tqdm import trange
-from typing import Optional, Tuple
-from flygym import Fly, Camera
-from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision_connectome_model import MovingFlyArena, NMFRealisticVision
+from flygym.examples.vision_connectome_model import MovingFlyArena
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 from flygym.examples.vision_connectome_model.follow_fly_closed_loop import (
     leading_fly_speeds,
     leading_fly_radius,
@@ -27,6 +21,15 @@ from flygym.examples.vision_connectome_model.follow_fly_closed_loop import (
 
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
+
+# fmt: off
+neurons_txall = [
+    "T1", "T2", "T2a", "T3", "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d",
+    "Tm1", "Tm2", "Tm3", "Tm4", "Tm5Y", "Tm5a", "Tm5b", "Tm5c", "Tm9", "Tm16", "Tm20",
+    "Tm28", "Tm30", "TmY3", "TmY4", "TmY5a", "TmY9", "TmY10", "TmY13", "TmY14", "TmY15",
+    "TmY18"
+]
+# fmt: on
 
 
 # Run a very short simulation
@@ -44,11 +47,10 @@ with open(baseline_dir / f"{variation_name}_response_stats.pkl", "rb") as f:
     response_stats = pickle.load(f)
 res = run_simulation(
     arena,
-    cell="T3",
-    run_time=0.1,
-    response_mean=response_stats["T3"]["mean"],
-    response_std=response_stats["T3"]["std"],
-    z_score_threshold=-4,
+    tracking_cells=neurons_txall,
+    run_time=0.2,
+    baseline_response=response_stats,
+    z_score_threshold=10,
     tracking_gain=5,
     head_stabilization_model=stabilization_model,
     spawn_xy=(-5, 10),
@@ -56,14 +58,14 @@ res = run_simulation(
 
 
 # Plot the arena
-img = res["rendered_image_snapshots"][-1]
+img = res["viz_data_all"][-1]["rendered_image"]
 cv2.imwrite(
     str(output_dir / "figs/arena_snapshot.png"), cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 )
 
 
 # Plot the system activities
-nn_activities = res["nn_activities_snapshots"][-1]
+nn_activities = res["viz_data_all"][-1]["nn_activities"]
 retina = res["sim"].flies[0].retina
 cell_order_str = """
     T1    T2    T2a   T3    T4a   T4b   T4c   T4d
@@ -74,27 +76,36 @@ cell_order_str = """
     """
 cells = cell_order_str.split()
 images = {}
-images["raw"] = retina.hex_pxls_to_human_readable(
-    res["vision_observation_snapshots"][-1].sum(axis=-1).T
+images["obj_score"] = retina.hex_pxls_to_human_readable(
+    res["viz_data_all"][-1]["mean_zscore"].T
 )
-images["raw"][retina.ommatidia_id_map == 0] = np.nan
+images["obj_score"][retina.ommatidia_id_map == 0] = np.nan
 for cell in cells:
     nn_activity = res["sim"].retina_mapper.flyvis_to_flygym(nn_activities[cell])
     img = retina.hex_pxls_to_human_readable(nn_activity.T)
     img[retina.ommatidia_id_map == 0] = np.nan
     images[cell] = img
+images["raw"] = retina.hex_pxls_to_human_readable(
+    res["viz_data_all"][-1]["vision_observation"].sum(axis=-1).T
+)
+images["raw"][retina.ommatidia_id_map == 0] = np.nan
 
 fig, axs = plt.subplots(8, 5, figsize=(11, 16), tight_layout=True)
 for i, (cell, img) in enumerate(images.items()):
     ax = axs.flat[i]
     if cell == "raw":
         ax.imshow(img[:, :, 1], cmap="gray", vmin=0, vmax=1)
+        label = "Raw"
+    elif cell == "obj_score":
+        ax.imshow(img[:, :, 1], cmap="viridis", vmin=0, vmax=20)
+        label = "Obj. score"
     else:
         ax.imshow(img[:, :, 1], cmap="seismic", vmin=-3, vmax=3)
+        label = cell
     ax.text(
         0,
         1,
-        "Raw" if cell == "raw" else cell,
+        label,
         size=20,
         va="center",
         transform=ax.transAxes,
@@ -104,6 +115,13 @@ for i, (cell, img) in enumerate(images.items()):
 
 for i in range(5):
     axs[7, i].axis("off")
+
+ax = axs[7, 3]
+norm = plt.Normalize(vmin=0, vmax=20)
+sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+sm.set_array([])
+cbar = plt.colorbar(sm, ax=ax, orientation="horizontal")
+cbar.set_label("Object score")
 
 ax = axs[7, 4]
 norm = plt.Normalize(vmin=-3, vmax=3)

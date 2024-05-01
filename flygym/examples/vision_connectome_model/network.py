@@ -10,6 +10,11 @@ from flyvision.rendering import BoxEye
 from flygym.vision import Retina
 
 
+device = torch.device("cpu")
+torch.set_default_device(device)
+flyvision.device = torch.device(device)
+
+
 class RealTimeVisionNetwork(Network):
     def setup_step_by_step_simulation(
         self,
