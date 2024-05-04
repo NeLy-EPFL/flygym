@@ -67,8 +67,9 @@ class Fly:
         Stiffness of non-actuated joints.
     non_actuated_joint_damping : float
         Damping coefficient of non-actuated joints.
-    actuator_kp : float
-        Position gain of the actuators.
+    control: str
+        The joint controller type. Can be "position", "velocity", or
+        "motor".
     tarsus_stiffness : float
         Stiffness of the passive, compliant tarsus joints.
     tarsus_damping : float
@@ -167,7 +168,7 @@ class Fly:
         joint_damping: float = 0.06,
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
-        actuator_kp: float = 45.0,
+        actuator_gain: Union[float, List] = 45.0,
         actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
@@ -223,7 +224,7 @@ class Fly:
             position facing the positive direction of the x-axis.
         control : str, optional
             The joint controller type. Can be "position", "velocity", or
-            "torque", by default "position".
+            "motor", by default "position".
         init_pose : BaseState, optional
             Which initial pose to start the simulation from. By default
             "stretch" kinematic pose with all legs fully stretched.
@@ -258,8 +259,15 @@ class Fly:
             Damping coefficient of non-actuated joints, by default 1.0.
             Similar to ``non_actuated_joint_stiffness``, it is set
             explicitly here for better stability.
-        actuator_kp : float
-            Position gain of the actuators, by default 18.0.
+        actuator_gain : Union[float, List[float]]
+            Gain of the actuator:
+            If ``control`` is "position", it is the position gain of the
+            actuators.
+            If ``control`` is "velocity", it is the velocity gain of the
+            actuators.
+            If ``control`` is "motor", it is not used
+            if the actuator gain is a list, it needs to be of same length as
+            the number of actuated joints and will be applied to every joint
         actuator_forcerange : Union[float, Tuple[float, float], List]
             The force limit of the actuators. If a single value is
             provided, it will be symetrically applied to all actuators (-a, a).
@@ -349,7 +357,6 @@ class Fly:
         self.joint_damping = joint_damping
         self.non_actuated_joint_stiffness = non_actuated_joint_stiffness
         self.non_actuated_joint_damping = non_actuated_joint_damping
-        self.actuator_kp = actuator_kp
         self.tarsus_stiffness = tarsus_stiffness
         self.tarsus_damping = tarsus_damping
         self.friction = friction
@@ -445,17 +452,12 @@ class Fly:
             self.retina = vision.Retina()
 
         # Define list of actuated joints
-        self.actuators = [
-            self.model.find("actuator", f"actuator_{control}_{joint}")
-            for joint in self.actuated_joints
-        ]
+        self.actuators = self._add_joint_actuators(actuator_gain, actuator_forcerange)
         self.neck_actuators = [
             self.model.find("actuator", f"actuator_{control}_{joint}")
             for joint in ["joint_Head_yaw", "joint_Head"]
         ]
 
-        self._set_actuators_gain()
-        self._set_actuators_forcerange(actuator_forcerange)
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
         self._set_compliant_tarsus()
@@ -642,36 +644,6 @@ class Fly:
             )
         return spaces.Dict(_observation_space)
 
-    def _set_actuators_gain(self):
-        for actuator in self.actuators:
-            actuator.kp = self.actuator_kp
-
-        if self.neck_kp is not None:
-            for actuator in self.neck_actuators:
-                actuator.kp = self.neck_kp
-
-    def _set_actuators_forcerange(self, actuator_forcerange):
-        attr_islist = True
-        if isinstance(actuator_forcerange, (int, float)):
-            actuator_forcerange = [-actuator_forcerange, actuator_forcerange]
-            attr_islist = False
-        elif len(actuator_forcerange) == 2:
-            actuator_forcerange = [actuator_forcerange[0], actuator_forcerange[1]]
-            attr_islist = False
-        else:
-            assert len(actuator_forcerange) == len(self.actuators), (
-                "The number of actuator_forcerange supplied does"
-                "not match the number of actuators."
-                f"({len(actuator_forcerange)} != {len(self.actuators)})"
-            )
-
-        for i, actuator in enumerate(self.actuators):
-            actuator.forcelimited = True
-            if attr_islist:
-                actuator.forcerange = actuator_forcerange[i]
-            else:
-                actuator.forcerange = actuator_forcerange
-
     def _set_geoms_friction(self):
         for geom in self.model.find_all("geom"):
             geom.friction = self.friction
@@ -821,18 +793,8 @@ class Fly:
                     ),
                     self.model.sensor.add(
                         "actuatorfrc",
-                        name=f"actuatorfrc_position_{joint}",
-                        actuator=f"actuator_position_{joint}",
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_velocity_{joint}",
-                        actuator=f"actuator_velocity_{joint}",
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_motor_{joint}",
-                        actuator=f"actuator_torque_{joint}",
+                        name=f"actuatorfrc_{self.control}_{joint}",
+                        actuator=f"actuator_{self.control}_{joint}",
                     ),
                 ]
             )
@@ -921,6 +883,65 @@ class Fly:
             force_sensors.append(force_sensor)
 
         return force_sensors
+    
+    def _add_joint_actuators(self, gain, forcerange):
+
+        #if self control is "motor" check that the gain is not provided
+        if self.control == "motor" and gain is not None:
+            # print warning
+            logging.warning(
+                "Motor control is selected, the gain parameter will not be used"
+            )
+        
+        ## Need to deal with the kp, force range, and neck actuators
+        if not type(gain) == list:
+            gain = [gain]*len(self.actuated_joints)
+        if not type(forcerange) == list:
+            if type(forcerange) == tuple:
+                forcerange = [forcerange]*len(self.actuated_joints)
+            else:
+                forcerange = [(-forcerange, forcerange)]*len(self.actuated_joints)
+
+        actuators = []
+
+        for joint, g, forcerange in zip(self.actuated_joints, gain, forcerange):
+            if self.control == "position":
+                actuators.append(
+                    self.model.actuator.add(
+                        self.control,
+                        name=f"actuator_{self.control}_{joint}",
+                        joint=joint,
+                        kp=g,
+                        ctrlrange="-1000000 1000000",
+                        forcerange=forcerange,
+                        forcelimited=True,
+                        
+                    )
+                )
+            elif self.control == "velocity":
+                actuators.append(
+                    self.model.actuator.add(
+                        self.control,
+                        name=f"actuator_{self.control}_{joint}",
+                        joint=joint,
+                        kv=g,
+                        ctrlrange="-1000000 1000000", 
+                        forcerange=forcerange,
+                        forcelimited=True,
+                    )
+                )
+            elif self.control == "motor":
+                actuators.append(
+                    self.model.actuator.add(
+                        self.control,
+                        name=f"actuator_{self.control}_{joint}",
+                        joint=joint,
+                        ctrlrange="-1000000 1000000",
+                        forcerange=forcerange,
+                    )
+                )
+
+        return actuators
 
     def _add_adhesion_actuators(self, gain):
         adhesion_actuators = []
@@ -939,7 +960,7 @@ class Fly:
 
     def set_pose(self, pose: state.KinematicPose, physics: mjcf.Physics):
         for i in range(len(self.actuated_joints)):
-            curr_joint = self.actuators[i].joint.name
+            curr_joint = self.actuators[i].joint
             if (curr_joint in self.actuated_joints) and (curr_joint in pose):
                 animat_name = f"{self.name}/{curr_joint}"
                 physics.named.data.qpos[animat_name] = pose[curr_joint]
@@ -1074,11 +1095,9 @@ class Fly:
         joint_obs = np.zeros((3, len(self.actuated_joints)))
         joint_sensordata = physics.bind(self._joint_sensors).sensordata
         for i, joint in enumerate(self.actuated_joints):
-            base_idx = i * 5
-            # pos and vel
-            joint_obs[:2, i] = joint_sensordata[base_idx : base_idx + 2]
-            # torque from pos/vel/motor actuators
-            joint_obs[2, i] = joint_sensordata[base_idx + 2 : base_idx + 5].sum()
+            base_idx = i * 3
+            # pos and vel and torque from the joint sensors
+            joint_obs[:3, i] = joint_sensordata[base_idx : base_idx + 3]
         joint_obs[2, :] *= 1e-9  # convert to N
 
         # fly position and orientation
