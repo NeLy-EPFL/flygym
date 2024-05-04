@@ -451,13 +451,13 @@ class Fly:
         if self.head_stabilization_model is not None:
             self.neck_actuators = [
                 self.model.actuator.add(
-                            self.control,
-                            name=f"actuator_position_{joint}",
-                            joint=joint,
-                            kp=neck_kp,
-                            ctrlrange="-1000000 1000000",
-                            forcelimited=False,
-                        )
+                    self.control,
+                    name=f"actuator_position_{joint}",
+                    joint=joint,
+                    kp=neck_kp,
+                    ctrlrange="-1000000 1000000",
+                    forcelimited=False,
+                )
                 for joint in ["joint_Head_yaw", "joint_Head"]
             ]
 
@@ -777,9 +777,9 @@ class Fly:
                             (2, 1, 2),
                         ),
                     )
-                    floor_contacts[
-                        f"{geom.name}_{animat_geom_name}"
-                    ] = floor_contact_pair
+                    floor_contacts[f"{geom.name}_{animat_geom_name}"] = (
+                        floor_contact_pair
+                    )
 
         self._floor_contacts = floor_contacts
 
@@ -886,24 +886,24 @@ class Fly:
             force_sensors.append(force_sensor)
 
         return force_sensors
-    
+
     def _add_joint_actuators(self, gain, forcerange):
 
-        #if self control is "motor" check that the gain is not provided
+        # if self control is "motor" check that the gain is not provided
         if self.control == "motor" and gain is not None:
             # print warning
             logging.warning(
                 "Motor control is selected, the gain parameter will not be used"
             )
-        
+
         ## Need to deal with the kp, force range, and neck actuators
         if not type(gain) == list:
-            gain = [gain]*len(self.actuated_joints)
+            gain = [gain] * len(self.actuated_joints)
         if not type(forcerange) == list:
             if type(forcerange) == tuple:
-                forcerange = [forcerange]*len(self.actuated_joints)
+                forcerange = [forcerange] * len(self.actuated_joints)
             else:
-                forcerange = [(-forcerange, forcerange)]*len(self.actuated_joints)
+                forcerange = [(-forcerange, forcerange)] * len(self.actuated_joints)
 
         actuators = []
 
@@ -918,7 +918,6 @@ class Fly:
                         ctrlrange="-1000000 1000000",
                         forcerange=forcerange,
                         forcelimited=True,
-                        
                     )
                 )
             elif self.control == "velocity":
@@ -928,7 +927,7 @@ class Fly:
                         name=f"actuator_{self.control}_{joint}",
                         joint=joint,
                         kv=g,
-                        ctrlrange="-1000000 1000000", 
+                        ctrlrange="-1000000 1000000",
                         forcerange=forcerange,
                         forcelimited=True,
                     )
