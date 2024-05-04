@@ -29,8 +29,11 @@ class Parameters:
         Stiffness of non-actuated joints, by default 1.0. (made stiff for better stability)
     non_actuated_joint_damping : float
         Damping coefficient of non-actuated joints, by default 1.0. (made stiff for better stability)
-    actuator_kp : float
-        Position gain of the actuators, by default 40.0.
+    actuator_gain : float
+        if control is "position", this is the position gain of the
+        position actuators. If control is "velocity", this is the velocity
+        gain of the velocity actuators. If control is "torque", this is ignored.
+        By default 40.0.
     tarsus_stiffness : float
         Stiffness of the passive, compliant tarsus joints, by default 2.2.
     tarsus_damping : float
@@ -131,8 +134,8 @@ class Parameters:
         will be determined by the perspective.
     neck_kp : float, optional
         Position gain of the neck position actuators. If supplied, this
-        will overwrite ``actuator_kp`` for the neck actuators.
-        Otherwise, ``actuator_kp`` will be used.
+        will overwrite ``actuator_gain`` for the neck actuators.
+        Otherwise, ``actuator_gain`` will be used.
     """
 
     timestep: float = 0.0001
@@ -140,7 +143,7 @@ class Parameters:
     joint_damping: float = 0.06
     non_actuated_joint_stiffness: float = 1.0
     non_actuated_joint_damping: float = 1.0
-    actuator_kp: float = 40.0
+    actuator_gain: float = 40.0
     tarsus_stiffness: float = 10.0
     tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
@@ -355,7 +358,7 @@ class NeuroMechFly(SingleFlySimulation):
             joint_damping=sim_params.joint_damping,
             non_actuated_joint_stiffness=sim_params.non_actuated_joint_stiffness,
             non_actuated_joint_damping=sim_params.non_actuated_joint_damping,
-            actuator_kp=sim_params.actuator_kp,
+            actuator_gain=sim_params.actuator_gain,
             tarsus_stiffness=sim_params.tarsus_stiffness,
             tarsus_damping=sim_params.tarsus_damping,
             friction=sim_params.friction,
