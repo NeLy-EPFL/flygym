@@ -109,10 +109,6 @@ class Fly:
     draw_sensor_markers : bool
         If True, colored spheres will be added to the model to indicate the
         positions of the cameras (for vision) and odor sensors.
-    neck_kp : float, optional
-        Position gain of the neck position actuators. If supplied, this
-        will overwrite ``actuator_kp`` for the neck actuators. Otherwise,
-        ``actuator_kp`` will be used.
     head_stabilization_model : Callable or str optional
         If callable, it should be a function that, given the observation,
         predicts signals that need to be applied to the neck DoFs to
@@ -370,7 +366,6 @@ class Fly:
         self.adhesion_force = adhesion_force
         self.draw_adhesion = draw_adhesion
         self.draw_sensor_markers = draw_sensor_markers
-        self.neck_kp = neck_kp
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
         self.head_stabilization_model = head_stabilization_model
@@ -453,10 +448,18 @@ class Fly:
 
         # Define list of actuated joints
         self.actuators = self._add_joint_actuators(actuator_gain, actuator_forcerange)
-        self.neck_actuators = [
-            self.model.find("actuator", f"actuator_{control}_{joint}")
-            for joint in ["joint_Head_yaw", "joint_Head"]
-        ]
+        if self.head_stabilization_model is not None:
+            self.neck_actuators = [
+                self.model.actuator.add(
+                            self.control,
+                            name=f"actuator_position_{joint}",
+                            joint=joint,
+                            kp=neck_kp,
+                            ctrlrange="-1000000 1000000",
+                            forcelimited=False,
+                        )
+                for joint in ["joint_Head_yaw", "joint_Head"]
+            ]
 
         self._set_geoms_friction()
         self._set_joints_stiffness_and_damping()
@@ -938,6 +941,7 @@ class Fly:
                         joint=joint,
                         ctrlrange="-1000000 1000000",
                         forcerange=forcerange,
+                        forcelimited=True,
                     )
                 )
 
