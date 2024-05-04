@@ -777,9 +777,9 @@ class Fly:
                             (2, 1, 2),
                         ),
                     )
-                    floor_contacts[f"{geom.name}_{animat_geom_name}"] = (
-                        floor_contact_pair
-                    )
+                    floor_contacts[
+                        f"{geom.name}_{animat_geom_name}"
+                    ] = floor_contact_pair
 
         self._floor_contacts = floor_contacts
 
@@ -888,7 +888,6 @@ class Fly:
         return force_sensors
 
     def _add_joint_actuators(self, gain, forcerange):
-
         # if self control is "motor" check that the gain is not provided
         if self.control == "motor" and gain is not None:
             # print warning
