@@ -908,42 +908,38 @@ class Fly:
 
         for joint, g, forcerange in zip(self.actuated_joints, gain, forcerange):
             if self.control == "position":
-                actuators.append(
-                    self.model.actuator.add(
-                        self.control,
-                        name=f"actuator_{self.control}_{joint}",
-                        joint=joint,
-                        kp=g,
-                        ctrlrange="-1000000 1000000",
-                        forcerange=forcerange,
-                        forcelimited=True,
-                    )
+                actuator = self.model.actuator.add(
+                    self.control,
+                    name=f"actuator_{self.control}_{joint}",
+                    joint=joint,
+                    kp=g,
+                    ctrlrange="-1000000 1000000",
+                    forcerange=forcerange,
+                    forcelimited=True,
                 )
             elif self.control == "velocity":
-                actuators.append(
-                    self.model.actuator.add(
-                        self.control,
-                        name=f"actuator_{self.control}_{joint}",
-                        joint=joint,
-                        kv=g,
-                        ctrlrange="-1000000 1000000",
-                        forcerange=forcerange,
-                        forcelimited=True,
-                    )
+                actuator = self.model.actuator.add(
+                    self.control,
+                    name=f"actuator_{self.control}_{joint}",
+                    joint=joint,
+                    kv=g,
+                    ctrlrange="-1000000 1000000",
+                    forcerange=forcerange,
+                    forcelimited=True,
                 )
             elif self.control == "motor":
-                actuators.append(
-                    self.model.actuator.add(
-                        self.control,
-                        name=f"actuator_{self.control}_{joint}",
-                        joint=joint,
-                        ctrlrange="-1000000 1000000",
-                        forcerange=forcerange,
-                        forcelimited=True,
-                    )
+                actuator = self.model.actuator.add(
+                    self.control,
+                    name=f"actuator_{self.control}_{joint}",
+                    joint=joint,
+                    ctrlrange="-1000000 1000000",
+                    forcerange=forcerange,
+                    forcelimited=True,
                 )
             else:
                 raise ValueError(f"Invalid control type {self.control}.")
+
+            actuators.append(actuator)
 
         return actuators
 
