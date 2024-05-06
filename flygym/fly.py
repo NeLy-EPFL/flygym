@@ -896,10 +896,10 @@ class Fly:
             )
 
         ## Need to deal with the kp, force range, and neck actuators
-        if not type(gain) == list:
+        if not isinstance(gain, list):
             gain = [gain] * len(self.actuated_joints)
-        if not type(forcerange) == list:
-            if type(forcerange) == tuple:
+        if not isinstance(forcerange, list):
+            if isinstance(forcerange, tuple):
                 forcerange = [forcerange] * len(self.actuated_joints)
             else:
                 forcerange = [(-forcerange, forcerange)] * len(self.actuated_joints)
@@ -942,6 +942,8 @@ class Fly:
                         forcelimited=True,
                     )
                 )
+            else:
+                raise ValueError(f"Invalid control type {self.control}.")
 
         return actuators
 
