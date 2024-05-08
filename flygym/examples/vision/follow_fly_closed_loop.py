@@ -6,8 +6,8 @@ from typing import Optional, Tuple, List
 from flygym import Fly, Camera
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision_connectome_model import MovingFlyArena, NMFRealisticVision
-from flygym.examples.vision_connectome_model import viz
+from flygym.examples.vision import MovingFlyArena, NMFRealisticVision
+from flygym.examples.vision import viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 

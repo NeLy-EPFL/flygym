@@ -6,7 +6,7 @@ from gymnasium.utils.env_checker import check_env
 
 from flygym.camera import Camera
 from flygym.arena import BaseArena
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningNMF
 from flygym.vision import save_video_with_vision_insets
 
 

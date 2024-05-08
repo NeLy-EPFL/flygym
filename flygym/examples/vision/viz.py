@@ -13,7 +13,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Rectangle
 
 from flygym.vision import Retina
-from flygym.examples.vision_connectome_model import RetinaMapper
+from flygym.examples.vision import RetinaMapper
 
 
 matplotlib.style.use("fast")

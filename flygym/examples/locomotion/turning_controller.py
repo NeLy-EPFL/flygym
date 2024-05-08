@@ -7,7 +7,7 @@ from flygym.fly import Fly
 from flygym.simulation import SingleFlySimulation
 from flygym.preprogrammed import all_leg_dofs
 from flygym.examples.common import PreprogrammedSteps
-from flygym.examples.cpg_controller import CPGNetwork
+from flygym.examples.locomotion import CPGNetwork
 
 from dm_control.rl.control import PhysicsError
 import pickle

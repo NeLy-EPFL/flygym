@@ -6,9 +6,9 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-from flygym.examples.vision_connectome_model import MovingFlyArena
+from flygym.examples.vision import MovingFlyArena
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym.examples.vision_connectome_model.follow_fly_closed_loop import (
+from flygym.examples.vision.follow_fly_closed_loop import (
     leading_fly_speeds,
     leading_fly_radius,
     baseline_dir,

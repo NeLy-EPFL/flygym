@@ -3,7 +3,7 @@ from tqdm import trange
 
 from flygym import Fly, Camera
 from flygym.arena import OdorArena
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningNMF
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import numpy as np
-from flygym.examples.cpg_controller import CPGNetwork
+from flygym.examples.locomotion import CPGNetwork
 
 from flygym import Fly, Camera, SingleFlySimulation
 from flygym.examples import PreprogrammedSteps

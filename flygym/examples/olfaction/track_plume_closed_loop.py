@@ -7,7 +7,7 @@ from pathlib import Path
 
 from flygym.util import get_data_path
 from flygym import Fly, Camera
-from flygym.examples.plume_tracking import (
+from flygym.examples.olfaction import (
     PlumeNavigationController,
     WalkingState,
     OdorPlumeArena,
