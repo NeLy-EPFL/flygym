@@ -1,11 +1,11 @@
 ## FlyGym examples
 
 > [!NOTE]
-> `flygym/examples` aims to provide a packaged and importable implementation of things explained in the [online tutorials](https://neuromechfly.org/tutorials/index.html). The tutorials offer a much more detailed walk-through and it is preferable to start from there.
+> `flygym/examples` aims to provide a packaged and importable implementation of things explained in the [online tutorials](https://neuromechfly.org/tutorials/index.html). The tutorials offer a much more detailed walk-through of the concepts and it is preferable to start from there.
 
 In this subpackage, you will find some example use cases of NeuroMechFly and FlyGym.
 
-- Locomotion:
+- Locomotion
     - Centralized walking controller based on Central Pattern Generators (CPGs)
     - Decentralized walking controller based on stepping coordination rules
     - Hybrid controller integrating CPGs with sensory feedback
