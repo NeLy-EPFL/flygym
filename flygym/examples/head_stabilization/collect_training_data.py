@@ -10,7 +10,7 @@ from dm_control.rl.control import PhysicsError
 from flygym import Fly, Camera
 from flygym.arena import FlatTerrain, BlocksTerrain
 from flygym.preprogrammed import get_cpg_biases
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningNMF
 
 
 def run_simulation(

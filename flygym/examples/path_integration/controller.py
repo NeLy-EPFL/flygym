@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 from typing import Tuple, Union
 
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningNMF
 
 
 class WalkingState(Enum):

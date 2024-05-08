@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from shutil import rmtree
 
-from flygym.examples.plume_tracking.track_plume_closed_loop import run_simulation
+from flygym.examples.olfaction.track_plume_closed_loop import run_simulation
 
 
 plume_dataset_path = Path("./outputs/plume_tracking/plume_dataset/plume.hdf5")

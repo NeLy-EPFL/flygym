@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from dm_control.utils import transformations
 
 import flygym.examples.head_stabilization.viz as viz
-from flygym.examples.vision_connectome_model import NMFRealisticVision, RetinaMapper
+from flygym.examples.vision import NMFRealisticVision, RetinaMapper
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
 
