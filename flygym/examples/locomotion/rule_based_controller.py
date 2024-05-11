@@ -5,7 +5,7 @@ from tqdm import trange
 from flygym.examples.common import PreprogrammedSteps
 
 
-class RuleBasedSteppingController:
+class RuleBasedController:
     legs = ["LF", "LM", "LH", "RF", "RM", "RH"]
 
     def __init__(
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         "rule3_contra": 2.0,
     }
     rules_graph = construct_rules_graph()
-    controller = RuleBasedSteppingController(
+    controller = RuleBasedController(
         timestep=timestep,
         rules_graph=rules_graph,
         weights=weights,
