@@ -1,11 +1,11 @@
 import flyvision
 from torch import Tensor
-from flygym.examples.locomotion import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 from flyvision.utils.activity_utils import LayerActivity
 from flygym.examples.vision import RealTimeVisionNetworkView, RetinaMapper
 
 
-class NMFRealisticVision(HybridTurningNMF):
+class NMFRealisticVision(HybridTurningController):
     def __init__(self, vision_network_dir=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if vision_network_dir is None:
