@@ -4,4 +4,4 @@ from .vision_network import (
     RealTimeVisionNetworkView,
     RetinaMapper,
 )
-from .realisitc_vision import NMFRealisticVision
+from .realisitc_vision import RealisticVisionController

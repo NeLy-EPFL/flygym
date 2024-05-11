@@ -7,7 +7,7 @@ from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision import NMFRealisticVision, viz
+from flygym.examples.vision import RealisticVisionController, viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
@@ -66,7 +66,7 @@ def run_simulation(
         play_speed_text=False,
     )
 
-    sim = NMFRealisticVision(
+    sim = RealisticVisionController(
         fly=fly,
         cameras=[cam],
         arena=arena,
