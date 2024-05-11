@@ -3,7 +3,7 @@ from tqdm import trange
 
 from flygym import Fly, Camera
 from flygym.arena import OdorArena
-from flygym.examples.locomotion import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 
 
 if __name__ == "__main__":
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         window_size=(800, 608),
     )
 
-    sim = HybridTurningNMF(
+    sim = HybridTurningController(
         fly=fly,
         cameras=[cam],
         arena=arena,

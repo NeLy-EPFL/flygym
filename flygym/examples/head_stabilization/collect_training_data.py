@@ -10,7 +10,7 @@ from dm_control.rl.control import PhysicsError
 from flygym import Fly, Camera
 from flygym.arena import FlatTerrain, BlocksTerrain
 from flygym.preprogrammed import get_cpg_biases
-from flygym.examples.locomotion import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 
 
 def run_simulation(
@@ -78,7 +78,7 @@ def run_simulation(
         fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     )
     # cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
-    sim = HybridTurningNMF(
+    sim = HybridTurningController(
         arena=arena,
         phase_biases=get_cpg_biases(gait),
         fly=fly,

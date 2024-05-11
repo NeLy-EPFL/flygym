@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 from typing import Tuple, Union
 
-from flygym.examples.locomotion import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 
 
 class WalkingState(Enum):
@@ -73,7 +73,7 @@ class RandomExplorationController:
         return self.curr_state, self.dn_drives[self.curr_state]
 
 
-class PathIntegrationNMF(HybridTurningNMF):
+class PathIntegrationNMF(HybridTurningController):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._last_end_effector_pos: Union[None, np.ndarray] = None
