@@ -6,7 +6,7 @@ from typing import Optional, Tuple, List
 from flygym import Fly, Camera
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision import MovingFlyArena, NMFRealisticVision
+from flygym.examples.vision import MovingFlyArena, RealisticVisionController
 from flygym.examples.vision import viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
@@ -81,7 +81,7 @@ def run_simulation(
         fps=24,
         play_speed_text=False,
     )
-    sim = NMFRealisticVision(fly=fly, cameras=[cam], arena=arena)
+    sim = RealisticVisionController(fly=fly, cameras=[cam], arena=arena)
 
     # Calculate center-of-mass of each ommatidium
     ommatidia_coms = np.empty((fly.retina.num_ommatidia_per_eye, 2))

@@ -5,7 +5,7 @@ from flyvision.utils.activity_utils import LayerActivity
 from flygym.examples.vision import RealTimeVisionNetworkView, RetinaMapper
 
 
-class NMFRealisticVision(HybridTurningController):
+class RealisticVisionController(HybridTurningController):
     def __init__(self, vision_network_dir=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if vision_network_dir is None:
