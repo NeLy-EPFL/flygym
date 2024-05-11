@@ -5,6 +5,150 @@ from flygym import Fly
 from flygym.arena import BaseArena, Tethered
 
 
+class MovingObjArena(BaseArena):
+    """Flat terrain with a hovering moving object.
+
+    Attributes
+    ----------
+    arena : mjcf.RootElement
+        The arena object that the terrain is built on.
+    ball_pos : Tuple[float,float,float]
+        The position of the floating object in the arena.
+
+    Parameters
+    ----------
+    size : Tuple[int, int]
+        The size of the terrain in (x, y) dimensions.
+    friction : Tuple[float, float, float]
+        Sliding, torsional, and rolling friction coefficients, by default
+        (1, 0.005, 0.0001)
+    obj_radius : float
+        Radius of the spherical floating object in mm.
+    init_ball_pos : Tuple[float,float]
+        Initial position of the object, by default (5, 0).
+    move_speed : float
+        Speed of the moving object. By default 10.
+    move_direction : str
+        Which way the ball moves toward first. Can be "left", "right", or
+        "random". By default "right".
+    lateral_magnitude : float
+        Magnitude of the lateral movement of the object as a multiplier of
+        forward velocity. For example, when ``lateral_magnitude`` is 1, the
+        object moves at a heading (1, 1) when its movement is the most
+        lateral. By default 2.
+    """
+
+    def __init__(
+        self,
+        size=(300, 300),
+        friction=(1, 0.005, 0.0001),
+        obj_radius=1,
+        init_ball_pos=(5, 0),
+        move_speed=10,
+        move_direction="right",
+        lateral_magnitude=2,
+    ):
+        super().__init__()
+
+        self.init_ball_pos = (*init_ball_pos, obj_radius)
+        self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
+        self.friction = friction
+        self.move_speed = move_speed
+        self.curr_time = 0
+        self.move_direction = move_direction
+        self.lateral_magnitude = lateral_magnitude
+        if move_direction == "left":
+            self.y_mult = 1
+        elif move_direction == "right":
+            self.y_mult = -1
+        elif move_direction == "random":
+            self.y_mult = np.random.choice([-1, 1])
+        else:
+            raise ValueError("Invalid move_direction")
+
+        # Add ground
+        ground_size = [*size, 1]
+        chequered = self.root_element.asset.add(
+            "texture",
+            type="2d",
+            builtin="checker",
+            width=300,
+            height=300,
+            rgb1=(0.4, 0.4, 0.4),
+            rgb2=(0.5, 0.5, 0.5),
+        )
+        grid = self.root_element.asset.add(
+            "material",
+            name="grid",
+            texture=chequered,
+            texrepeat=(60, 60),
+            reflectance=0.1,
+        )
+        self.root_element.worldbody.add(
+            "geom",
+            type="plane",
+            name="ground",
+            material=grid,
+            size=ground_size,
+            friction=friction,
+        )
+        self.root_element.worldbody.add("body", name="b_plane")
+
+        # Add ball
+        obstacle = self.root_element.asset.add(
+            "material", name="obstacle", reflectance=0.1
+        )
+        self.root_element.worldbody.add(
+            "body", name="ball_mocap", mocap=True, pos=self.ball_pos, gravcomp=1
+        )
+        self.object_body = self.root_element.find("body", "ball_mocap")
+        self.object_body.add(
+            "geom",
+            name="ball",
+            type="sphere",
+            size=(obj_radius, obj_radius),
+            rgba=(0.0, 0.0, 0.0, 1),
+            material=obstacle,
+        )
+
+        # Add camera
+        self.birdeye_cam = self.root_element.worldbody.add(
+            "camera",
+            name="birdeye_cam",
+            mode="fixed",
+            pos=(15, 0, 35),
+            euler=(0, 0, 0),
+            fovy=45,
+        )
+        self.birdeye_cam_zoom = self.root_element.worldbody.add(
+            "camera",
+            name="birdeye_cam_zoom",
+            mode="fixed",
+            pos=(15, 0, 20),
+            euler=(0, 0, 0),
+            fovy=45,
+        )
+
+    def get_spawn_position(self, rel_pos, rel_angle):
+        return rel_pos, rel_angle
+
+    def step(self, dt, physics):
+        heading_vec = np.array(
+            [1, self.lateral_magnitude * np.cos(self.curr_time * 3) * self.y_mult]
+        )
+        heading_vec /= np.linalg.norm(heading_vec)
+        self.ball_pos[:2] += self.move_speed * heading_vec * dt
+        physics.bind(self.object_body).mocap_pos = self.ball_pos
+        self.curr_time += dt
+
+    def reset(self, physics):
+        if self.move_direction == "random":
+            self.y_mult = np.random.choice([-1, 1])
+        self.curr_time = 0
+        self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
+        physics.bind(self.object_body).mocap_pos = self.ball_pos
+
+
 class MovingFlyArena(BaseArena):
     """Flat terrain with a hovering moving fly.
 
