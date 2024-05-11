@@ -40,7 +40,7 @@ _default_correction_vectors = {
 _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 
 
-class HybridTurningNMF(SingleFlySimulation):
+class HybridTurningController(SingleFlySimulation):
     def __init__(
         self,
         fly: Fly,
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     )
 
     cam = Camera(fly=fly, camera_id="Animat/camera_right", play_speed=0.1)
-    sim = HybridTurningNMF(
+    sim = HybridTurningController(
         fly=fly,
         cameras=[cam],
         timestep=1e-4,

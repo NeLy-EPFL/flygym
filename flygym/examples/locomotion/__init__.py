@@ -1,3 +1,3 @@
 from .cpg_controller import CPGNetwork
 from .rule_based_controller import RuleBasedSteppingController
-from .turning_controller import HybridTurningNMF
+from .turning_controller import HybridTurningController

@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 from numba import njit, prange
-from flygym.examples.locomotion import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 from flygym.examples.olfaction import OdorPlumeArena
 
 
-class PlumeNavigationTask(HybridTurningNMF):
+class PlumeNavigationTask(HybridTurningController):
     def __init__(
         self,
         render_plume_alpha: float = 0.75,
