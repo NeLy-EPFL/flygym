@@ -5,6 +5,6 @@
 
 This subpackage includes the following files:
 - `cpg_controller`: This file implements a `CPGNetwork` class and demonstrate how a network of Central Pattern Generators (CPGs) can coordinate walking. 
-- `rule_based_controller`: This file implements a `RuleBasedSteppingController` and demonstrates how distributed leg coordination rules can coordinate walking.
+- `rule_based_controller`: This file implements a `RuleBasedController` and demonstrates how distributed leg coordination rules can coordinate walking.
 - `hybrid_controller`: This script demonstrates how one can integrate CPGs with sensory feedback.
-- `turning_controller`: This file refactors the hybrid controller into a class implementing the Gymnasium API and adds a steering input that enables turning.
+- `turning_controller`: This file refactors the hybrid controller into a `HybridTurningController` class. This class implements the Gymnasium API and, in addition to the hybrid controller above, receives a steering input that enables turning.
