@@ -16,6 +16,16 @@ class TurningObjective(Enum):
 
 
 class PlumeNavigationController:
+    """
+    This class implements the plume navigation controller described in
+    `Demir et al., 2020`_. The controller decides the fly's walking state based on the
+    encounters with the plume. The controller has three states: forward walking,
+    turning, and stopping. The transition among these states are governed by Poisson
+    processes with encounter-dependent rates.
+
+    .. Demir et al., 2020: https://doi.org/10.7554/eLife.57524
+    """
+
     def __init__(
         self,
         dt: float,
@@ -36,6 +46,55 @@ class PlumeNavigationController:
         lambda_turn: float = 1.33,  # s^-1
         random_seed: int = 0,
     ) -> None:
+        """
+        Parameters
+        ----------
+        dt : float
+            Time step of the physics simulation in seconds.
+        forward_dn_drive : Tuple[float, float]
+            Drive values for forward walking.
+        left_turn_dn_drive : Tuple[float, float]
+            Drive values for left turn.
+        right_turn_dn_drive : Tuple[float, float]
+            Drive values for right turn.
+        stop_dn_drive : Tuple[float, float]
+            Drive values for stopping.
+        turn_duration : float
+            Duration of the turn in seconds.
+        lambda_ws_0 : float
+            Baseline rate of transition from walking to stopping.
+        delta_lambda_ws : float
+            Change in the rate of transition from walking to stopping after an
+            encounter.
+        tau_s : float
+            Time constant for the transition from walking to stopping.
+        alpha : float
+            Parameter for the sigmoid function that determines the turning direction.
+        tau_freq_conv : float
+            Time constant for the exponential kernel that convolves the encounter
+            history to determine the turning direction.
+        cumulative_evidence_window : float
+            Window size for the cumulative evidence of the encounter history. In other
+            words, encounters more than this many seconds ago are ignored.
+        lambda_sw_0 : float
+            Baseline rate of transition from stopping to walking.
+        delta_lambda_sw : float
+            Maximum change in the rate of transition from stopping to walking after an
+            encounter.
+        tau_w : float
+            Time constant for evidence accumulation for the transition from stopping to
+            walking.
+        lambda_turn : float
+            Poisson rate for turning.
+        random_seed : int
+            Random seed.
+
+        Notes
+        -----
+        See `Demir et al., 2020`_ for details.
+
+        .. Demir et al., 2020: https://doi.org/10.7554/eLife.57524
+        """
         self.dt = dt
         # DN drives
         self.dn_drives = {
@@ -77,6 +136,11 @@ class PlumeNavigationController:
         self.random_state = np.random.RandomState(random_seed)
 
     def decide_state(self, encounter_flag: bool, fly_heading: np.ndarray):
+        """
+        Decide the fly's walking state based on the encounter information. If the next
+        state is turning, the turning direction is further determined based on the
+        encounter frequency and the fly's current heading (upwind or downwind).
+        """
         self.encounter_history.append(encounter_flag)
         if encounter_flag:
             self.last_encounter_time = self.curr_time
@@ -174,16 +238,27 @@ class PlumeNavigationController:
         return self.curr_state, self.dn_drives[self.curr_state], debug_str
 
     def exp_integral_norm_factor(self, window: float, tau: float):
-        """_summary_
-               int_{-inf}^0 exp(t / tau) dt
-        k(w) = ----------------------------
-                int_{-w}^0 exp(t / tau) dt
-             = 1 / (1 - exp(-w / tau))
+        """
+        In case the exponential kernel is truncated to a finite length, this method
+        computes a scaler k(w) that correct the underestimation of the integrated value.
+
+        .. math::
+            k(w) =
+                \frac{\int_{-\inf}^0 e^{t / \tau} dt}
+                    {\int_{-w}^0 e^{t / \tau} dt}
+            = \frac{1}{1 - e^{-w/\tau}}
 
         Parameters
         ----------
         window : float
             Window size for cumulative evidence in seconds.
+        tau : float
+            Time scale for the exponential kernel.
+
+        Returns
+        -------
+        float
+            The correction factor.
         """
         if window <= 0:
             raise ValueError("Window size must be positive for cumulative evidence")
