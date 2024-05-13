@@ -15,7 +15,7 @@ from flygym.examples.path_integration.arena import (
 from flygym.examples.path_integration.controller import (
     WalkingState,
     RandomExplorationController,
-    PathIntegrationNMF,
+    PathIntegrationController,
 )
 
 
@@ -127,7 +127,7 @@ def run_simulation(
     #     fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     # )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
-    sim = PathIntegrationNMF(
+    sim = PathIntegrationController(
         phase_biases=get_cpg_biases(gait),
         fly=fly,
         arena=arena,

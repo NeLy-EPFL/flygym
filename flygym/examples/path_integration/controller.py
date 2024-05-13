@@ -114,7 +114,7 @@ class RandomExplorationController:
         return self.curr_state, self.dn_drives[self.curr_state]
 
 
-class PathIntegrationNMF(HybridTurningController):
+class PathIntegrationController(HybridTurningController):
     """
     A wrapper of ``HybridTurningController`` that records variables that
     are used to perform path integration.
