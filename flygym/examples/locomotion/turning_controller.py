@@ -6,8 +6,7 @@ from gymnasium.utils.env_checker import check_env
 from flygym.fly import Fly
 from flygym.simulation import SingleFlySimulation
 from flygym.preprogrammed import all_leg_dofs
-from flygym.examples.common import PreprogrammedSteps
-from flygym.examples.locomotion import CPGNetwork
+from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
 
 from dm_control.rl.control import PhysicsError
 import pickle
@@ -453,7 +452,7 @@ if __name__ == "__main__":
     sim = HybridTurningController(
         fly=fly,
         cameras=[cam],
-        timestep=1e-4,
+        timestep=timestep,
         seed=0,
         draw_corrections=True,
         arena=MixedTerrain(),
