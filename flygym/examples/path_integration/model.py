@@ -5,13 +5,48 @@ from flygym.examples.path_integration import util
 
 def path_integrate(
     trial_data: Dict[str, np.ndarray],
-    heading_model: Callable,
-    displacement_model: Callable,
+    heading_model: "LinearModel",
+    displacement_model: "LinearModel",
     time_scale: float,
     contact_force_thr: Tuple[float, float, float],
     legs: str,
     dt: float,
 ):
+    """
+    Perform path integration on trial data.
+
+    Parameters
+    ----------
+    trial_data : Dict[str, np.ndarray]
+        Dictionary containing trial data.
+    heading_model : LinearModel
+        Model for predicting change in heading.
+    displacement_model : LinearModel
+        Model for predicting change in displacement.
+    time_scale : float
+        Time scale for path integration.
+    contact_force_thr : Tuple[float, float, float]
+        Thresholds for contact forces. These are used to determine whether
+        a leg is in contact with the ground.
+    legs : str
+        String indicating which legs are included. Can be any combination
+        of "F", "M", and "H".
+    dt : float
+        Time step of the physics simulation in the trial.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing the following keys:
+        * "heading_pred": Predicted heading.
+        * "heading_actual": Actual heading.
+        * "pos_pred": Predicted position.
+        * "pos_actual": Actual position.
+        * "heading_diff_pred": Predicted change in heading.
+        * "heading_diff_actual": Actual change in heading.
+        * "displacement_diff_pred": Predicted change in displacement.
+        * "displacement_diff_actual": Actual change in displacement.
+    """
     window_len = int(time_scale / dt)
     variables = util.extract_variables(
         trial_data,
@@ -54,6 +89,10 @@ def path_integrate(
 
 
 class LinearModel:
+    """
+    Simple linear model for predicting change in heading and displacement.
+    """
+
     def __init__(self, coefs_all, intercept, legs):
         self.coefs = coefs_all[util.get_leg_mask(legs)][None, :]
         self.intercept = intercept
