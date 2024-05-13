@@ -56,7 +56,7 @@ setup(
             "phiflow",
             "flyvision @ https://github.com/TuragaLab/flyvis/archive/refs/heads/main.zip",
         ],
-        "tests": ["networkx"]
+        "tests": ["networkx"],
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md", encoding="UTF-8").read(),
