@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import trange
 
-from flygym.examples.common import PreprogrammedSteps
+from flygym.examples.locomotion import PreprogrammedSteps
 
 
 def calculate_ddt(theta, r, w, phi, nu, R, alpha):

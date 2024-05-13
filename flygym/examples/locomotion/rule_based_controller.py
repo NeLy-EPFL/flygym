@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 from tqdm import trange
 
-from flygym.examples.common import PreprogrammedSteps
+from flygym.examples.locomotion import PreprogrammedSteps
 
 
 class RuleBasedController:
