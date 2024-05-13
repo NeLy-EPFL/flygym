@@ -9,5 +9,9 @@ Tutorials
    rule_based_controller
    hybrid_controller
    turning
-   vision
-   olfaction
+   simple_vision
+   simple_olfaction
+   path_integration
+   head_stabilization
+   advanced_vision
+   advanced_olfaction
