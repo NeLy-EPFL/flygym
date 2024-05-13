@@ -51,7 +51,7 @@ This time, we will use the `PreprogrammedSteps` Python class that
 encapsulates much of the code implemented in the previous tutorial.
 The following is the documentation for this class:
 
-.. autoclass:: flygym.examples.rule_based_controller.PreprogrammedSteps
+.. autoclass:: flygym.examples.locomotion.rule_based_controller.PreprogrammedSteps
    :members:
    :show-inheritance:
    :inherited-members:

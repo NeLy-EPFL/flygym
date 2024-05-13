@@ -15,3 +15,4 @@ This section of the documentation provides the complete API reference for the Fl
    olfaction
    utils
    preprogrammed
+   examples/index
