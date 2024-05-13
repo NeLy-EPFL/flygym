@@ -23,7 +23,7 @@ class PlumeNavigationController:
     turning, and stopping. The transition among these states are governed by Poisson
     processes with encounter-dependent rates.
 
-    .. Demir et al., 2020: https://doi.org/10.7554/eLife.57524
+    .. _Demir et al., 2020: https://doi.org/10.7554/eLife.57524
     """
 
     def __init__(
@@ -93,7 +93,7 @@ class PlumeNavigationController:
         -----
         See `Demir et al., 2020`_ for details.
 
-        .. Demir et al., 2020: https://doi.org/10.7554/eLife.57524
+        .. _Demir et al., 2020: https://doi.org/10.7554/eLife.57524
         """
         self.dt = dt
         # DN drives
@@ -238,13 +238,13 @@ class PlumeNavigationController:
         return self.curr_state, self.dn_drives[self.curr_state], debug_str
 
     def exp_integral_norm_factor(self, window: float, tau: float):
-        """
+        r"""
         In case the exponential kernel is truncated to a finite length, this method
-        computes a scaler k(w) that correct the underestimation of the integrated value.
+        computes a scaler k(w) that correct the underestimation of the integrated value:
 
         .. math::
             k(w) =
-                \frac{\int_{-\inf}^0 e^{t / \tau} dt}
+                \frac{\int_{-\infty}^0 e^{t / \tau} dt}
                     {\int_{-w}^0 e^{t / \tau} dt}
             = \frac{1}{1 - e^{-w/\tau}}
 
