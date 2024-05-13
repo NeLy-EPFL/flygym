@@ -237,10 +237,12 @@ class ThreeLayerMLP(pl.LightningModule):
         return self.layer3(x)
 
     def configure_optimizers(self):
+        """Use the Adam optimizer."""
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
     def training_step(self, batch, batch_idx):
+        """Training step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
@@ -249,6 +251,7 @@ class ThreeLayerMLP(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """Validation step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
