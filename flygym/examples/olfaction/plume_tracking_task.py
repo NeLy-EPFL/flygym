@@ -6,12 +6,28 @@ from flygym.examples.olfaction import OdorPlumeArena
 
 
 class PlumeNavigationTask(HybridTurningController):
+    """
+    A wrapper around the ``HybridTurningController`` that implements logics
+    and utilities related to plume tracking such as overlaying the plume on
+    the rendered images. It also checks if the fly is within the plume
+    simulation grid and truncates the simulation accordingly.
+    """
+
     def __init__(
         self,
         render_plume_alpha: float = 0.75,
         intensity_display_vmax: float = 1.0,
         **kwargs,
     ):
+        """
+        Parameters
+        ----------
+        render_plume_alpha : float
+            The transparency of the plume overlay on the rendered images.
+        intensity_display_vmax : float
+            The maximum intensity value to be displayed on the rendered
+            images.
+        """
         super().__init__(**kwargs)
         self.arena: OdorPlumeArena = kwargs["arena"]
         self._plume_last_update_time = -np.inf
@@ -84,9 +100,6 @@ class PlumeNavigationTask(HybridTurningController):
         obs, reward, terminated, truncated, info = super().step(action)
         if np.isnan(obs["odor_intensity"]).any():
             truncated = True
-        # if self.arena.is_in_target(*obs["fly"][0, :2]):
-        #     terminated = True
-        #     reward = 1
         return obs, reward, terminated, truncated, info
 
 
