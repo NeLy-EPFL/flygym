@@ -3,8 +3,15 @@ from typing import Tuple, Dict
 from scipy.signal import convolve2d
 
 
-# Extract input/output variables and train models
 def get_leg_mask(legs: str) -> np.ndarray:
+    """
+    Given a list of legs, return a boolean mask indicating which legs are
+    included.
+
+    If legs == "F", the mask is np.array([True, False, False])
+    If legs == "FM", the mask is np.array([True, True, False])
+    ...
+    """
     legs = legs.upper()
     leg_mask = np.zeros(3, dtype=bool)
     if "F" in legs:
@@ -23,6 +30,24 @@ def extract_variables(
     legs: str,
     dt: float = 1e-4,
 ) -> Dict[str, np.ndarray]:
+    """
+    Extract variables used for path integration from trial data.
+
+    Parameters
+    ----------
+    trial_data : Dict[str, np.ndarray]
+        Dictionary containing trial data.
+    time_scale : float
+        Time scale for path integration.
+    contact_force_thr : Tuple[float, float, float]
+        Thresholds for contact forces. These are used to determine whether
+        a leg is in contact with the ground.
+    legs : str
+        String indicating which legs are included. Can be any combination
+        of "F", "M", and "H".
+    dt : float, optional
+        Time step of the physics simulation in the trial, by default 1e-4.
+    """
     window_len = int(time_scale / dt)
     # contact force thresholds: (3,) -> (6,), for both sides
     contact_force_thr = np.array([*contact_force_thr, *contact_force_thr])

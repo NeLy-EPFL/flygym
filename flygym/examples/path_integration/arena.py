@@ -47,10 +47,20 @@ class PathIntegrationArenaBase:
 
 
 class PathIntegrationArenaFlat(PathIntegrationArenaBase, FlatTerrain):
+    """
+    Flat terrain for the path integration task with some fixed camera
+    configurations.
+    """
+
     pass
 
 
 class PathIntegrationArenaBlocks(PathIntegrationArenaBase, BlocksTerrain):
+    """
+    Blocks terrain for the path integration task with some fixed camera
+    configurations.
+    """
+
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
