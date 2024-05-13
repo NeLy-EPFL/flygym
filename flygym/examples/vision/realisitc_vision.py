@@ -6,7 +6,24 @@ from flygym.examples.vision import RealTimeVisionNetworkView, RetinaMapper
 
 
 class RealisticVisionController(HybridTurningController):
+    """
+    This class extends the ``HybridTurningController`` to couple it with
+    the visual system network from `Lappalainen et al., 2023`_. This allows
+    the user to receive, as a part of the observation, the activities
+    of visual system neurons.
+
+    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    """
+
     def __init__(self, vision_network_dir=None, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        vision_network_dir : str, optional
+            Path to the directory containing the vision network checkpoint.
+            If not provided, model 000 from Lappalainen et al., 2023 will
+            be used.
+        """
         super().__init__(*args, **kwargs)
         if vision_network_dir is None:
             vision_network_dir = flyvision.results_dir / "opticflow/000/0000"
@@ -17,6 +34,15 @@ class RealisticVisionController(HybridTurningController):
         self._nn_activities_buffer = None
 
     def step(self, action):
+        """
+        Same as ``HybridTurningController``, except the additional
+        ``nn_activities`` key in the info dictionary, which contains the
+        activities of the visual system neurons as a
+        ``flyvision.LayerActivity`` object, and the ``nn_activities_arr``
+        key in the observation dictionary, which contains the activities
+        of the visual system neurons as a numpy array of shape
+        TODO.
+        """
         obs, reward, terminated, truncated, info = super().step(action)
 
         # If first frame, initialize vision network
@@ -36,11 +62,13 @@ class RealisticVisionController(HybridTurningController):
         return obs, reward, terminated, truncated, info
 
     def close(self):
+        """Close the environment. See ``HybridTurningController.close``."""
         self.vision_network.cleanup_step_by_step_simulation()
         self._vision_network_initialized = False
         return super().close()
 
     def reset(self, *args, **kwargs):
+        """Reset the environment. See ``HybridTurningController.reset``."""
         if self._vision_network_initialized:
             self.vision_network.cleanup_step_by_step_simulation()
             self._vision_network_initialized = False

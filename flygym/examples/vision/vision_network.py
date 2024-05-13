@@ -16,6 +16,19 @@ flyvision.device = torch.device(device)
 
 
 class RealTimeVisionNetwork(Network):
+    """
+    This class extends ``flyvision.network.Network``. The main difference
+    is that ``flyvision.network.Network`` receives the entire history of
+    visual input as a block, which enables more efficient computation on
+    the GPU. In contrast, ``RealTimeVisionNetwork`` receives visual input
+    one frame at a time, allowing for deployment in closed-loop
+    simulations. See `flyvision`_ and `Lappalainen et al., 2023`_ for
+    more details.
+
+    .. _flyvision: https://github.com/TuragaLab/flyvis
+    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    """
+
     def setup_step_by_step_simulation(
         self,
         dt: float,
@@ -23,6 +36,28 @@ class RealTimeVisionNetwork(Network):
         as_states: bool = False,
         num_samples: int = 1,
     ) -> None:
+        """
+        Set up the network for step-by-step simulation.
+
+        Parameters
+        ----------
+        dt : float
+            Integration time step for the visual system neural network
+            simulation. Note that this is typically different from (larger
+            than) the time step of the physics simulation.
+        initial_state : Union[str, AutoDeref, None], optional
+            Initial state of the network. The default is "auto", which
+            establishes a steady state after 1s of gray input. See
+            ``RealTimeVisionNetwork.steady_state`` for more details.
+        as_states : bool, optional
+            Whether to return the network state or just the activities of
+            the nodes. The default is False.
+        num_samples : int, optional
+            Number of samples to simulate in parallel. The default is 1.
+            The user might want to change this to 2 since there are two
+            compound eyes in the fly.
+        """
+
         # Check dt
         if dt > 1 / 50:
             with warnings.catch_warnings():
@@ -82,6 +117,11 @@ class RealTimeVisionNetwork(Network):
         }
 
     def cleanup_step_by_step_simulation(self) -> None:
+        """
+        Clean up the network after the simulation ends. This clears the
+        parameters that were set up for the step-by-step simulation and
+        resets the gradient tracking / training flags.
+        """
         self._check_step_by_step_simulation_setup()
         self.training = self._step_by_step_sim_params["is_training"]
         for name, params in self.named_parameters():
@@ -97,12 +137,14 @@ class RealTimeVisionNetwork(Network):
         Parameters
         ----------
         curr_visual_input : Tensor
-            Tensor of shape (num_samples, num_ommatidia)
+            Raw visual input experienced by the fly (i.e., intensity
+            reading from each ommatidium). This is a tensor of shape
+            (num_samples, num_ommatidia).
 
         Returns
         -------
         Union[Tensor, AutoDeref]
-            _description_
+            _description_ TODO
         """
         self._check_step_by_step_simulation_setup()
 
@@ -125,6 +167,12 @@ class RealTimeVisionNetwork(Network):
             x_t=stimulus_buffer,
             dt=self._step_by_step_sim_params["dt"],
         )
+        print("next state is", type(self._current_step_by_step_sim_state))
+        print(
+            "node activity is of type",
+            type(self._current_step_by_step_sim_state.nodes.activity),
+        )
+        # TODO
         if self._step_by_step_sim_params["as_states"]:
             return self._current_step_by_step_sim_state
         else:
@@ -139,17 +187,34 @@ class RealTimeVisionNetwork(Network):
 
 
 class RealTimeVisionNetworkView(NetworkView):
+    """
+    This class extends ``flyvision.network.NetworkView`` to work with our
+    extended ``RealTimeVisionNetwork``. In brief, it is used as a handle to
+    set up the ``RealTimeVisionNetwork`` from saved checkpoint. See
+    `flyvision`_ and `Lappalainen et al., 2023`_ for more details.
+
+    .. _flyvision: https://github.com/TuragaLab/flyvis
+    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    """
+
     def init_network(
         self, chkpt="best_chkpt", network: Optional[RealTimeVisionNetwork] = None
     ) -> Network:
-        """Initialize the network.
+        """
+        Initialize the pretrained network.
 
-        Args:
-            chkpt: checkpoint to load.
-            network: network instance to initialize.
+        Parameters
+        ----------
+        chkpt: str
+            Checkpoint to load. Default: "best_chkpt".
+        network: RealTimeVisionNetwork, optional
+            Network instance to initialize. If None, a new instance will
+            be created.
 
-        Returns:
-            network instance.
+        Returns
+        -------
+        RealTimeVisionNetwork
+            The network instance.
         """
         if self._initialized["network"] and network is None:
             return self.network
@@ -161,6 +226,16 @@ class RealTimeVisionNetworkView(NetworkView):
 
 
 class RetinaMapper:
+    """
+    Both flyvision and flygym use a hexagonal grid of ommatidia to model
+    the compound eyes of the fly. To approximate the the correct number of
+    ommatidia per eye (about 700-800), the two libraries even share the
+    same size of the grid. However, the two libraries use different
+    indexing conventions for the ommatidia. This class provides methods to
+    convert stimuli between the coordinate systems of flyvision's
+    ``BoxEye`` representation and flygym's ``Retina`` representation.
+    """
+
     def __init__(
         self, retina: Optional[Retina] = None, boxeye: Optional[BoxEye] = None
     ):
@@ -216,7 +291,43 @@ class RetinaMapper:
         self._idx_flygym_to_flyvis = np.argsort(self._idx_flyvis_to_flygym)
 
     def flygym_to_flyvis(self, flygym_stimulus: np.ndarray) -> np.ndarray:
+        """
+        Convert a stimulus from flygym's ``Retina`` representation to
+        flyvision's ``BoxEye`` representation.
+
+        Parameters
+        ----------
+        flygym_stimulus : np.ndarray
+            Any value (e.g., intensities, neural activities) associated
+            with the ommatidia in flygym's ``Retina`` ordering. The shape
+            is (..., num_ommatidia): in other words, this method works as
+            long as the size along the last dimension is the same as the
+            number of ommatidia (721).
+
+        Returns
+        -------
+        np.ndarray
+            The same values, but now in flyvision's ``BoxEye`` ordering.
+        """
         return flygym_stimulus[..., self._idx_flyvis_to_flygym]
 
     def flyvis_to_flygym(self, flyvis_stimulus: np.ndarray) -> np.ndarray:
+        """
+        Convert a stimulus from flyvision's ``BoxEye`` representation to
+        flygym's ``Retina`` representation.
+
+        Parameters
+        ----------
+        flyvis_stimulus : np.ndarray
+            Any value (e.g., intensities, neural activities) associated
+            with the ommatidia in flyvision's ``BoxEye`` ordering. The
+            shape is (..., num_ommatidia): in other words, this method
+            works as long as the size along the last dimension is the same
+            as the number of ommatidia (721).
+
+        Returns
+        -------
+        np.ndarray
+            The same values, but now in flygym's ``Retina`` ordering.
+        """
         return flyvis_stimulus[..., self._idx_flygym_to_flyvis]
