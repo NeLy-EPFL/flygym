@@ -41,6 +41,14 @@ _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)
 
 
 class HybridTurningController(SingleFlySimulation):
+    """
+    This class implements a controller that uses a CPG network to generate
+    leg movements and uses a set of sensory-based rules to correct for
+    stumbling and retraction. The controller also receives a 2D descending
+    input to modulate the amplitudes and frequencies of the CPGs to
+    accomplish turning.
+    """
+
     def __init__(
         self,
         fly: Fly,
@@ -64,6 +72,55 @@ class HybridTurningController(SingleFlySimulation):
         seed=0,
         **kwargs,
     ):
+        """
+        Parameters
+        ----------
+        fly : Fly
+            The fly object to be simulated.
+        preprogrammed_steps : PreprogrammedSteps, optional
+            Preprogrammed steps to be used for leg movement.
+        intrinsic_freqs : np.ndarray, optional
+            Intrinsic frequencies of the CPGs. See ``CPGNetwork`` for
+            details.
+        intrinsic_amps : np.ndarray, optional
+            Intrinsic amplitudes of the CPGs. See ``CPGNetwork`` for
+            details.
+        phase_biases : np.ndarray, optional
+            Phase biases of the CPGs. See ``CPGNetwork`` for details.
+        coupling_weights : np.ndarray, optional
+            Coupling weights of the CPGs. See ``CPGNetwork`` for details.
+        convergence_coefs : np.ndarray, optional
+            Convergence coefficients of the CPGs. See ``CPGNetwork`` for
+            details.
+        init_phases : np.ndarray, optional
+            Initial phases of the CPGs. See ``CPGNetwork`` for details.
+        init_magnitudes : np.ndarray, optional
+            Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
+        stumble_segments : tuple, optional
+            Leg segments to be used for stumbling detection.
+        stumbling_force_threshold : float, optional
+            Threshold for stumbling detection.
+        correction_vectors : dict, optional
+            Correction vectors for each leg.
+        correction_rates : dict, optional
+            Correction rates for retraction and stumbling.
+        amplitude_range : tuple, optional
+            Range for leg lifting correction.
+        draw_corrections : bool, optional
+            Whether to color-code legs to indicate if correction rules
+            are active in the rendered video.
+        max_increment : float, optional
+            Maximum correction increment.
+        retraction_perisistance : int, optional
+            Number of timesteps to persist in retraction correction.
+        retraction_persistance_initiation_threshold : float, optional
+            Threshold for retraction correction initiation.
+        seed : int, optional
+            Seed for the random number generator.
+        **kwargs
+            Additional keyword arguments to be passed to
+            ``SingleFlySimulation.__init__``.
+        """
         # Check if we have the correct list of actuated joints
         if fly.actuated_joints != all_leg_dofs:
             raise ValueError(
@@ -242,6 +299,30 @@ class HybridTurningController(SingleFlySimulation):
         return new_amount, condition
 
     def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
+        """
+        Reset the simulation.
+
+        Parameters
+        ----------
+        seed : int, optional
+            Seed for the random number generator. If None, the simulation
+            is re-seeded without a specific seed. For reproducibility,
+            always specify a seed.
+        init_phases : np.ndarray, optional
+            Initial phases of the CPGs. See ``CPGNetwork`` for details.
+        init_magnitudes : np.ndarray, optional
+            Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
+        **kwargs
+            Additional keyword arguments to be passed to
+            ``SingleFlySimulation.reset``.
+
+        Returns
+        -------
+        np.ndarray
+            Initial observation upon reset.
+        dict
+            Additional information.
+        """
         obs, info = super().reset(seed=seed)
         self.cpg_network.random_state = np.random.RandomState(seed)
         self.cpg_network.intrinsic_amps = self.intrinsic_amps
@@ -298,9 +379,11 @@ class HybridTurningController(SingleFlySimulation):
                 condition=self._stumbling_rule_check_condition(obs, leg),
                 curr_amount=self.stumbling_correction[i],
                 correction_rates=self.correction_rates["stumbling"],
-                viz_segment=f"{leg}Femur"
-                if self.draw_corrections and retraction_correction <= 0
-                else None,
+                viz_segment=(
+                    f"{leg}Femur"
+                    if self.draw_corrections and retraction_correction <= 0
+                    else None
+                ),
             )
 
             # get net correction amount

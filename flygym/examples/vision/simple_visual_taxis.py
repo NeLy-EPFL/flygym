@@ -11,9 +11,29 @@ from flygym.examples.vision import MovingObjArena
 
 
 class VisualTaxis(HybridTurningController):
+    """
+    A simple visual taxis task where the fly has to follow a moving object.
+    """
+
     def __init__(
         self, camera: Camera, obj_threshold=0.15, decision_interval=0.05, **kwargs
     ):
+        """
+        Parameters
+        ----------
+        camera : Camera
+            The camera to be used for rendering.
+        obj_threshold : float
+            The threshold for object detection. Minimum and maximum
+            brightness values are 0 and 1. If an ommatidium's intensity
+            reading is below this value, then it is considered that this
+            ommatidium is seeing the object.
+        decision_interval : float
+            The interval between updates of descending drives, in seconds.
+        kwargs
+            Additional keyword arguments to be passed to
+            ``HybridTurningController.__init__``.
+        """
         super().__init__(cameras=[camera], **kwargs)
 
         self.obj_threshold = obj_threshold
@@ -29,6 +49,29 @@ class VisualTaxis(HybridTurningController):
         self.observation_space = spaces.Box(0, 1, shape=(6,))
 
     def step(self, control_signal):
+        """
+        Step the simulation forward in time. Note that this method is to be
+        called every time the descending steering signals are updated. This
+        typically includes many forward steps of the physics simulation.
+
+        Parameters
+        ----------
+        control_signal : array_like
+            The control signal to apply to the simulation.
+
+        Returns
+        -------
+        visual_features : array_like
+            The preprocessed visual features extracted from the observation.
+        reward : float
+            The reward obtained from the current step.
+        terminated : bool
+            Whether the episode is terminated or not. Always False.
+        truncated : bool
+            Whether the episode is truncated or not. Always False.
+        info : dict
+            Additional information about the step.
+        """
         vision_inputs = []
         for _ in range(self.num_substeps):
             raw_obs, _, _, _, info = super().step(control_signal)
@@ -56,6 +99,7 @@ class VisualTaxis(HybridTurningController):
         return features.ravel().astype("float32")
 
     def reset(self, seed=0, **kwargs):
+        """See `HybridTurningController.reset`."""
         raw_obs, _ = super().reset(seed=seed)
         self.visual_inputs_hist = []
         return self._process_visual_observation(raw_obs["vision"]), {}
