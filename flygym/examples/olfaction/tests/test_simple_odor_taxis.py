@@ -1,4 +1,4 @@
-from flygym.examples.olfaction import run_simulation
+from flygym.examples.olfaction.simple_odor_taxis import run_simulation
 import numpy as np
 
 
