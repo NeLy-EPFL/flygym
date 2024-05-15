@@ -2,7 +2,7 @@ import numpy as np
 
 from flygym.arena import OdorArena
 from flygym import Fly, Camera, SingleFlySimulation
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 
 from pytest import approx
 
@@ -59,7 +59,7 @@ def test_odor_intensity():
         draw_adhesion=False,
     )
 
-    sim = HybridTurningNMF(
+    sim = HybridTurningController(
         fly=fly,
         arena=arena,
         timestep=1e-4,
