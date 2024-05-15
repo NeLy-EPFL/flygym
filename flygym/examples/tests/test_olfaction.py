@@ -43,7 +43,6 @@ def test_odor_taxis_full_turn():
         run_time=5,
         target_pos=target_pos,
         distance_threshold=distance_threshold,
-        video_path="temp.mp4",
     )
 
     last_pos = obs_hist[-1]["fly"][0, :2]
