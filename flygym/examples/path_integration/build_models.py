@@ -351,6 +351,6 @@ viz.plot_all_path_integration_trials(
     output_path=figs_dir / "all_path_integration_trials.pdf",
 )
 
-viz.make_model_prediction_scatte_plot(
+viz.make_model_prediction_scatter_plot(
     path_integration_results, figs_dir / "scatter.pdf"
 )
