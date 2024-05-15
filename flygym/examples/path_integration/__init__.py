@@ -1,1 +1,7 @@
-from flygym.examples.path_integration import arena, controller, model, util, viz
+from .arena import (
+    PathIntegrationArenaBase,
+    PathIntegrationArenaFlat,
+    PathIntegrationArenaBlocks,
+)
+from .controller import RandomExplorationController, PathIntegrationController
+from .model import LinearModel, path_integrate

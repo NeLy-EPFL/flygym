@@ -11,8 +11,36 @@ from typing import Tuple, Optional, Callable
 
 
 class JointAngleScaler:
+    """
+    A class for standardizing joint angles (i.e., using mean and standard
+    deviation.
+
+    Attributes
+    ----------
+    mean : np.ndarray
+        The mean values used for scaling.
+    std : np.ndarray
+        The standard deviation values used for scaling.
+    """
+
     @classmethod
     def from_data(cls, joint_angles: np.ndarray):
+        """
+        Create a JointAngleScaler instance from joint angle data. The mean
+        and standard deviation values are calculated from the data.
+
+        Parameters
+        ----------
+        joint_angles : np.ndarray
+            The joint angle data. The shape should be (n_samples, n_joints)
+            where n_samples is, for example, the length of a time series of
+            joint angles.
+
+        Returns
+        -------
+        JointAngleScaler
+            A JointAngleScaler instance.
+        """
         scaler = cls()
         scaler.mean = np.mean(joint_angles, axis=0)
         scaler.std = np.std(joint_angles, axis=0)
@@ -20,16 +48,98 @@ class JointAngleScaler:
 
     @classmethod
     def from_params(cls, mean: np.ndarray, std: np.ndarray):
+        """
+        Create a JointAngleScaler instance from predetermined mean and
+        standard deviation values.
+
+        Parameters
+        ----------
+        mean : np.ndarray
+            The mean values. The shape should be (n_joints,).
+        std : np.ndarray
+            The standard deviation values. The shape should be (n_joints,).
+
+        Returns
+        -------
+        JointAngleScaler
+            A JointAngleScaler instance.
+        """
         scaler = cls()
         scaler.mean = mean
         scaler.std = std
         return scaler
 
     def __call__(self, joint_angles: np.ndarray):
+        """
+        Scale the given joint angles.
+
+        Parameters
+        ----------
+        joint_angles : np.ndarray
+            The joint angles to be scaled. The shape should be (n_samples,
+            n_joints) where n_samples is, for example, the length of a time
+            series of joint angles.
+
+        Returns
+        -------
+        np.ndarray
+            The scaled joint angles.
+        """
         return (joint_angles - self.mean) / self.std
 
 
 class WalkingDataset(Dataset):
+    """
+    PyTorch Dataset class for walking data.
+
+    Parameters
+    ----------
+    sim_data_file : Path
+        The path to the simulation data file.
+    contact_force_thr : Tuple[float, float, float], optional
+        The threshold values for contact forces, by default (0.5, 1, 3).
+    joint_angle_scaler : Optional[Callable], optional
+        A callable object used to scale joint angles, by default None.
+    ignore_first_n : int, optional
+        The number of initial data points to ignore, by default 200.
+    joint_mask : Optional, optional
+        A mask to apply on joint angles, by default None.
+
+    Attributes
+    ----------
+    gait : str
+        The type of gait.
+    terrain : str
+        The type of terrain.
+    subset : str
+        The subset of the data, i.e., "train" or "test".
+    dn_drive : str
+        The DN drive used to generate the data.
+    contact_force_thr : np.ndarray
+        The threshold values for contact forces.
+    joint_angle_scaler : Callable
+        The callable object used to scale joint angles.
+    ignore_first_n : int
+        The number of initial data points to ignore.
+    joint_mask : Optional
+        The mask applied on joint angles. This is used to zero out certain
+        DoFs to evaluate which DoFs are likely more important for head
+        stabilization.
+    contains_fly_flip : bool
+        Indicates if the simulation data contains fly flip errors.
+    contains_physics_error : bool
+        Indicates if the simulation data contains physics errors.
+    roll_pitch_ts : np.ndarray
+        The optimal roll and pitch correction angles. The shape is
+        (n_samples, 2).
+    joint_angles : np.ndarray
+        The scaled joint angle time series. The shape is (n_samples,
+        n_joints).
+    contact_mask : np.ndarray
+        The contact force mask (i.e., 1 if leg touching the floor, 0
+        otherwise). The shape is (n_samples, 6).
+    """
+
     def __init__(
         self,
         sim_data_file: Path,
@@ -95,6 +205,12 @@ class WalkingDataset(Dataset):
 
 
 class ThreeLayerMLP(pl.LightningModule):
+    """
+    A PyTorch Lightning module for a three-layer MLP that predicts the
+    head roll and pitch correction angles based on proprioception and
+    tactile information.
+    """
+
     def __init__(self):
         super().__init__()
         input_size = 42 + 6
@@ -106,15 +222,27 @@ class ThreeLayerMLP(pl.LightningModule):
         self.r2_score = R2Score()
 
     def forward(self, x):
+        """
+        Forward pass through the model.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            The input tensor. The shape should be (n_samples, 42 + 6)
+            where 42 is the number of joint angles and 6 is the number of
+            contact masks.
+        """
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)
 
     def configure_optimizers(self):
+        """Use the Adam optimizer."""
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
     def training_step(self, batch, batch_idx):
+        """Training step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
@@ -123,6 +251,7 @@ class ThreeLayerMLP(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """Validation step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
@@ -152,6 +281,17 @@ class HeadStabilizationInferenceWrapper:
         scaler_param_path: Path,
         contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
     ):
+        """
+        Parameters
+        ----------
+        model_path : Path
+            The path to the trained model.
+        scaler_param_path : Path
+            The path to the pickle file containing scaler parameters.
+        contact_force_thr : Tuple[float, float, float], optional
+            The threshold values for contact forces that are used to
+            determine the floor contact flags, by default (0.5, 1, 3).
+        """
         # Load scaler params
         with open(scaler_param_path, "rb") as f:
             scaler_params = pickle.load(f)
@@ -168,6 +308,23 @@ class HeadStabilizationInferenceWrapper:
     def __call__(
         self, joint_angles: np.ndarray, contact_forces: np.ndarray
     ) -> np.ndarray:
+        """
+        Make a prediction given joint angles and contact forces. This is
+        a light wrapper around the model's forward method and works without
+        batching.
+
+        Parameters
+        ----------
+        joint_angles : np.ndarray
+            The joint angles. The shape should be (n_joints,).
+        contact_forces : np.ndarray
+            The contact forces. The shape should be (n_legs, 6).
+
+        Returns
+        -------
+        np.ndarray
+            The predicted roll and pitch angles. The shape is (2,).
+        """
         joint_angles = (joint_angles - self.scaler_mean) / self.scaler_std
         contact_forces = np.linalg.norm(contact_forces, axis=1)
         contact_forces = contact_forces.reshape(6, 6).sum(axis=1)

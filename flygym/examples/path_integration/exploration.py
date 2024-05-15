@@ -15,7 +15,7 @@ from flygym.examples.path_integration.arena import (
 from flygym.examples.path_integration.controller import (
     WalkingState,
     RandomExplorationController,
-    PathIntegrationNMF,
+    PathIntegrationController,
 )
 
 
@@ -98,8 +98,12 @@ def run_simulation(
     terrain_type: str = "flat",
     gait: str = "tripod",
     live_display: bool = False,
+    enable_rendering: bool = True,
+    pbar: bool = False,
     output_dir: Optional[Path] = None,
 ):
+    if (not enable_rendering) and live_display:
+        raise ValueError("Cannot enable live display without rendering.")
     icons = get_walking_icons()
     contact_sensor_placements = [
         f"{leg}{segment}"
@@ -123,11 +127,8 @@ def run_simulation(
     else:
         raise ValueError(f"Unknown terrain type: {terrain_type}")
 
-    # cam = Camera(
-    #     fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
-    # )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
-    sim = PathIntegrationNMF(
+    sim = PathIntegrationController(
         phase_biases=get_cpg_biases(gait),
         fly=fly,
         arena=arena,
@@ -148,12 +149,15 @@ def run_simulation(
     obs, info = sim.reset(0)
     obs_hist, info_hist, action_hist = [], [], []
     _real_heading_buffer = []
-    _estimated_heading_buffer = []
-    for i in trange(int(running_time / sim.timestep)):
+    iterator = trange if pbar else range
+    for i in iterator(int(running_time / sim.timestep)):
         walking_state, dn_drive = random_exploration_controller.step()
         action_hist.append(dn_drive)
         obs, reward, terminated, truncated, info = sim.step(dn_drive)
-        rendered_img = sim.render()[0]
+        if enable_rendering:
+            rendered_img = sim.render()[0]
+        else:
+            rendered_img = None
 
         # Get real heading
         orientation_x, orientation_y = obs["fly_orientation"][:2]
@@ -175,7 +179,8 @@ def run_simulation(
     # Save data if output_dir is provided
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
-        cam.save_video(output_dir / "rendering.mp4")
+        if enable_rendering:
+            cam.save_video(output_dir / "rendering.mp4")
         with open(output_dir / "sim_data.pkl", "wb") as f:
             data = {
                 "obs_hist": obs_hist,
@@ -201,6 +206,7 @@ if __name__ == "__main__":
             terrain_type="flat",
             gait=gait,
             live_display=False,
+            pbar=True,
             output_dir=root_output_dir / f"seed={seed}_gait={gait}",
         )
 
