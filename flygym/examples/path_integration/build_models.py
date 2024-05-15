@@ -29,48 +29,11 @@ testing_trials = list(range(10, 15))
 
 
 # Load random exploration data
-def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
-    with open(trial_dir / "sim_data.pkl", "rb") as f:
-        sim_data = pickle.load(f)
-    obs_hist = sim_data["obs_hist"]
-    action_hist = sim_data["action_hist"]
-
-    end_effector_pos_ts = np.array(
-        [obs["stride_diff_unmasked"] for obs in obs_hist], dtype=np.float32
-    )
-
-    contact_force_ts = np.array(
-        [obs["contact_forces"] for obs in obs_hist], dtype=np.float32
-    )
-    contact_force_ts = np.linalg.norm(contact_force_ts, axis=2)  # calc force magnitude
-    contact_force_ts = contact_force_ts.reshape(-1, 6, 6).sum(axis=2)  # total per leg
-
-    dn_drive_ts = np.array(action_hist, dtype=np.float32)
-
-    fly_orientation_ts = np.array(
-        [obs["fly_orientation"][:2] for obs in obs_hist], dtype=np.float32
-    )
-
-    fly_pos_ts = np.array([obs["fly"][0, :2] for obs in obs_hist], dtype=np.float32)
-
-    # Clear RAM right away manually to avoid memory fragmentation
-    del sim_data
-    gc.collect()
-
-    return {
-        "end_effector_pos": end_effector_pos_ts,
-        "contact_force": contact_force_ts,
-        "dn_drive": dn_drive_ts,
-        "fly_orientation": fly_orientation_ts,
-        "fly_pos": fly_pos_ts,
-    }
-
-
 trial_data = {}
 for gait in gaits:
     for seed in trange(num_trials_per_gait, desc=f"Loading {gait} gait trials"):
         trial_dir = base_dir / f"random_exploration/seed={seed}_gait={gait}"
-        trial_data[(gait, seed)] = load_trial_data(trial_dir)
+        trial_data[(gait, seed)] = util.load_trial_data(trial_dir)
 
 
 # Plot example exploration trials

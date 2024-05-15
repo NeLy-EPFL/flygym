@@ -24,6 +24,7 @@ jobs:
           pip install --upgrade pip
           pip cache purge
           pip install -e ."[dev]"
+          pip install -e ."[tests]"
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names
