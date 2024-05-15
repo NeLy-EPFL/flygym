@@ -129,7 +129,7 @@ def test_left_right_sum():
     assert backstroke_mean_slow / backstroke_mean_fast == pytest.approx(4, abs=1)
 
 
-def test_left_right_sum():
+def test_left_right_diff():
     running_time = 0.2
     dt = 1e-4
 
