@@ -70,21 +70,31 @@ def path_integrate(
     displacement_diff_y_pred = np.sin(heading_pred) * displacement_diff_pred
     pos_x_pred = np.cumsum(displacement_diff_x_pred / window_len)
     pos_y_pred = np.cumsum(displacement_diff_y_pred / window_len)
+    pos_x_pred += trial_data["fly_pos"][window_len, 0]
+    pos_y_pred += trial_data["fly_pos"][window_len, 1]
     pos_pred = np.concatenate([pos_x_pred[:, None], pos_y_pred[:, None]], axis=1)
 
     # Pad with NaN where prediction not available
-    heading_pred = np.concatenate([np.full(window_len, np.nan), heading_pred])
+    padding = np.full(window_len, np.nan)
+    heading_pred = np.concatenate([padding, heading_pred])
+    heading_actual = np.concatenate([padding, variables["heading"]])
     pos_pred = np.concatenate([np.full((window_len, 2), np.nan), pos_pred], axis=0)
+    heading_diff_pred = np.concatenate([padding, heading_diff_pred])
+    heading_diff_actual = np.concatenate([padding, variables["heading_diff"]])
+    displacement_diff_pred = np.concatenate([padding, displacement_diff_pred])
+    displacement_diff_actual = np.concatenate(
+        [padding, variables["forward_disp_total_diff"]]
+    )
 
     return {
         "heading_pred": heading_pred,
-        "heading_actual": variables["heading"],
+        "heading_actual": heading_actual,
         "pos_pred": pos_pred,
         "pos_actual": trial_data["fly_pos"],
         "heading_diff_pred": heading_diff_pred,
-        "heading_diff_actual": variables["heading_diff"],
+        "heading_diff_actual": heading_diff_actual,
         "displacement_diff_pred": displacement_diff_pred,
-        "displacement_diff_actual": variables["forward_disp_total_diff"],
+        "displacement_diff_actual": displacement_diff_actual,
     }
 
 
