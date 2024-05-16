@@ -42,9 +42,9 @@ right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 stumbling_force_threshold = -1
 
 correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
-max_increment = 80/1e-4
-retraction_persistance = 20/1e-4
-persistance_init_thr = 20/1e-4
+max_increment = 80 / 1e-4
+retraction_persistance = 20 / 1e-4
+persistance_init_thr = 20 / 1e-4
 
 
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
@@ -96,7 +96,10 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
-            if retraction_correction[leg_to_correct_retraction] > persistance_init_thr*sim.timestep:
+            if (
+                retraction_correction[leg_to_correct_retraction]
+                > persistance_init_thr * sim.timestep
+            ):
                 retraction_persistance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
@@ -104,7 +107,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         # update persistance counter
         retraction_persistance_counter[retraction_persistance_counter > 0] += 1
         retraction_persistance_counter[
-            retraction_persistance_counter > retraction_persistance*sim.timestep
+            retraction_persistance_counter > retraction_persistance * sim.timestep
         ] = 0
         retraction_persistance_counter_hist[:, k] = retraction_persistance_counter
 
@@ -157,7 +160,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             my_joints_angles = preprogrammed_steps.get_joint_angles(
                 leg, cpg_network.curr_phases[i], cpg_network.curr_magnitudes[i]
             )
-            net_correction = np.clip(net_correction, 0, max_increment*sim.timestep)
+            net_correction = np.clip(net_correction, 0, max_increment * sim.timestep)
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
 

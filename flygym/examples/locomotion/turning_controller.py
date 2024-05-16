@@ -66,9 +66,9 @@ class HybridTurningController(SingleFlySimulation):
         correction_rates=_default_correction_rates,
         amplitude_range=(-0.5, 1.5),
         draw_corrections=False,
-        max_increment=80/1e-4,
-        retraction_persistance_duration=20/1e-4,
-        retraction_persistance_initiation_threshold=20/1e-4,
+        max_increment=80 / 1e-4,
+        retraction_persistance_duration=20 / 1e-4,
+        retraction_persistance_initiation_threshold=20 / 1e-4,
         seed=0,
         **kwargs,
     ):
@@ -150,13 +150,15 @@ class HybridTurningController(SingleFlySimulation):
         self.amplitude_range = amplitude_range
         self.draw_corrections = draw_corrections
         self.max_increment = max_increment * self.timestep
-        self.retraction_persistance_duration = retraction_persistance_duration * self.timestep
+        self.retraction_persistance_duration = (
+            retraction_persistance_duration * self.timestep
+        )
         self.retraction_persistance_initiation_threshold = (
             retraction_persistance_initiation_threshold * self.timestep
         )
         self.retraction_persistance_counter = np.zeros(6)
         # Define the joints that need to be inverted to
-        # mirror actions from left to right 
+        # mirror actions from left to right
         self.right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 
         # Define action and observation spaces
@@ -181,11 +183,11 @@ class HybridTurningController(SingleFlySimulation):
 
         # Find stumbling sensors
         self.stumbling_sensors = self._find_stumbling_sensor_indices()
-        # Define the gain applied to the correction based on the phase of the CPG
+        # Define the gain applied to the correction based on the phase of the CPG
         # (retracting the leg more during the swing phase, less during the stance phase)
         self.phasic_multiplier = self._init_phasic_gain()
 
-    def _init_phasic_gain(self, swing_extension=np.pi/4):
+    def _init_phasic_gain(self, swing_extension=np.pi / 4):
         """Initialize the gain applied to the correction based on the phase of the CPG.
         Lengthen the swing phase by swing_extension to give more
         chances to the leg to avoid obstacles.
@@ -261,11 +263,10 @@ class HybridTurningController(SingleFlySimulation):
         # increment every nonzero counter
         self.retraction_persistance_counter[
             self.retraction_persistance_counter > 0
-            ] += 1
+        ] += 1
         # zero the increment when reaching the threshold
         self.retraction_persistance_counter[
-            self.retraction_persistance_counter
-            > self.retraction_persistance_duration
+            self.retraction_persistance_counter > self.retraction_persistance_duration
         ] = 0
 
     def _stumbling_rule_check_condition(self, obs, leg):
