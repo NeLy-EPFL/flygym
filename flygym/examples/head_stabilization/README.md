@@ -9,9 +9,10 @@ This subpackage includes the following files:
   - First run it to plot the last frame of all simulations in one image (`last_frames_all.png`).
   - Modify the `excluded_videos` variable to indicate the trials to be excluded.
   - Run it again and check `last_frames_clean.png`. This time, no panel should contain a flipped fly.
-- `model.py`: This module defines the following —
+- `data.py`: This module defines the following —
   - A PyTorch dataset that draws data from the training trials,
   - The artificial neural network model used to compute the appropriate neck actuation signals,
+- `model.py`: This module defines the following —
   - A data scaler to be used with the model, and
   - An inference-time wrapper of the model suitable for closed-loop deployment.
 - `train_proprioception_model.py`: This script trains and evaluates models defined above using the simulated trials.

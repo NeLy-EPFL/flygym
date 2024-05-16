@@ -19,8 +19,10 @@ def run_simulation(
     spawn_xy: Tuple[float, float] = (0, 0),
     dn_drive: Tuple[float, float] = (1, 1),
     sim_duration: float = 0.5,
+    enable_rendering: bool = False,
     live_display: bool = False,
     output_dir: Optional[Path] = None,
+    pbar: bool = False,
 ):
     """Simulate locomotion and collect proprioceptive information to train
     a neural network for head stabilization.
@@ -41,16 +43,23 @@ def run_simulation(
         (1, 1).
     sim_duration : float, optional
         The duration of the simulation in seconds. Defaults to 0.5.
+    enable_rendering: bool, optional
+        If True, enables rendering. Defaults to False.
     live_display : bool, optional
         If True, enables live display. Defaults to False.
     output_dir : Path, optional
         The directory to which output files are saved. Defaults to None.
+    pbar : bool, optional
+        If True, enables progress bar. Defaults to False.
 
     Raises
     ------
     ValueError
         Raised when an unknown terrain type is provided.
     """
+    if (not enable_rendering) and live_display:
+        raise ValueError("Cannot enable live display without rendering.")
+
     # Set up arena
     if terrain == "flat":
         arena = FlatTerrain()
@@ -90,7 +99,8 @@ def run_simulation(
     obs_hist, info_hist, action_hist = [], [], []
     dn_drive = np.array(dn_drive)
     physics_error, fly_flipped = False, False
-    for _ in trange(int(sim_duration / sim.timestep)):
+    iterator = trange if pbar else range
+    for _ in iterator(int(sim_duration / sim.timestep)):
         action_hist.append(dn_drive)
 
         try:
@@ -100,7 +110,8 @@ def run_simulation(
             physics_error = True
             break
 
-        rendered_img = sim.render()[0]
+        if enable_rendering:
+            rendered_img = sim.render()[0]
 
         # Get necessary angles
         quat = sim.physics.bind(sim.fly.thorax).xquat
@@ -116,14 +127,15 @@ def run_simulation(
             break
 
         # Live display
-        if live_display and rendered_img is not None:
+        if enable_rendering and live_display and rendered_img is not None:
             cv2.imshow("rendered_img", rendered_img[:, :, ::-1])
             cv2.waitKey(1)
 
     # Save data if output_dir is provided
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
-        cam.save_video(output_dir / "rendering.mp4")
+        if enable_rendering:
+            cam.save_video(output_dir / "rendering.mp4")
         with open(output_dir / "sim_data.pkl", "wb") as f:
             data = {
                 "obs_hist": obs_hist,
@@ -138,7 +150,7 @@ def run_simulation(
 
 
 if __name__ == "__main__":
-    # run_simulation(live_display=True, terrain="blocks", dn_drive=(1, 1))
+    # run_simulation(live_display=True, terrain="blocks", dn_drive=(1, 1), pbar=True)
 
     from joblib import Parallel, delayed
     from numpy.random import RandomState
@@ -169,7 +181,17 @@ if __name__ == "__main__":
                         / f"{gait}_{terrain}_{set_tag}_{dn_left:.2f}_{dn_right:.2f}"
                     )
                     job_specs.append(
-                        (gait, terrain, spawn_xy, dn_drive, 1.5, False, output_dir)
+                        (
+                            gait,
+                            terrain,
+                            spawn_xy,
+                            dn_drive,
+                            1.5,  # sim duration
+                            True,  # enable rendering
+                            False,  # live display
+                            output_dir,
+                            True,  # enable progress bar
+                        )
                     )
 
     Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
