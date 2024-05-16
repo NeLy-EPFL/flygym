@@ -55,7 +55,35 @@ def get_collision_geometries(config: str = "all") -> List[str]:
     segments), "legs-no-coxa" (all leg segments excluding the coxa
     segments), "tarsi" (all tarsus segments), and "none" (nothing).
     """
-    if config == "legs":
+    if config == "all":
+        # fmt: off
+        return [
+            "Thorax", "A1A2", "A3", "A4", "A5", "A6", "Head_roll", "Head_yaw",
+            "Head", "LEye", "LPedicel_roll", "LPedicel_yaw", "LPedicel",
+            "LFuniculus_roll", "LFuniculus_yaw", "LFuniculus", "LArista_roll",
+            "LArista_yaw", "LArista", "REye", "Rostrum", "Haustellum",
+            "RPedicel_roll", "RPedicel_yaw", "RPedicel", "RFuniculus_roll",
+            "RFuniculus_yaw", "RFuniculus", "RArista_roll", "RArista_yaw",
+            "RArista", "LFCoxa_roll", "LFCoxa_yaw", "LFCoxa", "LFFemur",
+            "LFFemur_roll", "LFTibia", "LFTarsus1", "LFTarsus2", "LFTarsus3",
+            "LFTarsus4", "LFTarsus5", "LHaltere_roll", "LHaltere_yaw",
+            "LHaltere", "LHCoxa_roll", "LHCoxa_yaw", "LHCoxa", "LHFemur",
+            "LHFemur_roll", "LHTibia", "LHTarsus1", "LHTarsus2", "LHTarsus3",
+            "LHTarsus4", "LHTarsus5", "LMCoxa_roll", "LMCoxa_yaw", "LMCoxa",
+            "LMFemur", "LMFemur_roll", "LMTibia", "LMTarsus1", "LMTarsus2",
+            "LMTarsus3", "LMTarsus4", "LMTarsus5", "LWing_roll", "LWing_yaw",
+            "LWing", "RFCoxa_roll", "RFCoxa_yaw", "RFCoxa", "RFFemur",
+            "RFFemur_roll", "RFTibia", "RFTarsus1", "RFTarsus2", "RFTarsus3",
+            "RFTarsus4", "RFTarsus5", "RHaltere_roll", "RHaltere_yaw",
+            "RHaltere", "RHCoxa_roll", "RHCoxa_yaw", "RHCoxa", "RHFemur",
+            "RHFemur_roll", "RHTibia", "RHTarsus1", "RHTarsus2", "RHTarsus3",
+            "RHTarsus4", "RHTarsus5", "RMCoxa_roll", "RMCoxa_yaw", "RMCoxa",
+            "RMFemur", "RMFemur_roll", "RMTibia", "RMTarsus1", "RMTarsus2",
+            "RMTarsus3", "RMTarsus4", "RMTarsus5", "RWing_roll", "RWing_yaw",
+            "RWing"
+        ]
+        # fmt: on
+    elif config == "legs":
         return [
             f"{side}{pos}{dof}"
             for side in "LR"
