@@ -85,7 +85,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     obs_hist = []
     info_hist = []
 
-    retraction_perisitance_counter = np.zeros(6)
+    retraction_persistance_counter = np.zeros(6)
 
     retraction_persistance_counter_hist = np.zeros((6, target_num_steps))
 
@@ -97,16 +97,16 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if retraction_correction[leg_to_correct_retraction] > persistance_init_thr*sim.timestep:
-                retraction_perisitance_counter[leg_to_correct_retraction] = 1
+                retraction_persistance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
 
         # update persistance counter
-        retraction_perisitance_counter[retraction_perisitance_counter > 0] += 1
-        retraction_perisitance_counter[
-            retraction_perisitance_counter > retraction_persistance*sim.timestep
+        retraction_persistance_counter[retraction_persistance_counter > 0] += 1
+        retraction_persistance_counter[
+            retraction_persistance_counter > retraction_persistance*sim.timestep
         ] = 0
-        retraction_persistance_counter_hist[:, k] = retraction_perisitance_counter
+        retraction_persistance_counter_hist[:, k] = retraction_persistance_counter
 
         cpg_network.step()
         joints_angles = []
@@ -117,7 +117,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         for i, leg in enumerate(preprogrammed_steps.legs):
             # update amount of retraction correction
             if (
-                i == leg_to_correct_retraction or retraction_perisitance_counter[i] > 0
+                i == leg_to_correct_retraction or retraction_persistance_counter[i] > 0
             ):  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[i] += increment
