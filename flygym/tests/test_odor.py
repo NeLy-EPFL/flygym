@@ -36,7 +36,7 @@ def test_odor_dimensions():
 
 
 def test_odor_intensity():
-    odor_source = np.array([[-5, -5, 1.5], [-5, 5, 1.5], [5, -5, 1.5], [5, 5, 1.5]])
+    odor_source = np.array([[-3, -3, 1.5], [-3, 3, 1.5], [3, -3, 1.5], [3, 3, 1.5]])
     peak_odor_intensity = np.eye(4)
 
     arena = OdorArena(
@@ -85,7 +85,7 @@ def test_odor_intensity():
     for _ in range(10000):
         obs = sim.step(control_signal)[0]
         odor_intensity_hist.append(obs["odor_intensity"])
-        if obs["fly"][0, 0] > 5:
+        if obs["fly"][0, 0] > 2:
             break
 
     odor_intensity_hist = np.array(odor_intensity_hist)
