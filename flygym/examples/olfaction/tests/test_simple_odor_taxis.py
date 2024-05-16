@@ -65,7 +65,6 @@ def test_odor_taxis_45deg():
     assert np.linalg.norm(last_pos - target_pos) <= distance_threshold
 
 
-@pytest.mark.skip(reason="takes a long time to run on CI")
 def test_odor_taxis_full_turn():
     # Test that the fly can make a full turn if the attractive odor source
     # is placed behind it
