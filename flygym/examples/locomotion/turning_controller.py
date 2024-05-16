@@ -66,9 +66,9 @@ class HybridTurningController(SingleFlySimulation):
         correction_rates=_default_correction_rates,
         amplitude_range=(-0.5, 1.5),
         draw_corrections=False,
-        max_increment=80,
-        retraction_perisistance=20,
-        retraction_persistance_initiation_threshold=20,
+        max_increment=80/1e-4,
+        retraction_persistance_duration=20/1e-4,
+        retraction_persistance_initiation_threshold=20/1e-4,
         seed=0,
         **kwargs,
     ):
@@ -110,11 +110,14 @@ class HybridTurningController(SingleFlySimulation):
             Whether to color-code legs to indicate if correction rules
             are active in the rendered video.
         max_increment : float, optional
-            Maximum correction increment.
-        retraction_perisistance : int, optional
-            Number of timesteps to persist in retraction correction.
+            Maximum duration of the correction before it is capped.
+        retraction_persistance_duration : float, optional
+            Time spend in a persistent state (leg is further retracted)
+            even if the rule is no longer active
         retraction_persistance_initiation_threshold : float, optional
-            Threshold for retraction correction initiation.
+            Amount of time the leg had to be retracted for for the persistance
+            to be initiated (prevents activation of persistance for noise driven
+            rule activations)
         seed : int, optional
             Seed for the random number generator.
         **kwargs
@@ -146,12 +149,14 @@ class HybridTurningController(SingleFlySimulation):
         self.correction_rates = correction_rates
         self.amplitude_range = amplitude_range
         self.draw_corrections = draw_corrections
-        self.max_increment = max_increment
-        self.retraction_perisistance = retraction_perisistance
+        self.max_increment = max_increment * self.timestep
+        self.retraction_persistance_duration = retraction_persistance_duration * self.timestep
         self.retraction_persistance_initiation_threshold = (
-            retraction_persistance_initiation_threshold
+            retraction_persistance_initiation_threshold * self.timestep
         )
-        self.retraction_perisitance_counter = np.zeros(6)
+        self.retraction_persistance_counter = np.zeros(6)
+        # Define the joints that need to be inverted to
+        # mirror actions from left to right 
         self.right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 
         # Define action and observation spaces
@@ -176,10 +181,16 @@ class HybridTurningController(SingleFlySimulation):
 
         # Find stumbling sensors
         self.stumbling_sensors = self._find_stumbling_sensor_indices()
-
+        # Define the gain applied to the correction based on the phase of the CPG
+        # (retracting the leg more during the swing phase, less during the stance phase)
         self.phasic_multiplier = self._init_phasic_gain()
 
-    def _init_phasic_gain(self, swing_extension=np.pi / 4):
+    def _init_phasic_gain(self, swing_extension=np.pi/4):
+        """Initialize the gain applied to the correction based on the phase of the CPG.
+        Lengthen the swing phase by swing_extension to give more
+        chances to the leg to avoid obstacles.
+        """
+
         phasic_multiplier = {}
 
         for leg in self.preprogrammed_steps.legs:
@@ -205,6 +216,7 @@ class HybridTurningController(SingleFlySimulation):
         return phasic_multiplier
 
     def _find_stumbling_sensor_indices(self):
+        """Find the indices of the sensors that are used for stumbling detection."""
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
         for i, sensor_name in enumerate(self.fly.contact_sensor_placements):
             leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
@@ -223,7 +235,12 @@ class HybridTurningController(SingleFlySimulation):
 
     def _retraction_rule_find_leg(self, obs):
         """Returns the index of the leg that needs to be retracted, or None
-        if none applies."""
+        if none applies.
+        Retraction can be due to the activation of a rule or persistance.
+        Every time the rule is active the persistance counter is set to 1. At every step the persistance
+        counter is incremented. If the rule is still active it is again reset to 1 otherwise, it will
+        be incremented until it reaches the persistance duration. At this point the persistance counter
+        is reset to 0."""
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
@@ -233,20 +250,22 @@ class HybridTurningController(SingleFlySimulation):
                 self.retraction_correction[leg_to_correct_retraction]
                 > self.retraction_persistance_initiation_threshold
             ):
-                self.retraction_perisitance_counter[leg_to_correct_retraction] = 1
+                self.retraction_persistance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
         return leg_to_correct_retraction
 
     def _update_persistance_counter(self):
+        """Increment the persistance counter if it is nonzero. Zero the counter
+        when it reaches the persistance duration."""
         # increment every nonzero counter
-        self.retraction_perisitance_counter[
-            self.retraction_perisitance_counter > 0
-        ] += 1
+        self.retraction_persistance_counter[
+            self.retraction_persistance_counter > 0
+            ] += 1
         # zero the increment when reaching the threshold
-        self.retraction_perisitance_counter[
-            self.retraction_perisitance_counter
-            > self.retraction_persistance_initiation_threshold
+        self.retraction_persistance_counter[
+            self.retraction_persistance_counter
+            > self.retraction_persistance_duration
         ] = 0
 
     def _stumbling_rule_check_condition(self, obs, leg):
@@ -355,7 +374,7 @@ class HybridTurningController(SingleFlySimulation):
         # Retraction rule: is any leg stuck in a gap and needing to be retracted?
         leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
         self._update_persistance_counter()
-        persistent_retraction = self.retraction_perisitance_counter > 0
+        persistent_retraction = self.retraction_persistance_counter > 0
 
         self.cpg_network.step()
 

@@ -20,6 +20,22 @@ class RuleBasedController:
         self._phase_inc_per_step = (
             2 * np.pi * (timestep / self.preprogrammed_steps.duration)
         )
+        """
+        Parameters
+        ----------
+        timestep : float
+            The timestep of the simulation.
+        rules_graph : nx.MultiDiGraph
+            The rules graph that defines the interactions between the legs.
+        weights : dict
+            The weights for each rule.
+        preprogrammed_steps : PreprogrammedSteps, optional
+            Preprogrammed steps to be used for leg movement.
+        margin : float, optional
+            The margin for selecting the highest scoring leg.
+        seed : int, optional
+            The random seed to use for selecting the highest scoring leg.
+        """
         self.curr_step = 0
 
         self.rule1_scores = np.zeros(6)
@@ -34,9 +50,18 @@ class RuleBasedController:
 
     @property
     def combined_scores(self):
+        """
+        The global score for all legs. The highest scoring leg is
+        selected for stepping.
+        """
         return self.rule1_scores + self.rule2_scores + self.rule3_scores
 
     def _get_eligible_legs(self):
+        """
+        Return a mask of legs that are eligible for stepping (i.e. the score is:
+        the highest within margin, above zeros and the leg is not currently stepping).
+        """
+        # compute the score threshold as (1.0 - margin)*100% of the highest score
         score_thr = self.combined_scores.max()
         score_thr = max(0, score_thr - np.abs(score_thr) * self.margin)
         mask_is_eligible = (
@@ -47,12 +72,20 @@ class RuleBasedController:
         return np.where(mask_is_eligible)[0]
 
     def _select_stepping_leg(self):
+        """
+        Select the leg to be stepped within the eligible legs.
+        The choice is random if multiple legs have a high score.
+        """
         eligible_legs = self._get_eligible_legs()
         if len(eligible_legs) == 0:
             return None
         return self.random_state.choice(eligible_legs)
 
     def _apply_rule1(self):
+        """
+        Compute the contribution of rule 1 to the scores.
+        Rule 1: A leg is less likely to step if the connected legs are in stance .
+        """
         for i, leg in enumerate(self.legs):
             is_swinging = (
                 0 < self.leg_phases[i] < self.preprogrammed_steps.swing_period[leg][1]
@@ -64,6 +97,12 @@ class RuleBasedController:
                 )
 
     def _get_stance_progress_ratio(self, leg):
+        """
+        Compute the progress of the stance phase for the given leg.
+        0 if the leg just started the stance phase, 
+        0.5 if the leg is halfway through the stance and
+        1 if the leg is about to swing.
+        """
         swing_start, swing_end = self.preprogrammed_steps.swing_period[leg]
         stance_duration = 2 * np.pi - swing_end
         curr_stance_progress = self.leg_phases[self._leg2id[leg]] - swing_end
@@ -71,6 +110,11 @@ class RuleBasedController:
         return curr_stance_progress / stance_duration
 
     def _apply_rule2(self):
+        """
+        Compute the contribution of rule 2 to the scores.
+        Rule 2: Anterior legs are more likely to step 
+        if the posterior leg is early in the stance phase.
+        """
         self.rule2_scores[:] = 0
         for i, leg in enumerate(self.legs):
             stance_progress_ratio = self._get_stance_progress_ratio(leg)
@@ -84,6 +128,11 @@ class RuleBasedController:
                     self.rule2_scores[tgt_id] += weight * (1 - stance_progress_ratio)
 
     def _apply_rule3(self):
+        """
+        Compute the contribution of rule 3 to the scores.
+        Rule 3: Posterior legs are more likely to step
+        if the anterior leg is late in the stance phase.
+        """
         self.rule3_scores[:] = 0
         for i, leg in enumerate(self.legs):
             stance_progress_ratio = self._get_stance_progress_ratio(leg)
@@ -97,6 +146,11 @@ class RuleBasedController:
                     self.rule3_scores[tgt_id] += weight * stance_progress_ratio
 
     def step(self):
+        """
+        Steps the controller for one timestep.
+        Updates the leg phases.
+        Updates the scores based on the rules.
+        """
         if self.curr_step == 0:
             # The first step is always a fore leg or mid leg
             stepping_leg_id = self.random_state.choice([0, 1, 3, 4])
@@ -134,6 +188,10 @@ def filter_edges(graph, rule, src_node=None):
 
 
 def construct_rules_graph():
+    """Construct a rules graph that defines the interactions between the legs.
+    The rules graph is a directed multigraph where the nodes are the legs and the
+    edges are the rules that define the interactions between the legs."""
+
     # For each rule, the keys are the source nodes and the values are the
     # target nodes influenced by the source nodes
     edges = {
