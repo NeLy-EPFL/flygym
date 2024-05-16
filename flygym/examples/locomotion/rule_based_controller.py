@@ -99,7 +99,7 @@ class RuleBasedController:
     def _get_stance_progress_ratio(self, leg):
         """
         Compute the progress of the stance phase for the given leg.
-        0 if the leg just started the stance phase, 
+        0 if the leg just started the stance phase,
         0.5 if the leg is halfway through the stance and
         1 if the leg is about to swing.
         """
@@ -112,7 +112,7 @@ class RuleBasedController:
     def _apply_rule2(self):
         """
         Compute the contribution of rule 2 to the scores.
-        Rule 2: Anterior legs are more likely to step 
+        Rule 2: Anterior legs are more likely to step
         if the posterior leg is early in the stance phase.
         """
         self.rule2_scores[:] = 0
