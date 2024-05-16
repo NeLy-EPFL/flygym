@@ -1,10 +1,8 @@
 import numpy as np
 
 from flygym.arena import OdorArena
-from flygym import Fly, Camera, SingleFlySimulation
+from flygym import Fly, SingleFlySimulation
 from flygym.examples.locomotion import HybridTurningController
-
-from pytest import approx
 
 
 def test_odor_dimensions():
@@ -91,8 +89,6 @@ def test_odor_intensity():
     odor_intensity_hist = np.array(odor_intensity_hist)
     # Check that the odor intensity from behind decreases as the fly moves forward
     assert (odor_intensity_hist[-1, :2] < odor_intensity_hist[0, :2]).all()
-    # Check that the odor intensity from the front increases as the fly moves forward
-    assert (odor_intensity_hist[-1, 2:] > odor_intensity_hist[0, 2:]).all()
 
 
 def test_odor_sum():

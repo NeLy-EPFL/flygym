@@ -1,6 +1,5 @@
 from flygym.examples.olfaction.simple_odor_taxis import run_simulation
 import numpy as np
-import pytest
 
 
 def test_odor_taxis_example():
