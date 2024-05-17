@@ -32,7 +32,6 @@ setup(
         "opencv-python",
     ],
     extras_require={
-        "pybullet": ["pybullet"],
         "dev": [
             "sphinx",
             "sphinxcontrib.googleanalytics",
@@ -55,8 +54,9 @@ setup(
             "seaborn",
             "torch",
             "phiflow",
-            "flyvision @ https://github.com/TuragaLab/flyvis/archive/refs/heads/main.zip",
+            "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip",
         ],
+        "tests": ["networkx", "h5py", "scikit-learn", "torch", "lightning"],
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md", encoding="UTF-8").read(),

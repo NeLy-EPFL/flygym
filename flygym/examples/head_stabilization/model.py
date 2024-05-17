@@ -4,97 +4,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import lightning as pl
-from torch.utils.data import Dataset
 from torchmetrics.regression import R2Score
 from pathlib import Path
-from typing import Tuple, Optional, Callable
-
-
-class JointAngleScaler:
-    @classmethod
-    def from_data(cls, joint_angles: np.ndarray):
-        scaler = cls()
-        scaler.mean = np.mean(joint_angles, axis=0)
-        scaler.std = np.std(joint_angles, axis=0)
-        return scaler
-
-    @classmethod
-    def from_params(cls, mean: np.ndarray, std: np.ndarray):
-        scaler = cls()
-        scaler.mean = mean
-        scaler.std = std
-        return scaler
-
-    def __call__(self, joint_angles: np.ndarray):
-        return (joint_angles - self.mean) / self.std
-
-
-class WalkingDataset(Dataset):
-    def __init__(
-        self,
-        sim_data_file: Path,
-        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
-        joint_angle_scaler: Optional[Callable] = None,
-        ignore_first_n: int = 200,
-        joint_mask=None,
-    ) -> None:
-        super().__init__()
-        trial_name = sim_data_file.parent.name
-        gait, terrain, subset, _, dn_left, dn_right = trial_name.split("_")
-        self.gait = gait
-        self.terrain = terrain
-        self.subset = subset
-        self.dn_drive = f"{dn_left}_{dn_right}"
-        self.contact_force_thr = np.array([*contact_force_thr, *contact_force_thr])
-        self.joint_angle_scaler = joint_angle_scaler
-        self.ignore_first_n = ignore_first_n
-        self.joint_mask = joint_mask
-
-        with open(sim_data_file, "rb") as f:
-            sim_data = pickle.load(f)
-
-        self.contains_fly_flip = sim_data["errors"]["fly_flipped"]
-        self.contains_physics_error = sim_data["errors"]["physics_error"]
-
-        # Extract the roll and pitch angles
-        roll = np.array([info["roll"] for info in sim_data["info_hist"]])
-        pitch = np.array([info["pitch"] for info in sim_data["info_hist"]])
-        self.roll_pitch_ts = np.stack([roll, pitch], axis=1)
-        self.roll_pitch_ts = self.roll_pitch_ts[self.ignore_first_n :, :]
-
-        # Extract joint angles and scale them
-        joint_angles_raw = np.array(
-            [obs["joints"][0, :] for obs in sim_data["obs_hist"]]
-        )
-        if self.joint_angle_scaler is None:
-            self.joint_angle_scaler = JointAngleScaler.from_data(joint_angles_raw)
-        self.joint_angles = self.joint_angle_scaler(joint_angles_raw)
-        self.joint_angles = self.joint_angles[self.ignore_first_n :, :]
-
-        # Extract contact forces
-        contact_forces = np.array(
-            [obs["contact_forces"] for obs in sim_data["obs_hist"]]
-        )
-        contact_forces = np.linalg.norm(contact_forces, axis=2)  # magnitude
-        contact_forces = contact_forces.reshape(-1, 6, 6).sum(axis=2)  # sum per leg
-        self.contact_mask = (contact_forces >= self.contact_force_thr).astype(np.int16)
-        self.contact_mask = self.contact_mask[self.ignore_first_n :, :]
-
-    def __len__(self):
-        return self.roll_pitch_ts.shape[0]
-
-    def __getitem__(self, idx):
-        joint_angles = self.joint_angles[idx].astype(np.float32, copy=True)
-        if self.joint_mask is not None:
-            joint_angles[~self.joint_mask] = 0
-        return {
-            "roll_pitch": self.roll_pitch_ts[idx].astype(np.float32),
-            "joint_angles": joint_angles,
-            "contact_mask": self.contact_mask[idx].astype(np.float32),
-        }
+from typing import Tuple
 
 
 class ThreeLayerMLP(pl.LightningModule):
+    """
+    A PyTorch Lightning module for a three-layer MLP that predicts the
+    head roll and pitch correction angles based on proprioception and
+    tactile information.
+    """
+
     def __init__(self):
         super().__init__()
         input_size = 42 + 6
@@ -106,15 +27,27 @@ class ThreeLayerMLP(pl.LightningModule):
         self.r2_score = R2Score()
 
     def forward(self, x):
+        """
+        Forward pass through the model.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            The input tensor. The shape should be (n_samples, 42 + 6)
+            where 42 is the number of joint angles and 6 is the number of
+            contact masks.
+        """
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)
 
     def configure_optimizers(self):
+        """Use the Adam optimizer."""
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
     def training_step(self, batch, batch_idx):
+        """Training step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
@@ -123,6 +56,7 @@ class ThreeLayerMLP(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """Validation step of the PyTorch Lightning module."""
         x = torch.concat([batch["joint_angles"], batch["contact_mask"]], dim=1)
         y = batch["roll_pitch"]
         y_hat = self(x)
@@ -152,6 +86,17 @@ class HeadStabilizationInferenceWrapper:
         scaler_param_path: Path,
         contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
     ):
+        """
+        Parameters
+        ----------
+        model_path : Path
+            The path to the trained model.
+        scaler_param_path : Path
+            The path to the pickle file containing scaler parameters.
+        contact_force_thr : Tuple[float, float, float], optional
+            The threshold values for contact forces that are used to
+            determine the floor contact flags, by default (0.5, 1, 3).
+        """
         # Load scaler params
         with open(scaler_param_path, "rb") as f:
             scaler_params = pickle.load(f)
@@ -168,6 +113,23 @@ class HeadStabilizationInferenceWrapper:
     def __call__(
         self, joint_angles: np.ndarray, contact_forces: np.ndarray
     ) -> np.ndarray:
+        """
+        Make a prediction given joint angles and contact forces. This is
+        a light wrapper around the model's forward method and works without
+        batching.
+
+        Parameters
+        ----------
+        joint_angles : np.ndarray
+            The joint angles. The shape should be (n_joints,).
+        contact_forces : np.ndarray
+            The contact forces. The shape should be (n_legs * n_segments).
+
+        Returns
+        -------
+        np.ndarray
+            The predicted roll and pitch angles. The shape is (2,).
+        """
         joint_angles = (joint_angles - self.scaler_mean) / self.scaler_std
         contact_forces = np.linalg.norm(contact_forces, axis=1)
         contact_forces = contact_forces.reshape(6, 6).sum(axis=1)

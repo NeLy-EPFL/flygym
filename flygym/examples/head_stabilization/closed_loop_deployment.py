@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from dm_control.utils import transformations
 
 import flygym.examples.head_stabilization.viz as viz
-from flygym.examples.vision_connectome_model import NMFRealisticVision, RetinaMapper
+from flygym.examples.vision import RealisticVisionController, RetinaMapper
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
 
@@ -74,7 +74,7 @@ def run_simulation(
         play_speed_text=False,
     )
 
-    sim = NMFRealisticVision(
+    sim = RealisticVisionController(
         fly=fly,
         cameras=[birdeye_camera, neck_camera],
         arena=arena,
@@ -234,7 +234,7 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
         f"with R2 scores: {sim_res['r2_scores']}"
     )
-    sim: NMFRealisticVision = sim_res["sim"]
+    sim: RealisticVisionController = sim_res["sim"]
     raw_vision_hist = [
         raw_vision_to_human_readable(sim.fly.retina, x) for x in sim_res["raw_vision"]
     ]
