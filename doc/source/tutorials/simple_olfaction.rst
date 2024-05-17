@@ -1,5 +1,5 @@
-Olfaction
-=========
+Olfaction basics
+================
 
 **Summary:** In this tutorial, we will implement a simple controller for
 odor-guided taxis.
@@ -30,7 +30,7 @@ in the antennal lobe.
 
 
 Odor arena
---------------
+----------
 
 To demonstrate odor sensing, let’s create an environment with one
 attractive odor source and two aversive odor sources. The dimension of
@@ -125,8 +125,8 @@ to stand on the ground in a stable manner.
 
 
 
-Controller for odor taxis
--------------------------
+Simple controller for odor taxis
+--------------------------------
 
 Let’s design a simple hand-tuned controller for odor-guided taxis. We
 start by calculating the left-right asymmetry of the odor intensity :math:`I`
