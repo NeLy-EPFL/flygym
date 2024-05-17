@@ -51,7 +51,7 @@ This time, we will use the `PreprogrammedSteps` Python class that
 encapsulates much of the code implemented in the previous tutorial.
 The following is the documentation for this class:
 
-.. autoclass:: flygym.mujoco.examples.rule_based_controller.PreprogrammedSteps
+.. autoclass:: flygym.examples.locomotion.rule_based_controller.PreprogrammedSteps
    :members:
    :show-inheritance:
    :inherited-members:
@@ -62,7 +62,7 @@ Let’s import this class:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.rule_based_controller import PreprogrammedSteps
+    from flygym.examples.rule_based_controller import PreprogrammedSteps
 
 We can verify that this works by regenerating the following plot from
 the CPGs tutorial:
@@ -101,7 +101,7 @@ the CPGs tutorial:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -403,13 +403,13 @@ Finally, let’s implement the main ``step()`` method:
 
            self.curr_step += 1
 
-This class is actually included in ``flygym.mujoco.examples``. Let’s
+This class is actually included in ``flygym.examples``. Let’s
 import it.
 
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.rule_based_controller import RuleBasedSteppingCoordinator
+    from flygym.examples.rule_based_controller import RuleBasedSteppingCoordinator
 
 Let’s define the weights of the rules and run 1 second of simulation:
 
@@ -495,7 +495,7 @@ phases and stepping likelihood scores over time:
         if ax is None:
             fig, ax = plt.subplots(figsize=(8, 3), tight_layout=True)
         for i in range(len(legs)):
-            ax.axhline(offset.flatten()[i], color="k", linewidth=0.5)
+            ax.axhline(offset.ravel()[i], color="k", linewidth=0.5)
             ax.plot(t_grid, score_hist_viz[:, i])
         ax.set_yticks(offset[0], legs)
         ax.set_xlabel("Time (s)")
@@ -553,7 +553,7 @@ signals (joint positions) into the NeuroMechFly physics simulation:
 .. code-block:: ipython3
     :linenos:
 
-    import flygym.mujoco
+    import flygym
     from tqdm import trange
     
     
@@ -563,17 +563,17 @@ signals (joint positions) into the NeuroMechFly physics simulation:
         weights=weights,
         preprogrammed_steps=preprogrammed_steps,
     )
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=timestep,
         render_mode="saved",
         render_playspeed=0.1,
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
     

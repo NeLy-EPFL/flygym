@@ -5,15 +5,15 @@ Olfaction is the sense of smell. Olfactory experience is simulated by calculatin
 
 To enable this calculation, the ``BaseArena`` has the following methods. The user does not have to specifically implement them if an odor is not enabled.
 
-.. automethod:: flygym.mujoco.arena.BaseArena.get_olfaction
+.. automethod:: flygym.arena.BaseArena.get_olfaction
     :noindex:
 
-.. autoattribute:: flygym.mujoco.arena.BaseArena.odor_dimensions
+.. autoattribute:: flygym.arena.BaseArena.odor_dimensions
     :noindex:
 
 A useful implementation to refer to is the built-in ``OdorArena``:
 
-.. autoclass:: flygym.mujoco.arena.OdorArena
+.. autoclass:: flygym.arena.OdorArena
    :members:
    :undoc-members:
    :show-inheritance:

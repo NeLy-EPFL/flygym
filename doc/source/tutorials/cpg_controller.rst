@@ -14,7 +14,7 @@ realm of robotic motor control (see review by `Ijspeert,
 2008 <https://doi.org/10.1016/j.neunet.2008.03.014>`__). It is
 hypothesized that CPGs play a more important role in animals whose
 locomotion is fast and therefore cannot process decentralized 
-limb sensory signals in time to adjust their movements (ie., 
+limb sensory signals in time to adjust their movements (i.e.,
 like cockroaches running at ~1 m/s!).
 
 In this tutorial, we will start by implementing an oscillator network.
@@ -46,7 +46,7 @@ weight between the i-th and the j-th oscillator, and :math:`\phi_{ij}`
 is the phase bias between them. Intuitively, the first term of the first
 equation maintains an intrinsic frequency for each oscillator; the
 second term of the first equation keeps the oscillators synchronized
-(ie. maintains the phase differences between the oscillators), and the
+(i.e. maintains the phase differences between the oscillators), and the
 second equation maintains the amplitudes of the oscillators.
 
 To start, let’s write a function that computes :math:`\dot\theta` and
@@ -98,9 +98,9 @@ ODE, but you can use any higher-order methods or libraries.
             ----------
             timestep : float
                 The timestep of the simulation.
-            intrinsic_frequencies : np.ndarray
+            intrinsic_freqs : np.ndarray
                 The intrinsic frequencies of the oscillators, shape (N,).
-            intrinsic_amplitudes : np.ndarray
+            intrinsic_amps : np.ndarray
                 The intrinsic amplitude of the oscillators, shape (N,).
             coupling_weights : np.ndarray
                 The coupling weights between the oscillators, shape (N, N).
@@ -228,7 +228,7 @@ intrinsic frequencies and amplitudes.
     t = np.arange(num_steps) * network.timestep
     axs[0].plot(t, phase_hist % (2 * np.pi), linewidth=1)
     axs[0].set_yticks([0, np.pi, 2 * np.pi])
-    axs[0].set_yticklabels(["0", "$\pi$", "$2\pi$"])
+    axs[0].set_yticklabels(["0", r"$\pi$", r"$2\pi$"])
     axs[0].set_ylabel("Phase")
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
@@ -256,16 +256,16 @@ are used to calculate motor neuron activity
 muscle model. By contrast, `Ijspeert et al
 (2007) <https://doi.org/10.1126/science.1138353>`__ uses a more abstract
 control strategy — the CPG states directly control the target joint
-*position* (ie. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
+*position* (i.e. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
 target position is then provided to a `proportional-derivative (PD)
 controller <https://www.matthewpeterkelly.com/tutorials/pdControl/index.html>`__
 which actuates the joint.
 
 Here, we will use an even higher-level control approach where each
 oscillator controls the stepping of an entire leg (as opposed to a joint).
-The phase of the CPG represents the phase of the step (ie. how far into
+The phase of the CPG represents the phase of the step (i.e. how far into
 the step the leg is), while the magnitude of the CPG represents the
-magnitude of the step (ie. how large the step is). We will use
+magnitude of the step (i.e. how large the step is). We will use
 experimentally recorded data to execute the individual steps. In other
 words, we will extract the kinematics of a single step for each leg from
 experimental behavior recordings and modify its magnitude (modulated by
@@ -332,7 +332,7 @@ the time series of the state variables:
     t = np.arange(num_steps) * network.timestep
     axs[0].plot(t, phase_hist % (2 * np.pi), linewidth=1)
     axs[0].set_yticks([0, np.pi, 2 * np.pi])
-    axs[0].set_yticklabels(["0", "$\pi$", "$2\pi$"])
+    axs[0].set_yticklabels(["0", r"$\pi$", r"$2\pi$"])
     axs[0].set_ylabel("Phase")
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
@@ -350,7 +350,7 @@ Now, let’s load the behavior kinematics data:
     :linenos:
 
     import pickle
-    from flygym.common import get_data_path
+    from flygym.util import get_data_path
     
     
     single_steps_path = get_data_path("flygym", "data") / "behavior/single_steps.pkl"
@@ -437,7 +437,7 @@ visualize three stepping cycles for each leg:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -489,7 +489,7 @@ from 0 to 1:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else f"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -526,17 +526,17 @@ We start by initializing the simulation:
 .. code-block:: ipython3
     :linenos:
 
-    import flygym.mujoco
-    import flygym.mujoco.preprogrammed
+    import flygym
+    import flygym.preprogrammed
     
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4, render_mode="saved", render_playspeed=0.1, draw_contacts=True
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
 
@@ -689,7 +689,7 @@ during stance):
     ax.set_yticks(-np.arange(6) * 1.5 + 0.5)
     ax.set_yticklabels(legs)
     ax.set_xticks(np.arange(5) * np.pi / 2)
-    ax.set_xticklabels(["0", "$\pi/2$", "$\pi$", "3$\pi$/2", "$2\pi$"])
+    ax.set_xticklabels(["0", r"$\pi/2$", r"$\pi$", r"3$\pi$/2", r"$2\pi$"])
     ax.set_xlabel("Phase")
     ax.set_ylabel("Adhesion on/off")
     fig.savefig("./outputs/adhesion_signal.png")
@@ -706,17 +706,17 @@ parts of the code that have been changed are indicated with comments.
     :linenos:
 
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4,
         render_mode="saved",
         render_playspeed=0.1,
         enable_adhesion=True,  # THIS HAS CHANGED
         draw_adhesion=True,  # THIS HAS CHANGED (tarsus color indicates adhesion on/off)
     )
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
-        actuated_joints=flygym.mujoco.preprogrammed.all_leg_dofs,
+        actuated_joints=flygym.preprogrammed.all_leg_dofs,
         control="position",
     )
     
