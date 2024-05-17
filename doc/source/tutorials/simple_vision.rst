@@ -1,5 +1,5 @@
-Vision
-======
+Vision basics
+=============
 
 **Summary:** In this tutorial, we will build a simple model to control
 the fly to follow a moving sphere. By doing so, we will also demonstrate
@@ -424,8 +424,8 @@ Finally, let’s implement a ``reset`` method:
            self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
            physics.bind(self.object_body).mocap_pos = self.ball_pos
 
-Visual feature preprocessing
-----------------------------
+Simple visual feature preprocessing
+-----------------------------------
 
 We will preprocess the visual feature by computing the x-y position of
 the object on the retina along with its size relative to the whole
@@ -524,8 +524,8 @@ Finally, we implement the ``reset`` method:
            raw_obs, _ = super().reset(seed=seed)
            return self._process_visual_observation(raw_obs), {}
 
-Implementing a object tracking controller
------------------------------------------
+Implementing a simple object tracking controller
+------------------------------------------------
 
 Now that we have implemented the arena and the new Gym environment, we
 just need to define the actual controller logic that outputs the 2D
