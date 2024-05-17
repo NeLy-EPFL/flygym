@@ -42,7 +42,7 @@ of ``NeuroMechFly`` are as follows:
 
 The FlyGym package is designed to be expandable: the user can implement
 their own Gym environments with different action and observation spaces
-and implement different logics (eg. preprogrammed premotor computation
+and implement different logics (e.g. preprogrammed premotor computation
 and sensory processing). This is illustrated in the figure below:
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
@@ -131,9 +131,9 @@ as before:
     from gymnasium import spaces
     from gymnasium.utils.env_checker import check_env
     
-    from flygym.mujoco import Parameters, NeuroMechFly
-    from flygym.mujoco.examples.common import PreprogrammedSteps
-    from flygym.mujoco.examples.cpg_controller import CPGNetwork
+    from flygym import Parameters, NeuroMechFly
+    from flygym.examples.common import PreprogrammedSteps
+    from flygym.examples.cpg_controller import CPGNetwork
     
     
     _tripod_phase_biases = np.pi * np.array(
@@ -158,9 +158,9 @@ as before:
 
 Now, we will define the ``__init__`` method of our ``HybridTurningNMF``
 class. The `complete, functional class
-definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/hybrid_turning_controller.py>`__
+definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/hybrid_turning_controller.py>`__
 can be found on our GitHub repository. You can import it with
-``from flygym.mujoco.examples.turning_controller import HybridTurningNMF``.
+``from flygym.examples.turning_controller import HybridTurningNMF``.
 
 We start with initializing the parent class by calling
 ``super().__init__(...)``. This basically calls the ``__init__`` logic
@@ -278,7 +278,7 @@ did before. This time, we define it as a method of our new class:
        def _find_stumbling_sensor_indices(self):
            stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
            for i, sensor_name in enumerate(self.contact_sensor_placements):
-               leg = sensor_name.split("/")[1][:2]  # sensor_name: eg. "Animat/LFTarsus1"
+               leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
                segment = sensor_name.split("/")[1][2:]
                if segment in self.stumble_segments:
                    stumbling_sensors[leg].append(i)
@@ -337,7 +337,7 @@ as formulated above:
                turning.
            """
            # update CPG parameters
-           amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).flatten()
+           amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
            freqs = self.intrinsic_freqs.copy()
            freqs[:3] *= 1 if action[0] > 0 else -1
            freqs[3:] *= 1 if action[1] > 0 else -1
@@ -516,7 +516,7 @@ Let’s import this class and instantiate it:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym.examples.turning_controller import HybridTurningNMF
     
     run_time = 1
     timestep = 1e-4

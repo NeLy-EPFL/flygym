@@ -6,8 +6,8 @@ the fly to follow a moving sphere. By doing so, we will also demonstrate
 how one can create a custom arena.
 
 Animals typically navigate over rugged terrain to reach attractive
-objects (eg. potential mates, food sources) and to avoid repulsive
-features (eg. pheromones from predators) and obstacles. Animals use a
+objects (e.g. potential mates, food sources) and to avoid repulsive
+features (e.g. pheromones from predators) and obstacles. Animals use a
 hierarchical controller to achieve these goals: processing higher-order
 sensory signals, using them to select the next action, and translating
 these decisions into descending commands that drive lower-level motor
@@ -61,15 +61,15 @@ To start, we do the necessary imports:
     from tqdm import trange
     from gymnasium.utils.env_checker import check_env
     
-    from flygym.mujoco import Parameters
-    from flygym.mujoco.arena import FlatTerrain
-    from flygym.mujoco.examples.obstacle_arena import ObstacleOdorArena
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym import Parameters
+    from flygym.arena import FlatTerrain
+    from flygym.examples.obstacle_arena import ObstacleOdorArena
+    from flygym.examples.turning_controller import HybridTurningNMF
 
 We have pre-implemented an ``ObstacleOdorArena`` class with visual
 obstacles and an odor source. The details of this class is beyond the
 scope of this tutorial, but you can refer to it on the `FlyGym github
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/obstacle_arena.py>`__:
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/obstacle_arena.py>`__:
 
 .. code-block:: ipython3
     :linenos:
@@ -158,7 +158,7 @@ observation:
     Data type: float32
 
 
-This gives us a (2, 722, 2) array representing the light intensities
+This gives us a (2, 721, 2) array representing the light intensities
 sensed by the ommatidia. The values are normalized to [0, 1]. The first
 dimension is for the two eyes (left and right in that order). The second
 dimension is for the 721 ommatidia per eye. The third dimension is for
@@ -185,13 +185,24 @@ We can verify this below:
 
 But this is array representation is not good for visualization. We can
 use the ``hex_pxls_to_human_readable`` method of the retina to convert
-it into a normal [0, 256) 8-bit RGB image that can be plotted:
+it into a normal [0, 256) 8-bit RGB image that can be plotted. We set
+``color_8bit`` to True to process the 8-bit color representation more
+efficiently and return the output as an integer ranged from 0 to 255. We
+will further take the grayscale image (disregard yellow- vs pale-type
+ommatidia) by taking the maximum along the last dimension, i.e. that of
+color channels.
 
 .. code-block:: ipython3
     :linenos:
 
-    vision_left = nmf.retina.hex_pxls_to_human_readable(obs["vision"][0, :, :])
-    vision_right = nmf.retina.hex_pxls_to_human_readable(obs["vision"][1, :, :])
+    vision_left = nmf.retina.hex_pxls_to_human_readable(
+        obs["vision"][0, :, :], color_8bit=True
+    )
+    vision_left = vision_left.max(axis=-1)
+    vision_right = nmf.retina.hex_pxls_to_human_readable(
+        obs["vision"][1, :, :], color_8bit=True
+    )
+    vision_right = vision_right.max(axis=-1)
     
     fig, axs = plt.subplots(1, 2, figsize=(6, 3), tight_layout=True)
     axs[0].imshow(vision_left, cmap="gray", vmin=0, vmax=255)
@@ -239,10 +250,10 @@ A dynamic arena with a moving sphere
 
 The next step is to create a custom arena with a moving sphere. To do
 this, we will implement a ``MovingObjArena`` class that inherits from
-the ``flygym.mujoco.arena.BaseArena`` class. A complete, functioning
+the ``flygym.arena.BaseArena`` class. A complete, functioning
 implementation of this class is provided under
-``flygym.mujoco.examples.vision`` on the `FlyGym
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/vision.py>`__.
+``flygym.examples.vision`` on the `FlyGym
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/vision.py>`__.
 We start by defining some attributes in its ``__init__`` method:
 
 .. code:: python
@@ -284,6 +295,8 @@ We start by defining some attributes in its ``__init__`` method:
            move_speed: float = 8,
            move_direction: str = "right",
        ):
+           super().__init__()
+       
            self.init_ball_pos = (*init_ball_pos, obj_radius)
            self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
            self.friction = friction
@@ -435,8 +448,8 @@ Here, we will build yet another layer on top of
 ``HybridTurningController``, implementing the aforementioned sensory
 preprocessing logic (cyan arrow) and encapsulating it inside the new
 MDP. As before, a complete, functioning implementation of this class is
-provided under ``flygym.mujoco.examples.vision`` on the `FlyGym
-repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/examples/vision.py>`__.
+provided under ``flygym.examples.vision`` on the `FlyGym
+repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/vision.py>`__.
 
 We start by defining an ``__init__`` method. This time, we will specify
 the threshold used in the binary thresholding step. Any pixel darker
@@ -483,7 +496,7 @@ Next, let’s implement the visual preprocessing logic discussed above:
            features[:, 0] /= self.retina.nrows  # normalize y_center
            features[:, 1] /= self.retina.ncols  # normalize x_center
            features[:, 2] /= self.retina.num_ommatidia_per_eye  # normalize area
-           return features.flatten()
+           return features.ravel()
 
 In the ``step`` method, we will replace the raw observation with the
 output of the ``_process_visual_observation`` method. We will also
@@ -543,7 +556,7 @@ our arena and Gym environment:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.examples.vision import MovingObjArena, VisualTaxis
+    from flygym.examples.vision import MovingObjArena, VisualTaxis
     
     obj_threshold = 0.15
     decision_interval = 0.05
@@ -656,7 +669,7 @@ experience of the fly:
 .. code-block:: ipython3
     :linenos:
 
-    from flygym.mujoco.vision.visualize import save_video_with_vision_insets
+    from flygym.vision.visualize import save_video_with_vision_insets
     
     save_video_with_vision_insets(
         nmf, "./outputs/object_following_with_retina_images.mp4", nmf.visual_inputs_hist

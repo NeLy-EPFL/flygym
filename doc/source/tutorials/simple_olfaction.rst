@@ -46,33 +46,33 @@ color the attractive odor source orange and the aversive odor sources blue.
     # Odor source: array of shape (num_odor_sources, 3) - xyz coords of odor sources
     odor_source = np.array([[24, 0, 1.5], [8, -4, 1.5], [16, 4, 1.5]])
     
-    # Peak intensities: array of shape (num_odor_sources, odor_dimesions)
+    # Peak intensities: array of shape (num_odor_sources, odor_dimensions)
     # For each odor source, if the intensity is (x, 0) then the odor is in the 1st dimension
     # (in this case attractive). If it's (0, x) then it's in the 2nd dimension (in this case
     # aversive)
-    peak_intensity = np.array([[1, 0], [0, 1], [0, 1]])
+    peak_odor_intensity = np.array([[1, 0], [0, 1], [0, 1]])
     
     # Marker colors: array of shape (num_odor_sources, 4) - RGBA values for each marker,
     # normalized to [0, 1]
     marker_colors = [[255, 127, 14], [31, 119, 180], [31, 119, 180]]
     marker_colors = np.array([[*np.array(color) / 255, 1] for color in marker_colors])
     
-    odor_dimesions = len(peak_intensity[0])
+    odor_dimensions = len(peak_odor_intensity[0])
 
 Let’s create the arena using these parameters. The detailed
 documentation of the ``OdorArena`` class can be found in the `API
-reference <https://neuromechfly.org/api_ref/arena.html#flygym.mujoco.arena.OdorArena>`__.
+reference <https://neuromechfly.org/api_ref/arena.html#flygym.arena.OdorArena>`__.
 Its implementation is beyond the scope of this tutorial but can be found
-`here <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/mujoco/arena/sensory_environment.py>`__.
+`here <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/arena/sensory_environment.py>`__.
 
 .. code-block:: ipython3
    :linenos:
 
-    from flygym.mujoco.arena import OdorArena
+    from flygym.arena import OdorArena
     
     arena = OdorArena(
         odor_source=odor_source,
-        peak_intensity=peak_intensity,
+        peak_odor_intensity=peak_odor_intensity,
         diffuse_func=lambda x: x**-2,
         marker_colors=marker_colors,
         marker_size=0.3,
@@ -85,8 +85,8 @@ to stand on the ground in a stable manner.
    :linenos:
 
     import matplotlib.pyplot as plt
-    from flygym.mujoco import Parameters
-    from flygym.mujoco.examples.turning_controller import HybridTurningNMF
+    from flygym import Parameters
+    from flygym.examples.turning_controller import HybridTurningNMF
     
     
     contact_sensor_placements = [

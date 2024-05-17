@@ -102,14 +102,14 @@ The leg DoFs are the most critical to model terrestrial locomotion. In *Drosophi
 
     FlyGym provides hardcoded shorthands for these useful lists of links::
 
-        >>> import flygym.mujoco
+        >>> import flygym
 
         # all actuatable leg DoFs:
-        >>> flygym.mujoco.preprogrammed.all_leg_dofs
+        >>> flygym.preprogrammed.all_leg_dofs
         ['joint_LFCoxa', 'joint_LFCoxa_roll', 'joint_LFCoxa_yaw', 'joint_LFFemur', 'joint_LFFemur_roll', 'joint_LFTibia', 'joint_LFTarsus1', 'joint_LMCoxa', 'joint_LMCoxa_roll', 'joint_LMCoxa_yaw', 'joint_LMFemur', 'joint_LMFemur_roll', 'joint_LMTibia', 'joint_LMTarsus1', 'joint_LHCoxa', 'joint_LHCoxa_roll', 'joint_LHCoxa_yaw', 'joint_LHFemur', 'joint_LHFemur_roll', 'joint_LHTibia', 'joint_LHTarsus1', 'joint_RFCoxa', 'joint_RFCoxa_roll', 'joint_RFCoxa_yaw', 'joint_RFFemur', 'joint_RFFemur_roll', 'joint_RFTibia', 'joint_RFTarsus1', 'joint_RMCoxa', 'joint_RMCoxa_roll', 'joint_RMCoxa_yaw', 'joint_RMFemur', 'joint_RMFemur_roll', 'joint_RMTibia', 'joint_RMTarsus1', 'joint_RHCoxa', 'joint_RHCoxa_roll', 'joint_RHCoxa_yaw', 'joint_RHFemur', 'joint_RHFemur_roll', 'joint_RHTibia', 'joint_RHTarsus1']
 
         # 3 DoFs per leg:
-        >>> flygym.mujoco.preprogrammed.leg_dofs_3_per_leg
+        >>> flygym.preprogrammed.leg_dofs_3_per_leg
         ['joint_LFCoxa', 'joint_LFFemur', 'joint_LFTibia', 'joint_LMCoxa_roll', 'joint_LMFemur', 'joint_LMTibia', 'joint_LHCoxa_roll', 'joint_LHFemur', 'joint_LHTibia', 'joint_RFCoxa', 'joint_RFFemur', 'joint_RFTibia', 'joint_RMCoxa_roll', 'joint_RMFemur', 'joint_RMTibia', 'joint_RHCoxa_roll', 'joint_RHFemur', 'joint_RHTibia']
 
 

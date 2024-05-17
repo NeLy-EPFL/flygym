@@ -1,0 +1,599 @@
+<?xml version="1.0" ?>
+<mujoco model="Animat">
+	<compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" convexhull="true" fusestatic="true"/>
+	<option timestep="0.0001" gravity="0 0 -9810" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" mpr_iterations="100">
+		<flag multiccd="enable" energy="enable"/>
+		<!--multiccd seems to fix leg penetrating the floor-->
+	</option>
+	<size njmax="4096" nconmax="4096"/>
+	<visual>
+		<global offwidth="1280" offheight="720"/>
+		<quality shadowsize="1024" offsamples="4" numslices="28" numstacks="16" numquads="4"/>
+		<map stiffness="100.0" stiffnessrot="500.0" force="2.0" torque="1.0" alpha="0.3" fogstart="3.0" fogend="10.0" znear="0.0001" zfar="3.0" haze="0.3" shadowclip="1.0" shadowscale="0.3" actuatortendon="2.0"/>
+		<scale forcewidth="12.0" contactwidth="12.0" contactheight="50.0" connect="1.0" com="1.0" camera="1.0" light="1.0" selectpoint="1.0" jointlength="1.0" jointwidth="1.0" actuatorlength="1.0" actuatorwidth="1.0" framelength="0.01" framewidth="0.01" constraint="0.01" slidercrank="0.01"/>
+	</visual>
+	<statistic meanmass="1.0" meaninertia="1.0" meansize="1.0"/>
+	<default>
+		<default class="nmf"/>
+	</default>
+	<asset>
+		<mesh name="mesh_Thorax" class="nmf" file="../mesh/Thorax.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_A1A2" class="nmf" file="../mesh/A1A2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_A3" class="nmf" file="../mesh/A3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_A4" class="nmf" file="../mesh/A4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_A5" class="nmf" file="../mesh/A5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_A6" class="nmf" file="../mesh/A6.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_Head" class="nmf" file="../mesh/Head.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LEye" class="nmf" file="../mesh/LEye.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LPedicel" class="nmf" file="../mesh/LPedicel.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFuniculus" class="nmf" file="../mesh/LFuniculus.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LArista" class="nmf" file="../mesh/LArista.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_REye" class="nmf" file="../mesh/REye.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_Rostrum" class="nmf" file="../mesh/Rostrum.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_Haustellum" class="nmf" file="../mesh/Haustellum.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RPedicel" class="nmf" file="../mesh/RPedicel.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFuniculus" class="nmf" file="../mesh/RFuniculus.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RArista" class="nmf" file="../mesh/RArista.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFCoxa" class="nmf" file="../mesh/LFCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFFemur" class="nmf" file="../mesh/LFFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTibia" class="nmf" file="../mesh/LFTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTarsus1" class="nmf" file="../mesh/LFTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTarsus2" class="nmf" file="../mesh/LFTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTarsus3" class="nmf" file="../mesh/LFTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTarsus4" class="nmf" file="../mesh/LFTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LFTarsus5" class="nmf" file="../mesh/LFTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHaltere" class="nmf" file="../mesh/LHaltere.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHCoxa" class="nmf" file="../mesh/LHCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHFemur" class="nmf" file="../mesh/LHFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTibia" class="nmf" file="../mesh/LHTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTarsus1" class="nmf" file="../mesh/LHTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTarsus2" class="nmf" file="../mesh/LHTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTarsus3" class="nmf" file="../mesh/LHTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTarsus4" class="nmf" file="../mesh/LHTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LHTarsus5" class="nmf" file="../mesh/LHTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMCoxa" class="nmf" file="../mesh/LMCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMFemur" class="nmf" file="../mesh/LMFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTibia" class="nmf" file="../mesh/LMTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTarsus1" class="nmf" file="../mesh/LMTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTarsus2" class="nmf" file="../mesh/LMTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTarsus3" class="nmf" file="../mesh/LMTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTarsus4" class="nmf" file="../mesh/LMTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LMTarsus5" class="nmf" file="../mesh/LMTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_LWing" class="nmf" file="../mesh/LWing.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFCoxa" class="nmf" file="../mesh/RFCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFFemur" class="nmf" file="../mesh/RFFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTibia" class="nmf" file="../mesh/RFTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTarsus1" class="nmf" file="../mesh/RFTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTarsus2" class="nmf" file="../mesh/RFTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTarsus3" class="nmf" file="../mesh/RFTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTarsus4" class="nmf" file="../mesh/RFTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RFTarsus5" class="nmf" file="../mesh/RFTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHaltere" class="nmf" file="../mesh/RHaltere.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHCoxa" class="nmf" file="../mesh/RHCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHFemur" class="nmf" file="../mesh/RHFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTibia" class="nmf" file="../mesh/RHTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTarsus1" class="nmf" file="../mesh/RHTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTarsus2" class="nmf" file="../mesh/RHTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTarsus3" class="nmf" file="../mesh/RHTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTarsus4" class="nmf" file="../mesh/RHTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RHTarsus5" class="nmf" file="../mesh/RHTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMCoxa" class="nmf" file="../mesh/RMCoxa.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMFemur" class="nmf" file="../mesh/RMFemur.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTibia" class="nmf" file="../mesh/RMTibia.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTarsus1" class="nmf" file="../mesh/RMTarsus1.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTarsus2" class="nmf" file="../mesh/RMTarsus2.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTarsus3" class="nmf" file="../mesh/RMTarsus3.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTarsus4" class="nmf" file="../mesh/RMTarsus4.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RMTarsus5" class="nmf" file="../mesh/RMTarsus5.stl" scale="1000 1000 1000"/>
+		<mesh name="mesh_RWing" class="nmf" file="../mesh/RWing.stl" scale="1000 1000 1000"/>
+		<texture name="skybox" type="skybox" builtin="gradient" rgb1="1.0 1.0 1.0" rgb2="1.0 1.0 1.0" width="10" height="10"/>
+	</asset>
+	<worldbody>
+		<body name="Thorax" pos="0.49564525485038757 -0.018091375008225441 1.2966440916061401" quat="1 0 0 0">
+			<geom name="Thorax" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Thorax"/>
+			<inertial pos="-0.46684262156486511 0.0074175349436700344 -0.015944290906190872" mass="0.0003071677023684708" fullinertia="2.7243062516062266e-05 3.3360193196103347e-05 2.7511075978506267e-05 -5.5685715587566913e-10 -2.7580533932364634e-06 6.2920565723897632e-10"/>
+			<body name="A1A2" pos="-0.861628 -3.7252902984619141e-08 0.0 " quat="0.991 0.0 -0.131  0.0">
+				<geom name="A1A2" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A1A2"/>
+				<inertial pos="-0.23051536083221436 0.008398064412176609 0.064012818038463593" mass="8.5714247167182e-05" fullinertia="5.3790336083221771e-06 2.8840276035426221e-06 4.2837207054346272e-06 2.6176372263615442e-10 4.0165904089813288e-07 -1.2583927987046113e-09"/>
+				<body name="A3" pos="-0.3264735949039459 -1.3038516044616699e-08 0.04" quat="0.999 0.0 -0.043 0.0">
+					<geom name="A3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A3" fluidcoef="0 0 0 0 0"/>
+					<inertial pos="-0.075963973999023438 0.0083986930549144745 -0.029380751773715019" mass="0.00010703994712944607" fullinertia="8.9964392943171956e-06 4.1807746348039265e-06 6.5203583747581837e-06 1.0357107862621635e-10 2.1820474587532844e-07 -3.9504233647560162e-10"/>
+					<body name="A4" pos="-0.20758499012713935 3.7252902984619141e-09 0.025" quat="0.999 0.0 0.043 0.0">
+						<geom name="A4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A4" fluidcoef="0 0 0 0 0"/>
+						<inertial pos="-0.083291247487068176 0.0084340507164597511 -0.023897839710116386" mass="9.75245118031497e-05" fullinertia="8.0516310295361972e-06 3.2575321974971443e-06 6.2418992743168462e-06 2.3686085017703946e-10 1.6058867127502459e-07 -7.8781013489496621e-11"/>
+						<body name="A5" pos="-0.17429611215191623 0.0 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
+							<geom name="A5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A5" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="-0.099572323262691498 0.0084852380678057671 -0.047328092157840729" mass="9.704502211966751e-05" fullinertia="6.5100346614069085e-06 3.3950804221217629e-06 5.0585965600150107e-06 6.404385937523927e-10 -2.5107957418748027e-08 1.1672131908850304e-09"/>
+							<body name="A6" pos="-0.2280491096907428 3.7252902984619141e-09 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
+								<geom name="A6" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A6" fluidcoef="0 0 0 0 0"/>
+								<inertial pos="-0.069944337010383606 0.0084731420502066612 -0.041498661041259766" mass="6.267627178055471e-05" fullinertia="2.5686975223567006e-06 1.9706219398369053e-06 2.039626686007835e-06 -7.3222884962344734e-11 4.9758827520515329e-08 -4.6929311054145494e-11"/>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="Head_roll" pos="0.028699308633804321 -6.891787052154541e-08 0.00069832801818847656" quat="1 0 0 0">
+				<joint name="joint_Head_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.2" frictionloss="0.0"/>
+				<inertial pos="0 0 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="Head_yaw" pos="0 0 -2.384185791015625e-07" quat="1 0 0 0">
+					<joint name="joint_Head_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.2" frictionloss="0.0"/>
+					<inertial pos="0 0 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="Head" pos="0 0 -2.384185791015625e-07" quat="1 0 0 0">
+						<joint name="joint_Head" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.2" frictionloss="0.0"/>
+						<geom name="Head" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Head"/>
+						<inertial pos="0.21309308707714081 0.0028280734550207853 -0.02510833740234375" mass="9.455094693981879e-05" fullinertia="4.544697353997133e-06 3.4240366967151553e-06 3.5964090705991018e-06 -6.7972478876014505e-08 2.0875264623595434e-07 1.8957885659460538e-08"/>
+						<body name="LEye" pos="0.23149168491363525 -0.00056653283536434174 0.017043113708496094" quat="1 0 0 0">
+							<geom name="LEye" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LEye"/>
+							<inertial pos="0.0040917396545410156 0.30870887637138367 -0.019533826038241386" mass="1.251350088756361e-05" fullinertia="1.7159827561930109e-07 2.3428433924930286e-07 1.1733661391825418e-07 3.201087863081478e-08 1.3587085923434669e-08 -6.1966208356151355e-09"/>
+						</body>
+						<body name="LPedicel_roll" pos="0.42920660972595215 0.090969029814004898 0.082306623458862305" quat="1 0 0 0">
+							<joint name="joint_LPedicel_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+							<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+							<body name="LPedicel_yaw" pos="-1.1920928955078125e-07 0 0" quat="1 0 0 0">
+								<joint name="joint_LPedicel_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+								<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="LPedicel" pos="-1.1920928955078125e-07 0 0" quat="1 0 0 0">
+									<joint name="joint_LPedicel" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+									<geom name="LPedicel" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LPedicel" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.049508571624755859 0.0043900730088353157 -0.025609875097870827" mass="8.662544835547314e-07" fullinertia="1.5192979294855613e-09 1.5709095209306909e-09 1.6701576464121229e-09 8.5244705933452037e-11 7.8164128775362099e-11 -6.6032832658799698e-11"/>
+									<body name="LFuniculus_roll" pos="0.051315903663635254 -0.00017841905355453491 -0.042900562286376953" quat="1 0 0 0">
+										<joint name="joint_LFuniculus_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+										<inertial pos="0 0 9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+										<body name="LFuniculus_yaw" pos="0 0 0" quat="1 0 0 0">
+											<joint name="joint_LFuniculus_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+											<inertial pos="0 0 9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+											<body name="LFuniculus" pos="0 0 0" quat="1 0 0 0">
+												<joint name="joint_LFuniculus" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+												<geom name="LFuniculus" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFuniculus" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="0.017254447564482689 -0.0072380127385258675 -0.091828919947147369" mass="1.1002208214785619e-06" fullinertia="3.0875132946578104e-09 2.865122963330836e-09 1.5824501346561422e-09 1.3156936484150013e-10 2.7735380499993793e-10 -6.6321203739276129e-12"/>
+												<body name="LArista_roll" pos="0.019257545471191406 0.048715509474277496 -0.069890499114990234" quat="1 0 0 0">
+													<joint name="joint_LArista_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+													<inertial pos="0 0 -1.9073486612342094e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+													<body name="LArista_yaw" pos="0 0 -2.384185791015625e-07" quat="1 0 0 0">
+														<joint name="joint_LArista_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+														<inertial pos="0 0 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+														<body name="LArista" pos="0 0 -2.384185791015625e-07" quat="1 0 0 0">
+															<joint name="joint_LArista" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+															<geom name="LArista" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0.29999999999999999 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LArista" fluidcoef="0 0 0 0 0"/>
+															<inertial pos="0.015042114071547985 0.083989463746547699 0.014218616299331188" mass="1.1001493090684334e-07" fullinertia="4.6599688466032896e-10 3.7042770364287426e-11 4.4883186581701934e-10 -2.5237243253880454e-11 9.4244816387712885e-12 3.1652690957340937e-11"/>
+														</body>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+						<body name="REye" pos="0.23149150609970093 -0.0005665309727191925 0.017043113708496094" quat="1 0 0 0">
+							<geom name="REye" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_REye"/>
+							<inertial pos="-0.0029275417327880859 -0.30983772873878479 -0.02660980261862278" mass="1.0853648330100224e-05" fullinertia="1.527984675925129e-07 2.1410835305352209e-07 1.045733787135546e-07 -2.6946246922124963e-08 1.8822428726680308e-08 1.0351807208739374e-08"/>
+						</body>
+						<body name="Rostrum" pos="0.43001961708068848 0.003381817601621151 -0.27448439598083496" quat="1 0 0 0">
+							<geom name="Rostrum" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Rostrum"/>
+							<inertial pos="-0.17565731704235077 0.0041176388040184975 -0.017972946166992188" mass="1.821516305100949e-05" fullinertia="2.4548290045259023e-07 2.8704656988285668e-07 2.508260491576909e-07 7.2769935863263723e-11 1.5555772202121327e-09 8.3635489283509714e-11"/>
+							<body name="Haustellum" pos="-0.37093329429626465 0.000466151162981987 -0.019629240036010742" quat="1 0 0 0">
+								<geom name="Haustellum" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Haustellum"/>
+								<inertial pos="0.18446870148181915 0.00591269601136446 -0.099196150898933411" mass="8.088172523948103e-06" fullinertia="6.4597517524881994e-08 6.8613407256278104e-08 8.5945004142427658e-08 -3.1785147667015784e-10 1.4620935977416919e-08 -5.4383837912889742e-10"/>
+							</body>
+						</body>
+						<body name="RPedicel_roll" pos="0.4287382960319519 -0.081443209201097488 0.082798361778259277" quat="1 0 0 0">
+							<joint name="joint_RPedicel_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+							<inertial pos="9.5367433061710472e-08 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+							<body name="RPedicel_yaw" pos="1.1920928955078125e-07 0 0" quat="1 0 0 0">
+								<joint name="joint_RPedicel_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+								<inertial pos="9.5367433061710472e-08 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="RPedicel" pos="1.1920928955078125e-07 0 0" quat="1 0 0 0">
+									<joint name="joint_RPedicel" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+									<geom name="RPedicel" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RPedicel" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.04849548265337944 -0.0066871880553662777 -0.027813339605927467" mass="8.621888354241637e-07" fullinertia="1.5038017044329923e-09 1.5560727064926339e-09 1.6669160745867685e-09 -8.6835512216244375e-11 7.2138948184826382e-11 6.1139106113111659e-11"/>
+									<body name="RFuniculus_roll" pos="0.050687968730926514 0.00094661861658096313 -0.04530024528503418" quat="1 0 0 0">
+										<joint name="joint_RFuniculus_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+										<inertial pos="0 -1.1920929132713809e-08 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+										<body name="RFuniculus_yaw" pos="0 -1.4901161193847656e-08 0" quat="1 0 0 0">
+											<joint name="joint_RFuniculus_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+											<inertial pos="0 -1.1920929132713809e-08 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+											<body name="RFuniculus" pos="0 -1.4901161193847656e-08 0" quat="1 0 0 0">
+												<joint name="joint_RFuniculus" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.0001" frictionloss="0.0"/>
+												<geom name="RFuniculus" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFuniculus" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="0.017940713092684746 0.0040577114559710026 -0.090368561446666718" mass="1.0970476498469152e-06" fullinertia="3.0756661028858661e-09 2.8280188055311698e-09 1.583608848172615e-09 -1.1520395853300369e-10 2.9046155983820535e-10 1.8747938587181155e-11"/>
+												<body name="RArista_roll" pos="0.020437002182006836 -0.058991238474845886 -0.066675066947937012" quat="1 0 0 0">
+													<joint name="joint_RArista_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+													<inertial pos="0 -1.1920929132713809e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+													<body name="RArista_yaw" pos="0 -2.9802322387695312e-08 0" quat="1 0 0 0">
+														<joint name="joint_RArista_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+														<inertial pos="0 -2.3841858265427618e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+														<body name="RArista" pos="0 -2.9802322387695312e-08 0" quat="1 0 0 0">
+															<joint name="joint_RArista" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="1e-05" frictionloss="0.0"/>
+															<geom name="RArista" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0.29999999999999999 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RArista" fluidcoef="0 0 0 0 0"/>
+															<inertial pos="0.018207645043730736 -0.07643195241689682 0.015183830633759499" mass="1.099907640123722e-07" fullinertia="4.670162842313207e-10 3.7052343233882513e-11 4.4660965519116401e-10 -3.7279485149788858e-12 -7.7505962725038759e-12 -4.0081398195159983e-11"/>
+														</body>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="LFCoxa_roll" pos="-0.16154563426971436 0.16951037384569645 -0.23035943508148193" quat="1 0 0 0">
+				<joint name="joint_LFCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+				<inertial pos="-4.7683716530855236e-08 -1.1920929132713809e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="LFCoxa_yaw" pos="-5.9604644775390625e-08 -2.9802322387695312e-08 0" quat="1 0 0 0">
+					<joint name="joint_LFCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="-2.3841858265427618e-08 -2.3841858265427618e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="LFCoxa" pos="-5.9604644775390625e-08 -2.9802322387695312e-08 0" quat="1 0 0 0">
+						<joint name="joint_LFCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="LFCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFCoxa" fluidcoef="0 0 0 0 0"/>
+						<inertial pos="0.011279130354523659 0.00736581115052104 -0.22946958243846893" mass="4.522004066249335e-06" fullinertia="4.7123812760421842e-08 4.5527236773042671e-08 1.1321591847687633e-08 -1.2274809906478531e-09 -7.2365450041236439e-10 -3.1069120896910145e-09"/>
+						<body name="LFFemur" pos="-0.00060492753982543945 -0.0020639747381210327 -0.36546182632446289" quat="1 0 0 0">
+							<joint name="joint_LFFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="LFFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="-0.010954642668366432 0.021125424653291702 -0.39625737071037292" mass="6.294365178570592e-06" fullinertia="2.1573707889580229e-07 2.1478270450182664e-07 1.1870386019150603e-08 1.6798094458189905e-10 6.7854948495606726e-09 8.0974842456517342e-09"/>
+							<body name="LFFemur_roll" pos="-5.9604644775390625e-08 0 -1.1920928955078125e-07" quat="1 0 0 0">
+								<joint name="joint_LFFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="-2.3841858265427618e-08 0 -4.7683716530855236e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="LFTibia" pos="-0.0036284923553466797 -0.0010989010334014893 -0.70523034641519189" quat="1 0 0 0">
+									<joint name="joint_LFTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="LFTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.02392880991101265 0.0099955322220921516 -0.31698378920555115" mass="2.068820618721865e-06" fullinertia="4.3497627819153745e-08 4.3209208334952701e-08 1.8270032944757237e-09 -6.1814946369021546e-11 -1.4959013917518376e-09 -2.6989472254788086e-09"/>
+									<body name="LFTarsus1" pos="-0.00032007694244384766 -0.00055192410945892334 -0.51838202169165015" quat="1 0 0 0">
+										<joint name="joint_LFTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="LFTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus1" fluidcoef="0 0 0 0 0"/>
+										<inertial pos="0.0082519054412841797 -0.003517496632412076 -0.13727636635303497" mass="4.64851133190333e-07" fullinertia="2.0964557645231635e-09 2.1015949262804585e-09 1.7041431929651967e-10 6.9055233648740824e-12 6.6763879480630497e-11 -6.6683636685964753e-11"/>
+										<body name="LFTarsus2" pos="0.0014775395393371582 -0.00082576274871826172 -0.22551143169403076" quat="1 0 0 0">
+											<joint name="joint_LFTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="LFTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus2" fluidcoef="0 0 0 0 0"/>
+											<inertial pos="0.010072923265397549 -0.00325603480450809 -0.10305414348840714" mass="2.0941328890791866e-07" fullinertia="4.0192271745573064e-10 4.0220952143344572e-10 5.2961607935237259e-11 3.2341164854893351e-12 -1.7667517716669273e-11 -9.4347577046743588e-12"/>
+											<body name="LFTarsus3" pos="0.00091886520385742188 -1.1622905731201172e-06 -0.15366756916046143" quat="1 0 0 0">
+												<joint name="joint_LFTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="LFTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus3" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="0.0093610528856515884 -0.0044113993644714355 -0.073273085057735443" mass="1.1851731000018943e-07" fullinertia="1.0194155123381958e-10 1.022646707036408e-10 2.540825528836891e-11 1.1463153314968054e-12 -5.8463468647495397e-12 9.1081611464890469e-13"/>
+												<body name="LFTarsus4" pos="0.0013435184955596924 0.00041842460632324219 -0.098489820957183838" quat="1 0 0 0">
+													<joint name="joint_LFTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="LFTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus4" fluidcoef="0 0 0 0 0"/>
+													<inertial pos="0.00069010257720947266 -0.0050250054337084293 -0.063922695815563202" mass="9.269679574872209e-08" fullinertia="5.9657202483381852e-11 6.0054510662367946e-11 1.7947946662487983e-11 8.0358552583227865e-13 -3.2838846874856542e-12 4.520752673761952e-13"/>
+													<body name="LFTarsus5" pos="0.0014019608497619629 -0.00017428398132324219 -0.086987495422363281" quat="1 0 0 0">
+														<joint name="joint_LFTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="LFTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LFTarsus5" fluidcoef="0 0 0 0 0"/>
+														<inertial pos="0.0020870447624474764 -0.0064410450868308544 -0.066006660461425781" mass="1.1454791813432703e-07" fullinertia="8.9749323905509256e-11 9.4463703232687226e-11 2.7014405441458505e-11 -1.3565097743732539e-12 -6.8168972448890604e-12 -6.4142707181652357e-13"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="LHaltere_roll" pos="-0.80582523345947266 0.21355625428259373 -0.14926803112030029" quat="1 0 0 0">
+				<inertial pos="0 2.3841858265427618e-08 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="LHaltere_yaw" pos="0 2.9802322387695312e-08 0" quat="1 0 0 0">
+					<inertial pos="0 0 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="LHaltere" pos="0 2.9802322387695312e-08 0" quat="1 0 0 0">
+						<geom name="LHaltere" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHaltere"/>
+						<inertial pos="-0.0221053846180439 0.21382319927215576 0.0095170978456735611" mass="1.4161516439449333e-06" fullinertia="1.401018605304313e-08 1.9731167702807689e-09 1.3661075105086198e-08 3.2003048907543853e-11 -6.8355100035567021e-11 5.4829038721132187e-11"/>
+					</body>
+				</body>
+			</body>
+			<body name="LHCoxa_roll" pos="-0.78372153639793396 0.086993413046002388 -0.49661201238632202" quat="1 0 0 0">
+				<joint name="joint_LHCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+				<inertial pos="0 5.9604645663569045e-09 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="LHCoxa_yaw" pos="0 0 0" quat="1 0 0 0">
+					<joint name="joint_LHCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="0 5.9604645663569045e-09 -9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="LHCoxa" pos="0 0 0" quat="1 0 0 0">
+						<joint name="joint_LHCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="LHCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHCoxa"/>
+						<inertial pos="-0.01400837954133749 0.029449660331010818 -0.10787587612867355" mass="2.5634613650929467e-06" fullinertia="1.0638476565953336e-08 1.1408809600503282e-08 6.9917967204890234e-09 1.2880243832325035e-10 -2.0741832621486396e-10 -1.7925794052614201e-09"/>
+						<body name="LHFemur" pos="-0.00027471780776977539 -0.00015975534915924072 -0.19941717386245728" quat="1 0 0 0">
+							<joint name="joint_LHFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="LHFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="0.022989988327026367 -0.0098384981974959373 -0.44595643877983093" mass="8.752848223782955e-06" fullinertia="4.1274911592856501e-07 4.1276958217961331e-07 2.1336136144334236e-08 -2.7163455773064454e-09 -6.8486982807967254e-09 -8.1992449263549684e-09"/>
+							<body name="LHFemur_roll" pos="0 0 0" quat="1 0 0 0">
+								<joint name="joint_LHFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="LHTibia" pos="0.00013548135757446289 -8.58306884765625e-05 -0.83631375432014465" quat="1 0 0 0">
+									<joint name="joint_LHTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="LHTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.013148284517228603 -0.0068488717079162598 -0.42460152506828308" mass="3.3711467153216586e-06" fullinertia="1.0745207544560011e-07 1.0826390108452979e-07 3.8845566466093236e-09 7.0919780201332001e-11 -5.4984168294667852e-09 1.3154246181736999e-09"/>
+									<body name="LHTarsus1" pos="0.0002600252628326416 -0.00040558725595474243 -0.68445554375648499" quat="1 0 0 0">
+										<joint name="joint_LHTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="LHTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTarsus1" fluidcoef="0 0 0 0 0"/>
+										<inertial pos="-0.012777209281921387 0.012578213587403297 -0.1745121031999588" mass="1.0435290417843564e-06" fullinertia="1.0903900418592263e-08 1.0993954193822944e-08 5.8144186977122642e-10 6.4639668346849595e-12 1.086556696735295e-10 -8.5624831584129074e-11"/>
+										<body name="LHTarsus2" pos="-5.8799982070922852e-05 0.0007624700665473938 -0.35274249315261841" quat="1 0 0 0">
+											<joint name="joint_LHTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="LHTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTarsus2" fluidcoef="0 0 0 0 0"/>
+											<inertial pos="-0.011517978273332119 0.010785931721329689 -0.098260693252086639" mass="3.5169703880210384e-07" fullinertia="9.7828624251377287e-10 9.8303001422967506e-10 1.2488389564932046e-10 -3.0816774534172855e-12 -1.9384818077382828e-11 2.5781492422021609e-11"/>
+											<body name="LHTarsus3" pos="1.9490718841552734e-05 -0.00090782344341278076 -0.17505311965942383" quat="1 0 0 0">
+												<joint name="joint_LHTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="LHTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTarsus3" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="-0.014321041293442249 0.011688000522553921 -0.055696107447147369" mass="1.3524270807158195e-07" fullinertia="1.2368738612629028e-10 1.2583042861406472e-10 3.3279992866551568e-11 -1.2441728549747048e-12 -6.3934671916049506e-13 9.665689375018886e-13"/>
+												<body name="LHTarsus4" pos="6.4074993133544922e-06 0.00098983198404312134 -0.096707820892333984" quat="1 0 0 0">
+													<joint name="joint_LHTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="LHTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTarsus4" fluidcoef="0 0 0 0 0"/>
+													<inertial pos="0 0 0" mass="9.012496547607395e-08" fullinertia="2.5859938473544238e-10 2.6537498616290113e-10 4.5893199692252127e-11 1.2389534956523486e-11 -5.9507200204441174e-11 4.4449776673393079e-11"/>
+													<body name="LHTarsus5" pos="7.1853399276733398e-05 -0.00022908300161361694 -0.073304176330566406" quat="1 0 0 0">
+														<joint name="joint_LHTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="LHTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LHTarsus5" fluidcoef="0 0 0 0 0"/>
+														<inertial pos="-0.011947560124099255 0.0081241074949502945 -0.059480667114257812" mass="1.2468543442329055e-07" fullinertia="1.018035140267619e-10 1.0573634101357342e-10 3.4060532501918235e-11 -2.7882014577412394e-12 -4.5177406570292343e-12 -1.3081147151276895e-12"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="LMCoxa_roll" pos="-0.55687103420495987 0.12490093149244785 -0.48220914602279663" quat="1 0 0 0">
+				<joint name="joint_LMCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+				<inertial pos="0 0 1.9073486612342094e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="LMCoxa_yaw" pos="0 -1.4901161193847656e-08 2.384185791015625e-07" quat="1 0 0 0">
+					<joint name="joint_LMCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="0 0 9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="LMCoxa" pos="0 -1.4901161193847656e-08 2.384185791015625e-07" quat="1 0 0 0">
+						<joint name="joint_LMCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="LMCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMCoxa"/>
+						<inertial pos="-0.0055065634660422802 0.013313400559127331 -0.095957234501838684" mass="2.5958093133598814e-06" fullinertia="1.2710284618152903e-08 1.184295156856155e-08 8.2993952041759988e-09 4.08782733207304e-11 -3.5048600608243163e-10 -3.5370026791912912e-09"/>
+						<body name="LMFemur" pos="-0.00021589547395706177 0.00014557689428329468 -0.18144667148590088" quat="1 0 0 0">
+							<joint name="joint_LMFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="LMFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="0.019349096342921257 0.010498297400772572 -0.42227038741111755" mass="6.482330598202185e-06" fullinertia="3.2282135294101592e-07 3.2291991726835163e-07 1.073682855038871e-08 7.9803596847323979e-11 -1.1450833285265943e-09 -2.8810764707616674e-09"/>
+							<body name="LMFemur_roll" pos="-7.4505805969238281e-09 1.4901161193847656e-08 0" quat="1 0 0 0">
+								<joint name="joint_LMFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="-5.9604645663569045e-09 1.1920929132713809e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="LMTibia" pos="-0.00096974149346351624 0.00032547861337661743 -0.78366953134536743" quat="1 0 0 0">
+									<joint name="joint_LMTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="LMTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.018114423379302025 0.012055421248078346 -0.39092212915420532" mass="2.8600945241498507e-06" fullinertia="1.0594110786564213e-07 1.0601479603137318e-07 2.6255408506593385e-09 -2.3250287128312514e-10 -5.627270902197579e-09 -1.8027992555059154e-09"/>
+									<body name="LMTarsus1" pos="0.00027941539883613586 0.00032790005207061768 -0.66732656955718994" quat="1 0 0 0">
+										<joint name="joint_LMTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="LMTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTarsus1" fluidcoef="0 0 0 0 0"/>
+										<inertial pos="-0.011675506830215454 0.0086040860041975975 -0.17074728012084961" mass="5.247556124991491e-07" fullinertia="3.773690679472309e-09 3.7957785409696538e-09 1.8623278679936871e-10 1.0750656099748081e-11 2.1411759803834006e-10 -7.4021217304290633e-11"/>
+										<body name="LMTarsus2" pos="0.00044655799865722656 -0.00057838112115859985 -0.29433631896972656" quat="1 0 0 0">
+											<joint name="joint_LMTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="LMTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTarsus2" fluidcoef="0 0 0 0 0"/>
+											<inertial pos="-0.0090768039226531982 0.0092543363571166992 -0.096315480768680573" mass="2.354010887465768e-07" fullinertia="4.7860433171880432e-10 4.8234586171880052e-10 6.3981646956763485e-11 -9.2820492915539254e-13 2.7853019810993562e-12 -9.1137504357064077e-12"/>
+											<body name="LMTarsus3" pos="-9.112432599067688e-05 -0.00015010684728622437 -0.15916502475738525" quat="1 0 0 0">
+												<joint name="joint_LMTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="LMTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTarsus3" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="-0.006259542889893055 0.010509669780731201 -0.061798285692930222" mass="1.176311900856616e-07" fullinertia="9.3160589581964693e-11 9.3705463464156339e-11 2.837357614235686e-11 1.3163413649873262e-12 -4.9509922135454603e-12 9.4509662610329551e-13"/>
+												<body name="LMTarsus4" pos="0.00022959709167480469 -0.00013905763626098633 -0.089734196662902832" quat="1 0 0 0">
+													<joint name="joint_LMTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="LMTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTarsus4" fluidcoef="0 0 0 0 0"/>
+													<inertial pos="-5.9604645663569045e-09 -1.1920929132713809e-08 0" mass="6.844311672551234e-08" fullinertia="1.9736968486543227e-10 1.9489538672525679e-10 2.4598037841061406e-11 4.4974445042902712e-12 -2.5910657687012627e-11 3.2530918022030886e-11"/>
+													<body name="LMTarsus5" pos="0.00019349530339241028 7.4468553066253662e-05 -0.063277840614318848" quat="1 0 0 0">
+														<joint name="joint_LMTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="LMTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LMTarsus5" fluidcoef="0 0 0 0 0"/>
+														<inertial pos="-0.0052026808261871338 0.0078973770141601562 -0.060198307037353516" mass="1.1399435799447945e-07" fullinertia="9.2086560572842614e-11 9.6000375952220602e-11 2.7438879714269945e-11 -1.4798401031464296e-12 -6.5179968394764775e-12 -8.4988704865075234e-13"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="LWing_roll" pos="-0.54395866394042969 0.36983280815184116 0.18139433860778809" quat="0.7071067657322373 0 0 0.70710679664085752">
+				<inertial pos="2.3841858265427618e-08 0 1.9073486612342094e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="LWing_yaw" pos="-1.3322676295501878e-15 -2.9802322387695312e-08 2.384185791015625e-07" quat="0.98901586642260175 -0.14780939065008811 -1.143317297257293e-18 7.6501157495448676e-18">
+					<inertial pos="0 -8.9406970715799616e-09 1.1175871605928478e-07" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="LWing" pos="-5.5511151231257827e-17 -6.9706836969274377e-08 2.2800082399854205e-07" quat="1 6.0639315691974794e-19 -1.2301927814936334e-42 -2.0287049209832048e-24">
+						<geom name="LWing" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 -1.4551916978336921e-15" mesh="mesh_LWing"/>
+						<inertial pos="-0.10208909958600998 1.0870033502578735 0.11552351713180542" mass="2.500060809494719e-06" fullinertia="8.0231997657518542e-07 1.8091660454325853e-07 9.4758203363402564e-07 -6.1689559504894456e-08 4.1022346102295619e-08 5.7378039073271316e-08"/>
+					</body>
+				</body>
+			</body>
+			<body name="RFCoxa_roll" pos="-0.15964537858963013 -0.17366563342511654 -0.23007118701934814" quat="1 0 0 0">
+				<joint name="joint_RFCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+				<inertial pos="0 -1.1920929132713809e-08 9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="RFCoxa_yaw" pos="0 0 0" quat="1 0 0 0">
+					<joint name="joint_RFCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="0 -1.1920929132713809e-08 9.5367433061710472e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="RFCoxa" pos="0 0 0" quat="1 0 0 0">
+						<joint name="joint_RFCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="RFCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFCoxa" fluidcoef="0 0 0 0 0"/>
+						<inertial pos="0.0063267471268773079 0.0096058612689375877 -0.2294711172580719" mass="4.522002437988243e-06" fullinertia="4.7123813229593213e-08 4.5640997223176043e-08 1.1207818048204476e-08 1.2122635766321061e-09 -7.4885909889892878e-10 2.3975465459073188e-09"/>
+						<body name="RFFemur" pos="-0.0030191540718078613 0.0013685822486877441 -0.36545079946517944" quat="1 0 0 0">
+							<joint name="joint_RFFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="RFFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="-0.013492393307387829 -0.014454126358032227 -0.39591336250305176" mass="6.294376034121718e-06" fullinertia="2.1511689786095531e-07 2.146555514453844e-07 1.2621947948709672e-08 -9.4937150791357055e-11 6.6188234476314986e-09 -1.4846736094948131e-08"/>
+							<body name="RFFemur_roll" pos="-5.9604644775390625e-08 0 0" quat="1 0 0 0">
+								<joint name="joint_RFFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="-2.3841858265427618e-08 -1.1920929132713809e-08 -4.7683716530855236e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="RFTibia" pos="-0.0056810081005096436 0.0018779933452606201 -0.70521488972008228" quat="1 0 0 0">
+									<joint name="joint_RFTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="RFTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.023442937061190605 -0.017040228471159935 -0.31677436828613281" mass="2.0688194360187594e-06" fullinertia="4.3500474043375563e-08 4.3300255807843032e-08 1.7329578085641428e-09 9.3347659832026655e-11 -1.4941858114406243e-09 1.8393825588167648e-09"/>
+									<body name="RFTarsus1" pos="3.2097101211547852e-05 0.0013511478900909424 -0.51841160468757153" quat="1 0 0 0">
+										<camera name="camera_RFTarsus1_zoomin" class="nmf" mode="track" ipd="0.068" pos="-0.5 -2 0" euler="1.67 0 -0.3" fovy="60"/>
+										<!--arctan(0.5/2) = 0.245 arctan(0.2/2) = 0.1 -->
+										<joint name="joint_RFTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="RFTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus1" fluidcoef="0 0 0 0 0"/>
+										<inertial pos="0.0074234963394701481 -0.011223316192626953 -0.13725867867469788" mass="4.6485138504422505e-07" fullinertia="2.0964549102399104e-09 2.1035179217698059e-09 1.6849467410834598e-10 -5.5358380075935916e-12 6.6921015926244484e-11 2.7047441673079051e-11"/>
+										<body name="RFTarsus2" pos="0.0021611154079437256 0.0011281967163085938 -0.22541564702987671" quat="1 0 0 0">
+											<joint name="joint_RFTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="RFTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus2" fluidcoef="0 0 0 0 0"/>
+											<inertial pos="0.0085637336596846581 -0.015500927343964577 -0.10310168564319611" mass="2.0941347570628474e-07" fullinertia="4.0192390155226289e-10 4.0245019512924866e-10 5.2721185956788356e-11 -3.5956518916436904e-12 -1.7592281639831683e-11 2.2688692355631899e-12"/>
+											<body name="RFTarsus3" pos="0.0018048286437988281 0.00035412609577178955 -0.15366643667221069" quat="1 0 0 0">
+												<joint name="joint_RFTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="RFTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus3" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="0.0069680693559348583 -0.017446447163820267 -0.073320485651493073" mass="1.1851737405370073e-07" fullinertia="1.0194180306122899e-10 1.0219511470901431e-10 2.5477748433502503e-11 -1.2658881413813177e-12 -5.8204941679396491e-12 -2.4852692203238401e-12"/>
+												<body name="RFTarsus4" pos="0.0020432472229003906 -0.00018799304962158203 -0.098483145236968994" quat="1 0 0 0">
+													<joint name="joint_RFTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="RFTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus4" fluidcoef="0 0 0 0 0"/>
+													<inertial pos="0.0068747042678296566 -0.018890619277954102 -0.063961796462535858" mass="9.269690720771255e-08" fullinertia="5.9657429821010569e-11 6.001842680828075e-11 1.7984108501035329e-11 -8.7071700400594466e-13 -3.2660945447312429e-12 -1.3147009734854398e-12"/>
+													<body name="RFTarsus5" pos="0.0020258724689483643 0.00025747716426849365 -0.086998105049133301" quat="1 0 0 0">
+														<joint name="joint_RFTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="RFTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus5" fluidcoef="0 0 0 0 0"/>
+														<inertial pos="0.0065568448044359684 -0.019383907318115234 -0.066049575805664062" mass="1.1454814826407663e-07" fullinertia="8.9418261365169167e-11 9.4800529649045859e-11 2.7009213345570873e-11 -5.0850568009627798e-13 -6.7912072139120742e-12 -5.5885228911399426e-13"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="RHaltere_roll" pos="-0.80582511425018311 -0.21355666778981686 -0.1492685079574585" quat="1 0 0 0">
+				<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="RHaltere_yaw" pos="0 0 0" quat="1 0 0 0">
+					<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="RHaltere" pos="0 0 0" quat="1 0 0 0">
+						<geom name="RHaltere" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHaltere"/>
+						<inertial pos="-0.022123051807284355 -0.19827540218830109 0.0072251320816576481" mass="1.4161459875842644e-06" fullinertia="1.4020029846150617e-08 1.9731244407244549e-09 1.3650805979378972e-08 -1.1272894938793229e-11 3.2683329315348973e-11 -6.3544752463110505e-11"/>
+					</body>
+				</body>
+			</body>
+			<body name="RHCoxa_roll" pos="-0.78372162580490112 -0.086993483826518059 -0.49661147594451904" quat="1 0 0 0">
+				<joint name="joint_RHCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+				<inertial pos="0 1.1920929132713809e-08 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="RHCoxa_yaw" pos="0 1.4901161193847656e-08 0" quat="1 0 0 0">
+					<joint name="joint_RHCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="RHCoxa" pos="0 1.4901161193847656e-08 0" quat="1 0 0 0">
+						<joint name="joint_RHCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="RHCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHCoxa"/>
+						<inertial pos="-0.013914823532104492 -0.01245646458119154 -0.10789203643798828" mass="2.56346618880083e-06" fullinertia="1.0639120106914843e-08 1.1406619476540892e-08 6.9936358630244908e-09 -1.3008748467106788e-10 -2.0323976938917119e-10 1.7954716488237948e-09"/>
+						<body name="RHFemur" pos="-7.8380107879638672e-05 0.00029505789279937744 -0.19941705465316772" quat="1 0 0 0">
+							<joint name="joint_RHFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="RHFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="0.022992277517914772 0.026323556900024414 -0.44598349928855896" mass="8.752846411343817e-06" fullinertia="4.1275558502376173e-07 4.1277714481314791e-07 2.1322423705105886e-08 2.7106582045798295e-09 -6.8657838894531583e-09 7.8525593809497205e-09"/>
+							<body name="RHFemur_roll" pos="0 2.9802322387695312e-08 -1.1920928955078125e-07" quat="1 0 0 0">
+								<joint name="joint_RHFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="0 2.3841858265427618e-08 -4.7683716530855236e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="RHTibia" pos="8.1419944763183594e-05 -0.00067412108182907104 -0.8363138884305954" quat="1 0 0 0">
+									<joint name="joint_RHTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="RHTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.01747598685324192 0.017848348245024681 -0.42461252212524414" mass="3.3711512886318823e-06" fullinertia="1.0745154342410108e-07 1.082639023470002e-07 3.8857184749815663e-09 8.3035222063358144e-11 -5.6610163523746234e-09 -1.8423064174591536e-10"/>
+									<body name="RHTarsus1" pos="-0.00026181340217590332 0.00024248659610748291 -0.68445618450641632" quat="1 0 0 0">
+										<joint name="joint_RHTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="RHTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTarsus1" fluidcoef="0 0 0 0 0"/>
+										<inertial pos="-0.013229799456894398 0.005408167839050293 -0.174530029296875" mass="1.0435376475255117e-06" fullinertia="1.094404711706315e-08 1.0954541705561156e-08 5.8120307081303794e-10 -4.5321601024775227e-11 1.245822396559083e-10 3.3023317774378541e-11"/>
+										<body name="RHTarsus2" pos="0.00025260448455810547 -0.00025808811187744141 -0.35274320840835571" quat="1 0 0 0">
+											<joint name="joint_RHTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="RHTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTarsus2" fluidcoef="0 0 0 0 0"/>
+											<inertial pos="-0.011340809054672718 0.0059734880924224854 -0.098242759704589844" mass="3.516964968856457e-07" fullinertia="9.8261232287475928e-10 9.7899913201085609e-10 1.245831122938035e-10 3.5722275754684619e-12 -2.3346649601210262e-11 -1.5403451767343881e-11"/>
+											<body name="RHTarsus3" pos="0.00022739171981811523 -0.00039763003587722778 -0.17505478858947754" quat="1 0 0 0">
+												<joint name="joint_RHTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="RHTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTarsus3" fluidcoef="0 0 0 0 0"/>
+												<inertial pos="-0.014224529266357422 0.0076322257518768311 -0.055587198585271835" mass="1.352428932360253e-07" fullinertia="1.2633234246849735e-10 1.2314504377989579e-10 3.3321061696987948e-11 -3.3161223111173776e-13 -2.1973044686496473e-12 -5.5700194196166375e-13"/>
+												<body name="RHTarsus4" pos="-0.00051742792129516602 0.00032848119735717773 -0.096711039543151855" quat="1 0 0 0">
+													<joint name="joint_RHTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="RHTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTarsus4" fluidcoef="0 0 0 0 0"/>
+													<inertial pos="0 0 9.5367433061710472e-08" mass="9.01249567179059e-08" fullinertia="2.5309139055867012e-10 2.6555597773595454e-10 3.8543764264299837e-11 8.5066061537709505e-12 -5.6999152345403603e-11 3.0124625043631828e-11"/>
+													<body name="RHTarsus5" pos="0.00035637617111206055 -0.00034637749195098877 -0.073303103446960449" quat="1 0 0 0">
+														<joint name="joint_RHTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="RHTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RHTarsus5" fluidcoef="0 0 0 0 0"/>
+														<inertial pos="-0.010403466410934925 0.0085104107856750488 -0.059466935694217682" mass="1.2468550520191837e-07" fullinertia="1.020736338199787e-10 1.0553073131320156e-10 3.3996210432761537e-11 2.9093679976278776e-12 -3.2507830584509797e-12 2.6929686745873456e-12"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="RMCoxa_roll" pos="-0.5568711943924427 -0.12490125559270382 -0.48220843076705933" quat="1 0 0 0">
+				<joint name="joint_RMCoxa_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+				<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="RMCoxa_yaw" pos="0 0 0" quat="1 0 0 0">
+					<joint name="joint_RMCoxa_yaw" class="nmf" type="hinge" pos="0 0 0" axis="1 0 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+					<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="RMCoxa" pos="0 0 0" quat="1 0 0 0">
+						<joint name="joint_RMCoxa" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+						<geom name="RMCoxa" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMCoxa"/>
+						<inertial pos="-0.0055109085515141487 0.0036018968094140291 -0.095951750874519348" mass="2.5958084153147036e-06" fullinertia="1.2710285865574648e-08 1.1843212948869859e-08 8.2991121868276018e-09 -4.0817867198778026e-11 -3.5080043126869051e-10 3.5368295547059355e-09"/>
+						<body name="RMFemur" pos="-0.00021554157137870789 -0.00015276670455932617 -0.18144673109054565" quat="1 0 0 0">
+							<joint name="joint_RMFemur" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+							<geom name="RMFemur" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMFemur" fluidcoef="0 0 0 0 0"/>
+							<inertial pos="0.019344603642821312 0.0067075970582664013 -0.42226895689964294" mass="6.482327249565799e-06" fullinertia="3.2282105870738141e-07 3.229154490521696e-07 1.0740947552411523e-08 -7.9020571924220908e-11 -1.1464607488585402e-09 3.0961938242818263e-09"/>
+							<body name="RMFemur_roll" pos="0 0 -1.1920928955078125e-07" quat="1 0 0 0">
+								<joint name="joint_RMFemur_roll" class="nmf" type="hinge" pos="0 0 0" axis="0 0 1" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+								<inertial pos="0 0 -4.7683716530855236e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+								<body name="RMTibia" pos="-0.00097177550196647644 0.00021497905254364014 -0.78366996347904205" quat="1 0 0 0">
+									<joint name="joint_RMTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
+									<geom name="RMTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTibia" fluidcoef="0 0 0 0 0"/>
+									<inertial pos="0.01062463503330946 0.0047764419578015804 -0.40760311484336853" mass="2.8600997544055163e-06" fullinertia="1.0591554406326336e-07 1.060195713142781e-07 2.647140643151944e-09 2.3215222261966599e-10 -5.8497308387299922e-09 1.7109275105513768e-09"/>
+									<body name="RMTarsus1" pos="-0.00014773383736610413 0.0010670721530914307 -0.6673261970281601" quat="1 0 0 0">
+										<joint name="joint_RMTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+										<geom name="RMTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTarsus1"/>
+										<inertial pos="-0.018532484769821167 0.0066356658935546875 -0.18734894692897797" mass="5.24756450411376e-07" fullinertia="3.7710636817423131e-09 3.7959035178278693e-09 1.8875511393356143e-10 -1.1146514199825002e-11 2.3291529265968518e-10 7.8137019887934824e-11"/>
+										<body name="RMTarsus2" pos="0.00057838112115859985 -0.00038231909275054932 -0.28996920585632324" quat="1 0 0 0">
+											<joint name="joint_RMTarsus2" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+											<geom name="RMTarsus2" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTarsus2"/>
+											<inertial pos="-0.014674968086183071 0.0079340105876326561 -0.11728506535291672" mass="2.354013998600498e-07" fullinertia="4.7855627128476553e-10 4.8234586703887756e-10 6.4031048761201063e-11 8.5970727281566422e-13 4.8860475188315372e-12 9.3531039095353443e-12"/>
+											<body name="RMTarsus3" pos="3.501400351524353e-05 0.00015558302402496338 -0.16015195846557617" quat="1 0 0 0">
+												<joint name="joint_RMTarsus3" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+												<geom name="RMTarsus3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTarsus3"/>
+												<inertial pos="-0.012899535708129406 0.0053047537803649902 -0.081616781651973724" mass="1.1763144858436786e-07" fullinertia="9.3102756944161369e-11 9.3519401454451956e-11 2.8617975683901038e-11 -1.3850133398001044e-12 -6.2503551409002508e-12 -1.424930940656579e-12"/>
+												<body name="RMTarsus4" pos="-0.00048250332474708557 0.00024263560771942139 -0.092435002326965332" quat="1 0 0 0">
+													<joint name="joint_RMTarsus4" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+													<geom name="RMTarsus4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTarsus4"/>
+													<inertial pos="0 0 9.5367433061710472e-08" mass="6.84432308676254e-08" fullinertia="3.3014706925647218e-10 3.41408468374553e-10 3.0625741274269722e-11 6.6893901701071073e-12 -6.552494466943857e-11 2.9099283338976597e-11"/>
+													<body name="RMTarsus5" pos="0.00160989910364151 -0.00012277066707611084 -0.06372225284576416" quat="1 0 0 0">
+														<joint name="joint_RMTarsus5" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
+														<geom name="RMTarsus5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RMTarsus5"/>
+														<inertial pos="-0.014021026901900768 0.0084944842383265495 -0.077146433293819427" mass="1.1399464253693984e-07" fullinertia="9.1491025372955178e-11 9.6458044672698627e-11 2.7578251117581606e-11 5.4556604695503306e-13 -7.2112018904636513e-12 1.4413404260868505e-13"/>
+													</body>
+												</body>
+											</body>
+										</body>
+									</body>
+								</body>
+							</body>
+						</body>
+					</body>
+				</body>
+			</body>
+			<body name="RWing_roll" pos="-0.5439588725566864 -0.369832968339324 0.18139410018920898" quat="0.7071067657322373 0 0 -0.70710679664085752">
+				<inertial pos="0 0 0" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+				<body name="RWing_yaw" pos="-1.27675647831893e-15 2.9802322387695312e-08 0" quat="0.98901586642260175 0.14780939065008811 -1.143317297257293e-18 -7.6501157495448676e-18">
+					<inertial pos="0 0 -1.9371510617816057e-08" mass="0.0" fullinertia="9.9999999999999998e-13 9.9999999999999998e-13 9.9999999999999998e-13 0 0 0"/>
+					<body name="RWing" pos="0 0 0" quat="1 -6.0639315691974794e-19 -1.2301927814936334e-42 2.0287049209832048e-24">
+						<geom name="RWing" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 1.4551916978336921e-15" mesh="mesh_RWing"/>
+						<inertial pos="-0.1000005230307579 -1.0700113773345947 0.11686674505472183" mass="2.499939190505281e-06" fullinertia="8.1053996194458205e-07 1.8097093612029778e-07 9.5417999581184494e-07 6.1319261171285959e-08 4.251352752368089e-08 -5.6859472852673536e-08"/>
+					</body>
+				</body>
+			</body>
+		</body>
+		<camera name="camera_back" class="nmf" mode="fixed" ipd="0.068" pos="-8 0 1.0" euler="1.57 0.0 -1.57"/>
+		<camera name="camera_back_track" class="nmf" mode="track" ipd="0.068" pos="-12 0 6" euler="1.2 0.0 -1.57"/>
+		<camera name="camera_front" class="nmf" mode="fixed" ipd="0.068" pos="8 0 1.0" euler="1.57 0.0 1.57"/>
+		<camera name="camera_left" class="nmf" mode="fixed" ipd="0.068" pos="0 8 1.0" euler="-1.57 3.14 0"/>
+		<camera name="camera_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 1.0" euler="1.57 0 0"/>
+		<camera name="camera_top_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 5" euler="1.1 0 0"/>
+		<camera name="camera_top" class="nmf" mode="track" ipd="0.068" pos="0 0 8" euler="0 0 0"/>
+		<camera name="camera_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 0 40" euler="0 0 0"/>
+		<camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
+		<camera name="camera_right_front" class="nmf" mode="track" ipd="0.068" pos="4 -6 1.0" euler="1.57 0 0.588"/>
+		<!-- arctan(2/3) = 0.588 -->
+		<camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 5" euler="-2.129 3.14 0"/>
+		<!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
+		<camera name="camera_right_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 -8 5" euler="1.011 0 0"/>
+		<!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
+		<camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 -3 1" euler="1.57 0 0.72" fovy="30"/>
+		<camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 0 1.57" fovy="15"/>
+	</worldbody>
+	<actuator>
+	</actuator>
+	<sensor>
+  </sensor>
+</mujoco>

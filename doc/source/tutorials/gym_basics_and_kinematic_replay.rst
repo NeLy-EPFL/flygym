@@ -17,8 +17,8 @@ controller and steps the physics forward accordingly. The observation
 space is a user-configurable subset of the state space including visual
 inputs, olfactory inputs, ground contacts, joint states (angles, angular
 velocities, and torques), and the position and velocity of the fly model
-within the arena. The action space includes the control signal (eg.
-angles for position control) for every actuated joint (eg. 7
+within the arena. The action space includes the control signal (e.g.
+angles for position control) for every actuated joint (e.g. 7
 degrees-of-freedom (DoFs) per leg \* 6 legs) and the on/off signal for
 leg adhesion. This framework is easily extendable: the user can
 incorporate additional layers of sensory preprocessing or premotor
@@ -31,7 +31,7 @@ computation into the MDP.
 | encapsulated as a MDP task. A user-defined controller interfaces with |
 | the task through actions (red) and observations (blue). The user can  |
 | extend the MDP task by adding preprogrammed processing routines for   |
-| sensory inputs (purple) and motor outputs (light blue), to modify the |
+| motor outputs (purple) and sensory inputs (light blue), to modify the |
 | action and observation spaces handled by the controller.*             |
 +-----------------------------------------------------------------------+
 
@@ -58,7 +58,7 @@ The overall steps for interacting with a Gym environment are:
       will return you the new observation (and optionally some
       additional information)
    -  Optional: render the simulation graphically
-   -  Break if certain conditions are met (eg. task is accomplished or
+   -  Break if certain conditions are met (e.g. task is accomplished or
       failed), otherwise continue
 
 4. Close the environment and analyze the results
@@ -68,7 +68,7 @@ This process is illustrated in the following code snippet:
 .. code-block:: ipython3
     :linenos:
     
-    env = MyEnvironement(...)
+    env = MyEnvironment(...)
     obs, info = env.reset()
 
     for step in range(1000):    # let's simulate 1000 steps max
@@ -81,7 +81,7 @@ This process is illustrated in the following code snippet:
     env.close()
 
 Note that the action can be selected by any means defined by the user
-(eg. preprogrammed rules, algorithmic models, artificial neural
+(e.g. preprogrammed rules, algorithmic models, artificial neural
 networks).
 
 .. |image1| image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
@@ -91,7 +91,7 @@ The action and observation spaces
 
 The **action** is a dictionary with the following keys and values:
 
--  **“joints”**: The control signal for the actuated DoFs (eg. if
+-  **“joints”**: The control signal for the actuated DoFs (e.g. if
    ``NeuroMechFly.control == "position"``, then this is the target joint
    angle). This is a NumPy array of shape (\|actuated_joints\|,). The
    order of the DoFs is the same as ``NeuroMechFly.actuated_joints``.
@@ -138,15 +138,15 @@ The **observation** is a dictionary with the following keys and values:
 
 In the Gym API, the ``step()`` method returns a ``terminated`` flag
 indicating whether the simulation has ended due to a condition under the
-MDP formulation (eg. task success/failure). The ``step()`` method also
+MDP formulation (e.g. task success/failure). The ``step()`` method also
 returns a ``truncated`` flag indicating whether the simulation has ended
-due to a condition outside the MDP formulation (eg. timeout). The
+due to a condition outside the MDP formulation (e.g. timeout). The
 provided ``NeuroMechFly`` environment always returns False for both
 ``terminated`` and ``truncated``. The user can modify this behavior by
 extending the ``NeuroMechFly`` class.
 
 Additionally, the ``step()`` method returns an ``info`` dictionary that
-contains arbitrary auxilliary information. The user can add any
+contains arbitrary auxiliary information. The user can add any
 information to this dictionary by extending the ``NeuroMechFly`` class.
 The provided ``NeuroMechFly`` contains the following keys and values in
 the **``info`` dictionary**:
@@ -182,9 +182,9 @@ We start with the necessary imports:
     from pathlib import Path
     from tqdm import trange
     
-    import flygym.common
-    import flygym.mujoco
-    import flygym.mujoco.preprogrammed
+    import flygym
+    import flygym
+    import flygym.preprogrammed
 
 Let’s define some simulation parameters:
 
@@ -192,10 +192,10 @@ Let’s define some simulation parameters:
     :linenos:
 
     run_time = 1
-    sim_params = flygym.mujoco.Parameters(
+    sim_params = flygym.Parameters(
         timestep=1e-4, render_mode="saved", render_playspeed=0.2, draw_contacts=True
     )
-    actuated_joints = flygym.mujoco.preprogrammed.all_leg_dofs
+    actuated_joints = flygym.preprogrammed.all_leg_dofs
 
 We can now load recorded kinematics that are included with the FlyGym
 package:
@@ -203,7 +203,7 @@ package:
 .. code-block:: ipython3
     :linenos:
 
-    data_path = flygym.common.get_data_path("flygym", "data")
+    data_path = flygym.get_data_path("flygym", "data")
     with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
         data = pickle.load(f)
 
@@ -234,7 +234,7 @@ We can visualize the time series of DoF angles:
         for side in ["Left", "Right"]
     ]
     for i, leg in enumerate(legs):
-        ax = axs.flatten()[i]
+        ax = axs.ravel()[i]
         leg_code = f"{leg.split()[0][0]}{leg.split()[1][0]}".upper()
         for j, dof in enumerate(actuated_joints):
             if dof.split("_")[1][:2] != leg_code:
@@ -259,7 +259,7 @@ recorded kinematics in the MDP loop:
 .. code-block:: ipython3
     :linenos:
 
-    nmf = flygym.mujoco.NeuroMechFly(
+    nmf = flygym.NeuroMechFly(
         sim_params=sim_params,
         init_pose="stretch",
         actuated_joints=actuated_joints,
