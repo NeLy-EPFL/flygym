@@ -1,4 +1,7 @@
 import numpy as np
+import pickle
+import gc
+from pathlib import Path
 from typing import Tuple, Dict
 from scipy.signal import convolve2d
 
@@ -23,6 +26,68 @@ def get_leg_mask(legs: str) -> np.ndarray:
     return leg_mask
 
 
+def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
+    """Load simulation data from trial.
+    The difference between ``load_trial_data`` and ``extract_variables`` is
+    that the former loads the raw data from the trial (i.e., physics
+    simulation). The latter extracts variables from these raw data subject
+    to additional parameters such as time scale. For each trial, we only
+    call ``load_trial_data`` once, but we may call ``extract_variables``
+    multiple times with different parameters.
+
+    Parameters
+    ----------
+    trial_dir : Path
+        Path to the directory containing the trial data saved in
+        ``exploration.run_simulation``.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing the following keys, each mapping to a time
+        series saved as a numpy array:
+        * "end_effector_pos": End effector positions.
+        * "contact_force": Contact forces.
+        * "dn_drive": DN drives.
+        * "fly_orientation": Fly orientation.
+        * "fly_pos": Fly position.
+    """
+    with open(trial_dir / "sim_data.pkl", "rb") as f:
+        sim_data = pickle.load(f)
+    obs_hist = sim_data["obs_hist"]
+    action_hist = sim_data["action_hist"]
+
+    end_effector_pos_ts = np.array(
+        [obs["stride_diff_unmasked"] for obs in obs_hist], dtype=np.float32
+    )
+
+    contact_force_ts = np.array(
+        [obs["contact_forces"] for obs in obs_hist], dtype=np.float32
+    )
+    contact_force_ts = np.linalg.norm(contact_force_ts, axis=2)  # calc force magnitude
+    contact_force_ts = contact_force_ts.reshape(-1, 6, 6).sum(axis=2)  # total per leg
+
+    dn_drive_ts = np.array(action_hist, dtype=np.float32)
+
+    fly_orientation_ts = np.array(
+        [obs["fly_orientation"][:2] for obs in obs_hist], dtype=np.float32
+    )
+
+    fly_pos_ts = np.array([obs["fly"][0, :2] for obs in obs_hist], dtype=np.float32)
+
+    # Clear RAM right away manually to avoid memory fragmentation
+    del sim_data
+    gc.collect()
+
+    return {
+        "end_effector_pos": end_effector_pos_ts,
+        "contact_force": contact_force_ts,
+        "dn_drive": dn_drive_ts,
+        "fly_orientation": fly_orientation_ts,
+        "fly_pos": fly_pos_ts,
+    }
+
+
 def extract_variables(
     trial_data: Dict[str, np.ndarray],
     time_scale: float,
@@ -32,6 +97,12 @@ def extract_variables(
 ) -> Dict[str, np.ndarray]:
     """
     Extract variables used for path integration from trial data.
+    The difference between ``load_trial_data`` and ``extract_variables`` is
+    that the former loads the raw data from the trial (i.e., physics
+    simulation). The latter extracts variables from these raw data subject
+    to additional parameters such as time scale. For each trial, we only
+    call ``load_trial_data`` once, but we may call ``extract_variables``
+    multiple times with different parameters.
 
     Parameters
     ----------

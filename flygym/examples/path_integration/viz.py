@@ -159,7 +159,7 @@ def plot_all_path_integration_trials(
     fig.savefig(output_path)
 
 
-def make_model_prediction_scatte_plot(
+def make_model_prediction_scatter_plot(
     path_integration_results, output_path, sample_rate=0.001
 ):
     sample_interval = int(1 / sample_rate)
@@ -189,7 +189,10 @@ def make_model_prediction_scatte_plot(
         alpha=0.5,
     )
     axs[0].plot([-180, 180], [-180, 180], "--", color="black", lw=1, zorder=1e9)
-    r2 = r2_score(heading_diff_real_all, heading_diff_pred_all)
+    r2 = r2_score(
+        heading_diff_real_all[np.isfinite(heading_diff_real_all)],
+        heading_diff_pred_all[np.isfinite(heading_diff_real_all)],
+    )
     axs[0].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[0].transAxes)
     axs[0].set_xlabel(r"Actual Δheading [$^\circ$]")
     axs[0].set_ylabel(r"Predicted Δheading [$^\circ$]")
@@ -206,7 +209,10 @@ def make_model_prediction_scatte_plot(
         alpha=0.5,
     )
     axs[1].plot([0, 20], [0, 20], "--", color="black", lw=1, zorder=1e9)
-    r2 = r2_score(disp_diff_real_all, disp_diff_pred_all)
+    r2 = r2_score(
+        disp_diff_real_all[np.isfinite(disp_diff_real_all)],
+        disp_diff_pred_all[np.isfinite(disp_diff_real_all)],
+    )
     axs[1].text(0.1, 0.9, f"$R^2$={r2:.2f}", transform=axs[1].transAxes)
     axs[1].set_xlabel(r"Actual Δdisplacement [mm]")
     axs[1].set_ylabel(r"Predicted Δdisplacement [mm]")
