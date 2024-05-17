@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 from typing import Tuple, Union
 
-from flygym.examples.turning_controller import HybridTurningNMF
+from flygym.examples.locomotion import HybridTurningController
 
 
 class WalkingState(Enum):
@@ -13,6 +13,12 @@ class WalkingState(Enum):
 
 
 class RandomExplorationController:
+    """This controller drives a random exploration: the fly transitions
+    between forward walking and turning in a Poisson process. When the fly
+    turns, the turn direction is chosen randomly and the turn duration is
+    drawn from a normal distribution.
+    """
+
     def __init__(
         self,
         dt: float,
@@ -25,6 +31,31 @@ class RandomExplorationController:
         seed: int = 0,
         init_time: float = 0.1,
     ) -> None:
+        """
+        Parameters
+        ----------
+        dt : float
+            Time step of the simulation.
+        forward_dn_drive : Tuple[float, float], optional
+            DN drives for forward walking, by default (1.0, 1.0).
+        left_turn_dn_drive : Tuple[float, float], optional
+            DN drives for turning left, by default (-0.4, 1.2).
+        right_turn_dn_drive : Tuple[float, float], optional
+            DN drives for turning right, by default (1.2, -0.4).
+        turn_duration_mean : float, optional
+            Mean of the turn duration distribution in seconds, by default
+            0.4.
+        turn_duration_std : float, optional
+            Standard deviation of the turn duration distribution in
+            seconds, by default 0.1.
+        lambda_turn : float, optional
+            Rate of the Poisson process for turning, by default 1.0.
+        seed : int, optional
+            Random seed, by default 0.
+        init_time : float, optional
+            Initial time, in seconds, during which the fly walks straight,
+            by default 0.1.
+        """
         self.random_state = np.random.RandomState(seed)
         self.dt = dt
         self.init_time = init_time
@@ -45,6 +76,16 @@ class RandomExplorationController:
         self.lambda_turn = lambda_turn
 
     def step(self):
+        """
+        Update the fly's walking state.
+
+        Returns
+        -------
+        WalkingState
+            The next state of the fly.
+        Tuple[float, float]
+            The next DN drives.
+        """
         # Upon spawning, just walk straight for a bit (init_time) for things to settle
         if self.curr_time < self.init_time:
             self.curr_time += self.dt
@@ -73,7 +114,12 @@ class RandomExplorationController:
         return self.curr_state, self.dn_drives[self.curr_state]
 
 
-class PathIntegrationNMF(HybridTurningNMF):
+class PathIntegrationController(HybridTurningController):
+    """
+    A wrapper of ``HybridTurningController`` that records variables that
+    are used to perform path integration.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._last_end_effector_pos: Union[None, np.ndarray] = None
@@ -82,6 +128,17 @@ class PathIntegrationNMF(HybridTurningNMF):
         self.pos_estimate_hist = []
 
     def step(self, action):
+        """
+        Same as ``HybridTurningController.step``, but also records the
+        stride for each leg (i.e., how much the leg tip has moved in the
+        fly's egocentric frame since the last step) in the observation
+        space under the key "stride_diff_unmasked". Note that this
+        calculation does not take into account whether the "stride" is
+        actually made during a power stroke (i.e., stance phase); it only
+        reports the change in end effector positions in an "unmasked"
+        manner. The user should post-process it using the contact mask as a
+        part of the model.
+        """
         obs, reward, terminated, truncated, info = super().step(action)
 
         # Update camera position
