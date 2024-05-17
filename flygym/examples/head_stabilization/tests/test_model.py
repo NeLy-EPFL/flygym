@@ -18,14 +18,16 @@ def test_torch_model():
     r2_scores = {}
     for terrain in ["flat", "blocks"]:
         # Load scaler
-        test_data_dir = get_data_path("flygym", "data/test_data")
-        with open(test_data_dir / "head_stabilization_scaler.pkl", "rb") as f:
+        test_data_dir = get_data_path(
+            "flygym", "data/trained_models/head_stabilization"
+        )
+        with open(test_data_dir / "joint_angle_scaler_params.pkl", "rb") as f:
             params = pickle.load(f)
             scaler = JointAngleScaler.from_params(**params)
 
         # Load model
         model = ThreeLayerMLP.load_from_checkpoint(
-            test_data_dir / "head_stabilization_model_all.ckpt",
+            test_data_dir / "all_dofs_model.ckpt",
             map_location=torch.device("cpu"),
         )
 
@@ -91,21 +93,21 @@ def test_torch_model():
 
 def test_model_wrapper():
     # Load scaler
-    test_data_dir = get_data_path("flygym", "data/test_data")
-    with open(test_data_dir / "head_stabilization_scaler.pkl", "rb") as f:
+    test_data_dir = get_data_path("flygym", "data/trained_models/head_stabilization")
+    with open(test_data_dir / "joint_angle_scaler_params.pkl", "rb") as f:
         params = pickle.load(f)
         scaler = JointAngleScaler.from_params(**params)
 
     # Load torch model
     model = ThreeLayerMLP.load_from_checkpoint(
-        test_data_dir / "head_stabilization_model_all.ckpt",
+        test_data_dir / "all_dofs_model.ckpt",
         map_location=torch.device("cpu"),
     )
 
     # Load wrapper model
     wrapper_model = HeadStabilizationInferenceWrapper(
-        model_path=test_data_dir / "head_stabilization_model_all.ckpt",
-        scaler_param_path=test_data_dir / "head_stabilization_scaler.pkl",
+        model_path=test_data_dir / "all_dofs_model.ckpt",
+        scaler_param_path=test_data_dir / "joint_angle_scaler_params.pkl",
         contact_force_thr=(0.5, 1, 3),  # model in test_data was trained with these
     )
 
