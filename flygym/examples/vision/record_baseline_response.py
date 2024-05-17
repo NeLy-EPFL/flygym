@@ -42,6 +42,15 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 # following line.
 # stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
+if not stabilization_model_path.exists() or not scaler_param_path.exists():
+    import warnings
+
+    warnings.warn(
+        "Head stabilization model not found. " "Pre-trained model will be used instead."
+    )
+
+    stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
+
 
 def run_simulation(
     arena: BaseArena,
