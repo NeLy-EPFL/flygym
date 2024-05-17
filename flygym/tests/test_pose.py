@@ -3,7 +3,7 @@ import tempfile
 import logging
 from pathlib import Path
 
-from flygym import NeuroMechFly, Parameters
+from flygym import Fly, SingleFlySimulation
 from flygym.util import plot_mujoco_rollout
 
 
@@ -12,24 +12,25 @@ def test_stretched_pose():
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
-    nmf = NeuroMechFly(init_pose="stretch")
+    fly = Fly(init_pose="stretch")
+    sim = SingleFlySimulation(fly=fly)
     run_time = 0.01
     freq = 20
     amp = np.pi / 2
 
-    obs, _ = nmf.reset()
+    obs, _ = sim.reset()
     fly_init_pos = obs["joints"][0]
 
     obs_list = []
-    while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
+    while sim.curr_time <= run_time:
+        joint_pos = fly_init_pos + amp * np.sin(freq * sim.curr_time)
         action = {"joints": joint_pos}
-        obs, reward, terminated, truncated, info = nmf.step(action)
+        obs, reward, terminated, truncated, info = sim.step(action)
         obs_list.append(obs)
-    nmf.close()
+    sim.close()
 
     out_dir = temp_base_dir / "mujoco_stretched_pose"
-    plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)
+    plot_mujoco_rollout(obs_list, sim.timestep, out_dir)
 
 
 def test_zero_pose():
@@ -39,24 +40,25 @@ def test_zero_pose():
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
-    nmf = NeuroMechFly(init_pose="zero", spawn_pos=(0, 0, 3))
+    fly = Fly(init_pose="zero", spawn_pos=(0, 0, 3))
+    sim = SingleFlySimulation(fly=fly)
     run_time = 0.01
     freq = 80
     amp = np.pi / 2
 
-    obs, _ = nmf.reset()
+    obs, _ = sim.reset()
     fly_init_pos = obs["joints"][0]
 
     obs_list = []
-    while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
+    while sim.curr_time <= run_time:
+        joint_pos = fly_init_pos + amp * np.sin(freq * sim.curr_time)
         action = {"joints": joint_pos}
-        obs, reward, terminated, truncated, info = nmf.step(action)
+        obs, reward, terminated, truncated, info = sim.step(action)
         obs_list.append(obs)
-    nmf.close()
+    sim.close()
 
     out_dir = temp_base_dir / "mujoco_zero_pose"
-    plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)
+    plot_mujoco_rollout(obs_list, sim.timestep, out_dir)
 
 
 def test_tripod_pose():
@@ -64,21 +66,22 @@ def test_tripod_pose():
     temp_base_dir = Path(tempfile.gettempdir()) / "flygym_test"
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
-    nmf = NeuroMechFly(init_pose="tripod")
+    fly = Fly(init_pose="tripod")
+    sim = SingleFlySimulation(fly=fly)
     run_time = 0.01
     freq = 80
     amp = np.pi / 2
 
-    obs, _ = nmf.reset()
+    obs, _ = sim.reset()
     fly_init_pos = obs["joints"][0]
 
     obs_list = []
-    while nmf.curr_time <= run_time:
-        joint_pos = fly_init_pos + amp * np.sin(freq * nmf.curr_time)
+    while sim.curr_time <= run_time:
+        joint_pos = fly_init_pos + amp * np.sin(freq * sim.curr_time)
         action = {"joints": joint_pos}
-        obs, reward, terminated, truncated, info = nmf.step(action)
+        obs, reward, terminated, truncated, info = sim.step(action)
         obs_list.append(obs)
-    nmf.close()
+    sim.close()
 
     out_dir = temp_base_dir / "mujoco_tripod_pose"
-    plot_mujoco_rollout(obs_list, nmf.timestep, out_dir)
+    plot_mujoco_rollout(obs_list, sim.timestep, out_dir)
