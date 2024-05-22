@@ -19,6 +19,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Set up renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libgl1-mesa-glx libosmesa6-dev
+          echo "MUJOCO_GL=egl" >> $GITHUB_ENV
+          echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
           pip install --upgrade pip
