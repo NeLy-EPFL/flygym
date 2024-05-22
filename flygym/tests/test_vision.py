@@ -12,9 +12,6 @@ from flygym.vision import visualize_visual_input
 np.random.seed(0)
 
 
-@pytest.mark.skip(
-    reason="github actions runner doesn't have a display; render will fail"
-)
 def test_vision_dimensions():
     # Load config
     config = load_config()
