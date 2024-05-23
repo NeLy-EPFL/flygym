@@ -27,6 +27,7 @@ jobs:
           echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
+          sudo apt-get install ffmpeg
           pip install --upgrade pip
           pip cache purge
           pip install -e ."[dev,examples]"
