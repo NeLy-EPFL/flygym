@@ -15,6 +15,7 @@ def step(
     noise: np.ndarray,
     noise_magnitude: Tuple[float, float] = (0.1, 2),
     dt: float = 1.0,
+    inflow: flow.Grid = None,
 ) -> Tuple[flow.Grid, flow.Grid]:
     """Simulate fluid dynamics by one time step.
 
@@ -132,7 +133,8 @@ if __name__ == "__main__":
     # Run fluid dynamics simulation
     smoke_hist = []
     for i in trange(simulation_steps):
-        velocity, smoke = step(velocity, smoke, wind_hist[i], dt=dt)
+        velocity, smoke = step(velocity, smoke, wind_hist[i],
+                                dt=dt, inflow=inflow)
         smoke_vals = smoke.values.numpy("y,x")
         smoke_hist.append(smoke_vals)
         plt.imshow(
