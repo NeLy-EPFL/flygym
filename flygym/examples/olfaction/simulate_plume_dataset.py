@@ -177,8 +177,21 @@ if __name__ == "__main__":
     animation.save(output_dir / "plume.mp4", fps=100, dpi=300, bitrate=500)
 
     # Save plume simulation data
-    with h5py.File("plume.hdf5", "w") as f:
-        f["plume"] = np.stack(smoke_hist).astype(np.float16)
+    with h5py.File(output_dir / "plume.hdf5", "w") as f:
+        f.create_dataset(
+            "plume", data=np.stack(smoke_hist).astype(np.float16), compression="gzip"
+        )
         f["inflow_pos"] = inflow_pos
-        f["inflow_radius"] = inflow_radius
-        f["inflow_scaler"] = inflow_scaler
+        f["inflow_radius"] = [inflow_radius]
+        f["inflow_scaler"] = [inflow_scaler]
+
+    # Save short plume simulation data for testing
+    with h5py.File(output_dir / "plume_short.hdf5", "w") as f:
+        f.create_dataset(
+            "plume",
+            data=np.stack(smoke_hist[5000:5600:10]).astype(np.float16),
+            compression="gzip",
+        )
+        f["inflow_pos"] = inflow_pos
+        f["inflow_radius"] = [inflow_radius]
+        f["inflow_scaler"] = [inflow_scaler]

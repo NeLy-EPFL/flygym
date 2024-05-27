@@ -70,9 +70,6 @@ def test_check_single_fly_simulation_env_basic():
     env_checker.check_env(sim, skip_render_check=True)
 
 
-@pytest.mark.skip(
-    reason="github actions runner doesn't have a display; render will fail"
-)
 def test_check_env_vision():
     fly = Fly(enable_vision=True, enable_olfaction=False)
     sim = SingleFlySimulation(fly=fly)
