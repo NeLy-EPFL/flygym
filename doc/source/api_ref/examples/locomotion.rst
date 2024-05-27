@@ -1,6 +1,15 @@
 Locomotion
 ==========
 
+Preprogrammed steps
+-------------------
+
+.. autoclass:: flygym.examples.locomotion.PreprogrammedSteps
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
 CPG controller
 --------------
 

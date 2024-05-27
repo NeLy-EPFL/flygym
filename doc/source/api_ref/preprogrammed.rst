@@ -3,6 +3,9 @@ Preprogrammed
 
 We have pre programmed a number of handy constants for the user:
 
+.. note::
+   For the preprogrammed steps associated with specific locomotion experiments presented in the NeuroMechFly v2 paper, see the `locomotion example <examples/locomotion.html#preprogrammed-steps>`_ page.
+
 
 DoFs
 ----
@@ -34,3 +37,10 @@ Pose
 ----
 
 .. autofunction:: flygym.preprogrammed.get_preprogrammed_pose
+
+CPG phase biases
+----------------
+
+We have preprogrammed the CPG phase biases (see `tutorial on CPGs <../tutorials/cpg_controller.html>`_ for details) for three gait types: tripod, tetrapod, and wave. These can be retrieved using the following function:
+
+.. autofunction:: flygym.preprogrammed.get_cpg_biases

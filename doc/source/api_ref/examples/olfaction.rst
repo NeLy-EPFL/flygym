@@ -1,5 +1,5 @@
-Olfaction
-=========
+Advanced Olfaction
+==================
 
 Arenas
 ------
