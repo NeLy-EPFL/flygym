@@ -4,10 +4,10 @@ from typing import Tuple
 
 
 class WalkingState(Enum):
-    FORWARD = 0
-    TURN_LEFT = 1
-    TURN_RIGHT = 2
-    STOP = 3
+    FORWARD = 0, "forward"
+    TURN_LEFT = 1, "left turn"
+    TURN_RIGHT = 2, "right turn"
+    STOP = 3, "stop"
 
 
 class TurningObjective(Enum):

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 from numba import njit, prange
+from flygym import Fly
 from flygym.examples.locomotion import HybridTurningController
 from flygym.examples.olfaction import OdorPlumeArena
 
@@ -15,6 +16,8 @@ class PlumeNavigationTask(HybridTurningController):
 
     def __init__(
         self,
+        fly: Fly,
+        arena: OdorPlumeArena,
         render_plume_alpha: float = 0.75,
         intensity_display_vmax: float = 1.0,
         **kwargs,
@@ -22,14 +25,20 @@ class PlumeNavigationTask(HybridTurningController):
         """
         Parameters
         ----------
+        fly: Fly
+            The fly object to be used. See
+            ``flygym.example.locomotion.HybridTurningController``.
+        arena: OdorPlumeArena
+            The odor plume arena object to be used. Initialize it before
+            creating the ``PlumeNavigationTask`` object.
         render_plume_alpha : float
             The transparency of the plume overlay on the rendered images.
         intensity_display_vmax : float
             The maximum intensity value to be displayed on the rendered
             images.
         """
-        super().__init__(**kwargs)
-        self.arena: OdorPlumeArena = kwargs["arena"]
+        super().__init__(fly=fly, arena=arena, **kwargs)
+        self.arena = arena
         self._plume_last_update_time = -np.inf
         self._cached_plume_img = None
         self._render_plume_alpha = render_plume_alpha
