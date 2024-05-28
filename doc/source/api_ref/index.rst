@@ -7,12 +7,14 @@ This section of the documentation provides the complete API reference for the Fl
 .. toctree::
    :maxdepth: 2
 
-   parameters
-   simulation
+   fly
    arena
+   camera
+   simulation
    state
    vision
    olfaction
    utils
    preprogrammed
    examples/index
+   legacy
