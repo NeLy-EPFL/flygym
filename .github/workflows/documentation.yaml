@@ -30,7 +30,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sphinx_site_build
-          path: doc/build/
+          path: _build
           if-no-files-found: error
           retention-days: 1
           compression-level: 6
