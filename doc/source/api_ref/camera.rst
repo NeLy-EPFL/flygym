@@ -1,7 +1,7 @@
 Camera
 ======
 
-The ``Camera`` class defines how images should be rendered from a camera in the world model. Note that the ``Camera`` class does not by itself add a camera to the MuJoCo model — the camera must have already exsited and can be referenced by its name. The camera can be added in two ways:
+The ``Camera`` class defines how images should be rendered from a camera in the world model. Note that the ``Camera`` class does not by itself add a camera to the MuJoCo model — the camera must have already existed and can be referenced by its name. The camera can be added in two ways:
 
 1. By adding a camera to the MuJoCo model file. Refer to the `section on camera <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_ in the MuJoCo XML reference for more information. As an example, the following XML code adds a tracking camera to the MuJoCo model:
 
@@ -12,7 +12,7 @@ The ``Camera`` class defines how images should be rendered from a camera in the 
         <camera name="camera_top" class="nmf" mode="track" ipd="0.068" pos="0 0 8" euler="0 0 0"/>
     </worldbody>
 
-2. By calling ``.worldbody.add()`` on the root element of the MuJoCo model programatically in Python. Practically, this can be done by extending an existing FlyGym Arena class and adding the camera in the ``__init__`` method. For example, the following code adds a stationary bird's eye camera to the MuJoCo model:
+2. By calling ``.worldbody.add()`` on the root element of the MuJoCo model programmatically in Python. Practically, this can be done by extending an existing FlyGym Arena class and adding the camera in the ``__init__`` method. For example, the following code adds a stationary bird's eye camera to the MuJoCo model:
 
 .. code-block:: python3
 
