@@ -17,3 +17,4 @@ This section of the documentation provides the complete API reference for the Fl
    utils
    preprogrammed
    examples/index
+   legacy
