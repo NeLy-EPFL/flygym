@@ -27,9 +27,6 @@ NeuroMechFly can be used to emulate a wide range of behaviours and scenarios. He
        box-sizing: border-box;
        font-size: 15px;
    }
-   .gallery-item:hover img {
-        filter: grayscale(100%); /* Apply grayscale filter on hover */
-    }
    </style>
 
    <div class="gallery-grid">
