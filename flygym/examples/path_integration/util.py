@@ -46,10 +46,13 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     Dict[str, np.ndarray]
         Dictionary containing the following keys, each mapping to a time
         series saved as a numpy array:
-        * "end_effector_pos": End effector positions.
+        * "end_effector_pos_diff": End effector positions.
         * "contact_force": Contact forces.
         * "dn_drive": DN drives.
-        * "fly_orientation": Fly orientation.
+        * "fly_orientation_xy": Fly orientation in the form of a unit vector
+          on the xy plane.
+        * "fly_orientation_angle": Fly orientation in the form of an angle
+          in radians.
         * "fly_pos": Fly position.
     """
     with open(trial_dir / "sim_data.pkl", "rb") as f:
@@ -57,34 +60,43 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
     obs_hist = sim_data["obs_hist"]
     action_hist = sim_data["action_hist"]
 
-    end_effector_pos_ts = np.array(
+    # End effector positions
+    end_effector_pos_diff = np.array(
         [obs["stride_diff_unmasked"] for obs in obs_hist], dtype=np.float32
     )
 
+    # Contact forces
     contact_force_ts = np.array(
         [obs["contact_forces"] for obs in obs_hist], dtype=np.float32
     )
     contact_force_ts = np.linalg.norm(contact_force_ts, axis=2)  # calc force magnitude
     contact_force_ts = contact_force_ts.reshape(-1, 6, 6).sum(axis=2)  # total per leg
 
+    # DN drive
     dn_drive_ts = np.array(action_hist, dtype=np.float32)
 
-    fly_orientation_ts = np.array(
+    # Fly position
+    fly_pos_ts = np.array([obs["fly"][0, :2] for obs in obs_hist], dtype=np.float32)
+
+    # Heading
+    fly_orientation_xy = np.array(
         [obs["fly_orientation"][:2] for obs in obs_hist], dtype=np.float32
     )
-
-    fly_pos_ts = np.array([obs["fly"][0, :2] for obs in obs_hist], dtype=np.float32)
+    fly_orientation_angle = np.arctan2(
+        fly_orientation_xy[:, 1], fly_orientation_xy[:, 0]
+    )
 
     # Clear RAM right away manually to avoid memory fragmentation
     del sim_data
     gc.collect()
 
     return {
-        "end_effector_pos": end_effector_pos_ts,
-        "contact_force": contact_force_ts,
-        "dn_drive": dn_drive_ts,
-        "fly_orientation": fly_orientation_ts,
-        "fly_pos": fly_pos_ts,
+        "end_effector_pos_diff": end_effector_pos_diff.astype(np.float32),
+        "contact_force": contact_force_ts.astype(np.float32),
+        "dn_drive": dn_drive_ts.astype(np.float32),
+        "fly_orientation_xy": fly_orientation_xy.astype(np.float32),
+        "fly_orientation_angle": fly_orientation_angle.astype(np.float32),
+        "fly_pos": fly_pos_ts.astype(np.float32),
     }
 
 
@@ -123,10 +135,10 @@ def extract_variables(
     # contact force thresholds: (3,) -> (6,), for both sides
     contact_force_thr = np.array([*contact_force_thr, *contact_force_thr])
 
-    # Proprioceptive signal ==========
+    # Mechanosensory signal ==========
     # Calculate total stride (Σstride) for each side
-    stride_left = trial_data["end_effector_pos"][:, :3, 0]  # (L, 3)
-    stride_right = trial_data["end_effector_pos"][:, 3:, 0]  # (L, 3)
+    stride_left = trial_data["end_effector_pos_diff"][:, :3, 0]  # (L, 3)
+    stride_right = trial_data["end_effector_pos_diff"][:, 3:, 0]  # (L, 3)
     contact_mask = trial_data["contact_force"] > contact_force_thr[None, :]  # (L, 6)
     leg_mask = get_leg_mask(legs)
     stride_left = (stride_left * contact_mask[:, :3])[:, leg_mask]
@@ -158,9 +170,11 @@ def extract_variables(
 
     # Change in locomotion state (heading & displacement) ==========
     # Calculate change in fly orientation over proprioceptive time window (Δheading)
-    fly_orientation_xy = trial_data["fly_orientation"]
-    heading_ts = np.arctan2(fly_orientation_xy[:, 1], fly_orientation_xy[:, 0])
-    heading_diff = heading_ts[window_len:] - heading_ts[:-window_len]
+    fly_orientation_xy = trial_data["fly_orientation_xy"]
+    fly_orientation_angle = trial_data["fly_orientation_angle"]
+    heading_diff = (
+        fly_orientation_angle[window_len:] - fly_orientation_angle[:-window_len]
+    )
     heading_diff = (heading_diff + np.pi) % (2 * np.pi) - np.pi  # wrap to [-π, π]
 
     # Same for displacement projected in the direction of fly's heading
@@ -184,5 +198,4 @@ def extract_variables(
         "diff_dn_drive": diff_dn_drive.astype(np.float32)[:, None],
         "heading_diff": heading_diff.astype(np.float32),
         "forward_disp_total_diff": forward_disp_total_diff.astype(np.float32),
-        "heading": heading_ts[window_len:].astype(np.float32),
     }
