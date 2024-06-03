@@ -60,7 +60,7 @@ def path_integrate(
     heading_pred = np.cumsum(heading_diff_pred / window_len)
     # Path int. not performed when not enough data is available. Start from the real
     # heading at the moment when path int. actually starts.
-    hx_start, hy_start = trial_data["fly_orientation"][window_len, :]
+    hx_start, hy_start = trial_data["fly_orientation_xy"][window_len, :]
     real_heading_start = np.arctan2(hy_start, hx_start)
     heading_pred += real_heading_start
 
@@ -77,7 +77,6 @@ def path_integrate(
     # Pad with NaN where prediction not available
     padding = np.full(window_len, np.nan)
     heading_pred = np.concatenate([padding, heading_pred])
-    heading_actual = np.concatenate([padding, variables["heading"]])
     pos_pred = np.concatenate([np.full((window_len, 2), np.nan), pos_pred], axis=0)
     heading_diff_pred = np.concatenate([padding, heading_diff_pred])
     heading_diff_actual = np.concatenate([padding, variables["heading_diff"]])
@@ -88,7 +87,7 @@ def path_integrate(
 
     return {
         "heading_pred": heading_pred,
-        "heading_actual": heading_actual,
+        "heading_actual": trial_data["fly_orientation_angle"],
         "pos_pred": pos_pred,
         "pos_actual": trial_data["fly_pos"],
         "heading_diff_pred": heading_diff_pred,
