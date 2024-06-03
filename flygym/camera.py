@@ -35,6 +35,11 @@ class Camera:
     play_speed_text : bool
         If True, text indicating the play speed will be added to the
         rendered video.
+    dm_camera : dm_control.mujoco.Camera
+        The ``dm_control`` camera instance associated with the camera.
+        Only available after calling ``initialize_dm_camera(physics)``.
+        Useful for mapping the rendered location to the physical location
+        in the simulation.
     draw_contacts : bool
         If True, arrows will be drawn to indicate contact forces between
         the legs and the ground.
@@ -69,7 +74,7 @@ class Camera:
         video will not be saved.
     """
 
-    _dm_camera: dm_control.mujoco.Camera
+    dm_camera: dm_control.mujoco.Camera
 
     def __init__(
         self,
@@ -278,14 +283,25 @@ class Camera:
             return
 
     def initialize_dm_camera(self, physics: mjcf.Physics):
-        if self.draw_contacts or self.draw_gravity:
-            width, height = self.window_size
-            self._dm_camera = dm_control.mujoco.Camera(
-                physics,
-                camera_id=self.camera_id,
-                width=width,
-                height=height,
-            )
+        """
+        ``dm_control`` comes with its own camera class that contains a
+        number of useful utilities, including in particular tools for
+        mapping the rendered location (row-column coordinate on the
+        rendered image) to the physical location in the simulation. Given
+        the physics instance of the simulation, this method initializes a
+        "shadow" ``dm_control`` camera instance.
+
+        Parameters
+        ----------
+        physics : mjcf.Physics
+            Physics instance of the simulation.
+        """
+        self.dm_camera = dm_control.mujoco.Camera(
+            physics,
+            camera_id=self.camera_id,
+            width=self.window_size[0],
+            height=self.window_size[1],
+        )
 
     def set_gravity(self, gravity: np.ndarray, rot_mat: np.ndarray = None) -> None:
         """Set the gravity of the environment. Changing the gravity vector
@@ -493,7 +509,7 @@ class Camera:
         of the frame.
         """
 
-        camera_matrix = self._dm_camera.matrix
+        camera_matrix = self.dm_camera.matrix
         last_fly_pos = self.fly.last_obs["pos"]
 
         if self.align_camera_with_gravity:
@@ -557,7 +573,7 @@ class Camera:
         # Convert to homogeneous coordinates
         Xw = np.concatenate((Xw, np.ones((1, *Xw.shape[1:]))))
 
-        mat = self._dm_camera.matrices()
+        mat = self.dm_camera.matrices()
 
         # Project to camera space
         Xc = np.tensordot(mat.rotation @ mat.translation, Xw, 1)
