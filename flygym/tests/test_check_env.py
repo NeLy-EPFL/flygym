@@ -1,30 +1,57 @@
-import pytest
 import gymnasium.spaces as spaces
 import gymnasium.utils.env_checker as env_checker
 
-from flygym import (
-    Camera,
-    Fly,
-    NeuroMechFly,
-    Parameters,
-    Simulation,
-    SingleFlySimulation,
-)
+from flygym import Camera, Fly, Simulation, SingleFlySimulation
 from flygym.arena import OdorArena
 
 
-def test_check_env_basic():
-    sim_params = Parameters(enable_vision=False, enable_olfaction=False)
-    nmf = NeuroMechFly(sim_params=sim_params)
+def test_check_env_1fly():
+    fly = Fly(
+        enable_vision=False,
+        enable_olfaction=False,
+        enable_adhesion=False,
+    )
+    num_dofs_per_fly = len(fly.actuated_joints)
+    sim = SingleFlySimulation(fly, cameras=[])
     # Override action space so joint control signals are reasonably bound. Otherwise,
     # the physics might become invalid
-    nmf.action_space = spaces.Dict(
+    sim.action_space = spaces.Dict(
         {
-            "joints": spaces.Box(low=-0.1, high=0.1, shape=(len(nmf.actuated_joints),)),
-            "adhesion": spaces.Discrete(n=2, start=0),  # 0: no adhesion, 1: adhesion
+            "joints": spaces.Box(low=-0.1, high=0.1, shape=(num_dofs_per_fly,)),
         }
     )
-    env_checker.check_env(nmf, skip_render_check=True)
+    env_checker.check_env(sim, skip_render_check=True)
+
+
+def test_check_env_2flies():
+    flies = [
+        Fly(
+            name=f"fly{i}",
+            enable_vision=False,
+            enable_olfaction=False,
+            enable_adhesion=False,
+        )
+        for i in range(2)
+    ]
+    num_dofs_per_fly = len(flies[0].actuated_joints)
+    sim = Simulation(flies, cameras=[])
+    # Override action space so joint control signals are reasonably bound. Otherwise,
+    # the physics might become invalid
+    sim.action_space = spaces.Dict(
+        {
+            "fly0": spaces.Dict(
+                {
+                    "joints": spaces.Box(low=-0.1, high=0.1, shape=(num_dofs_per_fly,)),
+                }
+            ),
+            "fly1": spaces.Dict(
+                {
+                    "joints": spaces.Box(low=-0.1, high=0.1, shape=(num_dofs_per_fly,)),
+                }
+            ),
+        }
+    )
+    env_checker.check_env(sim, skip_render_check=True)
 
 
 def test_check_simulation_env_basic():
