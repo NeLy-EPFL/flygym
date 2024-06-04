@@ -137,7 +137,8 @@ class PathIntegrationController(HybridTurningController):
         actually made during a power stroke (i.e., stance phase); it only
         reports the change in end effector positions in an "unmasked"
         manner. The user should post-process it using the contact mask as a
-        part of the model.
+        part of the model. The order of legs in stride_diff_unmasked is:
+        LF, LM, LH, RF, RM, RH.
         """
         obs, reward, terminated, truncated, info = super().step(action)
 
