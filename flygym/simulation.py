@@ -171,7 +171,7 @@ class Simulation(gym.Env):
         info = {}
 
         for fly in self.flies:
-            obs[fly.name], info[fly.name] = fly.reset(self)
+            obs[fly.name], info[fly.name] = fly.reset(self, seed=seed)
 
         return obs, info
 
