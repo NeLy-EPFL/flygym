@@ -64,9 +64,7 @@ def run_simulation(
     if terrain == "flat":
         arena = FlatTerrain()
     elif terrain == "blocks":
-        arena = BlocksTerrain(
-            height_range=(0.2, 0.2),
-        )
+        arena = BlocksTerrain(height_range=(0.2, 0.2))
     else:
         raise ValueError(f"Unknown terrain type: {terrain}")
 
@@ -86,7 +84,6 @@ def run_simulation(
     cam = Camera(
         fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
     )
-    # cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = HybridTurningController(
         arena=arena,
         phase_biases=get_cpg_biases(gait),
@@ -95,6 +92,7 @@ def run_simulation(
         timestep=1e-4,
     )
 
+    # Main simulation loop
     obs, info = sim.reset(0)
     obs_hist, info_hist, action_hist = [], [], []
     dn_drive = np.array(dn_drive)

@@ -49,14 +49,14 @@ def subset_to_mask(dof_subset):
 
 def make_concat_subdataset(individual_subdatasets, dofs):
     joint_mask = subset_to_mask(dofs)
-    df_li = []
+    dataset_list = []
     for gait, dict_ in individual_subdatasets.items():
         for terrain, dict_ in dict_.items():
             for dn_drive, ds in dict_.items():
                 ds = deepcopy(ds)
                 ds.joint_mask = joint_mask
-                df_li.append(ds)
-    return ConcatDataset(df_li)
+                dataset_list.append(ds)
+    return ConcatDataset(dataset_list)
 
 
 def train_model(
@@ -84,7 +84,7 @@ def train_model(
     # Train model
     logger = TensorBoardLogger(base_dir / "logs", name=trial_name)
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_loss",  # Name of your validation loss metric
+        monitor="val_loss",
         dirpath=base_dir / "models/checkpoints",
         filename="%s-{epoch:02d}-{val_loss:.2f}" % trial_name,
         save_top_k=1,  # Save only the best checkpoint
