@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 from numba import njit, prange
-from flygym.examples.locomotion.turning_controller import HybridTurningController
-from flygym.examples.olfaction.plume_tracking_arena import OdorPlumeArena
+from flygym.examples.locomotion import HybridTurningController
+from flygym.examples.olfaction import OdorPlumeArena
 
-from dm_control.mujoco import Camera as dm_Camera
+from dm_control.mujoco import Camera as DMCamera
 
 
 class PlumeNavigationTask(HybridTurningController):
@@ -127,9 +127,6 @@ class PlumeNavigationTask(HybridTurningController):
         obs, reward, terminated, truncated, info = super().step(action)
         if np.isnan(obs["odor_intensity"]).any():
             truncated = True
-        # if self.arena.is_in_target(*obs["fly"][0, :2]):
-        #     terminated = True
-        #     reward = 1
         return obs, reward, terminated, truncated, info
 
     def overlay_focused_plume(self, focus_img, t_idx):
@@ -174,7 +171,7 @@ class PlumeNavigationTask(HybridTurningController):
         # get the plume intensities at the physical points
 
         xs_physical_fov, ys_physical_fov = np.meshgrid(xs_physical_fov, ys_physical_fov)
-        focus_dm_cam = dm_Camera(
+        focus_dm_cam = DMCamera(
             self.physics,
             camera_id=self.cameras[1].camera_id,
             width=self.cameras[1].window_size[0],
