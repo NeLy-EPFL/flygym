@@ -1,10 +1,13 @@
 Path integration
 ================
 
+**Author:** Sibo Wang-Chen
+
 **Note:** The code presented in this notebook has been simplified for
-simplicity. A more complete and better structured implementation head
-stabilization can be found on the `FlyGym repository on
-GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/head_stabilization>`__.
+simplicity and restructured for display in a notebook format. A more
+complete and better structured implementation can be found on the
+`examples folder of the FlyGym repository on
+GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
 **Summary:** In this tutorial, we will show how the position and heading
 of the animal can be estimated by integrating mechanosensory signals, a
@@ -13,44 +16,45 @@ process known as path integration.
 Introduction
 ------------
 
-Thus far, we have demonstrated how brain-level processes can drive the
-motor system via *descending control*. *Ascending* motor signals are a
-complement to descending information as they convey information, often
-mechanosensory in nature, back to the brain. Ascending neurons signals
-are predicted to inform brain-level action selection, motor planning,
-and sensory contextualization (see `Chen et al.,
-2023 <https://doi.org/10.1038/s41593-023-01281-z>`__). In this tutorial
-and the next, we will demonstrate how incorporating ascending motor
-feedback signals allows us to model behaviors critical to the animal’s
-functioning.
+In the previous tutorials, we have demonstrated how brain-level
+processes can drive the motor system via *descending control*.
+*Ascending* motor signals are a complement to descending information as
+they convey information, often mechanosensory in nature, back to the
+brain. Ascending neurons signals are predicted to inform brain-level
+action selection, motor planning, and sensory contextualization (see
+`Chen et al., 2023 <https://doi.org/10.1038/s41593-023-01281-z>`__). In
+this tutorial and the next, we will demonstrate how incorporating
+ascending motor feedback signals allows us to model behaviors critical
+to the animal’s functioning.
 
 Animals, including flies, estimate their own orientation and distance
 traveled (“odometry”) to perform path integration while navigating the
-world. A superb case of path integration was *Cataglyphis fortis* (see
-`review by Wolf, 2011 <https://doi.org/10.1242/jeb.038570>`__). While
-the ant takes a rugged outbound path in search of a food source, it can
-return to the nest in a straight line. Furthermore, if the experimenter
-moves the ant to a different location upon finding the food, the ant
-still takes the “correct” path back to the nest, but starting from the
-location where it has been “air dropped” (as shown below). These results
-show that the ant must be using idiothetic cues, rather than sensory
-input, to navigate — similar to how sailors used to navigate featureless
-ocean by “dead reckoning.”
+world. A superb case of path integration was demonstrated in the desert
+ant *Cataglyphis fortis* (see `review by Wolf,
+2011 <https://doi.org/10.1242/jeb.038570>`__). While the ant takes an
+exploratory outbound path in search of a food source, it can return to
+the nest in a straight line. Furthermore, if the experimenter moves the
+ant to a different location upon finding the food, the ant still takes
+the “correct” path back to the nest, but starting from the location
+where it has been “air dropped” (as shown below). These results show
+that the ant must be using idiothetic cues, rather than sensory input,
+to navigate — similar to how sailors used to navigate featureless oceans
+by “dead reckoning.”
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_schematic.png?raw=true
    :width: 300
 
-The fly *Drosophila melanogaster* also performs path integration
-approach, especially while navigating to find food sources (see `Kim &
-Dickinson, 2017 <https://doi.org/10.1016/j.cub.2017.06.026>`__,
-`Behbahani et al., 2021 <https://doi.org/10.1016/j.cub.2021.08.006>`__).
-While the source of the idiothetic cues are unknown, they may, in
-principle, be derived using ascending proprioceptive and tactile signals
-from the legs and motor system. As a demonstration, we will attempt to
-estimate the change in the fly’s orientation (shown below in green) and
-displacement (shown below in purple) based on proprioceptive and tactile
-information. By integrating these changes over time, we aim to
-reconstruct the path of the fly in space.
+The fly *Drosophila melanogaster* also performs path integration,
+especially when navigating to find food sources (see `Kim & Dickinson,
+2017 <https://doi.org/10.1016/j.cub.2017.06.026>`__, `Behbahani et al.,
+2021 <https://doi.org/10.1016/j.cub.2021.08.006>`__). While the source
+of the idiothetic cues are unknown, they may, in principle, be derived
+using ascending proprioceptive and tactile signals from the legs and
+motor system. As a demonstration, we will attempt to estimate the
+changes in the fly’s orientation (shown below in green) and displacement
+(shown below in purple) based on proprioceptive and tactile information.
+By integrating these changes over time, we aim to reconstruct the path
+of the fly in space (right).
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_integration.png?raw=true
    :width: 600
@@ -60,43 +64,46 @@ The algorithm
 
 Having hand-waved at how we aim to accomplish path integration, we will
 try to make our proposed algorithm more precise. We can partition our
-task into two sub-problems: 1. How do we predict the changes in heading
-and forward displacement from proprioception and tactile information? 2.
-With these estimated “deltas” in heading and forward displacement, how
-do we design an integration scheme to find the position?
+task into two sub-problems:
+
+1. How do we predict the changes in heading and forward displacement
+   from proprioception and tactile information?
+2. With these estimated “deltas” in heading and forward displacement,
+   how do we integrate them to find the position?
 
 The first question can be tackled in the following way: for each leg, we
 accumulate stride lengths by computing the forward translation of the
-leg tip relative to the thorax when the leg was in contact with the
-ground. Proprioception gives us the positions of the leg tips; tactile
-sensing tells us whether the leg was in contact with the ground.
-Together, they allow us to calculate the stride lengths. Then, we
-compute the differences and sums of the left and right total stride
-lengths for each pair of legs over a short time window. These left-right
-differences and their sums were used to predict the change in heading
-and forward displacement respectively. We will use a simple linear
-regression model for this purpose.
+leg tip relative to the thorax when the leg is pushing. Proprioception
+gives us the positions of the leg tips; tactile sensing tells us whether
+the leg was in contact with the ground, which we use as a proxy to
+detect leg pushing. Together, proprioception and tactile sensing allow
+us to calculate the stride lengths. Then, we compute the differences and
+sums of the left and right total stride lengths for each pair of legs
+over a small time window. These left-right differences and their sums
+are then used to predict the change in heading and forward displacement
+respectively. We will use a simple linear regression model for this
+purpose.
 
-However, we have glossed over one important detail here: to predict the
+However, we have glossed over one important detail: to predict the
 change in heading and forward displacement, we need the *changes* in the
-cumulated left-right differences and sums. But to calculate the
-*changes* in the cumulated left-right differences and sums, we must
-first define a *time scale*. This underlies our solution to the second
-part of the problem. We record the cumulated left-right differences and
-sums at every point in time during the walking simulation. Then, for
-every time :math:`t`, can compute the changes in the left-right
-differences and sums from time :math:`t-\tau` (:math:`\tau` being the
-time scale) to time :math:`t`. If we use these “delta differences” and
-“delta sums” to predict “delta heading” and “delta forward
-displacement,” we will get the changes in heading and forward
-displacement in the same time scale. Therefore, we can simply
-re-normalize the predicted values by the time scale, and integrate
+cumulated left-right differences and sums. But to calculate these
+changes, we must first define a *time scale*. This underlies our
+solution to the second part of the problem. We record the cumulated
+left-right differences and sums at every point in time during the
+walking simulation. Then, for every time :math:`t`, can compute the
+changes in the left-right differences and sums from time :math:`t-\tau`
+(:math:`\tau` being the time scale) to time :math:`t`. If we use these
+“delta differences” and “delta sums” to predict “delta heading” and
+“delta forward displacement,” we can get the changes in heading and
+forward displacement in the same time scale. Therefore, we can simply
+re-normalize the predicted values by the time scale, and integrate the
 position in 2D. This process can be shown in the following schematic:
+
 
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_prediction.png?raw=true
    :width: 400
 
-In the next sections, we will put this proposed algorithm to the test.
+In the next sections, we will put this algorithm to the test.
 
 Collecting walking data
 -----------------------
@@ -112,20 +119,21 @@ behavior. This is to deliberately make path integration more difficult.
 When the fly executes a turn, we will apply a fixed asymmetrical
 descending drive of
 :math:`[{\rm DN}_\text{inner}, {\rm DN}_\text{outer}]` which has the
-following values: -
-:math:`[{\rm DN}_\text{inner}, {\rm DN}_\text{outer}] = [-0.2, 1.0]` for
-the tripod and tetrapod gaits -
-:math:`[{\rm DN}_\text{inner}, {\rm DN}_\text{outer}] = [0.4, 1.0]` for
-the wave gait
+following values:
 
-These choices lead to qualitatively similar turning. The direction of
-the turn is chosen at random. We will sample the duration of the turn
-(and therefore the angle turned) from a normal distribution
-:math:`\mathcal{N}(0.4\text{ s}, 0.1\text{ s})`. The fly receives no
-visual information — akin to navigating in the dark. We will use the
-`hybrid turning
+-  :math:`[{\rm DN}_\text{inner}, {\rm DN}_\text{outer}] = [-0.2, 1.0]`
+   for the tripod and tetrapod gaits
+-  :math:`[{\rm DN}_\text{inner}, {\rm DN}_\text{outer}] = [0.4, 1.0]`
+   for the wave gait
+
+These choices lead to qualitatively similar turning across gait types.
+The direction of the turn is chosen at random. We will sample the
+duration of the turn (and therefore the angle turned) from a normal
+distribution :math:`\mathcal{N}(0.4\text{ s}, 0.1\text{ s})`. The fly
+receives no visual information — akin to navigating in the dark. We will
+use the `hybrid turning
 controller <https://neuromechfly.org/tutorials/turning.html#implementing-the-hybridturningcontroller-class>`__,
-but we will the correction rules for simplicity.
+but with the correction amounts set to 0 for simplicity.
 
 .. code-block:: ipython3
 
@@ -178,14 +186,15 @@ exponential distribution is
 .. math::  F(x) = 1 - e^{-\lambda x} 
 
 Therefore, the probability that the transition will happen within the
-next :math:`dt` seconds is
+next :math:`\Delta t` seconds is
 
-.. math::  P(T_{\rm turn} \leq {\rm d} t) = 1 - e^{-\lambda {\rm d} t} 
+.. math::  P(T_{\rm turn} \leq {\rm d} t) = 1 - e^{-\lambda \Delta t} 
 
-where :math:`T_{\rm turn}` is the time until the next transition to
-turning. As a result, we will change the state to turning if and only if
-a scalar uniformly randomly sampled from 0 to 1 is greater than
-:math:`e^{-\lambda {\rm d} t}`.
+where :math:`\Delta t` is the simulation time step and
+:math:`T_{\rm turn}` is the time until the next transition to turning.
+As a result, we will change the state to turning if and only if a scalar
+uniformly randomly sampled from 0 to 1 is greater than
+:math:`e^{-\lambda \Delta t}`.
 
 .. code-block:: ipython3
 
@@ -305,10 +314,14 @@ a ``"stride_diff_unmasked"`` key to the observation that records how
 much the leg tips have shifted from the previous simulation time step.
 More precisely, for each leg,
 
-.. math::  \text{stride\_diff\_unmasked}[i] = \varepsilon[i] - \varepsilon[i - 1] 
+.. math::
 
-where :math:`\varepsilon[i]` is the position of the tip of this leg at
-the :math:`i`-th step.
+
+   \text{stride_diff_unmasked}[i] =
+       \text{rel_leg_tip_pos}[i] - \text{rel_leg_tip_pos}[i - 1]
+
+where :math:`\text{rel_leg_tip_pos}[i]` is the position of the tip of
+this leg at the :math:`i`-th step.
 
 .. code-block:: ipython3
 
@@ -370,7 +383,8 @@ the :math:`i`-th step.
 
 
 Now, we are ready to write a ``run_simulation`` function that interfaces
-the state switching controller with the actual NeuroMechFly simulation:
+the state switching controller with the physics-embedded NeuroMechFly
+simulation:
 
 .. code-block:: ipython3
 
@@ -485,8 +499,10 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
 
 
 
+
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/trajectory_sample_1s.png?raw=true
    :width: 500
+
 
 We can also plot the recorded shifts in leg tip positions relative to
 the fly’s thorax:
@@ -530,14 +546,16 @@ In the NeuroMechFly v2 paper, we ran 15 trials with different random
 seeds for each of the three gaits: tripod gait, tetrapod gait, and wave
 gait. Each trial was 20 seconds long. In this tutorial, we will use only
 5 trials for the tripod gait. We have uploaded the simulation data of
-the 5 random exploration trials to a SFTP server. Instead of running
-these simulations yourself (which would take roughly 20 minutes on a
-machine with 5+ cores), you can simply download the data by running the
-following code block:
+all trials to a SFTP server. Instead of running these simulations
+yourself (which would take roughly 20 minutes on a machine with 5+
+cores), you can simply download the data by running the following code
+block:
 
 .. code-block:: ipython3
 
-    # TODO
+    # TODO. We are working with our IT team to set up a gateway to share these data publicly
+    # in a secure manner. We aim to update this by the end of June. Please reach out to us
+    # by email in the meantime.
 
 .. code-block:: ipython3
 
@@ -557,8 +575,8 @@ following code block:
     [OK] Pregenerated simulation data found. Ready to proceed.
 
 
-Extract input and target variables from simulation data
--------------------------------------------------------
+Extracting input and target variables from simulation data
+----------------------------------------------------------
 
 Let’s start by loading basic information — time series of end effector
 positions, ground contact forces, descending drives, fly orientation,
@@ -735,12 +753,15 @@ second of simulation, but this time in 2D:
    :width: 700
 
 
-From the contact force time series, we can observe that: 1. There are
-roughly 6 groups of non-zero blocks per time series. These are the 6
-stance phases per line over the period of 0.5 seconds (the CPG frequency
-is 12 Hz). 2. The two sides are not necessarily symmetrical. This is
-because the fly might turn during walking. 3. The hind leg has a lower
-signal-to-noise ratio than the front and middle legs.
+From the contact force time series, we can observe that:
+
+1. There are roughly 6 groups of non-zero blocks per time series. These
+   are the 6 stance phases per line over the period of 0.5 seconds (the
+   CPG frequency is 12 Hz).
+2. The two sides are not necessarily symmetrical. This is because the
+   fly might turn during walking.
+3. The hind leg has a lower signal-to-noise ratio than the front and
+   middle legs.
 
 Next, we will inspect the fly’s orientation and position:
 
@@ -770,24 +791,28 @@ Next, we will inspect the fly’s orientation and position:
    :width: 700
 
 
---------------
+Recall the algorithm that we have proposed. To train the models, we need
+to collect the following *input* variables to the model:
 
-Now, recall from the introduction that we have proposed: To train the
-models, we need to collect the following *input* variables to the model:
-- Difference in the left-right *sum* of cumulated stride lengths,
-``stride_total_diff_lrsum`` - Difference in the left-right *difference*
-of cumulated stride lengths, ``stride_total_diff_lrdiff``
+-  Difference in the left-right *sum* of cumulated stride lengths,
+   ``stride_total_diff_lrsum``
+-  Difference in the left-right *difference* of cumulated stride
+   lengths, ``stride_total_diff_lrdiff``
 
 … and the following *target* variables (i.e., what the models are
-supposed to predict): - Difference in the fly’s heading,
-``heading_diff`` - Difference in the fly’s total forward displacement,
-``forward_disp_total_diff``
+supposed to predict):
 
-There are two things to note here: 1. We have not implemented the
-calculation of stride lengths yet; ``stride_diff_unmasked`` is only the
-shift of the leg tip position from one time step to the next. 2. As
-discussed in the Algorithm section, the differences above are calculated
-over a predefined time scale :math:`\tau`.
+-  Difference in the fly’s heading, ``heading_diff``
+-  Difference in the fly’s total forward displacement,
+   ``forward_disp_total_diff``
+
+There are two things to note here:
+
+1. We have not implemented the calculation of stride lengths yet;
+   ``stride_diff_unmasked`` is only the shift of the leg tip position
+   from one time step to the next.
+2. As discussed in the Algorithm section, the differences above are
+   calculated over a predefined time scale :math:`\tau`.
 
 To calculate the cumulated stride lengths given
 ``stride_diff_unmasked``, we need to mask it with a boolean time series
@@ -796,18 +821,19 @@ taking the cumulative sum. More precisely,
 
 .. math::
 
-     \begin{gather*}
-       \text{stride\_total}[0] = 0 \\
-       \text{stride\_total}[i] = \text{stride\_total}[i - 1] +
-           \big( p[i] \cdot \text{ stride\_diff\_unmasked}[i] \big)
+    
+   \begin{gather*}
+       \text{stride_total}[0] = 0 \\
+       \text{stride_total}[i] = \text{stride_total}[i - 1] +
+           \big( \text{mask}[i] \cdot \text{ stride_diff_unmasked}[i] \big)
        \quad \text{for } i > 0
-   \end{gather*} 
+   \end{gather*}
 
-where :math:`p[i]` is a boolean indicating whether the leg is in the
-power stroke (push). In our example, we will use the ground contact
-force to determine if the leg is in contact with the floor. If it is,
-then the leg is executing a power stroke. In this demo, we will use a
-threshold of 0.5 mN, 1 mN, and 3mN for the front, middle, and hind legs
+where :math:`\text{mask}[i]` is a boolean indicating whether the leg is
+in the power stroke (push). In our example, we will use the ground
+contact force to determine if the leg is in contact with the floor. If
+it is, then the leg is executing a power stroke. We will use a threshold
+of 0.5 mN, 1 mN, and 3mN for the front, middle, and hind legs
 respectively.
 
 Once we have the the cumulative stride lengths for each leg, we can
@@ -815,31 +841,28 @@ calculate how it changes over the predefined time scale :math:`\tau`:
 
 .. math::
 
-     \text{stride\_total\_diff}[i] =
-           \text{stride\_total}[i] - \text{stride\_total}[i - \text{window\_len}] 
 
-where :math:`\text{window\_len} = \tau / {\rm d} t` is the number of
+   \text{stride_total_diff}[i] =
+       \text{stride_total}[i] - \text{stride_total}[i - \text{window_len}]
+
+where :math:`\text{window_len} = \tau / \Delta t` is the number of
 simulation steps over the time scale :math:`\tau`.
 
-With this, for each leg position, we can finally calculate the changes
-in the left-right sum and left-right difference of cumulative stride
-lengths over time:
+With this, we can finally calculate the changes in the left-right sum
+and left-right difference of cumulative stride lengths for each leg pair
+over time:
 
 .. math::
 
 
    \begin{align*}
-       \text{stride\_total\_diff\_lrsum}[i] &= 
-           \text{stride\_total\_diff}_\text{left}[i] +
-           \text{stride\_total\_diff}_\text{right}[i] \\
-       \text{stride\_total\_diff\_lrdiff}[i] &= 
-           \text{stride\_total\_diff}_\text{left}[i] -
-           \text{stride\_total\_diff}_\text{right}[i] \\
+       \text{stride_total_diff_lrsum}[i] &= 
+           \text{stride_total_diff}_\text{left}[i] +
+           \text{stride_total_diff}_\text{right}[i] \\
+       \text{stride_total_diff_lrdiff}[i] &= 
+           \text{stride_total_diff}_\text{left}[i] -
+           \text{stride_total_diff}_\text{right}[i] \\
    \end{align*}
-
-Now, we will write another function that extracts these variables from
-the trial data given the time scale. We will also extract the time
-series of the real heading here for visualization later.
 
 Having extracted the *input* variables, we will next extract the target
 *output* variables: the changes in the fly’s heading and forward
@@ -851,7 +874,7 @@ simulation step :math:`i`,
 .. math::
 
 
-   \text{heading\_diff}[i] = \text{heading}[i] - \text{heading}[i - \text{window\_len}]
+   \text{heading_diff}[i] = \text{heading}[i] - \text{heading}[i - \text{window_len}]
    \quad \text{wrapped to $[-\pi, \pi)$}
 
 where :math:`\text{heading}` is the heading angle.
@@ -859,39 +882,45 @@ where :math:`\text{heading}` is the heading angle.
 To calculate the change in the fly’s forward displacement, we first to
 accumulate the forward displacement from one step to the next over the
 whole simulation. We will call this variable
-:math:`\text{forward\_disp}`. This sounds like simply the total travel
+:math:`\text{forward_disp}`. This sounds simply like the total travel
 distance, but the critical difference is that at the scale of single
 simulation steps, we discard lateral movements. Then, similar to the
 change in heading, we can simply calculate the cumulative forward
 displacement over the time period of :math:`\tau`:
 
 .. math::
-    
-    \begin{gather*}
-        \text{forward\_disp}[0] = 0, \\
-        \text{forward\_disp}[i] =
-            \text{forward\_disp}[i - 1] +
-            (\overrightarrow{\text{position}}[i] -
-            \overrightarrow{\text{position}}[i - 1]) \cdot
-            \begin{bmatrix}
-                \cos(\text{heading}[i])\\
-                \sin(\text{heading}[i])
-            \end{bmatrix}
-            
-        \quad\text{for } i > 0
-    \end{gather*}`
 
-where :math:`\overrightarrow{\text{position}}[i]` is
-the fly’s vector position (x-y) at simulation step :math:`i`.
 
-Then, the change in total forward displacement is:
+   \begin{gather*}
+       \text{forward_disp}[0] = 0, \\
+       \text{forward_disp}[i] =
+           \text{forward_disp}[i - 1] + \text{d_forward_disp}[i]
+       \quad\text{for } i > 0
+   \end{gather*}
+
+where
 
 .. math::
 
 
-   \text{forward\_disp\_diff}[i] =
-       \text{forward\_disp}[i] -
-       \text{forward\_disp}[i - \text{window\_len}]
+   \text{d_forward_disp}[i] = (\overrightarrow{\text{position}}[i] -
+           \overrightarrow{\text{position}}[i - 1]) \cdot
+           \begin{bmatrix}
+               \cos(\text{heading}[i])\\
+               \sin(\text{heading}[i])
+           \end{bmatrix}
+
+where :math:`\overrightarrow{\text{position}}[i]` is the fly’s vector
+position (x-y) at simulation step :math:`i`.
+
+With this, the change in total forward displacement is:
+
+.. math::
+
+
+   \text{forward_disp_diff}[i] =
+       \text{forward_disp}[i] -
+       \text{forward_disp}[i - \text{window_len}]
 
 Let’s implement a function that extracts these variables:
 
@@ -981,9 +1010,9 @@ Let’s implement a function that extracts these variables:
         }
 
 
-Let’s use this function extract the input and target variables at a time
-scale of 0.32 s using a contact force threshold of 0.5 mN, 1 mN, and 3
-mN for the front, middle, and hind legs respectively:
+Let’s use this function to extract the input and target variables at a
+time scale of 0.32 s using a contact force threshold of 0.5 mN, 1 mN,
+and 3 mN for the front, middle, and hind legs respectively:
 
 .. code-block:: ipython3
 
@@ -1044,13 +1073,8 @@ if these are qualitatively good predictors:
     axs[1].set_xlabel("Time (s)")
     axs[1].set_ylim(-6, 6)
     axs[1].set_title("Δheading predictors and target")
-
-
-
-
-.. parsed-literal::
-
-    Text(0.5, 1.0, 'Δheading predictors and target')
+    
+    fig.savefig(output_dir / "pathint_predictors_and_target.png")
 
 
 
@@ -1060,7 +1084,7 @@ if these are qualitatively good predictors:
 
 
 We observe that the inputs (blue, orange, and green lines) indeed seem
-to be good predictors of the target (black line). Next, we will train
+to be good predictors of the target (black lines). Next, we will train
 the prediction models based on our proposed algorithm.
 
 Training models to predict changes in locomotion state
@@ -1076,28 +1100,29 @@ stride lengths:
 
 
    \begin{align*}
-       \text{heading\_diff\_pred}[i] &=
+       \text{heading_diff_pred}[i] &=
            \sum_{pos\in\{\text{front}, \text{middle}, \text{hind}\}}
                \big(
-                   k_{pos}^{({\rm h})} \cdot \text{stride\_total\_diff\_lrsum}_{pos}[i]
+                   k_{pos}^{({\rm h})} \cdot \text{stride_total_diff_lrsum}_{pos}[i]
                \big) + b^{({\rm h})} \\
-       \text{forward\_disp\_diff\_pred}[i] &=
+       \text{forward_disp_diff_pred}[i] &=
            \sum_{pos\in\{\text{front}, \text{middle}, \text{hind}\}}
                \big(
-                   k_{pos}^{({\rm fd})} \cdot \text{stride\_total\_diff\_lrdiff}_{pos}[i]
+                   k_{pos}^{({\rm fd})} \cdot \text{stride_total_diff_lrdiff}_{pos}[i]
                \big) + b^{({\rm fd})} \\
    \end{align*}
 
-where :math:`\text{heading\_diff\_pred}` and
-:math:`\text{forward\_disp\_diff\_pred}` are the model’s predictions of
-:math:`\text{heading\_diff}` and :math:`\text{forward\_disp\_diff}`;
+where :math:`\text{heading_diff_pred}` and
+:math:`\text{forward_disp_diff_pred}` are the model’s predictions of
+:math:`\text{heading_diff}` and :math:`\text{forward_disp_diff}`;
 :math:`k_{pos}^{({\rm h})}`, :math:`b^{({\rm h})}`,
 :math:`k_{pos}^{({\rm fd})}`, and :math:`b^{({\rm fd})}` are the
-parameters to be fitted. Note that while we are using all three pairs of
-legs in this example, a different set of legs can be used instead.
+parameters to be fitted. While we are using all three pairs of legs in
+this example, a different set of legs can be used instead.
 
-But first, we will concatenate the first 4 trials to form the training
-set, and use the last trial for testing.
+Recall that we have 5 trials per gait type. We will first concatenate
+the first 4 trials to form the training set, and use the last trial for
+testing.
 
 .. code-block:: ipython3
 
@@ -1167,39 +1192,38 @@ Integrating changes in locomotion state to estimate position
 
 Now that we have built models that can estimate the changes in heading
 and forward displacement, we will integrate these changes to estimate
-the fly’s location in space. To do so, we can essentially reverse the
-process of extracting the change signals — whereas previously we have
+the fly’s location in space. To do so, we essentially reverse the
+process of extracting the change signals: whereas previously we have
 taken the per-step changes in cumulative stride lengths as an estimation
 of instantaneous changes, we will now sum these changes as an
 approximation of continuous integration.
 
-More formally, we start from the model-estimated changes in heading and
-forward displacement, :math:`\text{heading\_diff\_pred}[i]` and
-:math:`\text{fwd\_disp\_diff\_pred}[i]`, for each simulation step
-:math:`i`. Then, the estimated heading can be given by
+More formally, from the model-predicted change in heading,
+:math:`\text{heading_diff_pred}`, the estimated heading can be given
+by
 
 .. math::
 
 
-   \text{heading\_pred}[i] =
-       \sum_{i'=0}^i \frac{\text{heading\_diff\_pred}[i']}{\text{window\_len}}
+   \text{heading_pred}[i] =
+       \sum_{i'=0}^i \frac{\text{heading_diff_pred}[i']}{\text{window_len}}
 
-where, once again, :math:`\text{window\_len} = \tau / {\rm d} t` is the
+where, once again, :math:`\text{window_len} = \tau / \Delta t` is the
 number of simulation steps over the time scale :math:`\tau`.
 
 To obtain the estimated position vector,
-:math:`\overrightarrow{\text{position\_pred}}`, we have to take into
+:math:`\overrightarrow{\text{position_pred}}`, we have to take into
 account the fact that the change in *forward* displacement must be
 integrated in the direction of the fly’s instantaneous heading:
 
 .. math::
 
 
-   \overrightarrow{\text{position\_pred}}[i] =
-       \sum_{i'=0}^i \frac{\text{fwd\_disp\_diff\_pred}[i']}{\text{window\_len}}
+   \overrightarrow{\text{position_pred}}[i] =
+       \sum_{i'=0}^i \frac{\text{fwd_disp_diff_pred}[i']}{\text{window_len}}
        \begin{bmatrix}
-           \cos(\text{heading\_pred}[i'])\\
-           \sin(\text{heading\_pred}[i'])
+           \cos(\text{heading_pred}[i'])\\
+           \sin(\text{heading_pred}[i'])
        \end{bmatrix}
 
 We will now implement this integration logic:
@@ -1295,7 +1319,7 @@ We will now implement this integration logic:
             "displacement_diff_actual": displacement_diff_actual,
         }
 
-We will run this function on the last trial, which has been reserved for
+We can run this function on the last trial, which has been reserved for
 testing:
 
 .. code-block:: ipython3
@@ -1414,7 +1438,6 @@ forward displacement:
 .. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_cumulative.png?raw=true
    :width: 500
 
-
 Finally, we can plot the estimated and true trajectories of the fly:
 
 .. code-block:: ipython3
@@ -1452,7 +1475,8 @@ Finally, we can plot the estimated and true trajectories of the fly:
 
 We can observe that, while the model gives excellent predictions in
 heading and forward displacement, small errors in heading can lead to
-larger error in the final position estimation. This is simply due to the
-fact that walking straight in a slightly wrong direction amplifies the
-error in the estimated position. Therefore, re-calibration of path
-integration from sensory cues might be critical.
+larger errors in the final position estimation. This is simply due to
+the fact that walking straight in a slightly wrong direction amplifies
+the error in the estimated position. Therefore, while path integration
+based solely on idiothetic cues is possible, calibration of the
+integrator based on sensory inputs might be critical.
