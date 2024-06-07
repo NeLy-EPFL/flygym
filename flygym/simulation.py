@@ -321,6 +321,10 @@ class Simulation(gym.Env):
                 camera.output_path.parent.mkdir(parents=True, exist_ok=True)
                 camera.save_video(camera.output_path)
 
+        for fly in self.flies:
+            if hasattr(fly, "close"):
+                fly.close()
+
 
 class SingleFlySimulation(Simulation):
     """A single fly simulation environment using MuJoCo as the physics

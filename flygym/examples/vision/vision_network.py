@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import torch
 import flyvision
@@ -167,11 +168,12 @@ class RealTimeVisionNetwork(Network):
             x_t=stimulus_buffer,
             dt=self._step_by_step_sim_params["dt"],
         )
-        print("next state is", type(self._current_step_by_step_sim_state))
-        print(
-            "node activity is of type",
-            type(self._current_step_by_step_sim_state.nodes.activity),
-        )
+        # logging.debug("next state is %s", type(self._current_step_by_step_sim_state))
+        # logging.debug(
+        #     "node activity is of type %s",
+        #     type(self._current_step_by_step_sim_state.nodes.activity),
+        # )
+
         # TODO
         if self._step_by_step_sim_params["as_states"]:
             return self._current_step_by_step_sim_state
