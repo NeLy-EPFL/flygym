@@ -64,15 +64,13 @@ class RealisticVisionFly(HybridTurningFly):
         return obs, reward, terminated, truncated, info
 
     def close(self):
-        """Close the environment. See ``HybridTurningController.close``."""
+        """Close the fly. See ``HybridTurningFly.close``."""
         self.vision_network.cleanup_step_by_step_simulation()
         self._vision_network_initialized = False
-
-        if hasattr(super(), "close"):
-            super().close()
+        super().close()
 
     def reset(self, *args, **kwargs):
-        """Reset the environment. See ``HybridTurningController.reset``."""
+        """Reset the fly. See ``HybridTurningFly.reset``."""
         if self._vision_network_initialized:
             self.vision_network.cleanup_step_by_step_simulation()
             self._vision_network_initialized = False
