@@ -1327,3 +1327,7 @@ class Fly:
             info["neck_actuation"] = self._last_neck_actuation
 
         return obs, reward, terminated, truncated, info
+
+    def close(self):
+        """Release resources allocated by the environment."""
+        pass

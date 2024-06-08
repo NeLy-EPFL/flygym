@@ -322,8 +322,7 @@ class Simulation(gym.Env):
                 camera.save_video(camera.output_path)
 
         for fly in self.flies:
-            if hasattr(fly, "close"):
-                fly.close()
+            fly.close()
 
 
 class SingleFlySimulation(Simulation):
