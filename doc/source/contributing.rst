@@ -12,7 +12,7 @@ Please respect the `Contributor Covenant Code of Conduct <https://www.contributo
 Branches
 --------
 - ``main``: The latest stable code. Every time this branch is updated (except documentation-only updates to the neuromechfly.org website), a new version should be pushed to PyPI.
-- ``develop``: The latest development code. This branch is used for development and testing. Code should not be merged into this branch until all tests and style checks are passing. All PRs should be reviewed by a member of the core dev team (Sibo Wang-Chen, Victor Alfred Stimpfling, and Thomas Ka Chung Lam). When a new version is released, the ``develop`` branch is merged into the ``main`` branch.
+- ``dev-v[X.X.X]`` (where X.X.X is the next release): The latest development code. This branch is used for development and testing. Code should not be merged into this branch until all tests and style checks are passing. All PRs should be reviewed by a member of the core dev team (Sibo Wang-Chen, Victor Alfred Stimpfling, and Thomas Ka Chung Lam). When a new version is released, the ``dev-v[X.X.X]`` branch is merged into the ``main`` branch.
 - **Other branches** are for develop new features or fixing bugs. Please make your own fork for development (see the "Contributing to the codebase" section below).
 
 
