@@ -128,7 +128,22 @@ def get_collision_geometries(config: str = "all") -> List[str]:
 
 
 def get_cpg_biases(gait: str) -> np.ndarray:
-    """Define CPG biases for different gaits."""
+    """Define CPG biases for different gaits.
+
+    Parameters
+    ----------
+    gait : str
+        The gait to use. Available gaits are "tripod", "tetrapod", and
+        "wave".
+
+    Returns
+    -------
+    np.ndarray
+        The CPG biases as a (6, 6) array, where each row/column corresponds
+        to a leg and each element corresponds to the phase bias between the
+        two legs. The order of the legs is: LF, LM, LH, RF, RM, RH (L =
+        left, R = right, F = front, M = middle, H = hind).
+    """
     if gait.lower() == "tripod":
         phase_biases = np.array(
             [

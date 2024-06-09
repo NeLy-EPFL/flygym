@@ -7,9 +7,10 @@ Tutorials
    gym_basics_and_kinematic_replay
    cpg_controller
    rule_based_controller
+   hybrid_controller
    turning
-   simple_vision
-   simple_olfaction
+   vision_basics
+   olfaction_basics
    path_integration
    head_stabilization
    advanced_vision

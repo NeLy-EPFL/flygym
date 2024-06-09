@@ -131,7 +131,7 @@ class RealTimeVisionNetwork(Network):
         del self._step_by_step_sim_params
         del self._current_step_by_step_sim_state
 
-    def forward_one_step(self, curr_visual_input: Tensor) -> Union[Tensor, AutoDeref]:
+    def forward_one_step(self, curr_visual_input: Tensor) -> Union[AutoDeref, Tensor]:
         """Simulate the network one step forward.
 
         Parameters
@@ -143,8 +143,13 @@ class RealTimeVisionNetwork(Network):
 
         Returns
         -------
-        Union[Tensor, AutoDeref]
-            _description_ TODO
+        Union[AutoDeref, Tensor]
+            If ``as_states`` is set to True in ``__init__``, this returns
+            the network state after stepping the network simulation by one
+            step. The return value is of type
+            ``flyvision.utils.tensor_utils.AutoDeref``. Otherwise, the
+            actual activities of the nodes are returned as a torch tensor
+            (i.e., agnostic to the flyvision state representation).
         """
         self._check_step_by_step_simulation_setup()
 
@@ -167,12 +172,6 @@ class RealTimeVisionNetwork(Network):
             x_t=stimulus_buffer,
             dt=self._step_by_step_sim_params["dt"],
         )
-        print("next state is", type(self._current_step_by_step_sim_state))
-        print(
-            "node activity is of type",
-            type(self._current_step_by_step_sim_state.nodes.activity),
-        )
-        # TODO
         if self._step_by_step_sim_params["as_states"]:
             return self._current_step_by_step_sim_state
         else:
