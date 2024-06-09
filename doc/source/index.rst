@@ -12,12 +12,12 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
    :hidden:
 
    neuromechfly
+   gallery/index
    installation
    tutorials/index
    api_ref/index
    changelog
    contributing
-   gallery/index
 
 `Preprint <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ |
 `GitHub <https://github.com/NeLy-EPFL/flygym>`_
