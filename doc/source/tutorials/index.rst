@@ -8,8 +8,8 @@ Tutorials
    cpg_controller
    rule_based_controller
    turning
-   simple_vision
-   simple_olfaction
+   vision_basics
+   olfaction_basics
    path_integration
    head_stabilization
    advanced_vision
