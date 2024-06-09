@@ -3,14 +3,14 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.0.0-pre.1",
+    version="1.0.0-pre.2",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
     packages=find_packages(),
     package_data={"flygym": ["data/*", "config.yaml"]},
     include_package_data=True,
-    python_requires=">=3.8,<3.13",
+    python_requires=">=3.9,<3.13",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
@@ -56,7 +56,6 @@ setup(
             "phiflow",
             "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip",
         ],
-        "tests": ["networkx", "h5py", "scikit-learn", "torch", "lightning"],
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md", encoding="UTF-8").read(),

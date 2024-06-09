@@ -1,6 +1,14 @@
 Encapsulating custom code into Gym environments: A turning controller
 =====================================================================
 
+**Author:** Victor Alfred Stimpfling, Sibo Wang-Chen
+
+**Note:** The code presented in this notebook has been simplified for
+simplicity and restructured for display in a notebook format. A more
+complete and better structured implementation can be found on the
+`examples folder of the FlyGym repository on
+GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
 **Summary:** In this tutorial, we will demonstrate how one can build
 controllers at different levels of abstraction by implementing Gym
 environments encoding variable amounts of preprogrammed computation. As
@@ -45,7 +53,7 @@ their own Gym environments with different action and observation spaces
 and implement different logics (e.g. preprogrammed premotor computation
 and sensory processing). This is illustrated in the figure below:
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
    :width: 600
 
 In the hybrid controller that `we have
@@ -605,7 +613,7 @@ smaller one.
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/turning_cpg_magnitude.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/turning_cpg_magnitude.png?raw=true
    :width: 400
 
 Finally, let’s take a look at the video:

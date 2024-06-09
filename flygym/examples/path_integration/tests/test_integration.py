@@ -102,7 +102,6 @@ def test_left_right_sum():
         assert extracted_vars["diff_dn_drive"].shape == (nsteps, 1)
         assert extracted_vars["heading_diff"].shape == (nsteps,)
         assert extracted_vars["forward_disp_total_diff"].shape == (nsteps,)
-        assert extracted_vars["heading"].shape == (nsteps,)
 
     backstroke_mean_fast = np.mean(
         extracted_vars_all["fast"]["stride_total_diff_lrsum"][500:, :]
@@ -181,7 +180,7 @@ def test_left_right_diff():
     assert asymm_mean_slow / asymm_mean_fast == pytest.approx(4, abs=1.5)
 
 
-def test_model_perf():
+def test_path_integration():
     # Reference ensemble model:
     # k_fore_prop2heading    0.250722
     # k_mid_prop2heading     0.176886
@@ -233,7 +232,6 @@ def test_model_perf():
         )
 
         trial_data = load_trial_data(tempdir)
-    # trial_data = load_trial_data(Path("output_dir/path_integration/2021-09-30-16-00-00-000000/0/sim_data.pkl"))
 
     path_int_res = path_integrate(
         trial_data,
@@ -245,21 +243,55 @@ def test_model_perf():
         dt=dt,
     )
 
-    start_idx = int(time_scale / dt)
-    for k, v in path_int_res.items():
-        # Check shape
-        if k in ["pos_pred", "pos_actual"]:
-            expected_shape = (int(running_time / dt), 2)
-        else:
-            expected_shape = (int(running_time / dt),)
-        assert v.shape == expected_shape
+    expected_keys = {
+        "heading_pred",
+        "heading_actual",
+        "pos_pred",
+        "pos_actual",
+        "heading_diff_pred",
+        "heading_diff_actual",
+        "displacement_diff_pred",
+        "displacement_diff_actual",
+    }
+    expected_nsteps = int(running_time / dt)
+    start_idx = int(time_scale / dt)  # path int. starts after this many steps
 
-        # Check nan padding
-        if k == "pos_actual":
-            assert np.isfinite(v).all()
-        else:
-            assert np.isnan(v[:start_idx]).all()
-            assert (~np.isnan(v[start_idx:])).all()
+    # Check keys in the output dict
+    assert set(path_int_res.keys()) == expected_keys
+
+    # Check shapes of values in the output dict
+    assert path_int_res["heading_pred"].shape == (expected_nsteps,)
+    assert path_int_res["heading_actual"].shape == (expected_nsteps,)
+    assert path_int_res["pos_pred"].shape == (expected_nsteps, 2)
+    assert path_int_res["pos_actual"].shape == (expected_nsteps, 2)
+    assert path_int_res["heading_diff_pred"].shape == (expected_nsteps,)
+    assert path_int_res["heading_diff_actual"].shape == (expected_nsteps,)
+    assert path_int_res["displacement_diff_pred"].shape == (expected_nsteps,)
+    assert path_int_res["displacement_diff_actual"].shape == (expected_nsteps,)
+
+    # For the actual values, the whole array should be finite
+    # For the predicted values, the first few steps should be NaN (before path
+    # integration doesn't start until there's enough data to make the first
+    # delta heading/delta displacement prediction. This period is the same as the
+    # integration time scale). After that, the values should be finite.
+    assert np.isnan(path_int_res["heading_pred"][:start_idx]).all()
+    assert np.isfinite(path_int_res["heading_pred"][start_idx:]).all()
+    assert np.isfinite(path_int_res["heading_actual"]).all()
+    assert np.isnan(path_int_res["pos_pred"][:start_idx]).all()
+    assert np.isfinite(path_int_res["pos_pred"][start_idx:]).all()
+    assert np.isfinite(path_int_res["pos_actual"]).all()
+
+    # Though the position and heading in the actual simulation are defined from the
+    # 0th step, the *changes* in them are *undefined* until the time scale is reached
+    # even in the ground truth.
+    assert np.isnan(path_int_res["heading_diff_pred"][:start_idx]).all()
+    assert np.isfinite(path_int_res["heading_diff_pred"][start_idx:]).all()
+    assert np.isnan(path_int_res["heading_diff_actual"][:start_idx]).all()
+    assert np.isfinite(path_int_res["heading_diff_actual"][start_idx:]).all()
+    assert np.isnan(path_int_res["displacement_diff_pred"][:start_idx]).all()
+    assert np.isfinite(path_int_res["displacement_diff_pred"][start_idx:]).all()
+    assert np.isnan(path_int_res["displacement_diff_actual"][:start_idx]).all()
+    assert np.isfinite(path_int_res["displacement_diff_actual"][start_idx:]).all()
 
     # Check accuracy
     delta_heading_r2 = r2_score(
