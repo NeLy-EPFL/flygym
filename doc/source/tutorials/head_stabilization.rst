@@ -39,7 +39,7 @@ visual rotations caused by the animal’s own body movements during
 walking. We will use these signals to actuate the neck joint and aim to
 dampen head rotation. This approach is illustrated as follows:
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_schematic.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_schematic.png?raw=true
    :width: 700
 
 Collecting training data
@@ -248,7 +248,7 @@ As a sanity check, we can plot the trajectory of the fly:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png?raw=true
    :width: 500
 
 
@@ -410,7 +410,7 @@ side:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png?raw=true
    :width: 500
 
 
@@ -453,7 +453,7 @@ appears more dramatic:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png?raw=true
    :width: 500
 
 
@@ -740,7 +740,7 @@ dataset as an iterator instead of the output returned by
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png?raw=true
    :width: 500
 
 
@@ -1122,7 +1122,7 @@ sets changed over time. On the validation set, we will plot the loss and
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_training_metrics.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_training_metrics.png?raw=true
    :width: 500
 
 
@@ -1475,7 +1475,7 @@ signals:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png?raw=true
    :width: 500
 
 
@@ -1519,7 +1519,7 @@ thorax over time:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png?raw=true
    :width: 700
 
 
