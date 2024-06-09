@@ -3,6 +3,9 @@ Vision
 
 This page documents the implementation of the visual input received by the simulated fly. Note that in the typical use case, the user should **not** have to access most of the functions described here. Instead, the visual inputs are given as a part of the *observation* returned by ``NeuroMechFly`` at each time step. Nonetheless, the full API reference is provided here for greater transparency.
 
+.. note::
+   For API references of NeuroMechFly simulation with the connectome-constrained model proposed in `Lappalainen et al., 2023, <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`_, see the `Advanced Vision <api_ref/examples/vision.html>`_ page.
+
 Retina simulation
 -----------------
 
