@@ -162,7 +162,7 @@ ODE, but you can use any higher-order methods or libraries.
 To demonstrate this network, let’s simulate a network of three oscillators
 connected as follows:
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg.png
    :width: 500
 
 For the sake of illustration, let’s make them oscillate at an intrinsic
@@ -237,7 +237,7 @@ intrinsic frequencies and amplitudes.
 
 
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg_rollout.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg_rollout.png
    :width: 500
 
 We have now built a CPG network. In the next section, we address how the
@@ -285,7 +285,7 @@ network is synchronized. We will use other parameters from the
 `NeuroMechFly 2.0
 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg.png
    :width: 600
 
 As before, we will set up the CPG network, run the simulation, and plot
@@ -341,7 +341,7 @@ the time series of the state variables:
 
 
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg_rollout.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg_rollout.png
    :width: 500
 
 Now, let’s load the behavior kinematics data:
@@ -450,7 +450,7 @@ visualize three stepping cycles for each leg:
 
 
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_phase_only.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_phase_only.png
    :width: 700
 
 We can also modulate the amplitude of the steps using the magnitude
@@ -502,7 +502,7 @@ from 0 to 1:
 
 
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_amp_modulated.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_amp_modulated.png
    :width: 700
 
 We have now built the individual elements of the controller:
@@ -696,7 +696,7 @@ during stance):
 
 
 
-.. figure :: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/adhesion_signal.png
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/adhesion_signal.png
    :width: 400
 
 We can rerun the NeuroMechFly simulation with adhesion enabled. The

@@ -36,7 +36,7 @@ three rules of Walknet, namely:
 These rules are summarized in this figure:
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
    :width: 400
 
 
@@ -114,7 +114,7 @@ the CPGs tutorial:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/preprogrammed_steps_class.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/preprogrammed_steps_class.png?raw=true
    :width: 700
 
 Implementing the rules
@@ -216,7 +216,7 @@ so let’s visualize them separately:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rules_graph.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rules_graph.png?raw=true
    :width: 700
 
 
@@ -535,7 +535,7 @@ phases and stepping likelihood scores over time:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_control_signals.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_control_signals.png?raw=true
    :width: 700
 
 

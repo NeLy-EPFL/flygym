@@ -25,7 +25,7 @@ monomolecular chemicals sensed by OSNs in the antennae, or the
 intensities of composite odors co-activating numerous projection neurons
 in the antennal lobe.
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction.png?raw=true
    :width: 600
 
 
@@ -120,7 +120,7 @@ to stand on the ground in a stable manner.
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_env.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_env.png?raw=true
    :width: 500
 
 
@@ -281,7 +281,7 @@ We can visualize the fly trajectory:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/odor_taxis_trajectory.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/odor_taxis_trajectory.png?raw=true
    :width: 500
 
 
