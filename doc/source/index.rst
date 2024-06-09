@@ -21,7 +21,7 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
 `Preprint <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ |
 `GitHub <https://github.com/NeLy-EPFL/flygym>`_
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
    :width: 400
    :alt: Overview video
 
@@ -44,7 +44,7 @@ FlyGym consists of the following components:
 
 FlyGym formulates the control of the simulated fly as a `partially observable Markov Decision Process (MDP) <https://en.wikipedia.org/wiki/Partially_observable_Markov_decision_process>`_ and implements the `Gym interface <https://gymnasium.farama.org/>`_. This allows the user to use a wide range of reinforcement learning (RL) algorithms to train the fly to perform tasks. The standardized interface also allows the user to easily implement their own premotor computation and/or sensory preprocessing.
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
    :width: 600
    :alt: MDP
 
