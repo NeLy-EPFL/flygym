@@ -1,5 +1,5 @@
-Navigating a complex plume
-==========================
+Advanced olfaction: Navigating a complex plume
+==============================================
 
 **Author:** Victor Alfred Stimpfling
 
