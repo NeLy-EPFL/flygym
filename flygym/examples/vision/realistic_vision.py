@@ -40,8 +40,9 @@ class RealisticVisionController(HybridTurningController):
         activities of the visual system neurons as a
         ``flyvision.LayerActivity`` object, and the ``nn_activities_arr``
         key in the observation dictionary, which contains the activities
-        of the visual system neurons as a numpy array of shape
-        TODO.
+        of the visual system neurons, represented as a numpy array of shape
+        (2, num_cells_per_eye). The 0th dimension corresponds to the eyes
+        in the order (left, right).
         """
         obs, reward, terminated, truncated, info = super().step(action)
 
