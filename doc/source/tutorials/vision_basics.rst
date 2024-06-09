@@ -1,6 +1,14 @@
 Vision basics
 =============
 
+**Author:** Sibo Wang-Chen
+
+**Note:** The code presented in this notebook has been simplified for
+simplicity and restructured for display in a notebook format. A more
+complete and better structured implementation can be found on the
+`examples folder of the FlyGym repository on
+GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
 **Summary:** In this tutorial, we will build a simple model to control
 the fly to follow a moving sphere. By doing so, we will also demonstrate
 how one can create a custom arena.
@@ -38,7 +46,7 @@ light intensities sensed by yellow- and pale-type ommatidia to achieve
 more biorealistic chromatic vision.
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision.png?raw=true
    :width: 800
 
 
@@ -122,7 +130,7 @@ on the floor in a stable manner:
     fig.savefig("./outputs/vision_sim_env.png")
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_env.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_env.png?raw=true
    :width: 400
 
 
@@ -215,7 +223,7 @@ color channels.
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim.png?raw=true
    :width: 600
 
 
@@ -237,7 +245,7 @@ are binned into ommatidia:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_raw.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_raw.png?raw=true
    :width: 600
 
 We observe that the ommatidia covering the blue and the green pillars
@@ -441,7 +449,7 @@ Recall that in the ``HybridTurningController``, we implemented the
 purple arrow in the following figure, encapsulating the CPG network and
 the sensory feedback-based correction rules:
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
    :width: 600
 
 Here, we will build yet another layer on top of
