@@ -1,5 +1,6 @@
 Plume navigation
-=======
+================
+
 Our simulated fly uses the controller presented in `Demir et al. 2020 <https://doi.org/10.7554/eLife.57524>`_ to navigate a complex odour plume. 
 
 .. raw:: html

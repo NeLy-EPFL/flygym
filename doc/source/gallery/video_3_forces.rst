@@ -1,5 +1,6 @@
 Estimating contact forces
-=======
+=========================
+
 Here NeuroMechFly is traversing a flat terrain using a CPG based controller. During this behaviour, contact forces with the floor are predicted and displayed as arrows.
 
 .. raw:: html

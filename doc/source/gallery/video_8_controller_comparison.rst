@@ -1,5 +1,6 @@
 Controller comparison
-=======
+=====================
+
 Comparison between a CPG based a rule based and an hybrid controller (CPG incorporating sensory feedback based rules) traversing different challenging terrains. 
 
 .. raw:: html
