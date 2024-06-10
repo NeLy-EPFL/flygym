@@ -308,7 +308,7 @@ Though we have only tested one initial condition (spawn position,
 controller) per case, we can already begin to observe that the CPG-based
 and rule-based controllers may not be very robust over complex terrain.
 In fact, if we run 20 initial conditions for 1 second each, we get a
-result like the one reported in the NeuroMechFly 2.0 paper (Wang-Chen et
+result like the one reported in the NeuroMechFly v2 paper (Wang-Chen et
 al., 2023):
 
 .. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_rule_based_comparison.png?raw=true
@@ -336,7 +336,7 @@ Building a hybrid controller
 
 Now, we will build a hybrid controller that integrates both feedforward
 oscillators as well as feedback-based mechanisms that reposition the
-legs if they get stuck. As described in the NeuroMechFly 2.0 paper, we
+legs if they get stuck. As described in the NeuroMechFly v2 paper, we
 will detect the following conditions:
 
 1. **Retraction:** In principle, with the tripod gait, there should
@@ -849,7 +849,7 @@ than the CPG-based or rule-based controller. Indeed, we obtained the
 following results by running 20 simulations for each controller over
 each terrain type with different initial conditions. These show that a
 hybrid controller outperforms the other two controllers (see the
-NeuroMechFly 2.0 paper for details):
+NeuroMechFly v2 paper for details):
 
 .. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_rule_based_hybrid_comparison.png?raw=true
    :width: 800
