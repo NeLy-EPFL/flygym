@@ -1,7 +1,7 @@
 Controlling locomotion with CPGs
 ================================
 
-**Author:** Sibo Wang-Chen, Femke Hurtak
+**Authors:** Sibo Wang-Chen, Femke Hurtak
 
 **Note:** The code presented in this notebook has been simplified for
 simplicity and restructured for display in a notebook format. A more

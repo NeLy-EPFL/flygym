@@ -1,7 +1,7 @@
 Rule-based controller
 =====================
 
-**Author:** Victor Alfred Stimpfling, Sibo Wang-Chen
+**Authors:** Victor Alfred Stimpfling, Sibo Wang-Chen
 
 **Note:** The code presented in this notebook has been simplified for
 simplicity and restructured for display in a notebook format. A more
