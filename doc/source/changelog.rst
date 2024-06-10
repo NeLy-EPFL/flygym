@@ -1,6 +1,21 @@
 Change Log
 ==========
 
+* **1.0.0:** In spring 2024, NeuroMechFly was used, for the second time, in a course titled "`Controlling behavior in animals and robots <https://edu.epfl.ch/coursebook/en/controlling-behavior-in-animals-and-robots-BIOENG-456>`_" at EPFL. At the same time, we revised the NeuroMechFly v2 manuscript. In these processes, we significantly improved the FlyGym package, added new functionalities, and incorporated changes as we received feedback from the students. These enhancements are released as FlyGym version 1.0.0. This release is not backward compatible; please refer to the `tutorials <https://neuromechfly.org/tutorials/index.html>`_ and `API references <https://neuromechfly.org/api_ref/index.html>`_ for more information. The main changes are:
+  
+  * Major API changes:
+  
+    * The ``NeuroMechFly`` class is split into ``Fly``, a class that represents the fly, and ``Simulation``, a class that represents the simulation, which can potentially contain multiple flies.
+    * The ``Parameters`` class is deprecated. Parameters related to the fly (such as joint parameters, actuated DoFs, etc.) should be set directly on the ``Fly`` object. Parameters related to the simulation (such as the time step, the render cameras, etc.) should be set directly on the ``Simulation`` object.
+    * A new ``Camera`` class is introduced. A simulation can contain multiple cameras.
+
+  * New `examples <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples>`_:
+
+    * Path integration based on ascending mechanosensory feedback.
+    * Head stabilization based on ascending mechanosensory feedback.
+    * Navigating a complex plume, simulated separately in a fluid mechanics simulator.
+    * Following another fly using a realistic, connectome-constrained neural network that processes visual inputs.
+
 * **0.2.5:** Modify model file to make it compatible with MuJoCo 3.1.1. Disable Python 3.7 support accordingly.
 * **0.2.4:** Set MuJoCo version to 2.3.7. Documentation updates.
 * **0.2.3:** Various bug fixes. Improved placement of the spherical treadmill in the tethered environment.
