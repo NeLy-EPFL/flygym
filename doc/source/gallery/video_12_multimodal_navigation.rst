@@ -1,5 +1,6 @@
 Multimodal navigation
-=======
+=====================
+
 Here we demonstrate how a high level Reinforcement Learning trained agent can avoid a pilar using vision while walking toward an odour source.
 
 .. raw:: html
