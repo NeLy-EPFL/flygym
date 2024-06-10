@@ -45,7 +45,7 @@ Hybrid turning controller (``HybridTurningController``)
 **Info:** In addition to what is provided in the default ``Simulation``, the ``flygym.example.locomotion.HybridTurningController`` class includes the following in the "info" dictionary:
 
 * "joints", "adhesion": The hybrid turning controller computes the appropriate joint angles and adhesion signals based on the descending inputs, CPG states, and mechanosensory feedback. These values are the computed low-level motor commands applied to the underlying base ``Simulation``.
-* "net_corrections": The net correction amounts applied to the legs as a NumPy array of shape (6,). Refer to the `tutorial on the hybrid turning controller <https://neuromechfly.org/tutorials/hybrid_controller.html>`_ for more details. The order of legs is: LF, LM, LH, RF, RM, RH (L/R = left/right, F/M/H = front/middle/hind).
+* "net_corrections": The net correction amounts applied to the legs as a NumPy array of shape (6,). Refer to the `tutorial on the hybrid turning controller <https://neuromechfly.org/tutorials/hybrid_controller.html>`__ for more details. The order of legs is: LF, LM, LH, RF, RM, RH (L/R = left/right, F/M/H = front/middle/hind).
 
 
 

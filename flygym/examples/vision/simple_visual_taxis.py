@@ -13,6 +13,14 @@ from flygym.examples.vision import MovingObjArena
 class VisualTaxis(HybridTurningController):
     """
     A simple visual taxis task where the fly has to follow a moving object.
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#simple-object-following-visualtaxis>`_
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(
