@@ -290,7 +290,7 @@ be implemented using a CPG network shown on the right. We observe that
 the legs that should *not* swing together are coupled with a phase
 difference of 180 degrees, ensuring that they are out of phase once the
 network is synchronized. We will use other parameters from the
-`NeuroMechFly 2.0
+`NeuroMechFly v2
 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
 
 .. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg.png

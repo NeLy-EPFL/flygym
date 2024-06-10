@@ -286,7 +286,7 @@ you want to understand how property methods work in Python.
        def combined_scores(self):
            return self.rule1_scores + self.rule2_scores + self.rule3_scores
 
-As described in the NeuroMechFly 2.0 paper, the leg with the highest
+As described in the NeuroMechFly v2 paper, the leg with the highest
 positive score is stepped. If multiple legs are within a small margin of
 the highest score, we choose one of these legs at random to avoid bias
 from numerical artifacts. Let’s implement a method that selects the legs
