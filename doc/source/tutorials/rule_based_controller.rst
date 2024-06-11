@@ -3,24 +3,15 @@ Rule-based controller
 
 **Authors:** Victor Alfred Stimpfling, Sibo Wang-Chen
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
 **Summary:** In this tutorial, we will show how locomotion can be
 achieved using local coordination rules in the absence of centralized
-mechanisms like coupled CPGs.
-
-.. note:: 
-    Additional dependencies are required to follow this tutorial. In
-    addition to the standard installation, please also run:
-    
-    .. code:: bash
-
-       pip install networkx
-    
+mechanism like coupled CPGs.
 
 Previously, we covered how a centralized network of coupled oscillators
 (CPGs) can give rise to locomotion. A more decentralized mechanism for
@@ -37,16 +28,19 @@ This control approach has been applied to robotic locomotor control
 In this tutorial, we will implement a controller based on the first
 three rules of Walknet, namely:
 
-1. The swing (“return stroke” as described in the Walknet paper) of a leg inhibits the swing of its rostral neighboring leg.
-2. The start of the stance phase (“power stroke” as described in the Walknet paper) of a leg excites the swing of the rostral contralateral neighboring legs.
-3. The completion of the stance phase (“caudal position” as described in the Walknet paper) excites the swing of the caudal and contralateral neighboring legs.
+1. The swing (“return stroke” as described in the Walknet paper) of a
+   leg inhibits the swing of the rostral neighboring leg
+2. The start of the stance phase (“power stroke” as described in the
+   Walknet paper) of a leg excites the swing of the rostral
+   contralateral neighboring legs.
+3. The completion of the stance phase (“caudal position” as described in
+   the Walknet paper) excites the swing of the caudal and contralateral
+   neighboring legs.
 
-These rules are summarized in this figure:
+These rules are be summarized in this figure:
 
-
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
-   :width: 400
-
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based.png?raw=true
+    :width: 400
 
 
 Preprogrammed steps, refactored
@@ -55,29 +49,28 @@ Preprogrammed steps, refactored
 We start by loading the preprogrammed steps as explained in the tutorial
 `Controlling locomotion with
 CPGs <https://neuromechfly.org/tutorials/cpg_controller.html#controlling-leg-stepping-with-cpgs>`__.
-This time, we will use the `PreprogrammedSteps` Python class that
-encapsulates much of the code implemented in the previous tutorial.
-The following is the documentation for this class:
+This time, we will use the ``PreprogrammedSteps`` Python class that
+encapsulates much of the code implemented in the previous tutorial. See
+`this section of the API reference <https://neuromechfly.org/api_ref/examples/locomotion.html#preprogrammed-steps>`__
+for documentation of this class.
 
-.. autoclass:: flygym.examples.locomotion.rule_based_controller.PreprogrammedSteps
-   :members:
-   :show-inheritance:
-   :inherited-members:
-   :noindex:
+.. code:: ipython3
 
-Let’s import this class:
+    from flygym.examples.locomotion import PreprogrammedSteps
 
-.. code-block:: ipython3
-    :linenos:
 
-    from flygym.examples.rule_based_controller import PreprogrammedSteps
+.. parsed-literal::
+
+    pygame 2.5.1 (SDL 2.28.2, Python 3.11.0)
+    Hello from the pygame community. https://www.pygame.org/contribute.html
+
 
 We can verify that this works by regenerating the following plot from
 the CPGs tutorial:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
+    import numpy as np
     import matplotlib.pyplot as plt
     
     preprogrammed_steps = PreprogrammedSteps()
@@ -109,7 +102,7 @@ the CPGs tutorial:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else rf"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -118,12 +111,12 @@ the CPGs tutorial:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/preprogrammed_steps_class.png")
+    fig.savefig("./outputs/rule_based_controller/preprogrammed_steps_class.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/preprogrammed_steps_class.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/preprogrammed_steps_class.png?raw=true
+
 
 Implementing the rules
 ----------------------
@@ -131,14 +124,14 @@ Implementing the rules
 Next, we implement the first three rules from Walknet. To encode the
 graph representing the local coordination rules (the first figure of
 this tutorial), we will construct a ``MultiDiGraph`` using the Python
-graph library `NetworkX <https://networkx.org/>`_. This is a convenient way to manipulate a
-directed graph with multiple edges between the same nodes (in our case,
-each node represents a leg and each edge represents a coupling rule). Note that this graph representation is not
-strictly necessary; the user can alternatively implement the same logic
-using lots of lists and dictionaries in native Python.
+graph library `NetworkX <https://networkx.org/>`__. This is a convenient
+way to manipulate a directed graph with multiple edges between the same
+nodes (in our case, each node represents a leg and each edge represents
+a coupling rule). Note that this graph representation is not strictly
+necessary; the user can alternatively implement the same logic using
+lots of lists and dictionaries in native Python.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     import networkx as nx
     
@@ -180,8 +173,7 @@ Next, we will implement a helper function that selects the edges given
 the rule and the source node. This will become handy in the next
 section.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     def filter_edges(graph, rule, src_node=None):
         """Return a list of edges that match the given rule and source node.
@@ -197,8 +189,7 @@ connections for each of the three rules. The ipsilateral and
 contralateral connections of the same rule can have different weights,
 so let’s visualize them separately:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     node_pos = {
         "LF": (0, 0),
@@ -220,12 +211,11 @@ so let’s visualize them separately:
         ax.set_ylim(-0.3, 2.3)
         ax.invert_yaxis()
         ax.axis("on")
-    plt.savefig("./outputs/rules_graph.png")
+    plt.savefig("./outputs/rule_based_controller/rules_graph.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rules_graph.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rules_graph.png?raw=true
 
 
 Using this rules graph, we will proceed to implement the rule-based leg
@@ -242,8 +232,7 @@ phase 0 indefinitely. To indicate whether the legs are stepping at all,
 we will create a boolean mask. Finally, we will create two dictionaries
 to map the leg names to the leg indices and vice versa:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
    class RuleBasedSteppingCoordinator:
        legs = ["LF", "LM", "LH", "RF", "RM", "RH"]
@@ -279,8 +268,7 @@ way, we can access the total score simply with
 tutorial <https://www.programiz.com/python-programming/property>`__ if
 you want to understand how property methods work in Python.
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
        @property
        def combined_scores(self):
@@ -292,8 +280,7 @@ the highest score, we choose one of these legs at random to avoid bias
 from numerical artifacts. Let’s implement a method that selects the legs
 that are eligible for stepping:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
        def _get_eligible_legs(self):
            score_thr = self.combined_scores.max()
@@ -309,8 +296,7 @@ Then, let’s implement another method that chooses one of the eligible
 legs at random if at least one leg is eligible, and returns ``None`` if
 no leg can be stepped:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
        def _select_stepping_leg(self):
            eligible_legs = self._get_eligible_legs()
@@ -321,8 +307,7 @@ no leg can be stepped:
 Now, let’s write a method that applies Rule 1 based on the swing mask
 and the current phases of the legs:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
    def _apply_rule1(self):
            for i, leg in enumerate(self.legs):
@@ -340,19 +325,18 @@ stroke). We will scale their weights by γ, a ratio indicating how far
 the leg is into the stance phase. Let’s define a helper method that
 calculates γ:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
-       def _select_stepping_leg(self):
-           eligible_legs = self._get_eligible_legs()
-           if len(eligible_legs) == 0:
-               return None
-           return self.random_state.choice(eligible_legs)
+       def _get_stance_progress_ratio(self, leg):
+           swing_start, swing_end = self.preprogrammed_steps.swing_period[leg]
+           stance_duration = 2 * np.pi - swing_end
+           curr_stance_progress = self.leg_phases[self._leg2id[leg]] - swing_end
+           curr_stance_progress = max(0, curr_stance_progress)
+           return curr_stance_progress / stance_duration
 
 Now, we can implement Rule 2 and Rule 3:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
        def _apply_rule2(self):
            self.rule2_scores[:] = 0
@@ -382,8 +366,7 @@ Now, we can implement Rule 2 and Rule 3:
 
 Finally, let’s implement the main ``step()`` method:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: python
 
        def step(self):
            if self.curr_step == 0:
@@ -411,18 +394,15 @@ Finally, let’s implement the main ``step()`` method:
 
            self.curr_step += 1
 
-This class is actually included in ``flygym.examples``. Let’s
-import it.
+This class is actually included in ``flygym.examples``. Let’s import it.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    from flygym.examples.rule_based_controller import RuleBasedSteppingCoordinator
+    from flygym.examples.locomotion import RuleBasedController
 
 Let’s define the weights of the rules and run 1 second of simulation:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     run_time = 1
     timestep = 1e-4
@@ -435,7 +415,7 @@ Let’s define the weights of the rules and run 1 second of simulation:
         "rule3_contra": 2.0,
     }
     
-    controller = RuleBasedSteppingCoordinator(
+    controller = RuleBasedController(
         timestep=timestep,
         rules_graph=rules_graph,
         weights=weights,
@@ -464,8 +444,7 @@ Let’s define the weights of the rules and run 1 second of simulation:
 Let’s also implement a plotting helper function and visualize the leg
 phases and stepping likelihood scores over time:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     def plot_time_series_multi_legs(
         time_series_block,
@@ -490,7 +469,7 @@ phases and stepping likelihood scores over time:
             List of leg names. Default: ["LF", "LM", "LH", "RF", "RM", "RH"].
         ax : matplotlib.axes.Axes, optional
             Axes to plot on. If None, a new figure and axes will be created.
-        
+    
         Returns
         -------
         matplotlib.axes.Axes
@@ -509,8 +488,7 @@ phases and stepping likelihood scores over time:
         ax.set_xlabel("Time (s)")
         return ax
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     fig, axs = plt.subplots(5, 1, figsize=(8, 15), tight_layout=True)
     
@@ -539,12 +517,11 @@ phases and stepping likelihood scores over time:
     plot_time_series_multi_legs(score_hist_rule3, timestep=timestep, spacing=18, ax=ax)
     ax.set_title("Stepping scores (rule 3 contribution)")
     
-    fig.savefig("./outputs/rule_based_controll_signals.png")
+    fig.savefig("./outputs/rule_based_controller/rule_based_control_signals.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_control_signals.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based_control_signals.png?raw=true
 
 
 Plugging the controller into the simulation
@@ -552,41 +529,49 @@ Plugging the controller into the simulation
 
 By now, we have:
 
-- implemented the ``RuleBasedSteppingCoordinator`` that controls the stepping of the legs
-- (re)implemented ``PreprogrammedSteps`` which controls the kinematics of each individual step given the stepping state
+-  implemented the ``RuleBasedSteppingCoordinator`` that controls the
+   stepping of the legs
+-  (re)implemented ``PreprogrammedSteps`` which controls the kinematics
+   of each individual step given the stepping state
 
 The final task is to put everything together and plug the control
 signals (joint positions) into the NeuroMechFly physics simulation:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    import flygym
+    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym.preprogrammed import all_leg_dofs
     from tqdm import trange
     
     
-    controller = RuleBasedSteppingCoordinator(
+    controller = RuleBasedController(
         timestep=timestep,
         rules_graph=rules_graph,
         weights=weights,
         preprogrammed_steps=preprogrammed_steps,
     )
-    sim_params = flygym.Parameters(
-        timestep=timestep,
-        render_mode="saved",
-        render_playspeed=0.1,
+    
+    fly = Fly(
+        init_pose="stretch",
+        actuated_joints=all_leg_dofs,
+        control="position",
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    nmf = flygym.NeuroMechFly(
-        sim_params=sim_params,
-        init_pose="stretch",
-        actuated_joints=flygym.preprogrammed.all_leg_dofs,
-        control="position",
+    
+    cam = Camera(
+        fly=fly,
+        play_speed=0.1,
     )
     
-    obs, info = nmf.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
+    sim = SingleFlySimulation(
+        fly=fly,
+        cameras=[cam],
+        timestep=timestep,
+    )
+    
+    obs, info = sim.reset()
+    for i in trange(int(run_time / sim.timestep)):
         controller.step()
         joint_angles = []
         adhesion_onoff = []
@@ -598,23 +583,22 @@ signals (joint positions) into the NeuroMechFly physics simulation:
             "joints": np.concatenate(joint_angles),
             "adhesion": np.array(adhesion_onoff),
         }
-        obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        obs, reward, terminated, truncated, info = sim.step(action)
+        sim.render()
 
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:32<00:00, 309.08it/s]
+    100%|██████████| 10000/10000 [00:27<00:00, 366.94it/s]
 
 
 Let’s take a look at the result:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    nmf.save_video("./outputs/rule_based_controller.mp4")
+    cam.save_video("./outputs/rule_based_controller/rule_based_controller.mp4")
 
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/rule_based_controller.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/rule_based_controller/rule_based_controller.mp4" controls="controls" style="max-width: 730px;"></video>
