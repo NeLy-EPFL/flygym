@@ -601,4 +601,4 @@ Let’s take a look at the result:
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/rule_based_controller/rule_based_controller.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/rule_based_controller/rule_based_controller.mp4" controls="controls" style="max-width: 400px;"></video>

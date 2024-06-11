@@ -618,7 +618,7 @@ Let’s run the simulation:
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller.mp4" controls="controls" style="max-width: 400px;"></video>
 
 
 Leg adhesion
@@ -749,7 +749,7 @@ parts of the code that have been changed are indicated with comments.
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller_with_adhesion.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller_with_adhesion.mp4" controls="controls" style="max-width: 400px;"></video>
 
 
 In summary, in this tutorial we have (1) implemented a Python class for
