@@ -227,7 +227,7 @@ To save the rendered video:
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/gym_basics/kinematic_replay.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/gym_basics/kinematic_replay.mp4" controls="controls" style="max-width: 400px;"></video>
 
 We can inspect the observation at the last step to see if they are
 consistent with our expectations:
