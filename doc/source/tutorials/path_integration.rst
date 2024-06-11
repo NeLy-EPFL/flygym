@@ -41,7 +41,7 @@ that the ant must be using idiothetic cues, rather than sensory input,
 to navigate — similar to how sailors used to navigate featureless oceans
 by “dead reckoning.”
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_schematic.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_schematic.png?raw=true
    :width: 300
 
 The fly *Drosophila melanogaster* also performs path integration,
@@ -56,7 +56,7 @@ changes in the fly’s orientation (shown below in green) and displacement
 By integrating these changes over time, we aim to reconstruct the path
 of the fly in space (right).
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_integration.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_integration.png?raw=true
    :width: 600
 
 The algorithm
@@ -100,7 +100,7 @@ re-normalize the predicted values by the time scale, and integrate the
 position in 2D. This process can be shown in the following schematic:
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_prediction.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_prediction.png?raw=true
    :width: 400
 
 In the next sections, we will test this algorithm.
@@ -149,12 +149,6 @@ but with the correction amounts set to 0 for simplicity.
         PathIntegrationArenaFlat,
         PathIntegrationArenaBlocks,
     )
-
-
-.. parsed-literal::
-
-    pygame 2.5.1 (SDL 2.28.2, Python 3.11.0)
-    Hello from the pygame community. https://www.pygame.org/contribute.html
 
 
 Let’s define the discrete walking states as an ``Enum`` class (see
@@ -500,8 +494,7 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/trajectory_sample_1s.png?raw=true
-   :width: 500
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/trajectory_sample_1s.png?raw=true
 
 
 We can also plot the recorded shifts in leg tip positions relative to
@@ -532,8 +525,7 @@ the fly’s thorax:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_shift_1s.png?raw=true
-   :width: 500
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_shift_1s.png?raw=true
 
 
 This plot shows the time series of the change in the x position (along
@@ -725,8 +717,7 @@ second of simulation, but this time in 2D:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_shift_2d.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_shift_2d.png?raw=true
 
 
 .. code-block:: ipython3
@@ -749,8 +740,7 @@ second of simulation, but this time in 2D:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_contact_force.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_contact_force.png?raw=true
 
 
 From the contact force time series, we can observe that:
@@ -787,8 +777,7 @@ Next, we will inspect the fly’s orientation and position:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/heading_and_trajectory.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/heading_and_trajectory.png?raw=true
 
 
 Recall the algorithm that we have proposed. To train the models, we need
@@ -1079,8 +1068,7 @@ if these are qualitatively good predictors:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/pathint_predictors_and_target.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_predictors_and_target.png?raw=true
 
 
 We observe that the inputs (blue, orange, and green lines) indeed seem
@@ -1379,7 +1367,7 @@ and forward displacement on this test dataset.
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_diff.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_diff.png?raw=true
    :width: 500
 
 
@@ -1435,7 +1423,7 @@ forward displacement:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_cumulative.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_cumulative.png?raw=true
    :width: 500
 
 Finally, we can plot the estimated and true trajectories of the fly:
@@ -1469,7 +1457,7 @@ Finally, we can plot the estimated and true trajectories of the fly:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_trajectory.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_trajectory.png?raw=true
    :width: 500
 
 
