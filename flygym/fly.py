@@ -67,6 +67,13 @@ class Fly:
         Stiffness of non-actuated joints.
     non_actuated_joint_damping : float
         Damping coefficient of non-actuated joints.
+    neck_stiffness : Union[float, None]
+        Stiffness of the neck joints (``joint_Head``, ``joint_Head_roll``,
+        and ``joint_Head_yaw``), by default 10.0. The head joints have
+        their stiffness set separately, typically to a higher value than
+        the other non-actuated joints, to ensure that the visual input is
+        not perturbed by unintended passive head movements. If set, this
+        value overrides ``non_actuated_joint_stiffness``.
     control: str
         The joint controller type. Can be "position", "velocity", or
         "motor".
@@ -164,6 +171,7 @@ class Fly:
         joint_damping: float = 0.06,
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
+        neck_stiffness: Union[float, None] = 10.0,
         actuator_gain: Union[float, List] = 45.0,
         actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
         tarsus_stiffness: float = 7.5,
@@ -255,6 +263,14 @@ class Fly:
             Damping coefficient of non-actuated joints, by default 1.0.
             Similar to ``non_actuated_joint_stiffness``, it is set
             explicitly here for better stability.
+        neck_stiffness : Union[float, None]
+            Stiffness of the neck joints (``joint_Head``,
+            ``joint_Head_roll``, and ``joint_Head_yaw``), by default 10.0.
+            The head joints have their stiffness set separately, typically
+            to a higher value than the other non-actuated joints, to ensure
+            that the visual input is not perturbed by unintended passive
+            head movements. If set, this value overrides
+            ``non_actuated_joint_stiffness``.
         actuator_gain : Union[float, List[float]]
             Gain of the actuator:
             If ``control`` is "position", it is the position gain of the
@@ -266,10 +282,11 @@ class Fly:
             the number of actuated joints and will be applied to every joint
         actuator_forcerange : Union[float, Tuple[float, float], List]
             The force limit of the actuators. If a single value is
-            provided, it will be symetrically applied to all actuators (-a, a).
-            If a tuple is provided, the first value is the lower limit and the second
-            value is the upper limit. If a list is provided, it should have the same
-            length as the number of actuators. By default 65.0.
+            provided, it will be symetrically applied to all actuators
+            (-a, a). If a tuple is provided, the first value is the lower
+            limit and the second value is the upper limit. If a list is
+            provided, it should have the same length as the number of
+            actuators. By default 65.0.
         tarsus_stiffness : float
             Stiffness of the passive, compliant tarsus joints, by default
             7.5.
@@ -355,6 +372,7 @@ class Fly:
         self.non_actuated_joint_damping = non_actuated_joint_damping
         self.tarsus_stiffness = tarsus_stiffness
         self.tarsus_damping = tarsus_damping
+        self.neck_stiffness = neck_stiffness
         self.friction = friction
         self.contact_solref = contact_solref
         self.contact_solimp = contact_solimp
@@ -656,6 +674,12 @@ class Fly:
             if joint.name in self.actuated_joints:
                 joint.stiffness = self.joint_stiffness
                 joint.damping = self.joint_damping
+            elif joint.name in ("joint_Head", "joint_Head_roll", "joint_Head_yaw"):
+                if self.neck_stiffness is not None:
+                    joint.stiffness = self.neck_stiffness
+                else:
+                    joint.stiffness = self.non_actuated_joint_stiffness
+                joint.damping = self.non_actuated_joint_damping
             else:
                 joint.stiffness = self.non_actuated_joint_stiffness
                 joint.damping = self.non_actuated_joint_damping
