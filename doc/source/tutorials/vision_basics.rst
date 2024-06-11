@@ -3,10 +3,10 @@ Vision basics
 
 **Author:** Sibo Wang-Chen
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
 **Summary:** In this tutorial, we will build a simple model to control
@@ -14,8 +14,8 @@ the fly to follow a moving sphere. By doing so, we will also demonstrate
 how one can create a custom arena.
 
 Animals typically navigate over rugged terrain to reach attractive
-objects (e.g. potential mates, food sources) and to avoid repulsive
-features (e.g. pheromones from predators) and obstacles. Animals use a
+objects (e.g. potential mates, food sources) and to avoid repulsive
+features (e.g. pheromones from predators) and obstacles. Animals use a
 hierarchical controller to achieve these goals: processing higher-order
 sensory signals, using them to select the next action, and translating
 these decisions into descending commands that drive lower-level motor
@@ -45,9 +45,7 @@ Users can substitute the green and blue channel values with the desired
 light intensities sensed by yellow- and pale-type ommatidia to achieve
 more biorealistic chromatic vision.
 
-
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision.png?raw=true
-   :width: 800
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision.png?raw=true
 
 
 In NeuroMechFly, the main interface to interact with the fly is the
@@ -61,26 +59,31 @@ and simulating the fly’s visual experience.
 
 To start, we do the necessary imports:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     import matplotlib.pyplot as plt
     import numpy as np
     from tqdm import trange
     from gymnasium.utils.env_checker import check_env
     
-    from flygym import Parameters
+    from flygym import Fly, Camera
     from flygym.arena import FlatTerrain
-    from flygym.examples.obstacle_arena import ObstacleOdorArena
-    from flygym.examples.turning_controller import HybridTurningNMF
+    from flygym.examples.vision import ObstacleOdorArena
+    from flygym.examples.locomotion import HybridTurningController
+
+
+.. code:: ipython3
+
+    from pathlib import Path
+    
+    Path("./outputs").mkdir(exist_ok=True)
 
 We have pre-implemented an ``ObstacleOdorArena`` class with visual
 obstacles and an odor source. The details of this class is beyond the
 scope of this tutorial, but you can refer to it on the `FlyGym github
 repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/obstacle_arena.py>`__:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     # We start by creating a simple arena
     flat_terrain_arena = FlatTerrain()
@@ -97,48 +100,43 @@ repository <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/obstac
 Let’s put the fly in it and simulate 500 timesteps so the fly can stand
 on the floor in a stable manner:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
-    sim_params = Parameters(
-        render_playspeed=0.2,
-        render_camera="user_cam",
+    
+    fly = Fly(
+        spawn_pos=(13, -5, 0.2),
+        spawn_orientation=(0, 0, np.pi / 2 + np.deg2rad(70)),
+        contact_sensor_placements=contact_sensor_placements,
         enable_vision=True,
         render_raw_vision=True,
         enable_olfaction=True,
     )
-    nmf = HybridTurningNMF(
-        sim_params=sim_params,
-        arena=arena,
-        spawn_pos=(13, -5, 0.2),
-        spawn_orientation=(0, 0, np.pi / 2 + np.deg2rad(70)),
-        contact_sensor_placements=contact_sensor_placements,
-    )
+    
+    cam = Camera(fly=fly, play_speed=0.2, camera_id="user_cam")
+    sim = HybridTurningController(fly=fly, cameras=[cam], arena=arena)
     
     for i in range(500):
-        obs, reward, terminated, truncated, info = nmf.step(np.zeros(2))
-        nmf.render()
+        obs, reward, terminated, truncated, info = sim.step(np.zeros(2))
+        sim.render()
     
     fig, ax = plt.subplots(figsize=(4, 3), tight_layout=True)
-    ax.imshow(nmf._frames[-1])
+    ax.imshow(cam._frames[-1])
     ax.axis("off")
-    fig.savefig("./outputs/vision_sim_env.png")
+    fig.savefig("./outputs/vision_basics/vision_sim_env.png")
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_env.png?raw=true
-   :width: 400
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim_env.png?raw=true
 
 
 We can access the intensities sensed by the fly’s ommatidia from the
 observation:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     print(obs["vision"])
     print("Shape:", obs["vision"].shape)
@@ -147,21 +145,21 @@ observation:
 
 .. parsed-literal::
 
-    [[[0.9913793  0.        ]
-      [1.         0.        ]
-      [1.         0.        ]
+    [[[0.9913793 0.       ]
+      [1.        0.       ]
+      [1.        0.       ]
       ...
-      [0.31609195 0.        ]
-      [0.29803923 0.        ]
-      [0.29803923 0.        ]]
+      [0.4       0.       ]
+      [0.4       0.       ]
+      [0.4       0.       ]]
     
-     [[0.9913793  0.        ]
-      [1.         0.        ]
-      [1.         0.        ]
+     [[0.9913793 0.       ]
+      [1.        0.       ]
+      [1.        0.       ]
       ...
-      [0.29803923 0.        ]
-      [0.3752228  0.        ]
-      [0.4        0.        ]]]
+      [0.4       0.       ]
+      [0.4       0.       ]
+      [0.4       0.       ]]]
     Shape: (2, 721, 2)
     Data type: float32
 
@@ -175,8 +173,7 @@ ommatidia, only one of the two numbers along the last dimension is
 nonzero. The yellow- and pale-type ommatidia are split at a 7:3 ratio.
 We can verify this below:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     nonzero_idx = np.nonzero(obs["vision"])
     unique_vals, val_counts = np.unique(nonzero_idx[2], return_counts=True)
@@ -195,19 +192,18 @@ But this is array representation is not good for visualization. We can
 use the ``hex_pxls_to_human_readable`` method of the retina to convert
 it into a normal [0, 256) 8-bit RGB image that can be plotted. We set
 ``color_8bit`` to True to process the 8-bit color representation more
-efficiently and return the output as an integer ranged from 0 to 255. We
-will further take the grayscale image (disregard yellow- vs pale-type
-ommatidia) by taking the maximum along the last dimension, i.e. that of
+efficiently and to return the output as an integer ranged from 0 to 255.
+We will further take the grayscale image (disregard yellow- vs pale-type
+ommatidia) by taking the maximum along the last dimension, i.e. that of
 color channels.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    vision_left = nmf.retina.hex_pxls_to_human_readable(
+    vision_left = fly.retina.hex_pxls_to_human_readable(
         obs["vision"][0, :, :], color_8bit=True
     )
     vision_left = vision_left.max(axis=-1)
-    vision_right = nmf.retina.hex_pxls_to_human_readable(
+    vision_right = fly.retina.hex_pxls_to_human_readable(
         obs["vision"][1, :, :], color_8bit=True
     )
     vision_right = vision_right.max(axis=-1)
@@ -219,20 +215,18 @@ color channels.
     axs[1].imshow(vision_right, cmap="gray", vmin=0, vmax=255)
     axs[1].axis("off")
     axs[1].set_title("Right eye")
-    fig.savefig("./outputs/vision_sim.png")
+    fig.savefig("./outputs/vision_basics/vision_sim.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim.png?raw=true
-   :width: 600
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim.png?raw=true
 
 
 Since ``render_raw_vision`` is set to True in the parameters, we can
 access the raw RGB vision through the ``info`` dictionary before pixels
 are binned into ommatidia:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     fig, axs = plt.subplots(1, 2, figsize=(6, 3), tight_layout=True)
     axs[0].imshow(info["raw_vision"][0, :, :, :].astype(np.uint8))
@@ -241,12 +235,12 @@ are binned into ommatidia:
     axs[1].imshow(info["raw_vision"][1, :, :, :].astype(np.uint8))
     axs[1].axis("off")
     axs[1].set_title("Right eye")
-    fig.savefig("./outputs/vision_sim_raw.png")
+    fig.savefig("./outputs/vision_basics/vision_sim_raw.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_sim_raw.png?raw=true
-   :width: 600
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim_raw.png?raw=true
+
 
 We observe that the ommatidia covering the blue and the green pillars
 seem to have a bimodal distribution in intensity. This is because the
@@ -304,7 +298,7 @@ We start by defining some attributes in its ``__init__`` method:
            move_direction: str = "right",
        ):
            super().__init__()
-       
+
            self.init_ball_pos = (*init_ball_pos, obj_radius)
            self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
            self.friction = friction
@@ -395,8 +389,8 @@ angles. This concludes the definition of our ``__init__`` method.
 
 Next, let’s define a ``get_spawn_position`` class. This is applies an
 offset to the user-defined fly spawn position. For example, if there is
-a stage in your arena that is 1 mm high, and you want to place the fly on
-this stage, then you might want to apply a transformation to the
+a stage in your arena that is 1 mm high, and you want to place the fly
+on this stage, then you might want to apply a transformation to the
 user-specified relative spawn position and return
 ``rel_pos + np.array([0, 0, 1])`` as the effective spawn position. In
 our case, we have a flat arena, so we will just return the spawn
@@ -432,8 +426,8 @@ Finally, let’s implement a ``reset`` method:
            self.ball_pos = np.array(self.init_ball_pos, dtype="float32")
            physics.bind(self.object_body).mocap_pos = self.ball_pos
 
-Simple visual feature preprocessing
------------------------------------
+Visual feature preprocessing
+----------------------------
 
 We will preprocess the visual feature by computing the x-y position of
 the object on the retina along with its size relative to the whole
@@ -449,8 +443,8 @@ Recall that in the ``HybridTurningController``, we implemented the
 purple arrow in the following figure, encapsulating the CPG network and
 the sensory feedback-based correction rules:
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
-   :width: 600
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+
 
 Here, we will build yet another layer on top of
 ``HybridTurningController``, implementing the aforementioned sensory
@@ -532,8 +526,8 @@ Finally, we implement the ``reset`` method:
            raw_obs, _ = super().reset(seed=seed)
            return self._process_visual_observation(raw_obs), {}
 
-Implementing a simple object tracking controller
-------------------------------------------------
+Implementing a object tracking controller
+-----------------------------------------
 
 Now that we have implemented the arena and the new Gym environment, we
 just need to define the actual controller logic that outputs the 2D
@@ -561,76 +555,78 @@ considered unseen from the eye.
 Before we implement this in the main simulation loop, let’s instantiate
 our arena and Gym environment:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     from flygym.examples.vision import MovingObjArena, VisualTaxis
     
-    obj_threshold = 0.15
-    decision_interval = 0.05
+    obj_threshold = 0.2
+    decision_interval = 0.025
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
     arena = MovingObjArena()
-    sim_params = Parameters(
-        render_camera="birdeye_cam",
-        render_playspeed=0.5,
-        render_window_size=(800, 608),
+    fly = Fly(
+        contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
         enable_vision=True,
     )
-    nmf = VisualTaxis(
+    cam = Camera(
+        fly=fly,
+        camera_id="birdeye_cam",
+        play_speed=0.5,
+        window_size=(800, 608),
+    )
+    sim = VisualTaxis(
+        fly=fly,
+        camera=cam,
         obj_threshold=obj_threshold,
         decision_interval=decision_interval,
-        sim_params=sim_params,
         arena=arena,
-        contact_sensor_placements=contact_sensor_placements,
+        intrinsic_freqs=np.ones(6) * 9,
     )
 
 As before, let’s check if this environment complies with the Gym
 interface. Despite a few warnings on design choices, no errors should be
 raised.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    check_env(nmf)
+    check_env(sim)
 
 
 .. parsed-literal::
 
-    /opt/homebrew/Caskroom/miniforge/base/envs/flygym0.2/lib/python3.11/site-packages/gymnasium/utils/env_checker.py:247: UserWarning: WARN: For Box action spaces, we recommend using a symmetric and normalized space (range=[-1, 1] or [0, 1]). See https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html for more information.
+    .../gymnasium/utils/env_checker.py:247: UserWarning: [33mWARN: For Box action spaces, we recommend using a symmetric and normalized space (range=[-1, 1] or [0, 1]). See https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html for more information.[0m
       logger.warn(
-    /opt/homebrew/Caskroom/miniforge/base/envs/flygym0.2/lib/python3.11/site-packages/gymnasium/utils/env_checker.py:125: UserWarning: WARN: The default seed argument in reset should be `None`, otherwise the environment will by default always be deterministic. Actual default: 0
+    .../gymnasium/utils/env_checker.py:125: UserWarning: [33mWARN: The default seed argument in reset should be `None`, otherwise the environment will by default always be deterministic. Actual default: 0[0m
       logger.warn(
-    /opt/homebrew/Caskroom/miniforge/base/envs/flygym0.2/lib/python3.11/site-packages/gymnasium/utils/passive_env_checker.py:175: UserWarning: WARN: The default seed argument in `Env.reset` should be `None`, otherwise the environment will by default always be deterministic. Actual default: seed=0
+    .../gymnasium/utils/passive_env_checker.py:175: UserWarning: [33mWARN: The default seed argument in `Env.reset` should be `None`, otherwise the environment will by default always be deterministic. Actual default: seed=0[0m
       logger.warn(
-    /opt/homebrew/Caskroom/miniforge/base/envs/flygym0.2/lib/python3.11/site-packages/gymnasium/utils/env_checker.py:321: UserWarning: WARN: Not able to test alternative render modes due to the environment not having a spec. Try instantialising the environment through gymnasium.make
+    .../gymnasium/utils/env_checker.py:321: UserWarning: [33mWARN: Not able to test alternative render modes due to the environment not having a spec. Try instantialising the environment through gymnasium.make[0m
       logger.warn(
 
 
 Now, we implement the main simulation loop:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     def calc_ipsilateral_speed(deviation, is_found):
         if not is_found:
             return 1.0
         else:
-            return np.clip(1 - deviation * 3, 0.2, 1.0)
+            return np.clip(1 - deviation * 3, 0.4, 1.2)
     
     
-    num_substeps = int(decision_interval / sim_params.timestep)
+    num_substeps = int(decision_interval / sim.timestep)
     
     obs_hist = []
     deviations_hist = []
     control_signal_hist = []
     
-    obs, _ = nmf.reset()
-    for i in trange(70):
+    obs, _ = sim.reset()
+    for i in trange(140):
         left_deviation = 1 - obs[1]
         right_deviation = obs[4]
         left_found = obs[2] > 0.01
@@ -646,7 +642,7 @@ Now, we implement the main simulation loop:
             ]
         )
     
-        obs, _, _, _, _ = nmf.step(control_signal)
+        obs, _, _, _, _ = sim.step(control_signal)
         obs_hist.append(obs)
         deviations_hist.append([left_deviation, right_deviation])
         control_signal_hist.append(control_signal)
@@ -654,40 +650,37 @@ Now, we implement the main simulation loop:
 
 .. parsed-literal::
 
-    100%|██████████| 70/70 [02:33<00:00,  2.19s/it]
+    100%|██████████| 140/140 [02:05<00:00,  1.11it/s]
 
 
 To inspect the recorded video:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    nmf.save_video("./outputs/object_following.mp4")
-
+    cam.save_video("./outputs/vision_basics/object_following.mp4")
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/object_following.mp4" controls="controls" style="max-width: 500px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/vision_basics/object_following.mp4" controls="controls" style="max-width: 400px;"></video>
+
 
 
 We can use the ``save_video_with_vision_insets`` utility function to
-regenerate this video, but with insets at the bottom illustrating the visual
-experience of the fly:
+regenerate this video, but with insets at the bottom illustrating the
+visual experience of the fly:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     from flygym.vision.visualize import save_video_with_vision_insets
     
     save_video_with_vision_insets(
-        nmf, "./outputs/object_following_with_retina_images.mp4", nmf.visual_inputs_hist
+        sim,
+        cam,
+        "./outputs/vision_basics/object_following_with_retina_images.mp4",
+        sim.visual_inputs_hist,
     )
-
-
-.. parsed-literal::
-
-    WARNING:imageio_ffmpeg:IMAGEIO FFMPEG_WRITER WARNING: input image is not divisible by macro_block_size=16, resizing from (800, 763) to (800, 768) to ensure video compatibility with most codecs and players. To prevent resizing, make your input image divisible by the macro_block_size or set the macro_block_size to 1 (risking incompatibility).
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/object_following_with_retina_images.mp4" controls="controls" style="max-width: 500px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/vision_basics/object_following_with_retina_images.mp4" controls="controls" style="max-width: 400px;"></video>
+
