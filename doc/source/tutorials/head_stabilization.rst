@@ -1003,7 +1003,7 @@ training, and a trainer object to orchestrate the training procedure:
     from lightning.pytorch.callbacks import ModelCheckpoint
     from shutil import rmtree
     
-    log_dir = Path("outputs/logs")
+    log_dir = Path(output_dir / "logs")
     if log_dir.is_dir():
         rmtree(log_dir)
     logger = CSVLogger(log_dir, name="demo_trial")

@@ -9,6 +9,9 @@ better structured implementation can be found in the `examples folder of
 the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+
 **Summary:** In this tutorial, we will build a simple model to control
 the fly to follow a moving sphere. By doing so, we will also demonstrate
 how one can create a custom arena.
