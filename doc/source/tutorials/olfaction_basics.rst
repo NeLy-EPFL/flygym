@@ -92,7 +92,10 @@ iterations to allow it to stand on the ground in a stable manner.
     import matplotlib.pyplot as plt
     from flygym import Fly, Camera
     from flygym.examples.locomotion import HybridTurningController
-    
+    from pathlib import Path
+
+    outputs_dir = Path("./outputs/olfaction_basics")
+    outputs_dir.mkdir(parents=True, exist_ok=True)
     
     contact_sensor_placements = [
         f"{leg}{segment}"
@@ -127,7 +130,7 @@ iterations to allow it to stand on the ground in a stable manner.
     fig, ax = plt.subplots(1, 1, figsize=(5, 4), tight_layout=True)
     ax.imshow(cam._frames[-1])
     ax.axis("off")
-    fig.savefig("./outputs/olfaction_basics/olfaction_env.png")
+    fig.savefig(outputs_dir / "olfaction_env.png")
 
 
 
@@ -284,7 +287,7 @@ We can visualize the fly trajectory:
     ax.set_xlabel("x (mm)")
     ax.set_ylabel("y (mm)")
     ax.legend(ncols=3, loc="lower center", bbox_to_anchor=(0.5, -0.6))
-    fig.savefig("./outputs/olfaction_basics/odor_taxis_trajectory.png")
+    fig.savefig(outputs_dir / "odor_taxis_trajectory.png")
 
 
 
@@ -295,7 +298,7 @@ We can also generate the video:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/olfaction_basics/odor_taxis.mp4")
+    cam.save_video(outputs_dir / "odor_taxis.mp4")
 
 
 .. raw:: html

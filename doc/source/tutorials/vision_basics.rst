@@ -76,7 +76,8 @@ To start, we do the necessary imports:
 
     from pathlib import Path
     
-    Path("./outputs").mkdir(exist_ok=True)
+    output_dir = Path("./outputs/vision_basics")
+    output_dir.mkdir(exist_ok=True, parents=True)
 
 We have pre-implemented an ``ObstacleOdorArena`` class with visual
 obstacles and an odor source. The details of this class is beyond the
@@ -127,7 +128,7 @@ on the floor in a stable manner:
     fig, ax = plt.subplots(figsize=(4, 3), tight_layout=True)
     ax.imshow(cam._frames[-1])
     ax.axis("off")
-    fig.savefig("./outputs/vision_basics/vision_sim_env.png")
+    fig.savefig(output_dir / "vision_sim_env.png")
 
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim_env.png?raw=true
@@ -215,7 +216,7 @@ color channels.
     axs[1].imshow(vision_right, cmap="gray", vmin=0, vmax=255)
     axs[1].axis("off")
     axs[1].set_title("Right eye")
-    fig.savefig("./outputs/vision_basics/vision_sim.png")
+    fig.savefig(output_dir / "vision_sim.png")
 
 
 
@@ -235,7 +236,7 @@ are binned into ommatidia:
     axs[1].imshow(info["raw_vision"][1, :, :, :].astype(np.uint8))
     axs[1].axis("off")
     axs[1].set_title("Right eye")
-    fig.savefig("./outputs/vision_basics/vision_sim_raw.png")
+    fig.savefig(output_dir / "vision_sim_raw.png")
 
 
 
@@ -657,7 +658,7 @@ To inspect the recorded video:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/vision_basics/object_following.mp4")
+    cam.save_video(output_dir / "object_following.mp4")
 
 .. raw:: html
 
@@ -676,7 +677,7 @@ visual experience of the fly:
     save_video_with_vision_insets(
         sim,
         cam,
-        "./outputs/vision_basics/object_following_with_retina_images.mp4",
+        output_dir / "object_following_with_retina_images.mp4",
         sim.visual_inputs_hist,
     )
 

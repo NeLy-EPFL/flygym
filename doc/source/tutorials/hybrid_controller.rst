@@ -72,7 +72,10 @@ fly looks while walking over these different terrain types:
     from tqdm import tqdm, trange
     from flygym import Fly, Camera, SingleFlySimulation
     from flygym.examples.locomotion import PreprogrammedSteps
-    
+    from pathlib import Path
+
+    output_dir = Path("./outputs/hybrid_controller")
+    output_dir.mkdir(exist_ok=True, parents=True)
     
     preprogrammed_steps = PreprogrammedSteps()  # we will use the neutral pose from this
     
@@ -108,7 +111,7 @@ fly looks while walking over these different terrain types:
         ax.axis("off")
         ax.set_title(f"{terrain_type.title()} terrain")
     
-    fig.savefig("./outputs/hybrid_controller/complex_terrain_overview.png")
+    fig.savefig(output_dir / "complex_terrain_overview.png")
 
 
 .. parsed-literal::
@@ -208,7 +211,7 @@ on each of the different terrain types:
             x_pos = sim.get_observation()["fly"][0, 0]
             print(f"Final x position: {x_pos:.4f} mm")
     
-            cam.save_video(f"./outputs/{controller_name}_{terrain_name}.mp4")
+            cam.save_video(output_dir / f"{controller_name}_{terrain_name}.mp4")
 
 
 .. parsed-literal::
@@ -450,7 +453,7 @@ behavior.
         ["0", r"$\pi$", r"$2\pi$", r"$3\pi$", r"$4\pi$"],
     )
     plt.title("Step phase dependent gain")
-    plt.savefig("outputs/step_phase_dependent_gain.png")
+    plt.savefig(output_dir / "step_phase_dependent_gain.png")
 
 
 
@@ -779,7 +782,7 @@ Let’s visualize the results:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/hybrid_controller/hybrid_controller_mixed_terrain.mp4")
+    cam.save_video(output_dir / "hybrid_controller_mixed_terrain.mp4")
 
 .. raw:: html
 
