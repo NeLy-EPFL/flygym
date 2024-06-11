@@ -9,6 +9,9 @@ better structured implementation can be found in the `examples folder of
 the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+
 **Summary**: In this tutorial, we will illustrate how CPG- and
 rule-based controllers fail to produce robust locomotion over complex
 terrain. We will then build a combined CPG and sensory feedback-based

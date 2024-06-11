@@ -9,6 +9,9 @@ structured implementation can be found in the
 `examples folder of the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+
 **Summary:** In this tutorial, we will show how the position and heading
 of the animal can be estimated by integrating mechanosensory signals, a
 process known as path integration.

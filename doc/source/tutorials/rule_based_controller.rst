@@ -9,6 +9,9 @@ better structured implementation can be found in the `examples folder of
 the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+
 **Summary:** In this tutorial, we will show how locomotion can be
 achieved using local coordination rules in the absence of centralized
 mechanism like coupled CPGs.
