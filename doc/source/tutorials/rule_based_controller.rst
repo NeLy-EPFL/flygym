@@ -72,6 +72,10 @@ the CPGs tutorial:
 
     import numpy as np
     import matplotlib.pyplot as plt
+    from pathlib import Path
+    
+    output_dir = Path("./outputs/rule_based_controller")
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     preprogrammed_steps = PreprogrammedSteps()
     theta_ts = np.linspace(0, 3 * 2 * np.pi, 100)
@@ -111,7 +115,7 @@ the CPGs tutorial:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/rule_based_controller/preprogrammed_steps_class.png")
+    fig.savefig(output_dir / "preprogrammed_steps_class.png")
 
 
 
@@ -211,7 +215,7 @@ so let’s visualize them separately:
         ax.set_ylim(-0.3, 2.3)
         ax.invert_yaxis()
         ax.axis("on")
-    plt.savefig("./outputs/rule_based_controller/rules_graph.png")
+    plt.savefig(output_dir / "rules_graph.png")
 
 
 
@@ -517,7 +521,7 @@ phases and stepping likelihood scores over time:
     plot_time_series_multi_legs(score_hist_rule3, timestep=timestep, spacing=18, ax=ax)
     ax.set_title("Stepping scores (rule 3 contribution)")
     
-    fig.savefig("./outputs/rule_based_controller/rule_based_control_signals.png")
+    fig.savefig(output_dir / "rule_based_control_signals.png")
 
 
 
@@ -596,7 +600,7 @@ Let’s take a look at the result:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/rule_based_controller/rule_based_controller.mp4")
+    cam.save_video(output_dir / "rule_based_controller.mp4")
 
 
 .. raw:: html

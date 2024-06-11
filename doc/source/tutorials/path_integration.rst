@@ -462,8 +462,10 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
 .. code-block:: ipython3
 
     from pathlib import Path
+
+    output_dir = Path("outputs/path_integration/")
+    output_dir.mkdir(parents=True, exist_ok=True)
     
-    output_dir = Path("outputs/pathint_exporation/")
     run_simulation(
         seed=0, running_time=1.0, terrain_type="flat", gait="tripod", output_dir=output_dir
     )

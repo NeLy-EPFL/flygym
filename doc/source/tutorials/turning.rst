@@ -660,13 +660,18 @@ smaller one.
 
 .. code:: ipython3
 
+    from pathlib import Path
+
+    output_dir = Path("./outputs/turning_controller")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     t = np.arange(0, run_time, nmf.timestep)
     fig, ax = plt.subplots(1, 1, figsize=(4, 3), tight_layout=True)
     for ts in np.array(magnitude_hist).T:
         ax.plot(t, ts)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("CPG magnitude")
-    fig.savefig("./outputs/turning_controller/turning_cpg_magnitude.png")
+    fig.savefig(output_dir / "turning_cpg_magnitude.png")
 
 
 
@@ -677,7 +682,7 @@ Finally, let’s take a look at the video:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/turning_controller/hybrid_turning.mp4")
+    cam.save_video(output_dir / "hybrid_turning.mp4")
 
 
 .. raw:: html

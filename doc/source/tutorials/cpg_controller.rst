@@ -232,7 +232,8 @@ amplitudes.
     from pathlib import Path
     import matplotlib.pyplot as plt
     
-    Path("./outputs").mkdir(exist_ok=True)
+    output_dir = Path("./outputs/cpg_controller")
+    output_dir.mkdir(exist_ok=True, parents=True)
     
     fig, axs = plt.subplots(2, 1, figsize=(5, 5), sharex=True)
     t = np.arange(num_steps) * network.timestep
@@ -243,7 +244,7 @@ amplitudes.
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
     axs[1].set_xlabel("Time (s)")
-    fig.savefig("./outputs/cpg_controller/simple_cpg_rollout.png")
+    fig.savefig(output_dir / "simple_cpg_rollout.png")
 
 
 
@@ -346,7 +347,7 @@ the time series of the state variables:
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
     axs[1].set_xlabel("Time (s)")
-    fig.savefig("./outputs/cpg_controller/tripod_cpg_rollout.png")
+    fig.savefig(output_dir / "tripod_cpg_rollout.png")
 
 
 
@@ -452,7 +453,7 @@ visualize three stepping cycles for each leg:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/cpg_controller/three_steps_phase_only.png")
+    fig.savefig(output_dir / "three_steps_phase_only.png")
 
 
 
@@ -503,7 +504,7 @@ from 0 to 1:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/cpg_controller/three_steps_amp_modulated.png")
+    fig.savefig(output_dir / "three_steps_amp_modulated.png")
 
 
 
@@ -608,7 +609,7 @@ Let’s run the simulation:
         obs, reward, terminated, truncated, info = sim.step(action)
         sim.render()
     
-    cam.save_video("./outputs/cpg_controller.mp4", 0)
+    cam.save_video(output_dir / "cpg_controller.mp4", 0)
 
 
 .. parsed-literal::
@@ -690,7 +691,7 @@ during stance):
     ax.set_xticklabels(["0", r"$\pi/2$", r"$\pi$", r"3$\pi$/2", r"$2\pi$"])
     ax.set_xlabel("Phase")
     ax.set_ylabel("Adhesion on/off")
-    fig.savefig("./outputs/cpg_controller/adhesion_signal.png")
+    fig.savefig(output_dir / "adhesion_signal.png")
 
 
 
@@ -739,7 +740,7 @@ parts of the code that have been changed are indicated with comments.
         obs, reward, terminated, truncated, info = sim.step(action)
         sim.render()
     
-    cam.save_video("./outputs/cpg_controller/cpg_controller_with_adhesion.mp4", 0)
+    cam.save_video(output_dir / "cpg_controller_with_adhesion.mp4", 0)
 
 
 .. parsed-literal::

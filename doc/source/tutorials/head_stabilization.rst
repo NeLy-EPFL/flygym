@@ -206,6 +206,7 @@ drive [1.0, 1.0] to walk straight:
 .. code:: ipython3
 
     output_dir = Path("outputs/head_stabilization/")
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     run_simulation(
         gait="tripod",

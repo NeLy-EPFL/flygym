@@ -185,8 +185,9 @@ We can visualize the time series of DoF angles:
         if leg == "Right front leg":
             ax.legend(bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0)
     
-    Path("outputs/").mkdir(exist_ok=True)
-    fig.savefig("outputs/gym_basics/kin_replay_joint_dof_time_series.png")
+    output_dir = Path("outputs/gym_basics/")
+    output_dir.mkdir(exist_ok=True, parents=True)
+    fig.savefig(output_dir / "kin_replay_joint_dof_time_series.png")
 
 
 
@@ -222,7 +223,7 @@ To save the rendered video:
 
 .. code:: ipython3
 
-    cam.save_video("./outputs/gym_basics/kinematic_replay.mp4")
+    cam.save_video(output_dir / "kinematic_replay.mp4")
 
 
 .. raw:: html
