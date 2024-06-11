@@ -3,10 +3,10 @@ Controlling locomotion with CPGs
 
 **Authors:** Sibo Wang-Chen, Femke Hurtak
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
 **Summary:** In this tutorial, we will introduce the concept of Central
@@ -14,16 +14,17 @@ Pattern Generators (CPGs) and build a CPG-based model to control walking
 of the simulated fly.
 
 Central Pattern Generators (CPGs) are neural circuits that generate
-rhythmic output without receiving rhythmic input (see review of CPGs in insects by
-`Mantziaris et al, 2020 <https://doi.org/10.1002/dneu.22738>`__). CPGs
-have been identified in various species as playing a crucial role in
-locomotion. Their principles have also been adopted in the
-realm of robotic motor control (see review by `Ijspeert,
+rhythmic output without receiving rhythmic input (see review of CPGs in
+insects by `Mantziaris et al,
+2020 <https://doi.org/10.1002/dneu.22738>`__). CPGs have been identified
+in various species as playing a crucial role in locomotion. Their
+principles have also been adopted in the realm of robotic motor control
+(see review by `Ijspeert,
 2008 <https://doi.org/10.1016/j.neunet.2008.03.014>`__). It is
 hypothesized that CPGs play a more important role in animals whose
-locomotion is fast and therefore cannot process decentralized 
-limb sensory signals in time to adjust their movements (i.e.,
-like cockroaches running at ~1 m/s!).
+locomotion is fast and therefore cannot process decentralized limb
+sensory signals in time to adjust their movements (i.e., like
+cockroaches running at ~1 m/s!).
 
 In this tutorial, we will start by implementing an oscillator network.
 Then, we will use this network to control the stepping of the legs by
@@ -54,15 +55,14 @@ weight between the i-th and the j-th oscillator, and :math:`\phi_{ij}`
 is the phase bias between them. Intuitively, the first term of the first
 equation maintains an intrinsic frequency for each oscillator; the
 second term of the first equation keeps the oscillators synchronized
-(i.e. maintains the phase differences between the oscillators), and the
+(i.e., maintains the phase differences between the oscillators), and the
 second equation maintains the amplitudes of the oscillators.
 
 To start, let’s write a function that computes :math:`\dot\theta` and
 :math:`\dot r`. For explicitness, we will implement the CPG network
 using only Python and NumPy (no ``scipy.integrate``).
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     import numpy as np
     
@@ -81,12 +81,7 @@ Next, let’s implement the CPG as a class. We will use `Euler’s
 method <https://en.wikipedia.org/wiki/Euler_method>`__ to integrate the
 ODE, but you can use any higher-order methods or libraries.
 
-.. code-block:: ipython3
-    :linenos:
-
-    # Fix random seed for reproducibility
-    np.random.seed(0)
-
+.. code:: ipython3
 
     class CPGNetwork:
         def __init__(
@@ -99,9 +94,10 @@ ODE, but you can use any higher-order methods or libraries.
             convergence_coefs,
             init_phases=None,
             init_magnitudes=None,
+            seed=0,
         ) -> None:
             """Initialize a CPG network consisting of N oscillators.
-
+    
             Parameters
             ----------
             timestep : float
@@ -123,6 +119,9 @@ ODE, but you can use any higher-order methods or libraries.
             init_magnitudes : np.ndarray, optional
                 Initial magnitudes of the oscillators, shape (N,). The
                 magnitudes are randomly initialized if not provided.
+            seed : int, optional
+                The random seed to use for initializing the phases and
+                magnitudes.
             """
             self.timestep = timestep
             self.num_cpgs = intrinsic_freqs.size
@@ -131,9 +130,10 @@ ODE, but you can use any higher-order methods or libraries.
             self.coupling_weights = coupling_weights
             self.phase_biases = phase_biases
             self.convergence_coefs = convergence_coefs
-
+            self.random_state = np.random.RandomState(seed)
+    
             self.reset(init_phases, init_magnitudes)
-
+    
             # Check if the parameters have the right shape
             assert intrinsic_freqs.shape == (self.num_cpgs,)
             assert coupling_weights.shape == (self.num_cpgs, self.num_cpgs)
@@ -141,7 +141,7 @@ ODE, but you can use any higher-order methods or libraries.
             assert convergence_coefs.shape == (self.num_cpgs,)
             assert self.curr_phases.shape == (self.num_cpgs,)
             assert self.curr_magnitudes.shape == (self.num_cpgs,)
-
+    
         def step(self):
             """Integrate the ODEs using Euler's method."""
             dtheta_dt, dr_dt = calculate_ddt(
@@ -155,31 +155,32 @@ ODE, but you can use any higher-order methods or libraries.
             )
             self.curr_phases += dtheta_dt * self.timestep
             self.curr_magnitudes += dr_dt * self.timestep
-
+    
         def reset(self, init_phases=None, init_magnitudes=None):
+            """Reset the phases and magnitudes of the oscillators.
+            High magnitudes and unfortunate phases might cause physics error
+            """
             if init_phases is None:
-                self.curr_phases = np.random.random(self.num_cpgs) * 2 * np.pi
+                self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
             else:
                 self.curr_phases = init_phases
-
+    
             if init_magnitudes is None:
-                self.curr_magnitudes = np.random.random(self.num_cpgs) * self.intrinsic_amps
+                self.curr_magnitudes = np.zeros(self.num_cpgs)
             else:
                 self.curr_magnitudes = init_magnitudes
 
-To demonstrate this network, let’s simulate a network of three oscillators
-connected as follows:
+To demonstrate this network, let’s simulate a network of three
+oscillators connected as follows:
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg.png
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/simple_cpg.png?raw=true
 
 For the sake of illustration, let’s make them oscillate at an intrinsic
 frequency of 1 and intrinsic amplitudes of 1.0, 1.1, 1.2. They are
-coupled with a weight of 1 and phase differences of 120 degrees. We
-will initialize the phases and magnitudes randomly.
+coupled with a weight of 1 and phase differences of 120 degrees. We will
+initialize the phases and magnitudes randomly.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     intrinsic_freqs = np.ones(3)
     intrinsic_amps = np.array([1.0, 1.1, 1.2])
@@ -220,17 +221,18 @@ will initialize the phases and magnitudes randomly.
         phase_hist[i, :] = network.curr_phases
         magnitude_hist[i, :] = network.curr_magnitudes
 
-We can visualize the phases (wrapped to
-:math:`[0, 2\pi]`) and the magnitudes of the oscillators over time. We
-observe that, after a brief period of synchronization, the oscillators
-converge to a state where they oscillate 1/3 of a cycle apart at their
-intrinsic frequencies and amplitudes.
+We can visualize the phases (wrapped to :math:`[0, 2\pi]`) and the
+magnitudes of the oscillators over time. We observe that, after a brief
+period of synchronization, the oscillators converge to a state where
+they oscillate 1/3 of a cycle apart at their intrinsic frequencies and
+amplitudes.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
+    from pathlib import Path
     import matplotlib.pyplot as plt
     
+    Path("./outputs").mkdir(exist_ok=True)
     
     fig, axs = plt.subplots(2, 1, figsize=(5, 5), sharex=True)
     t = np.arange(num_steps) * network.timestep
@@ -241,12 +243,12 @@ intrinsic frequencies and amplitudes.
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
     axs[1].set_xlabel("Time (s)")
-    fig.savefig("./outputs/simple_cpg_rollout.png")
+    fig.savefig("./outputs/cpg_controller/simple_cpg_rollout.png")
 
 
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/simple_cpg_rollout.png
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/simple_cpg_rollout.png?raw=true
+
 
 We have now built a CPG network. In the next section, we address how the
 states of the CPGs can be used to drive locomotion.
@@ -256,51 +258,50 @@ Controlling leg stepping with CPGs
 
 The state variables :math:`\theta` and :math:`r` can be used to drive
 locomotion at various levels of abstraction. This is a design choice
-that the modeler should make depending on the scientific question being considered. 
-For example, in `Lobato-Rios et al
+that the modeler should make depending on the scientific question being
+considered. For example, in `Lobato-Rios et al
 (2022) <https://doi.org/10.1038/s41592-022-01466-7>`__, the CPG states
 are used to calculate motor neuron activity
 :math:`M_i = r_i (1 + \sin(\theta_i))`, which is in turn used to drive a
 muscle model. By contrast, `Ijspeert et al
 (2007) <https://doi.org/10.1126/science.1138353>`__ uses a more abstract
 control strategy — the CPG states directly control the target joint
-*position* (i.e. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
+*position* (i.e. angle) :math:`x_i = r_i (1 + \cos(\theta_i))`. This
 target position is then provided to a `proportional-derivative (PD)
 controller <https://www.matthewpeterkelly.com/tutorials/pdControl/index.html>`__
 which actuates the joint.
 
 Here, we will use an even higher-level control approach where each
-oscillator controls the stepping of an entire leg (as opposed to a joint).
-The phase of the CPG represents the phase of the step (i.e. how far into
-the step the leg is), while the magnitude of the CPG represents the
-magnitude of the step (i.e. how large the step is). We will use
+oscillator controls the stepping of an entire leg (as opposed to a
+joint). The phase of the CPG represents the phase of the step (i.e. how
+far into the step the leg is), while the magnitude of the CPG represents
+the magnitude of the step (i.e. how large the step is). We will use
 experimentally recorded data to execute the individual steps. In other
 words, we will extract the kinematics of a single step for each leg from
 experimental behavior recordings and modify its magnitude (modulated by
 :math:`r`) and speed (modulated by :math:`\theta`) so that the stepping
 of the six legs is coordinated by the CPG network.
 
-We will set the coupling parameters for locomotion using a “tripod gait”: at
-each point in time, the fore and hind legs on one side and the mid leg
-on the other side of the body are in stance, forming a stable tripod-shaped
-structure; the other three legs are in swing. This is illustrated in the
-figure below (left, figure adapted from `Emanuel et al,
-2020 <https://doi.org/10.3389/fphys.2020.00135>`__). The tripod gait can
-be implemented using a CPG network shown on the right. We observe that
-the legs that should *not* swing together are coupled with a phase
+We will set the coupling parameters for locomotion using a “tripod
+gait”: at each point in time, the fore and hind legs on one side and the
+mid leg on the other side of the body are in stance, forming a stable
+tripod-shaped structure; the other three legs are in swing. This is
+illustrated in the figure below (left, figure adapted from `Emanuel et
+al, 2020 <https://doi.org/10.3389/fphys.2020.00135>`__). The tripod gait
+can be implemented using a CPG network shown on the right. We observe
+that the legs that should *not* swing together are coupled with a phase
 difference of 180 degrees, ensuring that they are out of phase once the
 network is synchronized. We will use other parameters from the
 `NeuroMechFly v2
 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg.png
-   :width: 600
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/tripod_cpg.png?raw=true
 
 As before, we will set up the CPG network, run the simulation, and plot
 the time series of the state variables:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     intrinsic_freqs = np.ones(6) * 12
     intrinsic_amps = np.ones(6) * 1
@@ -345,23 +346,23 @@ the time series of the state variables:
     axs[1].plot(t, magnitude_hist, linewidth=1)
     axs[1].set_ylabel("Magnitude")
     axs[1].set_xlabel("Time (s)")
-    fig.savefig("./outputs/tripod_cpg_rollout.png")
+    fig.savefig("./outputs/cpg_controller/tripod_cpg_rollout.png")
 
 
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/tripod_cpg_rollout.png
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/tripod_cpg_rollout.png?raw=true
+
 
 Now, let’s load the behavior kinematics data:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     import pickle
     from flygym.util import get_data_path
     
-    
-    single_steps_path = get_data_path("flygym", "data") / "behavior/single_steps.pkl"
+    single_steps_path = (
+        get_data_path("flygym", "data") / "behavior/single_steps_untethered.pkl"
+    )
     with open(single_steps_path, "rb") as f:
         single_steps_data = pickle.load(f)
 
@@ -370,8 +371,7 @@ joint. We will check if they all have the same length. The steps should
 be periodic, so we will also check if the first and last angles in the
 time series are the same:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     preprogrammed_steps_length = len(single_steps_data["joint_LFCoxa"])
     preprogrammed_steps_timestep = single_steps_data["meta"]["timestep"]
@@ -387,7 +387,7 @@ time series are the same:
 
 .. parsed-literal::
 
-    Preprogrammed steps have a length of 1278 steps at dt=0.0001s.
+    Preprogrammed steps have a length of 45 steps at dt=0.003s.
 
 
 Now, for each leg :math:`i`, let’s build a function :math:`\Psi_i` such
@@ -397,8 +397,7 @@ that given the current stepping phase :math:`\theta_i` of the leg,
 this by interpolation and normalize :math:`\theta` to the range
 :math:`[0, 2\pi)`:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     from scipy.interpolate import CubicSpline
     
@@ -423,8 +422,7 @@ this by interpolation and normalize :math:`\theta` to the range
 We can then map the phase of the CPGs to the phase of the legs. Let’s
 visualize three stepping cycles for each leg:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     theta_ts = np.linspace(0, 3 * 2 * np.pi, 10000)
     
@@ -445,7 +443,7 @@ visualize three stepping cycles for each leg:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else rf"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -454,25 +452,24 @@ visualize three stepping cycles for each leg:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/three_steps_phase_only.png")
+    fig.savefig("./outputs/cpg_controller/three_steps_phase_only.png")
 
 
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_phase_only.png
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/three_steps_phase_only.png?raw=true
+
 
 We can also modulate the amplitude of the steps using the magnitude
 :math:`r` of the CPGs. To do this, we take the difference of the joint
 angles from the neutral positions and scale it by :math:`r`. The final
 joint positions are therefore :math:`\Psi_0 + r(\Psi - \Psi_0)`. We will
-use the beginnings of the preprogramed steps (right before the start of
+use the beginnings of the preprogrammed steps (right before the start of
 the swing) as the neutral positions.
 
 Let’s repeat the previous exercise, but gradually ramp up the amplitude
 from 0 to 1:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     theta_ts = np.linspace(0, 3 * 2 * np.pi, 10000)
     r_ts = np.linspace(0, 1, 10000)
@@ -497,7 +494,7 @@ from 0 to 1:
             if i_pos == 2:
                 ax.set_xlabel("Phase")
                 ax.set_xticks(np.pi * np.arange(7))
-                ax.set_xticklabels(["0" if x == 0 else fr"{x}$\pi$" for x in np.arange(7)])
+                ax.set_xticklabels(["0" if x == 0 else rf"{x}$\pi$" for x in np.arange(7)])
             if i_side == 0:
                 ax.set_ylabel(r"DoF angle ($\degree$)")
             ax.set_title(f"{leg} leg")
@@ -506,20 +503,24 @@ from 0 to 1:
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.8)
-    fig.savefig("./outputs/three_steps_amp_modulated.png")
+    fig.savefig("./outputs/cpg_controller/three_steps_amp_modulated.png")
 
 
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/three_steps_amp_modulated.png
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/three_steps_amp_modulated.png?raw=true
+
 
 We have now built the individual elements of the controller:
 
-- On the level of inter-leg coordination, the CPG network controls the phase :math:`\theta` of each leg of the magnitude :math:`r` of its steps.
-- On the level of per-leg kinematics, we find the corresponding joint states at the phase :math:`\theta` based on experimentally recorded data, scaled by the amplitude :math:`r`.
+-  On the level of inter-leg coordination, the CPG network controls the
+   phase :math:`\theta` of each leg of the magnitude :math:`r` of its
+   steps.
+-  On the level of per-leg kinematics, we find the corresponding joint
+   states at the phase :math:`\theta` based on experimentally recorded
+   data, scaled by the amplitude :math:`r`.
 
-In the next section, we will piece these components together and plug them
-into the physics simulation.
+In the next section, we will piece these components together and plug
+them into the physics simulation.
 
 Plugging the controller into the simulation
 -------------------------------------------
@@ -531,27 +532,19 @@ NeuroMechFly” <https://neuromechfly.org/tutorials/gym_basics_and_kinematic_rep
 
 We start by initializing the simulation:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
-    import flygym
-    import flygym.preprogrammed
+    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym.preprogrammed import all_leg_dofs
     
     run_time = 1
-    sim_params = flygym.Parameters(
-        timestep=1e-4, render_mode="saved", render_playspeed=0.1, draw_contacts=True
-    )
-    nmf = flygym.NeuroMechFly(
-        sim_params=sim_params,
-        init_pose="stretch",
-        actuated_joints=flygym.preprogrammed.all_leg_dofs,
-        control="position",
-    )
+    fly = Fly(init_pose="stretch", actuated_joints=all_leg_dofs, control="position")
+    cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False)
+    sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
 
 We will also initialize a CPG network:
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     intrinsic_freqs = np.ones(6) * 12
     intrinsic_amps = np.ones(6) * 1
@@ -566,7 +559,7 @@ We will also initialize a CPG network:
         ]
     )
     coupling_weights = (phase_biases > 0) * 10
-    convergence_coefs = np.ones(6) * 20
+    convergence_coefs = np.ones(6) * 1000
     
     cpg_network = CPGNetwork(
         timestep=1e-4,
@@ -575,96 +568,10 @@ We will also initialize a CPG network:
         coupling_weights=coupling_weights,
         phase_biases=phase_biases,
         convergence_coefs=convergence_coefs,
+        seed=1,
     )
 
-Let’s run the simulation:
-
-.. code-block:: ipython3
-    :linenos:
-
-    from tqdm import trange
-    
-    obs, info = nmf.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
-        cpg_network.step()
-        joints_angles = {}
-        for i, leg in enumerate(legs):
-            psi = psi_funcs[leg](cpg_network.curr_phases[i])
-            psi_0 = psi_funcs[leg](0)
-            adjusted_psi = psi_0 + cpg_network.curr_magnitudes[i] * (psi - psi_0)
-            for dof, angle in zip(dofs_per_leg, adjusted_psi):
-                joints_angles[f"joint_{leg}{dof}"] = angle
-        action = {"joints": np.array([joints_angles[dof] for dof in nmf.actuated_joints])}
-        obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
-    
-    nmf.save_video("./outputs/cpg_controller.mp4")
-
-
-.. parsed-literal::
-
-    100%|██████████| 10000/10000 [00:18<00:00, 534.28it/s]
-
-
-.. raw:: html
-
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller.mp4" controls="controls" style="max-width: 730px;"></video>
-
-
-
-Leg adhesion
-------------
-
-Insects, including flies, have evolved highly specialized adhesive
-structures to facilitate locomotion over complex 3D terrain. Substantial
-normal forces (10–100 times body weight) and frictional forces emerge
-from interactions between the adhesive pads and underlying substrates. These
-allow insects to navigate 3D terrain with ease. Because we cannot fully
-represent the physics underlying real, biological adhesion, we added a
-more abstract leg adhesion to our model by injecting an additional
-normal force to the pretarsus of each leg when it is in contact with a
-substrate. This adhesive force increases the normal force toward the
-object and the frictional force.
-
-Despite the huge forces generated by adhesive pads, insects can still
-lift their legs, seemingly with out effort. The mechanisms for lifting
-off are not well understood in *Drosophila*. Therefore, we abstracted
-the mechanisms used by other insects for lifting by turning adhesion
-forces on during stance and off during swing phases. In the preprogrammed
-stepping data, we have also indicated the start (in seconds) of the
-swing and stance periods:
-
-.. code-block:: ipython3
-    :linenos:
-
-    single_steps_data["swing_stance_time"]
-
-
-
-
-.. parsed-literal::
-
-    {'swing': {'RF': 0.0098,
-      'LF': 0.0098,
-      'RM': 0.0012000000000000001,
-      'LM': 0.0012000000000000001,
-      'RH': 0.0012000000000000001,
-      'LH': 0.0012000000000000001},
-     'stance': {'RF': 0.0408,
-      'LF': 0.0408,
-      'RM': 0.0318,
-      'LM': 0.0318,
-      'RH': 0.027200000000000002,
-      'LH': 0.027200000000000002}}
-
-
-
-Let’s write a function that, given the phases of the legs, return a
-boolean mask indicating whether adhesion should be on (during stance) or
-off (during swing):
-
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     swing_start = np.empty(6)
     swing_end = np.empty(6)
@@ -676,7 +583,91 @@ off (during swing):
     swing_end /= preprogrammed_steps_length * preprogrammed_steps_timestep
     swing_end *= 2 * np.pi
     
+    # have the rest phase in between the swing and stance phase (as the data starts with swing initiation)
+    psi_rest_phases = np.ones_like(swing_start)
+    for i, leg in enumerate(legs):
+        psi_rest_phases[i] = (swing_end[i] + 2 * np.pi) / 2
+
+Let’s run the simulation:
+
+.. code:: ipython3
+
+    from tqdm import trange
     
+    obs, info = sim.reset()
+    for _ in trange(int(run_time / sim.timestep)):
+        cpg_network.step()
+        joints_angles = {}
+        for i, leg in enumerate(legs):
+            psi = psi_funcs[leg](cpg_network.curr_phases[i])
+            psi_base = psi_funcs[leg](psi_rest_phases[i])
+            adjusted_psi = psi_base + (psi - psi_base) * cpg_network.curr_magnitudes[i]
+            for dof, angle in zip(dofs_per_leg, adjusted_psi):
+                joints_angles[f"joint_{leg}{dof}"] = angle
+        action = {"joints": np.array([joints_angles[dof] for dof in fly.actuated_joints])}
+        obs, reward, terminated, truncated, info = sim.step(action)
+        sim.render()
+    
+    cam.save_video("./outputs/cpg_controller.mp4", 0)
+
+
+.. parsed-literal::
+
+    100%|██████████| 10000/10000 [00:18<00:00, 549.74it/s]
+
+
+.. raw:: html
+
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller.mp4" controls="controls" style="max-width: 730px;"></video>
+
+
+Leg adhesion
+------------
+
+Insects, including flies, have evolved highly specialized adhesive
+structures to facilitate locomotion over complex 3D terrain. Substantial
+normal forces (10–100 times body weight) and frictional forces emerge
+from interactions between the adhesive pads and underlying substrates.
+These allow insects to navigate 3D terrain with ease. Because we cannot
+fully represent the physics underlying real, biological adhesion, we
+added a more abstract leg adhesion to our model by injecting an
+additional normal force to the pretarsus of each leg when it is in
+contact with a substrate. This adhesive force increases the normal force
+toward the object and the frictional force.
+
+Despite the huge forces generated by adhesive pads, insects can still
+lift their legs, seemingly with out effort. The mechanisms for lifting
+off are not well understood in *Drosophila*. Therefore, we abstracted
+the mechanisms used by other insects for lifting by turning adhesion
+forces on during stance and off during swing phases. In the
+preprogrammed stepping data, we have also indicated the start (in
+seconds) of the swing and stance periods:
+
+.. code:: ipython3
+
+    single_steps_data["swing_stance_time"]
+
+
+
+
+.. parsed-literal::
+
+    {'swing': {'RF': 0.0, 'RM': 0.0, 'RH': 0.0, 'LF': 0.0, 'LM': 0.0, 'LH': 0.0},
+     'stance': {'RF': 0.051000000000000004,
+      'RM': 0.048,
+      'RH': 0.042,
+      'LF': 0.051000000000000004,
+      'LM': 0.048,
+      'LH': 0.042}}
+
+
+
+Let’s write a function that, given the phases of the legs, return a
+boolean mask indicating whether adhesion should be on (during stance) or
+off (during swing):
+
+.. code:: ipython3
+
     def get_adhesion_onoff(theta):
         theta = theta % (2 * np.pi)
         return ~((theta > swing_start) & (theta < swing_end)).squeeze()
@@ -684,14 +675,13 @@ off (during swing):
 To illustrate this binary signal (low = off, during swing; high = on,
 during stance):
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     onoff_signal = np.zeros((6, phase_grid.size), dtype=bool)
     for i in range(phase_grid.size):
         onoff_signal[:, i] = get_adhesion_onoff(phase_grid[i])
     
-    fig, ax = plt.subplots(figsize=(4, 2))
+    fig, ax = plt.subplots(figsize=(4, 2), tight_layout=True)
     for i in range(6):
         ax.plot(phase_grid, onoff_signal[i, :] - i * 1.5)
     ax.set_yticks(-np.arange(6) * 1.5 + 0.5)
@@ -700,75 +690,75 @@ during stance):
     ax.set_xticklabels(["0", r"$\pi/2$", r"$\pi$", r"3$\pi$/2", r"$2\pi$"])
     ax.set_xlabel("Phase")
     ax.set_ylabel("Adhesion on/off")
-    fig.savefig("./outputs/adhesion_signal.png")
+    fig.savefig("./outputs/cpg_controller/adhesion_signal.png")
 
 
 
-.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/adhesion_signal.png
-   :width: 400
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/adhesion_signal.png?raw=true
+
 
 We can rerun the NeuroMechFly simulation with adhesion enabled. The
 parts of the code that have been changed are indicated with comments.
 
-.. code-block:: ipython3
-    :linenos:
+.. code:: ipython3
 
     run_time = 1
-    sim_params = flygym.Parameters(
-        timestep=1e-4,
-        render_mode="saved",
-        render_playspeed=0.1,
-        enable_adhesion=True,  # THIS HAS CHANGED
-        draw_adhesion=True,  # THIS HAS CHANGED (tarsus color indicates adhesion on/off)
-    )
-    nmf = flygym.NeuroMechFly(
-        sim_params=sim_params,
+    
+    fly = Fly(
         init_pose="stretch",
-        actuated_joints=flygym.preprogrammed.all_leg_dofs,
+        actuated_joints=all_leg_dofs,
         control="position",
+        enable_adhesion=True,
+        draw_adhesion=True,
     )
+    cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False)
+    sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
     
     cpg_network.reset()
     
-    obs, info = nmf.reset()
-    for i in trange(int(run_time / sim_params.timestep)):
+    ang = []
+    
+    obs, info = sim.reset()
+    for _ in trange(int(run_time / sim.timestep)):
         cpg_network.step()
         joints_angles = {}
         for i, leg in enumerate(legs):
             psi = psi_funcs[leg](cpg_network.curr_phases[i])
-            psi_0 = psi_funcs[leg](0)
-            adjusted_psi = psi_0 + cpg_network.curr_magnitudes[i] * (psi - psi_0)
+            psi_base = psi_funcs[leg](psi_rest_phases[i])
+            adjusted_psi = psi_base + (psi - psi_base) * cpg_network.curr_magnitudes[i]
             for dof, angle in zip(dofs_per_leg, adjusted_psi):
                 joints_angles[f"joint_{leg}{dof}"] = angle
         adhesion_onoff = get_adhesion_onoff(cpg_network.curr_phases)
+        ang.append([joints_angles[dof] for dof in fly.actuated_joints])
         action = {
-            "joints": np.array([joints_angles[dof] for dof in nmf.actuated_joints]),
+            "joints": np.array([joints_angles[dof] for dof in fly.actuated_joints]),
             ##### THIS LINE IS NEW #####
             "adhesion": adhesion_onoff.astype(int),
             ############################
         }
-        obs, reward, terminated, truncated, info = nmf.step(action)
-        nmf.render()
+        obs, reward, terminated, truncated, info = sim.step(action)
+        sim.render()
     
-    nmf.save_video("./outputs/cpg_controller_with_adhesion.mp4")
+    cam.save_video("./outputs/cpg_controller/cpg_controller_with_adhesion.mp4", 0)
 
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:38<00:00, 260.59it/s]
+    100%|██████████| 10000/10000 [00:26<00:00, 384.60it/s]
 
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller_with_adhesion.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/cpg_controller/cpg_controller_with_adhesion.mp4" controls="controls" style="max-width: 730px;"></video>
 
 
-In summary, in this tutorial we have (1) implemented a Python class for CPG networks, (2)
-used it to modulate the stepping of legs using experimentally recorded
-data, (3) plugged this controller into the NeuroMechFly embodiment, and
-(4) added leg adhesion to the simulation. Note that the controller we
-built here is feedforward — that is, mechanosensory feedback is not used
-by the controller (except the position feedback in the PD controller for
-individual joints). In the next tutorial, we will build a rule-based
-controller where leg coordination is accomplished using sensory feedback in a
-more distributed manner.
+In summary, in this tutorial we have (1) implemented a Python class for
+CPG networks, (2) used it to modulate the stepping of legs using
+experimentally recorded data, (3) plugged this controller into the
+NeuroMechFly embodiment, and (4) added leg adhesion to the simulation.
+Note that the controller we built here is feedforward — that is,
+mechanosensory feedback is not used by the controller (except the
+position feedback in the PD controller for individual joints). In the
+next tutorial, we will build a rule-based controller where leg
+coordination is accomplished using sensory feedback in a more
+distributed manner.
