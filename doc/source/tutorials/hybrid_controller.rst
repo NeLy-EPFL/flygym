@@ -657,7 +657,7 @@ components:
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
     
-            # apply phase dependant gain
+            # apply phase dependent gain
             net_correction *= step_phase_gain[leg](cpg_network.curr_phases[i] % (2 * np.pi))
     
             my_joints_angles += net_correction * correction_vectors[leg[1]]
@@ -806,7 +806,7 @@ protraction if during swing or stance phase
 
 .. code:: python
 
-           # apply phase dependant gain
+           # apply phase dependent gain
            net_correction *= step_phase_gain[leg](cpg_network.curr_phases[i] % (2*np.pi))
 
 Finally, we can get the adhesion on/off signal based on the leg phase as
