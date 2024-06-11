@@ -14,6 +14,14 @@ class RealisticVisionFly(HybridTurningFly):
     of visual system neurons.
 
     .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisioncontroller>`__
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(self, vision_network_dir=None, *args, **kwargs):
@@ -41,8 +49,9 @@ class RealisticVisionFly(HybridTurningFly):
         activities of the visual system neurons as a
         ``flyvision.LayerActivity`` object, and the ``nn_activities_arr``
         key in the observation dictionary, which contains the activities
-        of the visual system neurons as a numpy array of shape
-        TODO.
+        of the visual system neurons, represented as a numpy array of shape
+        (2, num_cells_per_eye). The 0th dimension corresponds to the eyes
+        in the order (left, right).
         """
 
         obs, reward, terminated, truncated, info = super().post_step(sim)

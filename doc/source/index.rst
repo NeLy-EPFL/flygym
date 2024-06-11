@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Simulating embodied sensorimotor control with NeuroMechFly 2.0
-==============================================================
+Simulating embodied sensorimotor control with NeuroMechFly v2
+=============================================================
 
 
 .. toctree::
@@ -12,6 +12,7 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
    :hidden:
 
    neuromechfly
+   gallery/index
    installation
    tutorials/index
    api_ref/index
@@ -21,7 +22,7 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
 `Preprint <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ |
 `GitHub <https://github.com/NeLy-EPFL/flygym>`_
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
    :width: 400
    :alt: Overview video
 
@@ -31,11 +32,11 @@ Simulating embodied sensorimotor control with NeuroMechFly 2.0
    FlyGym is in beta. API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
 
 
-FlyGym is the Python library for NeuroMechFly 2.0, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly 2.0 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
+FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
 
 FlyGym consists of the following components:
 
-- **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our `original NeuroMechFly <https://doi.org/10.1038/s41592-022-01466-7>`_ publication). In NeuroMechFly 2.0 we have updated several body segments (in particular in the antennae) to better reflect the biological reality.
+- **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our `original NeuroMechFly <https://doi.org/10.1038/s41592-022-01466-7>`_ publication). In NeuroMechFly v2 we have updated several body segments (in particular in the antennae) to better reflect the biological reality.
 - **Vision:** The fly has compound eyes consisting of individual units called ommatidia. These are arranged on a hexagonal lattice. We have simulated visual inputs on the fly's retinae.
 - **Olfaction:** The fly has odor receptors in the antennae and maxillary palps. We have simulated olfactory signals experienced by the fly by computing odor/chemical intensities at the locations of the antennae and maxillary palps.
 - **Hierarchical control:** The fly's central nervous system (CNS) consists of the brain and the ventral nerve cord (VNC). This hierarchy is analogous to the brain-spinal cord organization of vertebrates. The user can build a two-part model --- one handling brain-level sensory integration and decision making as well as one handling VNC-level motor control --- with a interface between the two consisting of descending (brain-to-VNC) and ascending (VNC-to-brain) neuronal pathways.
@@ -44,7 +45,7 @@ FlyGym consists of the following components:
 
 FlyGym formulates the control of the simulated fly as a `partially observable Markov Decision Process (MDP) <https://en.wikipedia.org/wiki/Partially_observable_Markov_decision_process>`_ and implements the `Gym interface <https://gymnasium.farama.org/>`_. This allows the user to use a wide range of reinforcement learning (RL) algorithms to train the fly to perform tasks. The standardized interface also allows the user to easily implement their own premotor computation and/or sensory preprocessing.
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
    :width: 600
    :alt: MDP
 
@@ -71,7 +72,7 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
       journal = {Nature Methods}
    }
    
-   % NeuroMechFly 2.0: This library, MuJoCo version, leg adhesion, rule-based controller,
+   % NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller,
    % hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision,
    % olfaction, RL-based navigation, Gym environment, updated biomechanical model
    @article{WangChen2023,

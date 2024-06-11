@@ -1,6 +1,14 @@
 Interacting with NeuroMechFly
 =============================
 
+**Author:** Sibo Wang-Chen
+
+**Note:** The code presented in this notebook has been simplified for
+simplicity and restructured for display in a notebook format. A more
+complete and better structured implementation can be found on the
+`examples folder of the FlyGym repository on
+GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
 **Summary:** In this tutorial, we will introduce the basic concepts of
 interacting with the simulated fly in a Markov Decision Process using
 the Gym interface. As a demonstration, we will replay
@@ -86,77 +94,12 @@ networks).
 
 .. |image1| image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
 
-The action and observation spaces
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The **action** is a dictionary with the following keys and values:
+MDP specifications
+~~~~~~~~~~~~~~~~~~
 
--  **“joints”**: The control signal for the actuated DoFs (e.g. if
-   ``NeuroMechFly.control == "position"``, then this is the target joint
-   angle). This is a NumPy array of shape (\|actuated_joints\|,). The
-   order of the DoFs is the same as ``NeuroMechFly.actuated_joints``.
--  **“adhesion”** (if ``sim_params.enable_adhesion`` is True): The
-   on/off signal of leg adhesion as a NumPy array of shape (6,), one for
-   each leg. The order of the legs is: LF, LM, LH, RF, RM, RH (L/R =
-   left/right, F/M/H = front/middle/hind).
+Please refer to the `"MPD Task Specifications" page <https://neuromechfly.org/api_ref/mdp_specs.html#default-simulation>`_ of the API references for the detailed specifications of the action space, the observation space, the reward, the "terminated" and "truncated" flags, and the "info" dictionary.
 
-The **observation** is a dictionary with the following keys and values:
-
--  **“joints”**: The joint states as a NumPy array of shape (3,
-   \|actuated_joints\|). The three rows are the angle, angular velocity,
-   and force at each DoF. The order of the DoFs is the same as
-   ``NeuroMechFly.actuated_joints``
--  **“fly”**: The fly state as a NumPy array of shape (4, 3). 0th row:
-   x, y, z position of the fly in arena. 1st row: x, y, z velocity of
-   the fly in arena. 2nd row: orientation of fly around x, y, z axes.
-   3rd row: rate of change of fly orientation.
--  **“contact_forces”**: Readings of the touch contact sensors, one
-   placed for each of the body segments specified in
-   ``NeuroMechFly.contact_sensor_placements``. This is a NumPy array of
-   shape (\|contact_sensor_placements\|, 3)
--  **“end_effectors”**: The positions of the end effectors (most distal
-   tarsus link) of the legs as a NumPy array of shape (6, 3). The order
-   of the legs is: LF, LM, LH, RF, RM, RH (L/R = left/right, F/M/H =
-   front/middle/hind).
--  **“fly_orientation”**: NumPy array of shape (3,). This is the vector
-   (x, y, z) pointing toward the direction that the fly is facing.
--  **“vision”** (if ``sim_params.enable_vision`` is True): The light
-   intensities sensed by the ommatidia on the compound eyes. This is a
-   NumPy array of shape (2, num_ommatidia_per_eye, 2), where the zeroth
-   dimension is the side (left, right in that order); the second
-   dimension specifies the ommatidium, and the last column is for the
-   spectral channel (yellow-type, pale-type in that order). Each
-   ommatidium only has one channel with nonzero reading. The intensities
-   are given on a [0, 1] scale.
--  **“odor_intensity”** (if ``sim_params.enable_olfaction`` is True):
-   The odor intensities sensed by the odor sensors (by default 2
-   antennae and 2 maxillary palps). This is a NumPy array of shape
-   (odor_space_dimension, num_sensors).
-
-``terminated``, ``truncated``, and the ``info`` dictionary
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In the Gym API, the ``step()`` method returns a ``terminated`` flag
-indicating whether the simulation has ended due to a condition under the
-MDP formulation (e.g. task success/failure). The ``step()`` method also
-returns a ``truncated`` flag indicating whether the simulation has ended
-due to a condition outside the MDP formulation (e.g. timeout). The
-provided ``NeuroMechFly`` environment always returns False for both
-``terminated`` and ``truncated``. The user can modify this behavior by
-extending the ``NeuroMechFly`` class.
-
-Additionally, the ``step()`` method returns an ``info`` dictionary that
-contains arbitrary auxiliary information. The user can add any
-information to this dictionary by extending the ``NeuroMechFly`` class.
-The provided ``NeuroMechFly`` contains the following keys and values in
-the **``info`` dictionary**:
-
--  **“raw_vision”** (if ``sim_params.enable_vision`` and
-   ``sim_params.render_raw_vision`` are both True): The eye camera
-   rendering before it is transformed into ommatidia readings. This is a
-   NumPy array of shape (2, nrows, ncols, 3) where the zeroth dimension
-   is for the side (left, right in that order). The rest are the RGB
-   image.
 
 Example: Kinematic replay of experimentally recorded behavior
 -------------------------------------------------------------
