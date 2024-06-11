@@ -7,6 +7,7 @@ This section of the documentation provides the complete API reference for the Fl
 .. toctree::
    :maxdepth: 2
 
+   mdp_specs
    fly
    arena
    camera

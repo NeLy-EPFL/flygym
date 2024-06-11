@@ -46,6 +46,14 @@ class HybridTurningController(SingleFlySimulation):
     stumbling and retraction. The controller also receives a 2D descending
     input to modulate the amplitudes and frequencies of the CPGs to
     accomplish turning.
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#hybrid-turning-controller-hybridturningcontroller>`_
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(

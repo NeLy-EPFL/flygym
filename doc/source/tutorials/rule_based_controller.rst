@@ -1,6 +1,14 @@
 Rule-based controller
 =====================
 
+**Authors:** Victor Alfred Stimpfling, Sibo Wang-Chen
+
+**Note:** The code presented in this notebook has been simplified for
+simplicity and restructured for display in a notebook format. A more
+complete and better structured implementation can be found on the
+`examples folder of the FlyGym repository on
+GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
 **Summary:** In this tutorial, we will show how locomotion can be
 achieved using local coordination rules in the absence of centralized
 mechanisms like coupled CPGs.
@@ -36,7 +44,7 @@ three rules of Walknet, namely:
 These rules are summarized in this figure:
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based.png?raw=true
    :width: 400
 
 
@@ -114,7 +122,7 @@ the CPGs tutorial:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/preprogrammed_steps_class.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/preprogrammed_steps_class.png?raw=true
    :width: 700
 
 Implementing the rules
@@ -216,7 +224,7 @@ so let’s visualize them separately:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rules_graph.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rules_graph.png?raw=true
    :width: 700
 
 
@@ -278,7 +286,7 @@ you want to understand how property methods work in Python.
        def combined_scores(self):
            return self.rule1_scores + self.rule2_scores + self.rule3_scores
 
-As described in the NeuroMechFly 2.0 paper, the leg with the highest
+As described in the NeuroMechFly v2 paper, the leg with the highest
 positive score is stepped. If multiple legs are within a small margin of
 the highest score, we choose one of these legs at random to avoid bias
 from numerical artifacts. Let’s implement a method that selects the legs
@@ -535,7 +543,7 @@ phases and stepping likelihood scores over time:
 
 
 
-.. figure :: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_control_signals.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_control_signals.png?raw=true
    :width: 700
 
 

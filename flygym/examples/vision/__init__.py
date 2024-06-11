@@ -5,3 +5,4 @@ from .vision_network import (
     RetinaMapper,
 )
 from .realistic_vision import RealisticVisionFly
+from .simple_visual_taxis import VisualTaxis
