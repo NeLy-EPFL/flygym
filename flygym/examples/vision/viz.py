@@ -24,7 +24,7 @@ def visualize_vision(
     video_path: Path,
     retina: Retina,
     retina_mapper: RetinaMapper,
-    viz_data_all: Tuple[Dict[str, np.ndarray]],
+    viz_data_all: List[Dict[str, np.ndarray]],
     fps: int,
     figsize: Tuple[float, float] = (12, 9),
     dpi: int = 300,
