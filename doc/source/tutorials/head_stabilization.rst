@@ -1009,7 +1009,7 @@ training, and a trainer object to orchestrate the training procedure:
     logger = CSVLogger(log_dir, name="demo_trial")
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
-        dirpath="outputs/models/checkpoints",
+        dirpath=output_dir / "models/checkpoints",
         filename="%s-{epoch:02d}-{val_loss:.2f}",
         save_top_k=1,  # Save only the best checkpoint
         mode="min",  # `min` for minimizing the validation loss
