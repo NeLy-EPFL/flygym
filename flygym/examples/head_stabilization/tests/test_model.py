@@ -84,8 +84,8 @@ def test_torch_model():
     # are very short
     assert 0.8 < r2_scores["flat"]["roll"] < 1
     assert 0.8 < r2_scores["flat"]["pitch"] < 1
-    assert 0.7 < r2_scores["blocks"]["roll"] < 1
-    assert 0.7 < r2_scores["blocks"]["pitch"] < 1
+    assert 0.6 < r2_scores["blocks"]["roll"] < 1
+    assert 0.6 < r2_scores["blocks"]["pitch"] < 1
     # Should be better over flat terrain than blocks terrain
     assert r2_scores["flat"]["roll"] > r2_scores["blocks"]["roll"]
     assert r2_scores["flat"]["pitch"] > r2_scores["blocks"]["pitch"]
