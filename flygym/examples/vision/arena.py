@@ -10,8 +10,6 @@ class MovingObjArena(BaseArena):
 
     Attributes
     ----------
-    arena : mjcf.RootElement
-        The arena object that the terrain is built on.
     ball_pos : Tuple[float,float,float]
         The position of the floating object in the arena.
 

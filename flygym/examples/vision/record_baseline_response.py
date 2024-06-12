@@ -2,12 +2,12 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Fly, Camera
+from flygym import Camera, SingleFlySimulation
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision import RealisticVisionController, viz
+from flygym.examples.vision import RealisticVisionFly, viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
 
@@ -57,10 +57,9 @@ def run_simulation(
     run_time: float = 1.0,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
 ):
-    fly = Fly(
+    fly = RealisticVisionFly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
-        enable_vision=True,
         vision_refresh_rate=500,
         neck_kp=1000,
         head_stabilization_model=head_stabilization_model,
@@ -75,7 +74,7 @@ def run_simulation(
         play_speed_text=False,
     )
 
-    sim = RealisticVisionController(
+    sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],
         arena=arena,
@@ -87,7 +86,7 @@ def run_simulation(
     viz_data_all = []
 
     # Main simulation loop
-    for i in trange(int(run_time / sim.timestep)):
+    for _ in trange(int(run_time / sim.timestep)):
         try:
             obs, _, _, _, info = sim.step(action=np.array([1, 1]))
         except PhysicsError:
@@ -106,6 +105,7 @@ def run_simulation(
 
     return {
         "sim": sim,
+        "fly": fly,
         "obs_hist": obs_hist,
         "info_hist": info_hist,
         "viz_data_all": viz_data_all,
@@ -139,8 +139,8 @@ def process_trial(terrain_type: str, stabilization_on: bool):
     # Save visualization
     viz.visualize_vision(
         Path(output_dir / f"{variation_name}_vision_simulation.mp4"),
-        res["sim"].fly.retina,
-        res["sim"].retina_mapper,
+        res["fly"].retina,
+        res["fly"].retina_mapper,
         viz_data_all=res["viz_data_all"],
         fps=res["sim"].cameras[0].fps,
     )
@@ -154,8 +154,8 @@ def process_trial(terrain_type: str, stabilization_on: bool):
         response_mean = np.mean(response_all, axis=0)
         response_std = np.std(response_all, axis=0)
         response_stats[cell] = {
-            "mean": res["sim"].retina_mapper.flyvis_to_flygym(response_mean),
-            "std": res["sim"].retina_mapper.flyvis_to_flygym(response_std),
+            "mean": res["fly"].retina_mapper.flyvis_to_flygym(response_mean),
+            "std": res["fly"].retina_mapper.flyvis_to_flygym(response_std),
         }
     with open(output_dir / f"{variation_name}_response_stats.pkl", "wb") as f:
         pickle.dump(response_stats, f)
