@@ -3,35 +3,35 @@ Head stabilization
 
 **Author:** Sibo Wang-Chen
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
 **Summary:** In this tutorial, we will use mechanosensory information to
 correct for self motion in closed loop. We will train an internal model
 that predicts the appropriate neck actuation signals, based on leg joint
-angles and ground contacts, that minimize head rotation during walking.
+angles and ground contacts, to minimize head rotations during walking.
 
 Introduction
 ------------
 
 In the `previous
 tutorial <https://neuromechfly.org/tutorials/path_integration.html>`__,
-we have demonstrated how one can integrate ascending mechanosensory
+we demonstrated how one can integrate ascending mechanosensory
 information to estimate the fly’s position. In this tutorial, we will
-demonstrate another way in which the fly uses ascending information from
-the body to complete the sensorimotor control loop.
+demonstrate another way in which the fly uses ascending motor signals to
+complete the sensorimotor control loop.
 
 In flies, head stabilization has been shown to be used to compensate for
 body pitch and roll (`Kress & Egelhaaf,
-2012 <https://doi.org/10.1242/jeb.066910>`__). It is thought that these
-stabilizing movements may be derived using leg sensory feedback signals
-(`Gollin & Dürr,
+2012 <https://doi.org/10.1242/jeb.066910>`__) during locomotion. It is
+thought that these stabilizing movements may be informed by leg sensory
+feedback signals (`Gollin & Dürr,
 2018 <https://doi.org/10.1007/978-3-319-95972-6_20>`__). To explore head
 stabilization in our embodied model, we will design a controller in
-which leg joint angles (i.e., proprioceptive signals, 6 legs x 7 degrees
+which leg joint angles (i.e., proprioceptive signals, 6 legs × 7 degrees
 of freedom per leg) and ground contacts (i.e., tactile signals, 6 legs)
 are given as inputs to a multilayer perceptron (MLP). This model, in
 turn, predicts the appropriate head roll and pitch required to cancel
@@ -39,18 +39,18 @@ visual rotations caused by the animal’s own body movements during
 walking. We will use these signals to actuate the neck joint and aim to
 dampen head rotation. This approach is illustrated as follows:
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_schematic.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_schematic.png?raw=true
+
 
 Collecting training data
 ------------------------
 
-We start by running short walking simulations and recording joint
+We start by running short simulations of walking while recording joint
 angles, ground contacts, and head rotations. This will give us a set of
 input-output pairs to use as training data. To run the simulations, we
 implement the following function:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     import numpy as np
     import pickle
@@ -201,11 +201,12 @@ implement the following function:
                 pickle.dump(data, f)
 
 With this function, we will run a short simulation using the descending
-drive [1.0, 1.0] (walking straight):
+drive [1.0, 1.0] to walk straight:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     output_dir = Path("outputs/head_stabilization/")
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     run_simulation(
         gait="tripod",
@@ -222,12 +223,12 @@ drive [1.0, 1.0] (walking straight):
 
 .. parsed-literal::
 
-    100%|██████████| 5000/5000 [00:15<00:00, 323.87it/s]
+    100%|██████████| 5000/5000 [00:14<00:00, 338.80it/s]
 
 
 As a sanity check, we can plot the trajectory of the fly:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     import matplotlib.pyplot as plt
     
@@ -247,9 +248,7 @@ As a sanity check, we can plot the trajectory of the fly:
 
 
 
-
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png?raw=true
 
 
 We can also plot the time series of the variables that we are interested
@@ -257,7 +256,7 @@ in, namely:
 
 -  **Joint angles** of all leg degrees of freedom (DoFs), 7 real values
    per leg per step
--  **Leg contact** mask, 1 boolean value per leg per step
+-  **Leg contact** mask, 1 Boolean value per leg per step
 -  The appropriate neck **roll** needed to cancel out body rotation, 1
    real value per step
 -  The appropriate neck **pitch** needed to cancel out body rotation, 1
@@ -272,7 +271,7 @@ for the front legs, 1 mN for the middle legs, and 3 mN for the hind legs
 — as was the case in the path integration tutorial.
 
 To get the appropriate neck roll and pitch needed to cancel out body
-rotation, we will take the **quaternion** representing the thorax
+rotations, we will take the **quaternion** representing the thorax
 rotation, invert it, and convert it to **Euler angles**. Quaternions are
 a mathematical concept used to represent rotations in three dimensions.
 They avoid some of the pitfalls of other rotation representations, such
@@ -286,7 +285,7 @@ article <https://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions>`
 For simplicity of visualization, we will only plot the legs on the left
 side:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
@@ -400,7 +399,7 @@ side:
     
         fig.savefig(output_path)
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     visualize_trial_data(
         sim_data_flat["obs_hist"],
@@ -410,17 +409,16 @@ side:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png?raw=true
 
 
 We observe that, after about 0.1 seconds of transient response, we can
 indeed see the gait cycles from the input variables.
 
-If we run another simulation over rugged terrain, the body oscillation
-appears more dramatic:
+If we run another simulation over rugged terrain, the body oscillations
+appear more dramatic:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     run_simulation(
         gait="tripod",
@@ -437,10 +435,10 @@ appears more dramatic:
 
 .. parsed-literal::
 
-    100%|██████████| 5000/5000 [00:22<00:00, 226.43it/s]
+    100%|██████████| 5000/5000 [00:21<00:00, 235.63it/s]
 
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     with open(output_dir / "tripod_blocks_train_set_1.00_1.00/sim_data.pkl", "rb") as f:
         sim_data_blocks = pickle.load(f)
@@ -453,8 +451,7 @@ appears more dramatic:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png?raw=true
 
 
 Training an internal model to control neck actuation
@@ -489,7 +486,7 @@ initialized in one of two ways:
 This way, we can compute the mean and standard deviation from one trial
 and use the same parameters on all datasets.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     class JointAngleScaler:
         """
@@ -576,10 +573,11 @@ PyTorch models expect, so that the neural network can work with it. See
 Pytorch <https://pytorch.org/tutorials/beginner/data_loading_tutorial.html>`__
 for more details on the Dataset interface.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from torch.utils.data import Dataset
     from typing import Tuple, Optional, Callable
+    
     
     class WalkingDataset(Dataset):
         """
@@ -699,7 +697,7 @@ for more details on the Dataset interface.
 We can test the joint angle scaler and dataset classes using our trial
 simulation:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     joint_angles = np.array([obs["joints"][0, :] for obs in sim_data_flat["obs_hist"]])
     joint_scaler = JointAngleScaler.from_data(joint_angles)
@@ -715,7 +713,7 @@ Let’s plot the joint angles for the left front leg again, but using the
 dataset as an iterator instead of the output returned by
 ``run_simulation``:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     t_grid = np.arange(200, 200 + len(dataset)) * 1e-4
     joint_angles = np.array([entry["joint_angles"] for entry in dataset])
@@ -740,8 +738,7 @@ dataset as an iterator instead of the output returned by
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png?raw=true
 
 
 We observe that the joint angles now share a mean of 0 (black line) and
@@ -751,7 +748,7 @@ We can further use the PyTorch dataloader to fetch data in batches. This
 is useful for training the MLP in the next step. As an example, we can
 create a dataset that gives us a shuffled batch of 32 samples at a time:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from torch.utils.data import DataLoader
     
@@ -814,13 +811,16 @@ For more information on implementing a PyTorch Lightning module, see
 `this
 tutorial <https://lightning.ai/courses/deep-learning-fundamentals/overview-organizing-your-code-with-pytorch-lightning/5-2-training-a-multilayer-perceptron-using-the-lightning-trainer/>`__.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
     import lightning as pl
     from torchmetrics.regression import R2Score
+    
+    
+    pl.seed_everything(0, workers=True)
     
     
     class ThreeLayerMLP(pl.LightningModule):
@@ -884,6 +884,13 @@ tutorial <https://lightning.ai/courses/deep-learning-fundamentals/overview-organ
             self.log("val_r2_roll", r2_roll)
             self.log("val_r2_pitch", r2_pitch)
 
+
+.. parsed-literal::
+
+    INFO: Seed set to 0
+    INFO:lightning.fabric.utilities.seed:Seed set to 0
+
+
 Training the model
 ~~~~~~~~~~~~~~~~~~
 
@@ -896,13 +903,13 @@ exclude one simulation (wave gait, blocks terrain, test set, DN drives
 [0.58, 1.14]) because the fly flipped while walking. You can download
 this dataset by running the code block below.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     # TODO. We are working with our IT team to set up a gateway to share these data publicly
-    # in a secure manner. We aim to update this by the end of June. Please reach out to us
-    # by email in the meantime.
+    # in a secure manner. We aim to update this by the end of June, 2024. Please reach out
+    # to us by email in the meantime.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     simulation_data_dir = (
         Path.home() / "Data/flygym_demo_data/head_stabilization/random_exploration/"
@@ -924,7 +931,7 @@ this dataset by running the code block below.
 Let’s generate a ``WalkingDataset`` object (implemented above) for each
 training trial and concatenate them.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from torch.utils.data import ConcatDataset
     
@@ -956,8 +963,8 @@ training trial and concatenate them.
     Training dataset size: 4800
 
 
-The size is as expected: (3 gaits x 2 terrain types x 11 DN
-combinations) x (0.5 seconds of simulation / 0.0001 seconds per step –
+The size is as expected: (3 gaits × 2 terrain types × 11 DN
+combinations) × (0.5 seconds of simulation / 0.0001 seconds per step –
 200 transient steps excluded) = 976,800 samples in total.
 
 We will further divide the training set into the training set a
@@ -970,7 +977,7 @@ validation set at a ratio of 4:1:
    drives and is only used to report the final out-of-sample performance
    of the model.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from torch.utils.data import random_split
     
@@ -979,7 +986,7 @@ validation set at a ratio of 4:1:
 As demonstrated above, we will create dataloaders for the training and
 validation sets to load the data in batches:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from torch.utils.data import DataLoader
     
@@ -990,20 +997,19 @@ Finally, we will set up a logger to keep track of the training progress,
 a checkpoint callback that saves snapshots of model parameters while
 training, and a trainer object to orchestrate the training procedure:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from lightning.pytorch.loggers import CSVLogger
     from lightning.pytorch.callbacks import ModelCheckpoint
     from shutil import rmtree
     
-    pl.pytorch.seed_everything(0, workers=True)
-    log_dir = Path("outputs/logs")
+    log_dir = Path(output_dir / "logs")
     if log_dir.is_dir():
         rmtree(log_dir)
     logger = CSVLogger(log_dir, name="demo_trial")
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
-        dirpath="outputs/models/checkpoints",
+        dirpath=output_dir / "models/checkpoints",
         filename="%s-{epoch:02d}-{val_loss:.2f}",
         save_top_k=1,  # Save only the best checkpoint
         mode="min",  # `min` for minimizing the validation loss
@@ -1012,7 +1018,7 @@ training, and a trainer object to orchestrate the training procedure:
     trainer = pl.Trainer(
         logger=logger,
         callbacks=[checkpoint_callback],
-        max_epochs=20,
+        max_epochs=10,
         check_val_every_n_epoch=1,
         deterministic=True,
     )
@@ -1020,10 +1026,8 @@ training, and a trainer object to orchestrate the training procedure:
 
 .. parsed-literal::
 
-    INFO: Seed set to 0
-    INFO:lightning.fabric.utilities.seed:Seed set to 0
-    INFO: GPU available: True (cuda), used: True
-    INFO:lightning.pytorch.utilities.rank_zero:GPU available: True (cuda), used: True
+    INFO: GPU available: False, used: False
+    INFO:lightning.pytorch.utilities.rank_zero:GPU available: False, used: False
     INFO: TPU available: False, using: 0 TPU cores
     INFO:lightning.pytorch.utilities.rank_zero:TPU available: False, using: 0 TPU cores
     INFO: IPU available: False, using: 0 IPUs
@@ -1032,24 +1036,19 @@ training, and a trainer object to orchestrate the training procedure:
     INFO:lightning.pytorch.utilities.rank_zero:HPU available: False, using: 0 HPUs
 
 
-We are now ready to train the model. We will train the model for 20
+We are now ready to train the model. We will train the model for 10
 epochs. On a machine with a NVIDIA GeForce RTX 3080 Ti GPU (2021), this
-takes about 5 minutes.
+takes about 2 minutes.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     trainer.fit(model, train_loader, val_loader)
 
 
 .. parsed-literal::
 
-    INFO: You are using a CUDA device ('NVIDIA GeForce RTX 3080 Ti') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
-    INFO:lightning.pytorch.utilities.rank_zero:You are using a CUDA device ('NVIDIA GeForce RTX 3080 Ti') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
     WARNING: Missing logger folder: outputs/logs/demo_trial
     WARNING:lightning.fabric.loggers.csv_logs:Missing logger folder: outputs/logs/demo_trial
-    /home/sibwang/anaconda3/envs/flygym312/lib/python3.12/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:653: Checkpoint directory /home/sibwang/Projects/flygym/notebooks/outputs/models/checkpoints exists and is not empty.
-    INFO: LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-    INFO:lightning.pytorch.accelerators.cuda:LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
     INFO: 
       | Name     | Type    | Params
     -------------------------------------
@@ -1075,15 +1074,19 @@ takes about 5 minutes.
     2.7 K     Total params
     0.011     Total estimated model params size (MB)
 
-    INFO: `Trainer.fit` stopped: `max_epochs=20` reached.
-    INFO:lightning.pytorch.utilities.rank_zero:`Trainer.fit` stopped: `max_epochs=20` reached.
 
 
-Let’s inspect how the model’s performance on the training and validation
+.. parsed-literal::
+
+    INFO: `Trainer.fit` stopped: `max_epochs=10` reached.
+    INFO:lightning.pytorch.utilities.rank_zero:`Trainer.fit` stopped: `max_epochs=10` reached.
+
+
+Let’s inspect the model’s performance on the training and validation
 sets changed over time. On the validation set, we will plot the loss and
 :math:`R^2` scores at the end of each epoch.
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     import pandas as pd
     
@@ -1122,8 +1125,7 @@ sets changed over time. On the validation set, we will plot the loss and
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_training_metrics.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_training_metrics.png?raw=true
 
 
 Satisfied with the performance, we now proceed to evaluate the model on
@@ -1143,7 +1145,7 @@ not worth loading/unloading data to the GPU every step. Therefore, as a
 next step, we will write a wrapper that provides a minimal interface
 that simplifies making single-step predictions natively on the CPU:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     class HeadStabilizationInferenceWrapper:
         """
@@ -1215,7 +1217,7 @@ that simplifies making single-step predictions natively on the CPU:
 
 Let’s load the model from the saved checkpoint:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     model_wrapper = HeadStabilizationInferenceWrapper(
         model_path=checkpoint_callback.best_model_path,
@@ -1225,7 +1227,7 @@ Let’s load the model from the saved checkpoint:
 To deploy the head stabilization model in closed loop, we will write a
 ``run_simulation_closed_loop`` function:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     from flygym.arena import BaseArena
     from sklearn.metrics import r2_score
@@ -1291,7 +1293,6 @@ To deploy the head stabilization model in closed loop, we will write a
             )
             head_rotation_hist.append([head_roll, head_pitch])
     
-    
         # Generate performance stats on head stabilization
         if head_stabilization_model is not None:
             neck_actuation_true_hist = np.array(neck_actuation_true_hist)
@@ -1327,7 +1328,7 @@ simulation step, the ``Fly`` class runs the ``head_stabilization_model``
 and actuates the appropriate DoFs in addition to the user-specified
 actions. In code, this is implemented as follows:
 
-.. code-block:: python
+.. code:: python
 
    class Fly:
        def __init__(... head_stabilization_model ...):
@@ -1405,7 +1406,7 @@ actions. In code, this is implemented as follows:
 
 Now, we can run the simulation over flat and blocks terrain again:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     arena = FlatTerrain()
     sim_data_flat = run_simulation_closed_loop(
@@ -1420,11 +1421,11 @@ Now, we can run the simulation over flat and blocks terrain again:
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:17<00:00, 573.31it/s]
-    100%|██████████| 10000/10000 [00:34<00:00, 290.08it/s]
+    100%|██████████| 10000/10000 [00:16<00:00, 594.56it/s]
+    100%|██████████| 10000/10000 [00:33<00:00, 299.90it/s]
 
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     print(f"R² scores over flat terrain: {sim_data_flat['r2_scores']}")
     print(f"R² scores over blocks terrain: {sim_data_blocks['r2_scores']}")
@@ -1432,15 +1433,15 @@ Now, we can run the simulation over flat and blocks terrain again:
 
 .. parsed-literal::
 
-    R² scores over flat terrain: {'roll': 0.8032044764695979, 'pitch': 0.9550866779122005}
-    R² scores over blocks terrain: {'roll': 0.5294043708967275, 'pitch': 0.7244333725874619}
+    R² scores over flat terrain: {'roll': 0.8720892058987814, 'pitch': 0.9293070918490837}
+    R² scores over blocks terrain: {'roll': 0.5792754921973917, 'pitch': 0.7106359552091986}
 
 
 Based on these results, we can plot the time series of the
 model-predicted neck actuation signals and the ideal neck actuation
 signals:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     fig, axs = plt.subplots(2, 1, figsize=(6, 5), tight_layout=True, sharex=True)
     color_config = {
@@ -1475,14 +1476,13 @@ signals:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png?raw=true
 
 
 Similarly, we can plot the roll and pitch of the head compared to the
 thorax over time:
 
-.. code-block:: ipython3
+.. code:: ipython3
 
     fig, axs = plt.subplots(
         2, 2, figsize=(8, 5), tight_layout=True, sharex=True, sharey=True
@@ -1519,8 +1519,7 @@ thorax over time:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png?raw=true
 
 
 As expected, the rotation of the head has a lower magnitude than that of

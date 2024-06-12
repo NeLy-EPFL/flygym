@@ -312,6 +312,7 @@ def closed_loop_comparison_video(
             ):
                 if view in ["birdeye", "zoomin"]:
                     img = data[(stabilization_on, view)][frame_id]
+                    img = img.astype(np.float32) / 255
                 elif view == "neck_actuation":
                     # Update line data for pitch and yaw
                     frame_data = data[(stabilization_on, view)][frame_id]
@@ -340,9 +341,11 @@ def closed_loop_comparison_video(
                                 np.append(plot_elements[key].get_xdata(), t),
                                 np.append(plot_elements[key].get_ydata(), new_y_val),
                             )
-                else:
+                elif view == "raw_vision":
                     img = data[(stabilization_on, view)][frame_id][0, ...]
                     img[img == 0] = np.nan
+                else:
+                    raise ValueError(f"Unexpected view: {view}")
                 if not view == "neck_actuation":
                     plot_elements[(stabilization_on, view)].set_data(img)
         return list(plot_elements.values())

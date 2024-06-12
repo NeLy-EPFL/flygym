@@ -1,6 +1,19 @@
 Gallery
 =======
 
+.. toctree::
+   :hidden:
+
+   video_3_forces
+   video_4_climbing
+   video_8_controller_comparison
+   video_9_visual_taxis
+   video_10_odour_taxis
+   video_11_head_stabilization
+   video_12_multimodal_navigation
+   video_13_plume_navigation
+   video_14_fly_follow_fly
+
 NeuroMechFly can be used to emulate a wide range of behaviours and scenarios. Here are some examples of the experiments that can be conducted using Flygym.
 
 .. raw:: html

@@ -1,67 +1,72 @@
-Advanced olfaction: Navigating a complex plume
-==============================================
+Advanced olfaction: Navigating a complex odor plume
+===================================================
 
 **Author:** Victor Alfred Stimpfling
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
 
-**Summary**: In this tutorial, we simulate a complex plume, replay the
-plume in MuJoCo, and build a simple controller that can navigate it.
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+
+**Summary**: In this tutorial, we simulate a complex odor plume, replay
+the plume in MuJoCo, and build a simple controller to navigate it.
 
 We have shown, in `a previous
 tutorial <https://neuromechfly.org/tutorials/olfaction.html>`__, that
-our model is able to navigate a static odor field. In nature, static
-odor fields are rather rare. On the contrary, dynamic plumes (c.f.
+our model is able to navigate a static odor gradient. In nature, static
+odor gradients are rather rare. On the contrary, dynamic plumes (c.f.
 illustration from `Demir et al,
 2020 <https://doi.org/10.7554/eLife.57524>`__ below) with short
-intermittent bursts represent a more naturalistic setting. In such
-environments, the odor gradient carries only limited information
-regarding the position of the odor source. Consequently, navigating an
-odor plume requires the integration of multimodal sensory input (wind,
-odor). In this notebook, we will demonstrate how one can create a plume
-using `PhiFlow <https://tum-pbs.github.io/PhiFlow/>`__, a partial
-differential equations solver designed for machine learning, to solve
-the Navier-Stokes equations that determine the dynamics of our complex
-plume. We will also show how this plume dataset can be plugged into
-NeuroMechFly. Finally, we will design a very simple controller that can
-successfully navigate a complex plume based on the algorithm proposed in
-`Demir et al, 2020 <https://doi.org/10.7554/eLife.57524>`__.
+intermittent bursts are more common. In such environments, odor
+gradients carry only limited information regarding the position of odor
+source. Consequently, navigating an odor plume requires multimodal
+integration of both wind and odor. In this notebook, we will demonstrate
+how one can create an odor plume using
+`PhiFlow <https://tum-pbs.github.io/PhiFlow/>`__, a partial differential
+equations solver designed for machine learning that solves the
+Navier-Stokes equations to model the dynamics of a complex plume. We
+will also show how this plume dataset can be plugged into NeuroMechFly.
+Finally, we will design a very simple controller that can successfully
+navigate a complex plume based on the algorithm proposed in `Demir et
+al, 2020 <https://doi.org/10.7554/eLife.57524>`__.
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/demir_et_al_real_odour_plume.jpg?raw=true
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/demir_et_al_real_odour_plume.jpg?raw=true
    :width: 500
 
-Simulating a complex plume
---------------------------
+*Image from Demir et al, 2020.*
+
+
+Simulating a complex odor plume
+-------------------------------
 
 To demonstrate the flexibility of our framework, we will simulate an
-arbitrary plume resembling the ones presented in `Demir et
+arbitrary odor plume resembling those in `Demir et
 al. 2020 <https://doi.org/10.7554/eLife.57524>`__. Our plume is modelled
-as a distinct specie embedded in an incompressible fluid. This is
-analogous to, for example, food odor being embedded in air. As such, we
-simulate the plume by solving incompressible the Navier—Stokes equations
-in 2D. Our simulation is initialized with a constant velocity field,
-producing a right-bound “wind”. In addition to the wind, we add random
-perturbations following the Brownian motion, akin to wind bursts making
-the flow turbulent and the plume more complex.
+as a distinct substance embedded in an incompressible fluid. This is
+analogous to, for example, a food odor embedded in air. We simulate the
+plume by solving the Navier—Stokes equations in 2D. Our simulation is
+initialized with a constant velocity field, producing a right-bound
+“wind”. In addition to the wind, we inject random perturbations as
+external forces exerted on the smoke. The force vector moves in Brownian
+motion, akin to random wind bursts driving turbulent flow.
 
-Although we are simulating the plume in this tutorial, one can also plug
-in an experimentally recorded plume dataset.
+Although we are simulating the plume in this tutorial, one can also
+replay an experimentally recorded plume dataset.
 
-To work with the PhiFlow and generate your own plume, make sure you have
-installed PhiFlow. This should have been done already if you installed
-the “examples” optional dependency of flygym
-(``pip install "flygym[examples]"``).
+To generate your own plume, make sure you have installed PhiFlow. This
+should have been done already if you installed the “examples” optional
+dependency of flygym (``pip install "flygym[examples]"``).
 
 Let’s decide on a few hyperparameters defining our plume:
 
 -  The size of the arena
--  The scaling factor (i.e., spatial resolution) for the velocity and
+-  A scaling factor (i.e., spatial resolution) for the velocity and
    smoke grids
--  The position and the size of the inflow
+-  The position and size of the inflow
 
 .. code:: ipython3
 
@@ -86,6 +91,7 @@ Let’s decide on a few hyperparameters defining our plume:
     velocity_grid_size = 0.5
     smoke_grid_size = 0.25
     simulation_steps = int(simulation_time / dt)
+
 
 
 Next we define the dynamics of the plume in more detail. In particular,
@@ -187,16 +193,16 @@ the beginning of the simulation:
     plt.gcf().savefig(output_dir / "inflow_t0.png")
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_t0.png?raw=true
-   :width: 400
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_t0.png?raw=true
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_t0.png?raw=true
-   :width: 400
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_t0.png?raw=true
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_t0.png?raw=true
-   :width: 400
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_t0.png?raw=true
 
 
 Now we are ready to simulate the plume. For that we use the following
@@ -244,8 +250,8 @@ step function:
 
 For every time step, we let the smoke advect in the velocity field and
 add new smoke through the inflow. Then the velocity field (composed of
-the previous wind and the brownian external noise) is self advected to
-ge the next velocity field and finally the pressures are projected using
+the previous wind and Brownian external noise) is self advected to get
+the next velocity field and finally the pressures are projected using
 the make incompressible function. The step function will be repeated to
 unroll the full plume.
 
@@ -270,12 +276,12 @@ unroll the full plume.
 
 .. parsed-literal::
 
-    100%|██████████| 400/400 [00:36<00:00, 10.86it/s]
+    100%|██████████| 400/400 [00:35<00:00, 11.41it/s]
 
 
-As our time steps are much bigger than that of the NeuroMechFly physics
-simulation, we interpolate the smoke field. This is much faster than
-running the plume simulation with smaller time steps:
+Because our time steps are much larger than that of the NeuroMechFly
+physics simulation, we interpolate the smoke field. This is much faster
+than running the plume simulation with smaller time steps:
 
 .. code:: ipython3
 
@@ -303,22 +309,21 @@ at the end of the simulation:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_tf.png?raw=true
-   :width: 400
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_tf.png?raw=true
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_tf.png?raw=true
-   :width: 400
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_tf.png?raw=true
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_tf.png?raw=true
-   :width: 400
+
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_tf.png?raw=true
 
 
-Let’s save this plume dataset using HDF5. HDF5 is an efficient data
-format for saving arrays. Different from NumPy’s built-in formats (NPY
-or NPZ), HDF5 allows partial reads of the dataset. In other words, with
-NPZ:
+Let’s save this plume dataset in the HDF5 format. HDF5 is an efficient
+data format for saving arrays. Different from NumPy’s built-in formats
+(NPY or NPZ), HDF5 allows partial reads of the dataset. In other words,
+with NPZ:
 
 .. code:: python
 
@@ -331,7 +336,7 @@ NPZ:
 
 .. code:: python
 
-   h5file = h5py.File("/path/to/file.hdf5")  # this only loads the metadata, data stays on disk
+   h5file = h5py.File("/path/to/file.hdf5")  # this only loads the metadata; data stays on disk
    dataset = h5file["key"]  # HDF5 datasets are NumPy-array-like and can be accessed the same way
 
    for idx in my_iterator:
@@ -353,12 +358,12 @@ be found `here <https://docs.h5py.org/en/stable/quick.html>`__.
         f["inflow_radius"] = [inflow_radius]  # save as array with a single value
         f["inflow_scaler"] = [inflow_scaler]  # "
 
-Creating a plume arena
-----------------------
+Creating a plume within an arena
+--------------------------------
 
-The next step is to create an environment where the fly can navigate the
-plume. For sake of simplicity, the pre-recorded plume is simply replayed
-and does not physically interact with the fly.
+The next step is to create an environment in which the fly can navigate
+the plume. For the sake of simplicity, here the pre-recorded plume is
+simply replayed and does not physically interact with the fly.
 
 The ``OdorPlumeArena`` class implements all the necessary functions to
 obtain sensory input from the plume and resample the plume to the size
@@ -464,7 +469,7 @@ follows:
                    fovy=60,
                )
 
-Note that we have added bird’s eye camera for rendering.
+Note that we have added a bird’s eye camera for rendering.
 
 We will also implement a function that reads out the odor intensity for
 every sensor from the simulated smoke grid:
@@ -498,16 +503,16 @@ every sensor from the simulated smoke grid:
            return intensities * self.intensity_scale_factor
 
 Finally, we will implement a function to get the position mapping
-between the bird’s eye camera and indexes in the simulated plume grid.
-This will reveal very handy when wanting to project the simulated plume
-on the arena for proper rendering.
+between the bird’s eye camera and indices in the simulated plume grid.
+This will become very handy when we want to project the simulated plume
+onto the arena for proper rendering.
 
 .. code:: python
 
    def get_position_mapping(
            self, sim: Simulation, camera_id: str = "birdeye_cam"
        ) -> np.ndarray:
-           """Get the display location (row-col coordinates) of each pixel on
+           """Get the display location (row-col coordinates) of each pixel in
            the fluid dynamics simulation.
 
            Parameters
@@ -568,7 +573,7 @@ high plume FPS to make the simulation easier to run.
     )
 
 Now, we are ready to implement the main simulation loop. We will make
-the fly stand still for the sake of demonstration:
+the fly stand still for the sake of this demonstration:
 
 .. code:: ipython3
 
@@ -578,7 +583,7 @@ the fly stand still for the sake of demonstration:
     timestep = 1e-4
     run_time = 1.0
     
-    # Initialize fly simultion
+    # Initialize fly simulation
     fly = Fly(
         enable_olfaction=True,
         spawn_pos=(60.0, 30.0, 0.25),
@@ -606,11 +611,11 @@ the fly stand still for the sake of demonstration:
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:19<00:00, 506.91it/s]
+    100%|██████████| 10000/10000 [00:19<00:00, 503.42it/s]
 
 
 Let’s plot the time series of the odor intensities sensed by the fly’s
-odor sensing organs:
+olfactory sensory organs:
 
 .. code:: ipython3
 
@@ -629,8 +634,7 @@ odor sensing organs:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/odor_intensity_ts.png?raw=true
-   :width: 700
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/odor_intensity_ts.png?raw=true
 
 
 We can also generate a video of the simulation:
@@ -639,24 +643,23 @@ We can also generate a video of the simulation:
 
     cam.save_video(output_dir / "sim_static.mp4")
 
-
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/sim_static.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/sim_static.mp4" controls="controls" style="max-width: 400px;"></video>
 
 
 But we don’t see the plume here! This is because we are simply reading
 out the appropriate values from the pre-generated plume dataset. The
-odor is not actually added or visualize in any way in the NeuroMechFly
+odor is not actually added or visualized in any way in the NeuroMechFly
 physics simulation. In the next section, we will build another layer of
-abstraction that overlays the image of the plume on the rendered image
+abstraction that overlays the image of the plume onto the rendered image
 for visualization.
 
 Plume tracking task
 -------------------
 
 By now, we have implemented an odor plume arena that replays the
-simulated plume. The fly can walk in this arena and experience the
+simulated plume. The fly can walk in this arena and experience
 intermittent bursts of odor. We will now implement a wrapper for the
 plume tracking task. In this layer of abstraction, we will implement the
 following functionalities:
@@ -673,14 +676,14 @@ purpose.
 
 We start with the ``__init__`` method. Here, we use the
 ``get_position_mapping`` function that we have implemented for
-``OdorPlumeArena`` to find the following for each element in the smoke
+``OdorPlumeArena`` to find the following for each element in the odor
 simulation grid:
 
 1. The row-column position of it on the image rendered by the camera.
 2. The x-y position, in mm, of the physical spot where the center of
-   cell on the smoke grid is.
+   cell is on the smoke grid.
 
-Then, we will interpolate these point in 2D so that for every pixel
+Then, we will interpolate these points in 2D so that for every pixel
 displayed on the camera’s output, we know which cell it corresponds to
 on the plume grid and what the x-y coordinates are in the physical
 arena.
@@ -690,8 +693,8 @@ arena.
    class PlumeNavigationTask(HybridTurningController):
        """
        A wrapper around the ``HybridTurningController`` that implements logics
-       and utilities related to plume tracking such as overlaying the plume on
-       the rendered images. It also checks if the fly is within the plume
+       and utilities related to plume tracking such as overlaying the plume
+       onto the rendered images. It also checks if the fly is within the plume
        simulation grid and truncates the simulation accordingly.
        """
 
@@ -727,7 +730,7 @@ arena.
 
            # Find out where on the displayed images the plume simulation grid
            # should be overlaid. In other words, interpolate the mapping from
-           # displayed pixel position to simulated physical position.
+           # displayed pixel positions to simulated physical positions.
            pos_display_sample, pos_physical_sample = self.arena.get_position_mapping(
                self, camera_id="birdeye_cam"
            )
@@ -765,7 +768,7 @@ arena.
 
 To override the ``render`` method, we just need to get the plume image
 corresponding to the current time point and overlay it on top of the
-camera image. We also add a bar indicating the mean intensity at the
+camera image. We also add a bar indicating the mean intensity to the
 bottom image for better visualization.
 
 .. code:: python
@@ -832,11 +835,11 @@ These changes give us C-like performance in the render function.
                    plume_img[i, j] = plume_grid[y_idx, x_idx]
        return plume_img
 
-To truncate the simulation when the fly moves out of bound, we can
+To truncate the simulation when the fly moves out of bounds, we can
 simply set the ``truncate`` flag — returned by the ``step`` method of
 any Gymnasium environment — to ``True``. Recall that we have already
 implemented a logic in the ``OdorPlumeArena`` that returns NaN when the
-queried position is out of bound. Therefore,
+queried position is out of bounds. Therefore,
 
 .. code:: python
 
@@ -891,12 +894,13 @@ Let’s run a sample simulation where the fly walks blindly forward:
 
 .. parsed-literal::
 
-    100%|██████████| 10000/10000 [00:33<00:00, 299.54it/s]
+    100%|██████████| 10000/10000 [00:33<00:00, 298.85it/s]
 
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/plume_display.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/plume_display.mp4" controls="controls" style="max-width: 400px;"></video>
+
 
 
 Implementing a plume tracking controller
@@ -908,10 +912,10 @@ walks crosswind when little odor evidence is accumulated and upwind when
 encountering a lot of odor packets. The crosswind direction is random
 and biased by the encounter history during crosswind walks.
 
-It takes time for the first burst of plume to reach the fly. We will
-crop the first half of the plume simulation so that the plume reaches
-the fly immediately. This is merely to shorten the simulation in this
-tutorial and is optional.
+It takes time for the first plume burst to reach the fly. We will crop
+the first half of the plume simulation so that the plume reaches the fly
+immediately. This is merely to shorten the simulation in this tutorial
+and is optional.
 
 .. code:: ipython3
 
@@ -926,14 +930,14 @@ tutorial and is optional.
 
 We implement the plume navigation controller as follows. Our controller
 accumulates odor evidence during a fixed interval of time. The
-accumulated evidences increases with odor encounter and decreases
-linearly with time. From the accumulated evidence, we derive an angle to
-the wind direction. The more evidences are accumulated, the more upwind
-the fly heads while it heads more crosswind when no evidences are
-accumulated. When the target angle is defined, the descending drive is
-regularly updated to match the target angle. See `Demir et al,
-2020 <https://doi.org/10.7554/eLife.57524>`__ or our NeuroMechFly v2
-paper for more details.
+accumulated evidence increases with odor encounters and decreases with
+time. From accumulated evidence, we derive the angle of wind direction.
+The more evidence accumulated, the more likely it is that the fly will
+head upwind. It heads more randomly, i.e., more crosswind, when no
+evidence is accumulated. When the target angle is defined, the
+descending drive is regularly updated to match the target angle. See
+`Demir et al, 2020 <https://doi.org/10.7554/eLife.57524>`__ or our
+NeuroMechFly v2 paper for more details.
 
 .. code:: ipython3
 
@@ -955,7 +959,7 @@ paper for more details.
     
     
     # change an array to a set of probabilities (sum to 1)
-    # this is used to bias the crosswind walk
+    # this is used to bias crosswind walking
     def to_probability(x):
         # the difference between the two values reflects
         # the probability of each entry
@@ -964,7 +968,7 @@ paper for more details.
     
     
     class SimplePlumeNavigationController:
-        # defines a very simple controller to navigate the plume
+        # defines a very simple controller to navigate the odor plume
         def __init__(self, timestep, wind_dir=[-1.0, 0.0], seed=0):
             self.timestep = timestep
             self.wind_dir = wind_dir
@@ -994,7 +998,7 @@ paper for more details.
                 -1 * self.accumulation_decay * self.default_decision_interval / timestep
             )
     
-            # dn drive parameters
+            # descending neuron drive parameters
             self.dn_drive_update_inteval = 0.1  # s
             self.dn_drive_update_steps = int(self.dn_drive_update_inteval / self.timestep)
             self.dn_drive = self.dn_drives[WalkingState.STOP]
@@ -1025,13 +1029,13 @@ paper for more details.
             """
     
             up_wind_angle = get_vector_angle(self.wind_dir) - np.pi
-            # the angle to the wind is defined by the accumlated evidence:
-            #     -if little evidence, the fly will go crosswind (angle to upwind = np.pi/2)
-            #     -if a lot of evidence, the fly will go upwind (angle to upwind = 0)
+            # the angle to the wind is defined by the accumulated evidence:
+            #   - if little evidence, the fly will go crosswind (angle to upwind = np.pi/2)
+            #   - if a lots of evidence, the fly will go upwind (angle to upwind = 0)
             to_upwind_angle = np.tanh(self.accumulated_evidence) * np.pi / 4 - np.pi / 4
             crosswind_success_proba = to_probability(self.upwind_success)
     
-            # make random the sign of the angle depending on the history of success
+            # randomize the sign of the angle depending on the history of success
             to_upwind_angle = np.random.choice([-1, 1], p=crosswind_success_proba) * np.abs(
                 to_upwind_angle
             )
@@ -1047,8 +1051,8 @@ paper for more details.
     
         def angle_to_dn_drive(self, fly_orientation):
             """
-            Compare the fly orientation to the target angle and return the
-            dn drive that will make the fly go in the right direction
+            Compare the fly's orientation to the target angle and return the
+            descending drive that will make the fly go in the correct direction
     
             Parameters
             ----------
@@ -1058,7 +1062,7 @@ paper for more details.
             Returns
             -------
             dn_drive : np.array
-                The dn drive that will make the fly go in the right direction
+                The dn drive that will make the fly go in the correct direction
             """
     
             fly_angle = get_vector_angle(fly_orientation)
@@ -1080,18 +1084,18 @@ paper for more details.
         def step(self, fly_orientation, odor_intensities, close_to_boundary, curr_time):
             """
             Step the controller:
-                - Check if the fly is close to the boundary
-                - Accumulate evidence
-                - Update the target angle if:
-                    - the accumulated evidence is high
-                    - the decision interval is reached
-                    - the fly is close to the boundary
-                - Update the sucess history:
-                    - If crosswind: update the success history (increases if
-                      the fly collected evidence in that direction, decreases otherwise)
-                    - If close to boundary and the fly is not upwind: decrease the success history
-                - Update the dn drive
-                - Increment time and counters
+              - Check if the fly is close to the boundary
+              - Accumulate evidence
+              - Update the target angle if:
+                - the accumulated evidence is high
+                - the decision interval is reached
+                - the fly is close to the boundary
+              - Update the success history:
+                - If crosswind: update the success history (increases if
+                  the fly collected evidence in that direction, decreases otherwise)
+                - If close to boundary and the fly is not upwind: decrease success history
+              - Update the descending drive
+              - Increment time and counters
     
             Parameters
             ----------
@@ -1107,7 +1111,7 @@ paper for more details.
             Returns
             -------
             dn_drive : np.array
-                The dn drive that will make the fly go in the right direction
+                The dn drive that will make the fly go in the correct direction
             """
     
             if self.boundary_time > 0.0:
@@ -1122,14 +1126,13 @@ paper for more details.
                 or self.since_last_decision_time > self.default_decision_interval
                 or boundary_inv
             ):
-    
                 if self.accumulated_evidence > self.accumulation_threshold:
                     # reset the history and just take into account the last success
                     self.upwind_success = [0, 0]
     
                 if boundary_inv:
                     # if close to the boundary and not upwind
-                    # decrease the success history of the currect directions as it led the
+                    # decrease the success history of the correct directions as it led the
                     # fly to the boundary
                     if self.to_upwind_angle < np.deg2rad(-45):
                         self.upwind_success[0] -= 10
@@ -1232,7 +1235,7 @@ paper for more details.
         """
         Compute the xy locations of the inflow circle in the camera view
         """
-        # draw a circle arround the inflow position (get x y pos of
+        # draw a circle around the inflow position (get x y pos of
         # a few points on the circle)
         circle_x, circle_y = [], []
         for angle in np.linspace(0, 2 * np.pi + 0.01, num=50):
@@ -1426,11 +1429,12 @@ Now, let’s run this controller:
 
 .. parsed-literal::
 
-     76%|███████▌  | 76026/100000 [04:06<01:17, 308.97it/s]
+     76%|███████▌  | 76026/100000 [04:04<01:17, 310.69it/s]
 
 .. parsed-literal::
 
     The fly reached the inflow
+    
 
 
 .. code:: ipython3
@@ -1440,4 +1444,4 @@ Now, let’s run this controller:
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/plume_navigation_controller.mp4" controls="controls" style="max-width: 730px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/plume_tracking/plume_navigation_controller.mp4" controls="controls" style="max-width: 400px;"></video>

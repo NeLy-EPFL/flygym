@@ -118,6 +118,14 @@ class PathIntegrationController(HybridTurningController):
     """
     A wrapper of ``HybridTurningController`` that records variables that
     are used to perform path integration.
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#path-integration-task-pathintegrationcontroller>`_
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(self, *args, **kwargs):

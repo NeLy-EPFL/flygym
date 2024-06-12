@@ -14,6 +14,14 @@ class PlumeNavigationTask(HybridTurningController):
     and utilities related to plume tracking such as overlaying the plume on
     the rendered images. It also checks if the fly is within the plume
     simulation grid and truncates the simulation accordingly.
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#plume-tracking-task-plumenavigationtask>`_
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(

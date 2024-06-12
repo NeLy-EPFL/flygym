@@ -43,12 +43,12 @@ stumbling_force_threshold = -1
 
 correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 max_increment = 80 / 1e-4
-retraction_persistance = 20 / 1e-4
-persistance_init_thr = 20 / 1e-4
+retraction_persistence = 20 / 1e-4
+persistence_init_thr = 20 / 1e-4
 
 
 def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
-    step_phase_multipler = {}
+    step_phase_multiplier = {}
 
     for leg in preprogrammed_steps.legs:
         swing_start, swing_end = preprogrammed_steps.swing_period[leg]
@@ -63,7 +63,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         preprogrammed_steps.swing_period[leg] = (swing_start, swing_end + np.pi / 4)
         increment_vals = [0, 0.8, 0, -0.1, 0]
 
-        step_phase_multipler[leg] = interp1d(
+        step_phase_multiplier[leg] = interp1d(
             step_points, increment_vals, kind="linear", fill_value="extrapolate"
         )
 
@@ -85,9 +85,9 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
     obs_hist = []
     info_hist = []
 
-    retraction_persistance_counter = np.zeros(6)
+    retraction_persistence_counter = np.zeros(6)
 
-    retraction_persistance_counter_hist = np.zeros((6, target_num_steps))
+    retraction_persistence_counter_hist = np.zeros((6, target_num_steps))
 
     for k in trange(target_num_steps):
         # retraction rule: does a leg need to be retracted from a hole?
@@ -98,18 +98,18 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if (
                 retraction_correction[leg_to_correct_retraction]
-                > persistance_init_thr * sim.timestep
+                > persistence_init_thr * sim.timestep
             ):
-                retraction_persistance_counter[leg_to_correct_retraction] = 1
+                retraction_persistence_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
 
-        # update persistance counter
-        retraction_persistance_counter[retraction_persistance_counter > 0] += 1
-        retraction_persistance_counter[
-            retraction_persistance_counter > retraction_persistance * sim.timestep
+        # update persistence counter
+        retraction_persistence_counter[retraction_persistence_counter > 0] += 1
+        retraction_persistence_counter[
+            retraction_persistence_counter > retraction_persistence * sim.timestep
         ] = 0
-        retraction_persistance_counter_hist[:, k] = retraction_persistance_counter
+        retraction_persistence_counter_hist[:, k] = retraction_persistence_counter
 
         cpg_network.step()
         joints_angles = []
@@ -120,7 +120,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
         for i, leg in enumerate(preprogrammed_steps.legs):
             # update amount of retraction correction
             if (
-                i == leg_to_correct_retraction or retraction_persistance_counter[i] > 0
+                i == leg_to_correct_retraction or retraction_persistence_counter[i] > 0
             ):  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[i] += increment
@@ -164,7 +164,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
             if leg[0] == "R":
                 net_correction *= right_leg_inversion[i]
 
-            net_correction *= step_phase_multipler[leg](
+            net_correction *= step_phase_multiplier[leg](
                 cpg_network.curr_phases[i] % (2 * np.pi)
             )
 

@@ -36,3 +36,12 @@ Hybrid turning controller
     :undoc-members:
     :show-inheritance:
     :inherited-members:
+
+Hybrid turning fly
+-------------------------
+
+.. autoclass:: flygym.examples.locomotion.HybridTurningFly
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:

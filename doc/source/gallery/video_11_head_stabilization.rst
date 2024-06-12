@@ -1,5 +1,6 @@
 Head stabilization on complex terrain
-=======
+=====================================
+
 Here we incorporate ascending proprioceptive signals to stabilize the head of NeuroMechFly while it traverses a complex terrain. This effectively reduces the perceived self-induced motion in the vision. 
 
 .. raw:: html
