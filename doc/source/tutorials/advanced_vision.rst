@@ -165,7 +165,10 @@ figure below). The connectivity in this network is informed by the
 connectome and, unlike typical ANNs, models biologically meaningful
 variables such as voltage.
 
-TODO
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/advanced_vision/lappalainen_model_schematic.png?raw=true
+   :width: 400
+
+*Image from Lappalainen et al., 2023.*
 
 We will pass the visual experience of the simulated fly as inputs to
 this pretrained model and simulate the activities of real neurons. For
