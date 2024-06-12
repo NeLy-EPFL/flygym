@@ -54,7 +54,7 @@ Connectome-constrained vision model
     :show-inheritance:
     :inherited-members:
 
-.. autoclass:: flygym.examples.vision.RealisticVisionController
+.. autoclass:: flygym.examples.vision.RealisticVisionFly
     :members:
     :undoc-members:
     :show-inheritance:

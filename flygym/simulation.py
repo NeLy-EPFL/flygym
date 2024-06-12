@@ -171,7 +171,7 @@ class Simulation(gym.Env):
         info = {}
 
         for fly in self.flies:
-            obs[fly.name], info[fly.name] = fly.reset(self)
+            obs[fly.name], info[fly.name] = fly.reset(self, seed=seed)
 
         return obs, info
 
@@ -320,6 +320,9 @@ class Simulation(gym.Env):
             if camera.output_path is not None:
                 camera.output_path.parent.mkdir(parents=True, exist_ok=True)
                 camera.save_video(camera.output_path)
+
+        for fly in self.flies:
+            fly.close()
 
 
 class SingleFlySimulation(Simulation):

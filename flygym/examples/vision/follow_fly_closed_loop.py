@@ -2,11 +2,11 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from typing import Optional, Tuple, List
-from flygym import Fly, Camera
+from typing import Optional, Tuple, List, Dict
+from flygym import Camera, SingleFlySimulation
 from dm_control.rl.control import PhysicsError
 
-from flygym.examples.vision import MovingFlyArena, RealisticVisionController
+from flygym.examples.vision import MovingFlyArena, RealisticVisionFly
 from flygym.examples.vision import viz
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 from flygym.examples.head_stabilization import get_head_stabilization_model_paths
@@ -71,12 +71,11 @@ def run_simulation(
     tracking_gain: float,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
     spawn_xy: Tuple[float, float] = (0, 0),
-):
+) -> Dict:
     # Setup NMF simulation
-    fly = Fly(
+    fly = RealisticVisionFly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
-        enable_vision=True,
         vision_refresh_rate=500,
         neck_kp=500,
         head_stabilization_model=head_stabilization_model,
@@ -90,7 +89,7 @@ def run_simulation(
         fps=24,
         play_speed_text=False,
     )
-    sim = RealisticVisionController(fly=fly, cameras=[cam], arena=arena)
+    sim = SingleFlySimulation(fly=fly, cameras=[cam], arena=arena)
 
     # Calculate center-of-mass of each ommatidium
     ommatidia_coms = np.empty((fly.retina.num_ommatidia_per_eye, 2))
@@ -105,13 +104,13 @@ def run_simulation(
     viz_data_all = []
 
     dn_drive = np.array([1, 1])
-    for i in trange(int(run_time / sim.timestep)):
+    for _ in trange(int(run_time / sim.timestep)):
         if info["vision_updated"]:
             # Estimate object mask
             nn_activities = info["nn_activities"]
             zscores = []
             for cell in tracking_cells:
-                activities = sim.retina_mapper.flyvis_to_flygym(nn_activities[cell])
+                activities = fly.retina_mapper.flyvis_to_flygym(nn_activities[cell])
                 response_mean = baseline_response[cell]["mean"]
                 response_std = baseline_response[cell]["std"]
                 abs_zscore = np.abs((activities - response_mean) / response_std)
@@ -181,6 +180,7 @@ def run_simulation(
 
     return {
         "sim": sim,
+        "fly": fly,
         "obs_hist": obs_hist,
         "info_hist": info_hist,
         "viz_data_all": viz_data_all,
@@ -254,8 +254,8 @@ def process_trial(
     # Save visualization
     viz.visualize_vision(
         Path(output_dir / f"videos/{variation_name}_{trial_name}.mp4"),
-        res["sim"].fly.retina,
-        res["sim"].retina_mapper,
+        res["fly"].retina,
+        res["fly"].retina_mapper,
         viz_data_all=res["viz_data_all"],
         fps=res["sim"].cameras[0].fps,
     )
@@ -265,6 +265,7 @@ def process_trial(
         with open(output_path, "wb") as f:
             # Remove items that work poorly with pickle
             del res["sim"]
+            del res["fly"]
             for viz_data in res["viz_data_all"]:
                 del viz_data["nn_activities"]
             for info in res["info_hist"]:

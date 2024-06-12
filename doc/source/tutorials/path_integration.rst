@@ -3,11 +3,14 @@ Path integration
 
 **Author:** Sibo Wang-Chen
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and better
+structured implementation can be found in the
 `examples folder of the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
 
 **Summary:** In this tutorial, we will show how the position and heading
 of the animal can be estimated by integrating mechanosensory signals, a
@@ -20,16 +23,16 @@ In the previous tutorials, we have demonstrated how brain-level
 processes can drive the motor system via *descending control*.
 *Ascending* motor signals are a complement to descending information as
 they convey information, often mechanosensory in nature, back to the
-brain. Ascending neurons signals are predicted to inform brain-level
+brain. Ascending signals are predicted to inform brain-level
 action selection, motor planning, and sensory contextualization (see
 `Chen et al., 2023 <https://doi.org/10.1038/s41593-023-01281-z>`__). In
 this tutorial and the next, we will demonstrate how incorporating
-ascending motor feedback signals allows us to model behaviors critical
-to the animal’s functioning.
+ascending motor feedback signals allows us to model behaviors that are
+critical to the animal’s survival and functioning.
 
 Animals, including flies, estimate their own orientation and distance
-traveled (“odometry”) to perform path integration while navigating the
-world. A superb case of path integration was demonstrated in the desert
+traveled (“odometry”) to perform path integration when navigating the
+world. A superb example of path integration was demonstrated in the desert
 ant *Cataglyphis fortis* (see `review by Wolf,
 2011 <https://doi.org/10.1242/jeb.038570>`__). While the ant takes an
 exploratory outbound path in search of a food source, it can return to
@@ -41,7 +44,7 @@ that the ant must be using idiothetic cues, rather than sensory input,
 to navigate — similar to how sailors used to navigate featureless oceans
 by “dead reckoning.”
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_schematic.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_schematic.png?raw=true
    :width: 300
 
 The fly *Drosophila melanogaster* also performs path integration,
@@ -56,7 +59,7 @@ changes in the fly’s orientation (shown below in green) and displacement
 By integrating these changes over time, we aim to reconstruct the path
 of the fly in space (right).
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_integration.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_integration.png?raw=true
    :width: 600
 
 The algorithm
@@ -100,10 +103,10 @@ re-normalize the predicted values by the time scale, and integrate the
 position in 2D. This process can be shown in the following schematic:
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_prediction.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_prediction.png?raw=true
    :width: 400
 
-In the next sections, we will put this algorithm to the test.
+In the next sections, we will test this algorithm.
 
 Collecting walking data
 -----------------------
@@ -151,13 +154,7 @@ but with the correction amounts set to 0 for simplicity.
     )
 
 
-.. parsed-literal::
-
-    pygame 2.5.1 (SDL 2.28.2, Python 3.11.0)
-    Hello from the pygame community. https://www.pygame.org/contribute.html
-
-
-Let’s define an the discrete walking states as an ``Enum`` class (see
+Let’s define the discrete walking states as an ``Enum`` class (see
 `this tutorial <https://docs.python.org/3/howto/enum.html>`__ for more
 information on Enum if you are not familiar with it, but this is not
 required).
@@ -468,8 +465,10 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
 .. code-block:: ipython3
 
     from pathlib import Path
+
+    output_dir = Path("outputs/path_integration/")
+    output_dir.mkdir(parents=True, exist_ok=True)
     
-    output_dir = Path("outputs/pathint_exporation/")
     run_simulation(
         seed=0, running_time=1.0, terrain_type="flat", gait="tripod", output_dir=output_dir
     )
@@ -500,8 +499,7 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/trajectory_sample_1s.png?raw=true
-   :width: 500
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/trajectory_sample_1s.png?raw=true
 
 
 We can also plot the recorded shifts in leg tip positions relative to
@@ -532,8 +530,7 @@ the fly’s thorax:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_shift_1s.png?raw=true
-   :width: 500
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_shift_1s.png?raw=true
 
 
 This plot shows the time series of the change in the x position (along
@@ -725,8 +722,7 @@ second of simulation, but this time in 2D:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_shift_2d.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_shift_2d.png?raw=true
 
 
 .. code-block:: ipython3
@@ -749,8 +745,7 @@ second of simulation, but this time in 2D:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/ee_contact_force.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/ee_contact_force.png?raw=true
 
 
 From the contact force time series, we can observe that:
@@ -787,8 +782,7 @@ Next, we will inspect the fly’s orientation and position:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/heading_and_trajectory.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/heading_and_trajectory.png?raw=true
 
 
 Recall the algorithm that we have proposed. To train the models, we need
@@ -836,7 +830,7 @@ it is, then the leg is executing a power stroke. We will use a threshold
 of 0.5 mN, 1 mN, and 3mN for the front, middle, and hind legs
 respectively.
 
-Once we have the the cumulative stride lengths for each leg, we can
+Once we have the cumulative stride lengths for each leg, we can
 calculate how it changes over the predefined time scale :math:`\tau`:
 
 .. math::
@@ -879,7 +873,7 @@ simulation step :math:`i`,
 
 where :math:`\text{heading}` is the heading angle.
 
-To calculate the change in the fly’s forward displacement, we first to
+To calculate the change in the fly’s forward displacement, we first have to
 accumulate the forward displacement from one step to the next over the
 whole simulation. We will call this variable
 :math:`\text{forward_disp}`. This sounds simply like the total travel
@@ -1079,16 +1073,15 @@ if these are qualitatively good predictors:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/pathint_predictors_and_target.png?raw=true
-   :width: 700
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/pathint_predictors_and_target.png?raw=true
 
 
 We observe that the inputs (blue, orange, and green lines) indeed seem
 to be good predictors of the target (black lines). Next, we will train
 the prediction models based on our proposed algorithm.
 
-Training models to predict changes in locomotion state
-------------------------------------------------------
+Training models to predict changes in locomotor state
+-----------------------------------------------------
 
 Once the input and target variables have been extracted, training the
 models themselves is relatively easy. As discussed, we will train two
@@ -1120,8 +1113,8 @@ where :math:`\text{heading_diff_pred}` and
 parameters to be fitted. While we are using all three pairs of legs in
 this example, a different set of legs can be used instead.
 
-Recall that we have 5 trials per gait type. We will first concatenate
-the first 4 trials to form the training set, and use the last trial for
+Recall that we have 5 trials per gait type. We will concatenate the 
+first 4 trials to form the training set, and then use the last trial for
 testing.
 
 .. code-block:: ipython3
@@ -1187,12 +1180,12 @@ class from scikit-learn.
       r2 score (training set): 0.9717244581507696
 
 
-Integrating changes in locomotion state to estimate position
-------------------------------------------------------------
+Integrating changes in locomotor state to estimate position
+-----------------------------------------------------------
 
 Now that we have built models that can estimate the changes in heading
 and forward displacement, we will integrate these changes to estimate
-the fly’s location in space. To do so, we essentially reverse the
+the fly’s location in space. To do this, we essentially reverse the
 process of extracting the change signals: whereas previously we have
 taken the per-step changes in cumulative stride lengths as an estimation
 of instantaneous changes, we will now sum these changes as an
@@ -1379,7 +1372,7 @@ and forward displacement on this test dataset.
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_diff.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_diff.png?raw=true
    :width: 500
 
 
@@ -1435,7 +1428,7 @@ forward displacement:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_cumulative.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_cumulative.png?raw=true
    :width: 500
 
 Finally, we can plot the estimated and true trajectories of the fly:
@@ -1469,14 +1462,14 @@ Finally, we can plot the estimated and true trajectories of the fly:
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/pathint_exporation/path_integration_trajectory.png?raw=true
+.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/path_integration/path_integration_trajectory.png?raw=true
    :width: 500
 
 
-We can observe that, while the model gives excellent predictions in
+We can observe that, although the model gives excellent predictions in
 heading and forward displacement, small errors in heading can lead to
 larger errors in the final position estimation. This is simply due to
 the fact that walking straight in a slightly wrong direction amplifies
 the error in the estimated position. Therefore, while path integration
 based solely on idiothetic cues is possible, calibration of the
-integrator based on sensory inputs might be critical.
+integrator based on sensory inputs appears to be critical.

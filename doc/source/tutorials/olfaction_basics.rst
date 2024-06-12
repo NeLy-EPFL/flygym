@@ -3,25 +3,28 @@ Olfaction basics
 
 **Author:** Sibo Wang-Chen
 
-**Note:** The code presented in this notebook has been simplified for
-simplicity and restructured for display in a notebook format. A more
-complete and better structured implementation can be found on the
-`examples folder of the FlyGym repository on
+**Note:** The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the `examples folder of
+the FlyGym repository on
 GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
+**Notebook Format:** This tutorial is available in `.ipynb` format in the
+`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
 
 **Summary:** In this tutorial, we will implement a simple controller for
 odor-guided taxis.
 
 In the `previous
-tutorial <https://neuromechfly.org/tutorials/vision.html>`__, we
-covered how one can simulate the visual experience of the fly simulation. 
-In addition to vision, we also made it possible for our
-model to detect odors emitted by objects in the simulation environment.
-The olfactory system in *Drosophila* consists of specialized olfactory
-sensory neurons (OSNs) located in the antennae and maxillary palps.
-These detect specific odorant molecules and convey this information to
-the brain’s antennal lobe, where their signals are further processed.
-This is shown in the figure below (left, source: `Martin et al,
+tutorial <https://neuromechfly.org/tutorials/vision.html>`__, we covered
+how one can simulate the visual experience of the fly simulation. In
+addition to vision, we also made it possible for our model to detect
+odors emitted by objects in the simulation environment. The olfactory
+system in *Drosophila* consists of specialized olfactory sensory neurons
+(OSNs) located in the antennae and maxillary palps. These detect
+specific odorant molecules and convey this information to the brain’s
+antennal lobe, where their signals are further processed. This is shown
+in the figure below (left, source: `Martin et al,
 2013 <https://doi.org/10.1002/ar.22747>`__) We emulated peripheral
 olfaction by attaching virtual odor sensors to the antennae and
 maxillary palps of our biomechanical model, as shown in the figure
@@ -33,8 +36,7 @@ monomolecular chemicals sensed by OSNs in the antennae, or the
 intensities of composite odors co-activating numerous projection neurons
 in the antennal lobe.
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction.png?raw=true
-   :width: 600
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/olfaction.png?raw=true
 
 
 Odor arena
@@ -44,10 +46,10 @@ To demonstrate odor sensing, let’s create an environment with one
 attractive odor source and two aversive odor sources. The dimension of
 this odor space is 2 (attractive, aversive) despite the number of odor
 sources being 3. The odor sources share a peak intensity of 1. We will
-color the attractive odor source orange and the aversive odor sources blue.
+color the attractive odor source orange and the aversive odor sources
+blue.
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
     import numpy as np
     
@@ -73,8 +75,7 @@ reference <https://neuromechfly.org/api_ref/arena.html#flygym.arena.OdorArena>`_
 Its implementation is beyond the scope of this tutorial but can be found
 `here <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/arena/sensory_environment.py>`__.
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
     from flygym.arena import OdorArena
     
@@ -86,59 +87,65 @@ Its implementation is beyond the scope of this tutorial but can be found
         marker_size=0.3,
     )
 
-Let’s place our fly in the arena. As before, we will run a few iterations to allow it
-to stand on the ground in a stable manner.
+Let’s place our fly in the arena. As before, we will run a few
+iterations to allow it to stand on the ground in a stable manner.
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
     import matplotlib.pyplot as plt
-    from flygym import Parameters
-    from flygym.examples.turning_controller import HybridTurningNMF
-    
+    from flygym import Fly, Camera
+    from flygym.examples.locomotion import HybridTurningController
+    from pathlib import Path
+
+    outputs_dir = Path("./outputs/olfaction_basics")
+    outputs_dir.mkdir(parents=True, exist_ok=True)
     
     contact_sensor_placements = [
         f"{leg}{segment}"
         for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
         for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
     ]
-    sim_params = Parameters(
-        timestep=1e-4,
-        render_mode="saved",
-        render_playspeed=0.5,
-        render_window_size=(800, 608),
+    
+    fly = Fly(
+        spawn_pos=(0, 0, 0.2),
+        contact_sensor_placements=contact_sensor_placements,
         enable_olfaction=True,
         enable_adhesion=True,
         draw_adhesion=False,
-        render_camera="birdeye_cam",
     )
-    sim = HybridTurningNMF(
-        sim_params=sim_params,
+    
+    cam = Camera(
+        fly=fly,
+        camera_id="birdeye_cam",
+        play_speed=0.5,
+        window_size=(800, 608),
+    )
+    
+    sim = HybridTurningController(
+        fly=fly,
+        cameras=[cam],
         arena=arena,
-        spawn_pos=(0, 0, 0.2),
-        contact_sensor_placements=contact_sensor_placements,
+        timestep=1e-4,
     )
     for i in range(500):
         sim.step(np.zeros(2))
         sim.render()
     fig, ax = plt.subplots(1, 1, figsize=(5, 4), tight_layout=True)
-    ax.imshow(sim._frames[-1])
+    ax.imshow(cam._frames[-1])
     ax.axis("off")
-    fig.savefig("./outputs/olfaction_env.png")
+    fig.savefig(outputs_dir / "olfaction_env.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_env.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/olfaction_env.png?raw=true
 
 
-
-Simple controller for odor taxis
---------------------------------
+Controller for odor taxis
+-------------------------
 
 Let’s design a simple hand-tuned controller for odor-guided taxis. We
-start by calculating the left-right asymmetry of the odor intensity :math:`I`
-for each odor :math:`o`:
+start by calculating the left-right asymmetry of the odor intensity
+:math:`I` for each odor :math:`o`:
 
 .. math::
 
@@ -154,8 +161,8 @@ will have different signs in their gains.
 
    s = \sum_{o} \gamma_o \Delta I_o
 
-We transform :math:`s` nonlinearly to avoid overly drastic turns
-when the asymmetry is subtle and to crop it within the range [0, 1). This
+We transform :math:`s` nonlinearly to avoid overly drastic turns when
+the asymmetry is subtle and to crop it within the range [0, 1). This
 gives us a turning bias :math:`b`:
 
 .. math::
@@ -195,8 +202,7 @@ parameters:
 As before, we will recalculate the steering signal every 0.05 seconds.
 Let’s implement this in Python:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
     from tqdm import trange
     
@@ -205,7 +211,7 @@ Let’s implement this in Python:
     decision_interval = 0.05
     run_time = 5
     num_decision_steps = int(run_time / decision_interval)
-    physics_steps_per_decision_step = int(decision_interval / sim_params.timestep)
+    physics_steps_per_decision_step = int(decision_interval / sim.timestep)
     
     obs_hist = []
     odor_history = []
@@ -251,13 +257,12 @@ Let’s implement this in Python:
 
 .. parsed-literal::
 
-     77%|███████▋  | 77/100 [01:48<00:32,  1.41s/it]
+     51%|█████     | 51/100 [00:57<00:55,  1.13s/it]
 
 
 We can visualize the fly trajectory:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
     fly_pos_hist = np.array([obs["fly"][0, :2] for obs in obs_hist])
     fig, ax = plt.subplots(1, 1, figsize=(5, 4), tight_layout=True)
@@ -285,22 +290,20 @@ We can visualize the fly trajectory:
     ax.set_xlabel("x (mm)")
     ax.set_ylabel("y (mm)")
     ax.legend(ncols=3, loc="lower center", bbox_to_anchor=(0.5, -0.6))
-    fig.savefig("./outputs/odor_taxis_trajectory.png")
+    fig.savefig(outputs_dir / "odor_taxis_trajectory.png")
 
 
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/odor_taxis_trajectory.png?raw=true
-   :width: 500
+.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/odor_taxis_trajectory.png?raw=true
 
 
 We can also generate the video:
 
-.. code-block:: ipython3
-   :linenos:
+.. code:: ipython3
 
-    sim.save_video("./outputs/odor_taxis.mp4")
+    cam.save_video(outputs_dir / "odor_taxis.mp4")
 
 
 .. raw:: html
 
-   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/odor_taxis.mp4" controls="controls" style="max-width: 500px;"></video>
+   <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/olfaction_basics/odor_taxis.mp4" controls="controls" style="max-width: 400px;"></video>

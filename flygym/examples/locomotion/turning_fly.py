@@ -4,12 +4,11 @@ from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 
 from flygym.fly import Fly
-from flygym.simulation import SingleFlySimulation
+from flygym.simulation import SingleFlySimulation, Simulation
 from flygym.preprogrammed import all_leg_dofs
 from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
 
 from dm_control.rl.control import PhysicsError
-import pickle
 
 from flygym.arena import MixedTerrain
 
@@ -39,26 +38,18 @@ _default_correction_vectors = {
 _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 
 
-class HybridTurningController(SingleFlySimulation):
+class HybridTurningFly(Fly):
     """
     This class implements a controller that uses a CPG network to generate
     leg movements and uses a set of sensory-based rules to correct for
     stumbling and retraction. The controller also receives a 2D descending
     input to modulate the amplitudes and frequencies of the CPGs to
     accomplish turning.
-
-    Notes
-    -----
-    Please refer to the `"MPD Task Specifications" page
-    <https://neuromechfly.org/api_ref/mdp_specs.html#hybrid-turning-controller-hybridturningcontroller>`_
-    of the API references for the detailed specifications of the action
-    space, the observation space, the reward, the "terminated" and
-    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(
         self,
-        fly: Fly,
+        timestep=1e-4,
         preprogrammed_steps=None,
         intrinsic_freqs=np.ones(6) * 12,
         intrinsic_amps=np.ones(6) * 1,
@@ -74,16 +65,14 @@ class HybridTurningController(SingleFlySimulation):
         amplitude_range=(-0.5, 1.5),
         draw_corrections=False,
         max_increment=80 / 1e-4,
-        retraction_persistence_duration=20 / 1e-4,
-        retraction_persistence_initiation_threshold=20 / 1e-4,
+        retraction_persistance_duration=20 / 1e-4,
+        retraction_persistance_initiation_threshold=20 / 1e-4,
         seed=0,
         **kwargs,
     ):
         """
         Parameters
         ----------
-        fly : Fly
-            The fly object to be simulated.
         preprogrammed_steps : PreprogrammedSteps, optional
             Preprogrammed steps to be used for leg movement.
         intrinsic_freqs : np.ndarray, optional
@@ -118,12 +107,12 @@ class HybridTurningController(SingleFlySimulation):
             are active in the rendered video.
         max_increment : float, optional
             Maximum duration of the correction before it is capped.
-        retraction_persist3nce_duration : float, optional
+        retraction_persistance_duration : float, optional
             Time spend in a persistent state (leg is further retracted)
             even if the rule is no longer active
-        retraction_persist3nce_initiation_threshold : float, optional
-            Amount of time the leg had to be retracted for for the persistence
-            to be initiated (prevents activation of persistence for noise driven
+        retraction_persistance_initiation_threshold : float, optional
+            Amount of time the leg had to be retracted for for the persistance
+            to be initiated (prevents activation of persistance for noise driven
             rule activations)
         seed : int, optional
             Seed for the random number generator.
@@ -131,16 +120,17 @@ class HybridTurningController(SingleFlySimulation):
             Additional keyword arguments to be passed to
             ``SingleFlySimulation.__init__``.
         """
+        self.timestep = timestep
+        # Initialize fly
+        super().__init__(**kwargs)
+
         # Check if we have the correct list of actuated joints
-        if fly.actuated_joints != all_leg_dofs:
+        if self.actuated_joints != all_leg_dofs:
             raise ValueError(
                 "``HybridTurningNMF`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
                 "set of DoFs was provided."
             )
-
-        # Initialize core NMF simulation
-        super().__init__(fly=fly, **kwargs)
 
         if preprogrammed_steps is None:
             preprogrammed_steps = PreprogrammedSteps()
@@ -157,13 +147,13 @@ class HybridTurningController(SingleFlySimulation):
         self.amplitude_range = amplitude_range
         self.draw_corrections = draw_corrections
         self.max_increment = max_increment * self.timestep
-        self.retraction_persistence_duration = (
-            retraction_persistence_duration * self.timestep
+        self.retraction_persistance_duration = (
+            retraction_persistance_duration * self.timestep
         )
-        self.retraction_persistence_initiation_threshold = (
-            retraction_persistence_initiation_threshold * self.timestep
+        self.retraction_persistance_initiation_threshold = (
+            retraction_persistance_initiation_threshold * self.timestep
         )
-        self.retraction_persistence_counter = np.zeros(6)
+        self.retraction_persistance_counter = np.zeros(6)
         # Define the joints that need to be inverted to
         # mirror actions from left to right
         self.right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
@@ -194,10 +184,12 @@ class HybridTurningController(SingleFlySimulation):
         # (retracting the leg more during the swing phase, less during the stance phase)
         self.phasic_multiplier = self._init_phasic_gain()
 
+        self._all_net_corrections = None
+        self._action = None
+
     def _init_phasic_gain(self, swing_extension=np.pi / 4):
-        """
-        Initialize the gain applied to the correction based on the phase of
-        the CPG. Lengthen the swing phase by swing_extension to give more
+        """Initialize the gain applied to the correction based on the phase of the CPG.
+        Lengthen the swing phase by swing_extension to give more
         chances to the leg to avoid obstacles.
         """
 
@@ -228,7 +220,7 @@ class HybridTurningController(SingleFlySimulation):
     def _find_stumbling_sensor_indices(self):
         """Find the indices of the sensors that are used for stumbling detection."""
         stumbling_sensors = {leg: [] for leg in self.preprogrammed_steps.legs}
-        for i, sensor_name in enumerate(self.fly.contact_sensor_placements):
+        for i, sensor_name in enumerate(self.contact_sensor_placements):
             leg = sensor_name.split("/")[1][:2]  # sensor_name: e.g. "Animat/LFTarsus1"
             segment = sensor_name.split("/")[1][2:]
             if segment in self.stumble_segments:
@@ -244,16 +236,13 @@ class HybridTurningController(SingleFlySimulation):
         return stumbling_sensors
 
     def _retraction_rule_find_leg(self, obs):
-        """
-        Returns the index of the leg that needs to be retracted, or None
+        """Returns the index of the leg that needs to be retracted, or None
         if none applies.
-        Retraction can be due to the activation of a rule or persistence.
-        Every time the rule is active the persistence counter is set to 1.
-        At every step the persistence counter is incremented. If the rule
-        is still active it is again reset to 1 otherwise, it will be
-        incremented until it reaches the persistence duration. At this
-        point the persistence counter is reset to 0.
-        """
+        Retraction can be due to the activation of a rule or persistance.
+        Every time the rule is active the persistance counter is set to 1. At every step the persistance
+        counter is incremented. If the rule is still active it is again reset to 1 otherwise, it will
+        be incremented until it reaches the persistance duration. At this point the persistance counter
+        is reset to 0."""
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
@@ -261,24 +250,23 @@ class HybridTurningController(SingleFlySimulation):
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if (
                 self.retraction_correction[leg_to_correct_retraction]
-                > self.retraction_persistence_initiation_threshold
+                > self.retraction_persistance_initiation_threshold
             ):
-                self.retraction_persistence_counter[leg_to_correct_retraction] = 1
+                self.retraction_persistance_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
         return leg_to_correct_retraction
 
-    def _update_persistence_counter(self):
-        """
-        Increment the persistence counter if it is nonzero. Zero the
-        counter when it reaches the persistence duration."""
+    def _update_persistance_counter(self):
+        """Increment the persistance counter if it is nonzero. Zero the counter
+        when it reaches the persistance duration."""
         # increment every nonzero counter
-        self.retraction_persistence_counter[
-            self.retraction_persistence_counter > 0
+        self.retraction_persistance_counter[
+            self.retraction_persistance_counter > 0
         ] += 1
         # zero the increment when reaching the threshold
-        self.retraction_persistence_counter[
-            self.retraction_persistence_counter > self.retraction_persistence_duration
+        self.retraction_persistance_counter[
+            self.retraction_persistance_counter > self.retraction_persistance_duration
         ] = 0
 
     def _stumbling_rule_check_condition(self, obs, leg):
@@ -297,7 +285,12 @@ class HybridTurningController(SingleFlySimulation):
         return stumbling_correction, False
 
     def _update_correction_amount(
-        self, condition, curr_amount, correction_rates, viz_segment
+        self,
+        condition,
+        curr_amount,
+        correction_rates,
+        viz_segment,
+        sim: "Simulation",
     ):
         """Update correction amount and color code leg segment.
 
@@ -327,12 +320,19 @@ class HybridTurningController(SingleFlySimulation):
             new_amount = max(0, curr_amount - decrement)
             color = (0.5, 0.5, 0.5, 1)
         if viz_segment is not None:
-            self.fly.change_segment_color(self.physics, viz_segment, color)
+            self.change_segment_color(sim.physics, viz_segment, color)
         return new_amount, condition
 
-    def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
+    def reset(
+        self,
+        sim: "Simulation",
+        seed=None,
+        init_phases=None,
+        init_magnitudes=None,
+        **kwargs,
+    ):
         """
-        Reset the simulation.
+        Reset the fly.
 
         Parameters
         ----------
@@ -355,7 +355,7 @@ class HybridTurningController(SingleFlySimulation):
         dict
             Additional information.
         """
-        obs, info = super().reset(seed=seed)
+        obs, info = super().reset(sim=sim, seed=seed, **kwargs)
         self.cpg_network.random_state = np.random.RandomState(seed)
         self.cpg_network.intrinsic_amps = self.intrinsic_amps
         self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
@@ -364,7 +364,7 @@ class HybridTurningController(SingleFlySimulation):
         self.stumbling_correction = np.zeros(6)
         return obs, info
 
-    def step(self, action):
+    def pre_step(self, action, sim: "Simulation"):
         """Step the simulation forward one timestep.
 
         Parameters
@@ -382,12 +382,12 @@ class HybridTurningController(SingleFlySimulation):
         self.cpg_network.intrinsic_freqs = freqs
 
         # get current observation
-        obs = super().get_observation()
+        obs = super().get_observation(sim)
 
         # Retraction rule: is any leg stuck in a gap and needing to be retracted?
         leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
-        self._update_persistence_counter()
-        persistent_retraction = self.retraction_persistence_counter > 0
+        self._update_persistance_counter()
+        persistent_retraction = self.retraction_persistance_counter > 0
 
         self.cpg_network.step()
 
@@ -403,6 +403,7 @@ class HybridTurningController(SingleFlySimulation):
                 curr_amount=self.retraction_correction[i],
                 correction_rates=self.correction_rates["retraction"],
                 viz_segment=f"{leg}Tibia" if self.draw_corrections else None,
+                sim=sim,
             )
             self.retraction_correction[i] = retraction_correction
 
@@ -416,6 +417,7 @@ class HybridTurningController(SingleFlySimulation):
                     if self.draw_corrections and retraction_correction <= 0
                     else None
                 ),
+                sim=sim,
             )
 
             # get net correction amount
@@ -456,9 +458,14 @@ class HybridTurningController(SingleFlySimulation):
             "joints": np.array(np.concatenate(joints_angles)),
             "adhesion": np.array(adhesion_onoff).astype(int),
         }
-        obs, reward, terminated, truncated, info = super().step(action)
-        info["net_corrections"] = np.array(all_net_corrections)
-        info.update(action)  # add lower-level action to info
+        self._all_net_corrections = all_net_corrections
+        self._action = action
+        return super().pre_step(action, sim)
+
+    def post_step(self, sim: "Simulation"):
+        obs, reward, terminated, truncated, info = super().post_step(sim)
+        info["net_correction"] = np.array(self._all_net_corrections)
+        info.update(self._action)
         return obs, reward, terminated, truncated, info
 
 
@@ -475,26 +482,27 @@ if __name__ == "__main__":
 
     np.random.seed(0)
 
-    fly = Fly(
+    fly = HybridTurningFly(
         enable_adhesion=True,
         draw_adhesion=True,
         contact_sensor_placements=contact_sensor_placements,
+        seed=0,
+        draw_corrections=True,
+        timestep=timestep,
     )
 
     cam = Camera(fly=fly, camera_id="Animat/camera_right", play_speed=0.1)
-    sim = HybridTurningController(
+    sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],
         timestep=timestep,
-        seed=0,
-        draw_corrections=True,
         arena=MixedTerrain(),
     )
     check_env(sim)
 
     obs_list = []
 
-    obs, info = sim.reset(0)
+    obs, info = sim.reset(seed=0)
     print(f"Spawning fly at {obs['fly'][0]} mm")
 
     for i in trange(int(run_time / sim.timestep)):
@@ -522,4 +530,4 @@ if __name__ == "__main__":
     print(f"Final x position: {x_pos:.4f} mm")
     print(f"Simulation terminated: {obs_list[-1]['fly'][0] - obs_list[0]['fly'][0]}")
 
-    cam.save_video("./outputs/hybrid_turning.mp4", 0)
+    cam.save_video("./outputs/hybrid_turning_fly.mp4", 0)

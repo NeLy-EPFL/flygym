@@ -1,18 +1,27 @@
 import flyvision
 from torch import Tensor
-from flygym.examples.locomotion import HybridTurningController
+from flygym.examples.locomotion import HybridTurningFly
 from flyvision.utils.activity_utils import LayerActivity
 from flygym.examples.vision import RealTimeVisionNetworkView, RetinaMapper
+from flygym.simulation import Simulation
 
 
-class RealisticVisionController(HybridTurningController):
+class RealisticVisionFly(HybridTurningFly):
     """
-    This class extends the ``HybridTurningController`` to couple it with
+    This class extends the ``HybridTurningFly`` to couple it with
     the visual system network from `Lappalainen et al., 2023`_. This allows
     the user to receive, as a part of the observation, the activities
     of visual system neurons.
 
     .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+
+    Notes
+    -----
+    Please refer to the `"MPD Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisioncontroller>`__
+    of the API references for the detailed specifications of the action
+    space, the observation space, the reward, the "terminated" and
+    "truncated" flags, and the "info" dictionary.
     """
 
     def __init__(self, vision_network_dir=None, *args, **kwargs):
@@ -24,7 +33,7 @@ class RealisticVisionController(HybridTurningController):
             If not provided, model 000 from Lappalainen et al., 2023 will
             be used.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, enable_vision=True)
         if vision_network_dir is None:
             vision_network_dir = flyvision.results_dir / "opticflow/000/0000"
         vision_network_view = RealTimeVisionNetworkView(vision_network_dir)
@@ -33,7 +42,7 @@ class RealisticVisionController(HybridTurningController):
         self._vision_network_initialized = False
         self._nn_activities_buffer = None
 
-    def step(self, action):
+    def post_step(self, sim: "Simulation"):
         """
         Same as ``HybridTurningController``, except the additional
         ``nn_activities`` key in the info dictionary, which contains the
@@ -44,7 +53,8 @@ class RealisticVisionController(HybridTurningController):
         (2, num_cells_per_eye). The 0th dimension corresponds to the eyes
         in the order (left, right).
         """
-        obs, reward, terminated, truncated, info = super().step(action)
+
+        obs, reward, terminated, truncated, info = super().post_step(sim)
 
         # If first frame, initialize vision network
         if not self._vision_network_initialized:
@@ -63,13 +73,13 @@ class RealisticVisionController(HybridTurningController):
         return obs, reward, terminated, truncated, info
 
     def close(self):
-        """Close the environment. See ``HybridTurningController.close``."""
+        """Close the fly. See ``HybridTurningFly.close``."""
         self.vision_network.cleanup_step_by_step_simulation()
         self._vision_network_initialized = False
-        return super().close()
+        super().close()
 
     def reset(self, *args, **kwargs):
-        """Reset the environment. See ``HybridTurningController.reset``."""
+        """Reset the fly. See ``HybridTurningFly.reset``."""
         if self._vision_network_initialized:
             self.vision_network.cleanup_step_by_step_simulation()
             self._vision_network_initialized = False
@@ -88,11 +98,11 @@ class RealisticVisionController(HybridTurningController):
         visual_input = Tensor(visual_input).to(flyvision.device)
         initial_state = self.vision_network.fade_in_state(
             t_fade_in=1.0,
-            dt=1 / self.fly.vision_refresh_rate,
+            dt=1 / self.vision_refresh_rate,
             initial_frames=visual_input.unsqueeze(1),
         )
         self.vision_network.setup_step_by_step_simulation(
-            dt=1 / self.fly.vision_refresh_rate,
+            dt=1 / self.vision_refresh_rate,
             initial_state=initial_state,
             as_states=False,
             num_samples=2,

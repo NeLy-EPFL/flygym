@@ -1,4 +1,4 @@
-## Simulating embodied sensorimotor control with NeuroMechFly 2.0
+## Simulating embodied sensorimotor control with NeuroMechFly v2
 
 ![](https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_large.jpg?raw=true)
 
@@ -11,7 +11,7 @@
 
 ![overview_video](https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true)
 
-This repository contains the source code for FlyGym, the Python library for NeuroMechFly 2.0, a digital twin of the adult fruit fly *Drosophila* melanogaster that can see, smell, walk over challenging terrain, and interact with the environment (see our [NeuroMechFly 2.0 paper](https://www.biorxiv.org/content/10.1101/2023.09.18.556649)).
+This repository contains the source code for FlyGym, the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila* melanogaster that can see, smell, walk over challenging terrain, and interact with the environment (see our [NeuroMechFly v2 paper](https://www.biorxiv.org/content/10.1101/2023.09.18.556649)).
 
 NeuroMechFly consists of the following components:
 - **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our original NeuroMechFly publication). We have adjusted several body segments (in particular in the antennae) to better reflect the biological reality.
