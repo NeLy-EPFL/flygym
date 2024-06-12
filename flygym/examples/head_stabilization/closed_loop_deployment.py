@@ -264,7 +264,7 @@ if __name__ == "__main__":
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
     ]
-    res_all = Parallel(n_jobs=-2)(delayed(process_trial)(*config) for config in configs)
+    res_all = Parallel(n_jobs=4)(delayed(process_trial)(*config) for config in configs)
     res_all = {k[:2]: v for k, v in zip(configs, res_all)}
     # res_all = {config[:2]: process_trial(*config) for config in configs}
 
