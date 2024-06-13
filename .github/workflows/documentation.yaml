@@ -13,11 +13,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinxcontrib-googleanalytics
+          pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
           pip install -e ."[dev,examples]"
           pip install toolz
-          git clone https://github.com/NeLy-EPFL/flyvis.git
-          cd flyvis
-          pip install -e .
       - name: Sphinx build
         run: |
           sphinx-build doc/source _build
