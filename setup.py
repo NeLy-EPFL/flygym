@@ -54,7 +54,6 @@ setup(
             "seaborn",
             "torch",
             "phiflow",
-            "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip",
         ],
     },
     url="https://neuromechfly.org/",
