@@ -32,6 +32,9 @@ jobs:
           pip cache purge
           pip install -e ."[dev,examples]"
           pip install toolz
+          git clone https://github.com/NeLy-EPFL/flyvis.git
+          cd flyvis
+          pip install -e .
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names
