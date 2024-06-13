@@ -177,6 +177,7 @@ To demonstrate this network, let’s simulate a network of three
 oscillators connected as follows:
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/simple_cpg.png?raw=true
+   :width: 500px
 
 For the sake of illustration, let’s make them oscillate at an intrinsic
 frequency of 1 and intrinsic amplitudes of 1.0, 1.1, 1.2. They are
@@ -301,6 +302,8 @@ paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
 
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/tripod_cpg.png?raw=true
+   :width: 600px
+
 
 As before, we will set up the CPG network, run the simulation, and plot
 the time series of the state variables:
