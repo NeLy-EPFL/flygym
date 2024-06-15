@@ -4,8 +4,8 @@ from pathlib import Path
 
 
 excluded_videos = [
-    ("wave", "blocks", "train", "1.12_0.64"),
-    ("tripod", "blocks", "test", "1.14_0.58"),
+    # ("wave", "blocks", "train", "1.12_0.64"),
+    # ("tripod", "blocks", "test", "1.14_0.58"),
 ]
 
 
