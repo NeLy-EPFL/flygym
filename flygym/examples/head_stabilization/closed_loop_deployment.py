@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Fly, Camera, NeckCamera
+from flygym import Camera, NeckCamera, SingleFlySimulation
 from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from dm_control.utils import transformations
 
 import flygym.examples.head_stabilization.viz as viz
-from flygym.examples.vision import RealisticVisionController, RetinaMapper
+from flygym.examples.vision import RealisticVisionFly, RetinaMapper
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
 
 
@@ -38,7 +38,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 # Simulation parameters
 
-run_time = 1.5
+run_time = 1.15  # seconds
 
 
 def run_simulation(
@@ -46,10 +46,9 @@ def run_simulation(
     run_time: float = 0.5,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
 ):
-    fly = Fly(
+    fly = RealisticVisionFly(
         contact_sensor_placements=contact_sensor_placements,
         enable_adhesion=True,
-        enable_vision=True,
         vision_refresh_rate=500,
         neck_kp=500,
         head_stabilization_model=head_stabilization_model,
@@ -74,10 +73,8 @@ def run_simulation(
         play_speed_text=False,
     )
 
-    sim = RealisticVisionController(
-        fly=fly,
-        cameras=[birdeye_camera, neck_camera],
-        arena=arena,
+    sim = SingleFlySimulation(
+        fly=fly, cameras=[birdeye_camera, neck_camera], arena=arena
     )
 
     sim.reset(seed=0)
@@ -234,12 +231,12 @@ def process_trial(terrain_type: str, stabilization_on: bool, cell: str):
         f"Terrain type {terrain_type}, stabilization {stabilization_on} completed "
         f"with R2 scores: {sim_res['r2_scores']}"
     )
-    sim: RealisticVisionController = sim_res["sim"]
+    sim: SingleFlySimulation = sim_res["sim"]
     raw_vision_hist = [
         raw_vision_to_human_readable(sim.fly.retina, x) for x in sim_res["raw_vision"]
     ]
     cell_response_hist = [
-        cell_response_to_human_readable(sim.fly.retina, sim.retina_mapper, x, cell)
+        cell_response_to_human_readable(sim.fly.retina, sim.fly.retina_mapper, x, cell)
         for x in sim_res["nn_activities"]
     ]
 
