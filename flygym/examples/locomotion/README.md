@@ -9,4 +9,3 @@ This subpackage includes the following files:
 - `hybrid_controller`: This script demonstrates how one can integrate CPGs with sensory feedback.
 - `turning_controller`: This file refactors the hybrid controller into a `HybridTurningController` class. This class implements the Gymnasium API and, in addition to the hybrid controller above, receives a steering input that enables turning.
 - `turning_fly`: This module implements a `HybridTurningFly` class, which has the same essential logic as `HybridTurningController` but functions at the level of the fly instead of the simulation. Therefore, it is useful to use this module when simulating multiple flies, each using a hybrid walking controller that be modulated to execute turns.
-- `controller_comparison.py`: This script compares the performance of the CPG, rule-based, and hybrid controller in different terrains.
