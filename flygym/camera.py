@@ -231,33 +231,39 @@ class Camera:
         camera will always be in front of the fly).
         """
 
-        is_animat = "Animat" in camera_name
+        is_animat = camera_name.startswith("Animat") or camera_name.startswith(
+            self.fly.name
+        )
         is_visualization_camera = (
             "head" in camera_name
             or "Tarsus" in camera_name
             or "camera_front_zoomin" in camera_name
         )
 
-        is_compound_camera = camera_name not in [
-            "Animat/camera_front",
-            "Animat/camera_top",
-            "Animat/camera_bottom",
-            "Animat/camera_back",
-            "Animat/camera_right",
-            "Animat/camera_left",
-            "Animat/camera_neck_zoomin",
+        canonical_cameras = [
+            "camera_front",
+            "camera_back",
+            "camera_top",
+            "camera_bottom",
+            "camera_left",
+            "camera_right",
+            "camera_neck_zoomin",
         ]
+        if "/" not in camera_name:
+            is_canonical_camera = False
+        else:
+            is_canonical_camera = camera_name.split("/")[-1] in canonical_cameras
 
         # always add pos update if it is a head camera
         if is_animat and not is_visualization_camera:
             self.update_camera_pos = True
             self.cam_offset = self._cam.pos
-            if is_compound_camera and self.camera_follows_fly_orientation:
+            if (not is_canonical_camera) and self.camera_follows_fly_orientation:
                 self.camera_follows_fly_orientation = False
                 logging.warning(
                     "Overriding `camera_follows_fly_orientation` to False because"
-                    "it is never applied to visualization cameras (head, tarsus, ect)"
-                    "or non Animat camera."
+                    "the rendering camera is not a simple camera from a canonical "
+                    "angle (front, back, top, bottom, left, right, neck_zoomin)."
                 )
             elif self.camera_follows_fly_orientation:
                 # Why would that be xyz and not XYZ ? DOES NOT MAKE SENSE BUT IT WORKS
