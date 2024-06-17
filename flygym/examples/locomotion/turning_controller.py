@@ -515,7 +515,7 @@ if __name__ == "__main__":
             obs_list.append(obs)
             sim.render()
         except PhysicsError:
-            print("Simulation was interupted because of a physics error")
+            print("Simulation was interrupted because of a physics error")
             break
 
     x_pos = obs_list[-1]["fly"][0][0]
