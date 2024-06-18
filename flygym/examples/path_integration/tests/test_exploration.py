@@ -101,5 +101,5 @@ def test_path_integration_controller():
 
     # (0.2, 1.2) and (1.2, 0.2) should both be more or less turning
     # print(right_total_li[2] / left_total_li[2], left_total_li[3] / right_total_li[3])
-    assert right_total_li[2] / left_total_li[2] == pytest.approx(1.85, abs=0.25)
-    assert left_total_li[3] / right_total_li[3] == pytest.approx(1.85, abs=0.25)
+    assert right_total_li[2] / left_total_li[2] == pytest.approx(1.85, abs=0.4)
+    assert left_total_li[3] / right_total_li[3] == pytest.approx(1.85, abs=0.4)

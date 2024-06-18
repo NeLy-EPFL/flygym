@@ -15,8 +15,8 @@ def test_odor_dimensions():
     num_steps = 100
     arena = OdorArena(odor_source=odor_source, peak_odor_intensity=peak_odor_intensity)
 
-    fly = Fly(enable_olfaction=True, cameras=[])
-    sim = SingleFlySimulation(fly=fly, arena=arena)
+    fly = Fly(enable_olfaction=True)
+    sim = SingleFlySimulation(fly=fly, arena=arena, cameras=[])
 
     # Run simulation
     obs_list = []

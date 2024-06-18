@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
-from flygym import Fly, Camera, disable_rendering
+from flygym import Fly, Camera, is_rendering_skipped
 from flygym.examples.olfaction import OdorPlumeArena, PlumeNavigationTask
 from flygym.util import get_data_path
 
 
+@pytest.mark.skipif(is_rendering_skipped, reason="env['SKIP_RENDERING'] == 'true'")
 def test_plume_tracking_task():
     plume_data_path = get_data_path(
         "flygym", "data/test_data/plume_tracking/plume_short.hdf5"
@@ -32,7 +33,7 @@ def test_plume_tracking_task():
     sim = PlumeNavigationTask(
         fly=fly,
         arena=arena,
-        cameras=[] if disable_rendering else [cam],
+        cameras=[cam],
     )
     sim_time = 0.1
     rendered_images = []
@@ -42,7 +43,7 @@ def test_plume_tracking_task():
         obs, _, _, _, info = sim.step(np.array([1, 1]))
         obs_hist.append(obs)
         info_hist.append(info)
-        img = None if disable_rendering else sim.render()[0]
+        img = sim.render()[0]
         if img is not None:
             rendered_images.append(img)
 
@@ -79,5 +80,4 @@ def test_plume_tracking_task():
     assert pos_physical_sample.sum() == pytest.approx(7680000.0, rel=1e-6)
     assert sim.grid_idx_all.sum() == 84662700
     assert np.all(sim.grid_idx_all[90, 100] == [46, 270])
-    if not disable_rendering:
-        assert not np.all(rendered_images[0] == rendered_images[-1])
+    assert not np.all(rendered_images[0] == rendered_images[-1])
