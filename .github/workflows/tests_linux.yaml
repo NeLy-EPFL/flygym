@@ -1,18 +1,13 @@
-name: MuJoCo Tests
+name: Unit tests (Linux)
 
 on: [push]
 
-# env:
-#   LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libGLEW.so
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -31,8 +26,7 @@ jobs:
           pip install --upgrade pip
           pip cache purge
           pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
-          pip install -e ."[dev,examples]"
-          pip install toolz
+          pip install -e ".[dev,examples]"
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names

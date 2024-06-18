@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
-from flygym import Fly, Camera
+from flygym import Fly, Camera, is_rendering_skipped
 from flygym.examples.olfaction import OdorPlumeArena, PlumeNavigationTask
 from flygym.util import get_data_path
 
 
+@pytest.mark.skipif(is_rendering_skipped, reason="env['SKIP_RENDERING'] == 'true'")
 def test_plume_tracking_task():
     plume_data_path = get_data_path(
         "flygym", "data/test_data/plume_tracking/plume_short.hdf5"
@@ -40,9 +41,9 @@ def test_plume_tracking_task():
     info_hist = []
     for i in range(int(sim_time / sim.timestep)):
         obs, _, _, _, info = sim.step(np.array([1, 1]))
-        img = sim.render()[0]
         obs_hist.append(obs)
         info_hist.append(info)
+        img = sim.render()[0]
         if img is not None:
             rendered_images.append(img)
 
