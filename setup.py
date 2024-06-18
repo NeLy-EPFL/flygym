@@ -46,6 +46,7 @@ setup(
             "requests",
         ],
         "examples": [
+            "joblib",
             "networkx",
             "lightning",
             "tensorboardX",
@@ -54,6 +55,7 @@ setup(
             "seaborn",
             "torch",
             "phiflow",
+            "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
         ],
     },
     url="https://neuromechfly.org/",
