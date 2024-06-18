@@ -7,11 +7,10 @@ env:
 
 jobs:
   build:
-
-    runs-on: [macos-13, macos-latest]
     strategy:
       matrix:
         python-version: ["3.12"]
+        runs-on: ["macos-13", "macos-latest"]
 
     steps:
       - uses: actions/checkout@v3
