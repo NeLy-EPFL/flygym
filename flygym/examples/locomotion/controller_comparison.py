@@ -527,7 +527,7 @@ def init_fig(trial_id: int) -> List[AxesImage]:
             spine.set_visible(False)
         ax.set_xticks([])
         ax.set_yticks([])
-        images[i, j] = ax.imshow([[0]])
+        images[i, j] = ax.imshow(empty_img)
         if i + j == 0:
             ax.text(7, 60, f"Trial {trial_id + 1}", fontsize=20, fontname="Arial")
 
