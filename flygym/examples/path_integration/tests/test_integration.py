@@ -17,7 +17,6 @@ def run_simulation_debug(
     dn_drive: np.ndarray = np.array([1.0, 1.0]),
     seed: int = 0,
     running_time: float = 0.1,
-    terrain_type: str = "flat",
     gait: str = "tripod",
     output_dir: Path = None,
 ):
@@ -40,6 +39,7 @@ def run_simulation_debug(
         cameras=[],
         timestep=1e-4,
         correction_rates={"retraction": (0, 0), "stumbling": (0, 0)},
+        seed=seed,
     )
 
     obs, info = sim.reset(0)
