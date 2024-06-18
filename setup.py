@@ -17,7 +17,7 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy",
+        "numpy<2",
         "scipy",
         "pyyaml",
         "jupyter",
