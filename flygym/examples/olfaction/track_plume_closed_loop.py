@@ -139,7 +139,9 @@ def run_simulation(
 
 def process_trial(plume_dataset_path, output_dir, seed, initial_position, is_control):
     try:
-        return run_simulation(
+        # Run_simulation returns a Simulation object, which is not
+        # pickle-able. Do not return it here in this wrapper.
+        run_simulation(
             plume_dataset_path,
             output_dir,
             seed,
