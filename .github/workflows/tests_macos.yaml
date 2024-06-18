@@ -9,9 +9,9 @@ jobs:
   build:
     strategy:
       matrix:
+        os: ["macos-13", "macos-latest"]
         python-version: ["3.12"]
-        runs-on: ["macos-13", "macos-latest"]
-
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
