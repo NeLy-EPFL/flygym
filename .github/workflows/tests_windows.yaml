@@ -3,7 +3,7 @@ name: Unit tests (Windows)
 on: [push]
 
 env:
-  SKIP_RENDERING_TESTS: "true"
+  SKIP_RENDERING: "true"
 
 jobs:
   build:
@@ -21,7 +21,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          choco install ffmpeg
           pip install --upgrade pip
           pip cache purge
           pip install "flyvision @ https://github.com/nely-epfl/flyvis/archive/refs/heads/main.zip"
