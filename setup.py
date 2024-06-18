@@ -55,6 +55,7 @@ setup(
             "seaborn",
             "torch",
             "phiflow",
+            "h5py",
             "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
         ],
     },
