@@ -17,14 +17,12 @@ from tqdm import tqdm
 
 from flygym import Camera, SingleFlySimulation
 from flygym.arena import BlocksTerrain, FlatTerrain, GappedTerrain, MixedTerrain
-from flygym.examples.locomotion import CPGNetwork, PreprogrammedSteps
+from flygym.examples.locomotion import CPGNetwork, PreprogrammedSteps, ColorableFly
 from flygym.examples.locomotion.rule_based_controller import (
     RuleBasedController,
     construct_rules_graph,
 )
 from flygym.preprogrammed import get_cpg_biases
-
-from colored_fly import ColoredFly as Fly
 
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["pdf.fonttype"] = 42
@@ -36,7 +34,7 @@ controller_labels = ["CPG", "Rule-based", "Hybrid"]
 palette = ["tab:blue", "tab:orange", "tab:brown"]
 
 ########### PATHS ############
-outputs_dir = Path("outputs")
+outputs_dir = Path("outputs/controller_benchmark")
 saves_dir = outputs_dir / "obs"
 videos_dir = outputs_dir / "videos"
 metadata_path = outputs_dir / "metadata.npz"
@@ -387,7 +385,7 @@ def run_all(arena: str, seed: int, pos: np.ndarray, verbose: bool = False):
     ]
 
     # Initialize the simulation
-    fly = Fly(
+    fly = ColorableFly(
         enable_adhesion=True,
         draw_adhesion=True,
         init_pose="stretch",
@@ -529,7 +527,7 @@ def init_fig(trial_id: int) -> List[AxesImage]:
             spine.set_visible(False)
         ax.set_xticks([])
         ax.set_yticks([])
-        images[i, j] = ax.imshow([[0]])
+        images[i, j] = ax.imshow(empty_img)
         if i + j == 0:
             ax.text(7, 60, f"Trial {trial_id + 1}", fontsize=20, fontname="Arial")
 
@@ -590,7 +588,7 @@ subprocess.run(
 )
 
 for i in range(n_trials):
-    Path(f"{i:02d}.mp4").unlink()
+    Path(outputs_dir / f"{i:02d}.mp4").unlink()
 
 (outputs_dir / "video_list.txt").unlink()
 
