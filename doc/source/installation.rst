@@ -98,6 +98,18 @@ Finally, if you want to install the additional dependencies required to run the 
    pip install -e ."[examples]"
 
 
+Cross-platform compatibility
+----------------------------
+
+FlyGym supports Linux, macOS, and Windows, although rendering on headless Mac and Windows servers (i.e., without displays) is not tested. To render on a headless Linux server, follow the special instructions at the bottom of this page.
+
+FlyGym is automatically tested in the following setups:
+
+- Linux: latest version of Ubuntu, with Python 3.9, 3.10, 3.11, and 3.12.
+- macOS: latest version of macOS (Apple silicon) and macOS 13 Ventura (pre Apple silicon), wih Python 3.12, without rendering.
+- Windows: latest version of Windows, with Python 3.12, without rendering.
+
+
 Special notes for rendering on machines without a display
 ---------------------------------------------------------
 
