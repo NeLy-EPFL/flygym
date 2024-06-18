@@ -15,7 +15,7 @@ def test_odor_dimensions():
     num_steps = 100
     arena = OdorArena(odor_source=odor_source, peak_odor_intensity=peak_odor_intensity)
 
-    fly = Fly(enable_olfaction=True)
+    fly = Fly(enable_olfaction=True, cameras=[])
     sim = SingleFlySimulation(fly=fly, arena=arena)
 
     # Run simulation
@@ -24,7 +24,6 @@ def test_odor_dimensions():
         joint_pos = np.zeros(len(fly.actuated_joints))
         action = {"joints": joint_pos}
         obs, reward, terminated, truncated, info = sim.step(action)
-        # nmf.render()
         obs_list.append(obs)
     sim.close()
 
@@ -60,6 +59,7 @@ def test_odor_intensity():
     sim = HybridTurningController(
         fly=fly,
         arena=arena,
+        cameras=[],
         timestep=1e-4,
     )
 
@@ -100,6 +100,6 @@ def test_odor_sum():
         diffuse_func=lambda x: x**-2,
     )
     fly = Fly(enable_olfaction=True)
-    sim = SingleFlySimulation(fly=fly, arena=arena)
+    sim = SingleFlySimulation(fly=fly, arena=arena, cameras=[])
     dim1_intensity, dim2_intensity = sim.reset()[0]["odor_intensity"]
     np.testing.assert_allclose(dim1_intensity, dim2_intensity)

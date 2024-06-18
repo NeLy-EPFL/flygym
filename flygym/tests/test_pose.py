@@ -13,7 +13,7 @@ def test_stretched_pose():
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
     fly = Fly(init_pose="stretch")
-    sim = SingleFlySimulation(fly=fly)
+    sim = SingleFlySimulation(fly=fly, cameras=[])
     run_time = 0.01
     freq = 20
     amp = np.pi / 2
@@ -41,7 +41,7 @@ def test_zero_pose():
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
     fly = Fly(init_pose="zero", spawn_pos=(0, 0, 3))
-    sim = SingleFlySimulation(fly=fly)
+    sim = SingleFlySimulation(fly=fly, cameras=[])
     run_time = 0.01
     freq = 80
     amp = np.pi / 2
@@ -67,7 +67,7 @@ def test_tripod_pose():
     logging.info(f"temp_base_dir: {temp_base_dir}")
 
     fly = Fly(init_pose="tripod")
-    sim = SingleFlySimulation(fly=fly)
+    sim = SingleFlySimulation(fly=fly, cameras=[])
     run_time = 0.01
     freq = 80
     amp = np.pi / 2

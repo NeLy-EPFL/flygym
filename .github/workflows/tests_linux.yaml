@@ -1,0 +1,38 @@
+name: Unit tests (Linux)
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libgl1-mesa-glx libosmesa6-dev
+          echo "MUJOCO_GL=egl" >> $GITHUB_ENV
+          echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: |
+          sudo apt-get install ffmpeg
+          pip install --upgrade pip
+          pip cache purge
+          pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
+          pip install -e ".[dev,examples]"
+      - name: Lint with ruff
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          ruff --output-format=github --select=E9,F63,F7,F82 --target-version=py38 .
+      - name: Test with pytest
+        run: |
+          python -m pytest
