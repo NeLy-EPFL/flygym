@@ -3,8 +3,20 @@ from dm_control import mjcf
 from flygym import Fly
 
 
-class ColoredFly(Fly):
-    """Fly with segments colored accurately."""
+class ColorableFly(Fly):
+    """
+    A wrapper around the Fly class that facilitates the recoloring of
+    specific segments. This is useful for, as an example, recoloring parts
+    of the leg depending on the activation of specific correction rules.
+
+    This class is necessary because the leg segments would otherwise not be
+    colored as intended: "textures are applied in GL_MODULATE mode, meaning
+    that the texture color and the color specified here are multiplied
+    component-wise" as mentioned in the MuJoCo documentation. This class
+    overrides the impact of the default texture on the resulting final
+    color. See
+    https://mujoco.readthedocs.io/en/stable/XMLreference.html#asset-material-rgba
+    """
 
     def __init__(self, recolor_types=("femur", "tibia"), **kwargs):
         self.default_segment_rgba = {}
