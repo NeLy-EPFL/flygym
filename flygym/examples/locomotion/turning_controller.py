@@ -419,10 +419,10 @@ class HybridTurningController(SingleFlySimulation):
             )
 
             # get net correction amount
-            net_correction, reset_stumbing = self._get_net_correction(
+            net_correction, reset_stumbling = self._get_net_correction(
                 self.retraction_correction[i], self.stumbling_correction[i]
             )
-            if reset_stumbing:
+            if reset_stumbling:
                 self.stumbling_correction[i] = 0.0
 
             net_correction = np.clip(net_correction, 0, self.max_increment)

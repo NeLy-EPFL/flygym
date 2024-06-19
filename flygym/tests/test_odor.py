@@ -74,7 +74,7 @@ def test_odor_intensity():
     # (n_dims,)
     asym = np.diff(weighted_intensity, axis=-1)[..., 0]
 
-    # Check that the odor intensity asymmmetries have the correct signs
+    # Check that the odor intensity asymmetries have the correct signs
     assert all(np.sign(asym) == (1, -1, 1, -1))
 
     control_signal = np.ones((2,))
