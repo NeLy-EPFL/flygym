@@ -142,6 +142,18 @@ Docker image
 
 `"Containerization" <https://en.wikipedia.org/wiki/Containerization_(computing)>`_ is a way of virtualization that aims to bundle an application and its dependencies into a single portable, executable unit called a *container*. `Docker <https://docs.docker.com/guides/docker-overview/>`_ is a popular platform for developing, shipping, and running containers, making it easier to manage and deploy applications in a consistent manner.
 
-Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (Caas) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to `Docker Hub <https://hub.docker.com/repository/docker/nelyepfl/flygym>`_. This image is defined by the `Dockerfile <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/Dockerfile>`_ at the root level of the directory.
+Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (CaaS) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to `Docker Hub <https://hub.docker.com/repository/docker/nelyepfl/flygym>`_. This image is defined by the `Dockerfile <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/Dockerfile>`_ at the root level of the directory.
 
-For more information about how to interact with Docker, please refer to the `official Docker guides <https://docs.docker.com/guides/>`_.
+For more information about how to interact with Docker, please refer to the `official Docker guides <https://docs.docker.com/guides/>`_. Note that you need to `install NVIDIA Container Toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html>`_ if you would like to use an NVIDIA GPU from the container.
+
+
+Troubleshooting
+---------------
+
+- ``AttributeError: module 'pkgutil' has no attribute 'ImpImporter'. Did you mean: 'zipimporter'?`` during ``opencv-python`` installation:
+  
+  - This appears to be an issue with `opencv-python` on certain Mac systems with Python 3.12. Please refer to `this GitHub issue <https://github.com/opencv/opencv-python/issues/988>`_. Temporary fixes (from simple to complex) include:
+  
+    - Use Python 3.11 instead.
+    - Uninstall `opencv-python`, clone `opencv-python` from GitHub, remove the line `"setuptools==59.2.0",` in its `pyproject.toml`, install an up-to-date version of `setuptools` (e.g., 70.0.0), and install `opencv-python` locally from the cloned directory. Then, continue with the FlyGym installation.
+    - Use Docker to run FlyGym (see below).
