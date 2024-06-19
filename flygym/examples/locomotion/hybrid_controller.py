@@ -188,7 +188,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
             sim.render()
         except PhysicsError:
-            print("Simulation was interupted because of a physics error")
+            print("Simulation was interrupted because of a physics error")
             return obs_hist, info_hist, True
 
     return obs_hist, info_hist, False

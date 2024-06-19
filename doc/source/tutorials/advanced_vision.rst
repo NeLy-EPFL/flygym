@@ -160,7 +160,7 @@ network model (`Lappalainen et al.,
 2023 <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`__;
 `code <https://github.com/TuragaLab/flyvis>`__). This study has
 constructed an artificial neural network (ANN) representing the retina,
-lamina, medula, lobula plate, and lobula of the fly visual system (see
+lamina, medulla, lobula plate, and lobula of the fly visual system (see
 figure below). The connectivity in this network is informed by the
 connectome and, unlike typical ANNs, models biologically meaningful
 variables such as voltage.

@@ -983,7 +983,7 @@ NeuroMechFly v2 paper for more details.
                 WalkingState.STOP: np.array((0.0, 0.0)),
             }
     
-            # evidence acccumulation parameters
+            # evidence accumulation parameters
             self.accumulated_evidence = 0.0
             self.accumulation_decay = 0.0001
             self.accumulation_odor_gain = 0.05
@@ -999,8 +999,8 @@ NeuroMechFly v2 paper for more details.
             )
     
             # descending neuron drive parameters
-            self.dn_drive_update_inteval = 0.1  # s
-            self.dn_drive_update_steps = int(self.dn_drive_update_inteval / self.timestep)
+            self.dn_drive_update_interval = 0.1  # s
+            self.dn_drive_update_steps = int(self.dn_drive_update_interval / self.timestep)
             self.dn_drive = self.dn_drives[WalkingState.STOP]
     
             # controller state parameters

@@ -77,8 +77,8 @@ right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
 stumbling_force_threshold = -1
 correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 max_increment = 80
-retraction_persistance = 20
-persistance_init_thr = 20
+retraction_persistence = 20
+persistence_init_thr = 20
 
 
 ########### FUNCTIONS ############
@@ -158,7 +158,7 @@ def run_hybrid(
     obs, info = sim.reset()
     target_num_steps = int(run_time / sim.timestep)
     obs_list = []
-    retraction_perisitance_counter = np.zeros(6)
+    retraction_persistence_counter = np.zeros(6)
 
     for _ in range(target_num_steps):
         # retraction rule: does a leg need to be retracted from a hole?
@@ -167,15 +167,15 @@ def run_hybrid(
         end_effector_z_pos_sorted = end_effector_z_pos[end_effector_z_pos_sorted_idx]
         if end_effector_z_pos_sorted[-1] > end_effector_z_pos_sorted[-3] + 0.05:
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
-            if retraction_correction[leg_to_correct_retraction] > persistance_init_thr:
-                retraction_perisitance_counter[leg_to_correct_retraction] = 1
+            if retraction_correction[leg_to_correct_retraction] > persistence_init_thr:
+                retraction_persistence_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
 
-        # update persistance counter
-        retraction_perisitance_counter[retraction_perisitance_counter > 0] += 1
-        retraction_perisitance_counter[
-            retraction_perisitance_counter > retraction_persistance
+        # update persistence counter
+        retraction_persistence_counter[retraction_persistence_counter > 0] += 1
+        retraction_persistence_counter[
+            retraction_persistence_counter > retraction_persistence
         ] = 0
 
         cpg_network.step()
@@ -185,7 +185,7 @@ def run_hybrid(
         for j, leg in enumerate(preprogrammed_steps.legs):
             # update amount of retraction correction
             if (
-                j == leg_to_correct_retraction or retraction_perisitance_counter[j] > 0
+                j == leg_to_correct_retraction or retraction_persistence_counter[j] > 0
             ):  # lift leg
                 increment = correction_rates["retraction"][0] * sim.timestep
                 retraction_correction[j] += increment
