@@ -123,10 +123,25 @@ If you are using a machine without a display (e.g. a server), you will need to c
 
 If you want to change this setting by default, you can add the two lines above to the end of your ``.bashrc`` file.
 
-
 If you are using a Conda environment, you can change the environment variables as follows (replacing ``my-env-name`` accordingly), and then re-activate the environment:
 
 .. code-block:: bash
 
    conda activate my-env-name
    conda env config vars set MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
+
+You might need to install EGL-related dependencies on your machine. For example, on some Ubuntu/Debian systems, you might need to install the following:
+
+.. code-block:: bash
+
+   apt-get install libegl1-mesa-dev
+
+
+Docker image
+------------
+
+`"Containerization" <https://en.wikipedia.org/wiki/Containerization_(computing)>`_ is a way of virtualization that aims to bundle an application and its dependencies into a single portable, executable unit called a *container*. `Docker <https://docs.docker.com/guides/docker-overview/>`_ is a popular platform for developing, shipping, and running containers, making it easier to manage and deploy applications in a consistent manner.
+
+Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (Caas) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to `Docker Hub <https://hub.docker.com/repository/docker/nelyepfl/flygym>`_. This image is defined by the `Dockerfile <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/Dockerfile>`_ at the root level of the directory.
+
+For more information about how to interact with Docker, please refer to the `official Docker guides <https://docs.docker.com/guides/>`_.
