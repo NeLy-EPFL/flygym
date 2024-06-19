@@ -11,7 +11,7 @@ The easiest way to install FlyGym is via PyPI. Before you start, you might want 
    conda create -n flygym python=3.12    # flygym is tested on Python 3.9-3.12
    conda activate flygym    # run this every time you use the environment
 
-(Optional) If you would like to interface FlyGym with the [connectome-constrained vision model](https://github.com/TuragaLab/flyvis) from [Lappalainen et al. (2023)](https://www.biorxiv.org/content/10.1101/2023.03.11.532232), you need to install the FlyVision package separately. Since FlyVision is not published on the Python Package Index (PyPI), you must either install it manually following [its installation instructions](https://github.com/TuragaLab/flyvis?tab=readme-ov-file#install-locally-), or install it with `pip` from our fork on GitHub:
+(Optional) If you would like to interface FlyGym with the `connectome-constrained vision model <https://github.com/TuragaLab/flyvis>`_ from `Lappalainen et al. (2023) <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`_, you need to install the FlyVision package separately. Since FlyVision is not published on the Python Package Index (PyPI), you must either install it manually following `its installation instructions <https://github.com/TuragaLab/flyvis?tab=readme-ov-file#install-locally->`_, or install it with ``pip`` from our fork on GitHub:
 
 .. code-block:: bash
 
