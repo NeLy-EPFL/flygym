@@ -156,4 +156,4 @@ Troubleshooting
   
     - Use Python 3.11 instead.
     - Uninstall `opencv-python`, clone `opencv-python` from GitHub, remove the line `"setuptools==59.2.0",` in its `pyproject.toml`, install an up-to-date version of `setuptools` (e.g., 70.0.0), and install `opencv-python` locally from the cloned directory. Then, continue with the FlyGym installation.
-    - Use Docker to run FlyGym (see below).
+    - Use Docker to run FlyGym (see above).

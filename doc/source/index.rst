@@ -29,7 +29,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
 
 .. note:: 
 
-   FlyGym is in beta. API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
+   API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
 
 
 FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
