@@ -1,10 +1,10 @@
-name: Unit tests (Linux)
+name: Unit tests (full)
 
 on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
@@ -17,7 +17,7 @@ jobs:
       - name: Set up renderer
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libgl1-mesa-glx libosmesa6-dev
+          sudo apt-get install -y libegl1-mesa-dev
           echo "MUJOCO_GL=egl" >> $GITHUB_ENV
           echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
       - name: Install dependencies
