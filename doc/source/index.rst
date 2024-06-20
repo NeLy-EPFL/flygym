@@ -29,7 +29,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
 
 .. note:: 
 
-   FlyGym is in beta. API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
+   API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
 
 
 FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
@@ -37,7 +37,7 @@ FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fr
 FlyGym consists of the following components:
 
 - **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our `original NeuroMechFly <https://doi.org/10.1038/s41592-022-01466-7>`_ publication). In NeuroMechFly v2 we have updated several body segments (in particular in the antennae) to better reflect the biological reality.
-- **Vision:** The fly has compound eyes consisting of individual units called ommatidia. These are arranged on a hexagonal lattice. We have simulated visual inputs on the fly's retinae.
+- **Vision:** The fly has compound eyes consisting of individual units called ommatidia. These are arranged on a hexagonal lattice. We have simulated visual inputs on the fly's retinas.
 - **Olfaction:** The fly has odor receptors in the antennae and maxillary palps. We have simulated olfactory signals experienced by the fly by computing odor/chemical intensities at the locations of the antennae and maxillary palps.
 - **Hierarchical control:** The fly's central nervous system (CNS) consists of the brain and the ventral nerve cord (VNC). This hierarchy is analogous to the brain-spinal cord organization of vertebrates. The user can build a two-part model --- one handling brain-level sensory integration and decision making as well as one handling VNC-level motor control --- with a interface between the two consisting of descending (brain-to-VNC) and ascending (VNC-to-brain) neuronal pathways.
 - **Leg adhesion:** Insects have evolved specialized adhesive structures at the tips of their legs. These enable locomotion on inclined and overhanging surfaces. We have simulated adhesion in our model. The mechanism by which the fly lifts the legs during locomotion despite adhesive forces is currently not well understood. Therefore, to abstract this, adhesion can be turned on or off during stance or swing of the legs, respectively.

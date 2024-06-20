@@ -8,7 +8,7 @@ from typing import Tuple, Optional, Callable
 class JointAngleScaler:
     """
     A class for standardizing joint angles (i.e., using mean and standard
-    deviation.
+    deviation.)
 
     Attributes
     ----------

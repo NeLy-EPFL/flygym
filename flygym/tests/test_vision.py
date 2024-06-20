@@ -4,7 +4,7 @@ import pytest
 import logging
 from pathlib import Path
 
-from flygym import Fly, SingleFlySimulation
+from flygym import Fly, SingleFlySimulation, is_rendering_skipped
 from flygym.util import load_config
 from flygym.vision import visualize_visual_input
 
@@ -12,6 +12,7 @@ from flygym.vision import visualize_visual_input
 np.random.seed(0)
 
 
+@pytest.mark.skipif(is_rendering_skipped, reason="env['SKIP_RENDERING'] == 'true'")
 def test_vision_dimensions():
     # Load config
     config = load_config()

@@ -65,8 +65,8 @@ class HybridTurningFly(Fly):
         amplitude_range=(-0.5, 1.5),
         draw_corrections=False,
         max_increment=80 / 1e-4,
-        retraction_persistance_duration=20 / 1e-4,
-        retraction_persistance_initiation_threshold=20 / 1e-4,
+        retraction_persistence_duration=20 / 1e-4,
+        retraction_persistence_initiation_threshold=20 / 1e-4,
         seed=0,
         **kwargs,
     ):
@@ -107,12 +107,12 @@ class HybridTurningFly(Fly):
             are active in the rendered video.
         max_increment : float, optional
             Maximum duration of the correction before it is capped.
-        retraction_persistance_duration : float, optional
+        retraction_persistence_duration : float, optional
             Time spend in a persistent state (leg is further retracted)
             even if the rule is no longer active
-        retraction_persistance_initiation_threshold : float, optional
-            Amount of time the leg had to be retracted for for the persistance
-            to be initiated (prevents activation of persistance for noise driven
+        retraction_persistence_initiation_threshold : float, optional
+            Amount of time the leg had to be retracted for for the persistence
+            to be initiated (prevents activation of persistence for noise driven
             rule activations)
         seed : int, optional
             Seed for the random number generator.
@@ -147,13 +147,13 @@ class HybridTurningFly(Fly):
         self.amplitude_range = amplitude_range
         self.draw_corrections = draw_corrections
         self.max_increment = max_increment * self.timestep
-        self.retraction_persistance_duration = (
-            retraction_persistance_duration * self.timestep
+        self.retraction_persistence_duration = (
+            retraction_persistence_duration * self.timestep
         )
-        self.retraction_persistance_initiation_threshold = (
-            retraction_persistance_initiation_threshold * self.timestep
+        self.retraction_persistence_initiation_threshold = (
+            retraction_persistence_initiation_threshold * self.timestep
         )
-        self.retraction_persistance_counter = np.zeros(6)
+        self.retraction_persistence_counter = np.zeros(6)
         # Define the joints that need to be inverted to
         # mirror actions from left to right
         self.right_leg_inversion = [1, -1, -1, 1, -1, 1, 1]
@@ -238,10 +238,10 @@ class HybridTurningFly(Fly):
     def _retraction_rule_find_leg(self, obs):
         """Returns the index of the leg that needs to be retracted, or None
         if none applies.
-        Retraction can be due to the activation of a rule or persistance.
-        Every time the rule is active the persistance counter is set to 1. At every step the persistance
+        Retraction can be due to the activation of a rule or persistence.
+        Every time the rule is active the persistence counter is set to 1. At every step the persistence
         counter is incremented. If the rule is still active it is again reset to 1 otherwise, it will
-        be incremented until it reaches the persistance duration. At this point the persistance counter
+        be incremented until it reaches the persistence duration. At this point the persistence counter
         is reset to 0."""
         end_effector_z_pos = obs["fly"][0][2] - obs["end_effectors"][:, 2]
         end_effector_z_pos_sorted_idx = np.argsort(end_effector_z_pos)
@@ -250,23 +250,23 @@ class HybridTurningFly(Fly):
             leg_to_correct_retraction = end_effector_z_pos_sorted_idx[-1]
             if (
                 self.retraction_correction[leg_to_correct_retraction]
-                > self.retraction_persistance_initiation_threshold
+                > self.retraction_persistence_initiation_threshold
             ):
-                self.retraction_persistance_counter[leg_to_correct_retraction] = 1
+                self.retraction_persistence_counter[leg_to_correct_retraction] = 1
         else:
             leg_to_correct_retraction = None
         return leg_to_correct_retraction
 
-    def _update_persistance_counter(self):
-        """Increment the persistance counter if it is nonzero. Zero the counter
-        when it reaches the persistance duration."""
+    def _update_persistence_counter(self):
+        """Increment the persistence counter if it is nonzero. Zero the counter
+        when it reaches the persistence duration."""
         # increment every nonzero counter
-        self.retraction_persistance_counter[
-            self.retraction_persistance_counter > 0
+        self.retraction_persistence_counter[
+            self.retraction_persistence_counter > 0
         ] += 1
         # zero the increment when reaching the threshold
-        self.retraction_persistance_counter[
-            self.retraction_persistance_counter > self.retraction_persistance_duration
+        self.retraction_persistence_counter[
+            self.retraction_persistence_counter > self.retraction_persistence_duration
         ] = 0
 
     def _stumbling_rule_check_condition(self, obs, leg):
@@ -386,8 +386,8 @@ class HybridTurningFly(Fly):
 
         # Retraction rule: is any leg stuck in a gap and needing to be retracted?
         leg_to_correct_retraction = self._retraction_rule_find_leg(obs)
-        self._update_persistance_counter()
-        persistent_retraction = self.retraction_persistance_counter > 0
+        self._update_persistence_counter()
+        persistent_retraction = self.retraction_persistence_counter > 0
 
         self.cpg_network.step()
 
@@ -421,10 +421,10 @@ class HybridTurningFly(Fly):
             )
 
             # get net correction amount
-            net_correction, reset_stumbing = self._get_net_correction(
+            net_correction, reset_stumbling = self._get_net_correction(
                 self.retraction_correction[i], self.stumbling_correction[i]
             )
-            if reset_stumbing:
+            if reset_stumbling:
                 self.stumbling_correction[i] = 0.0
 
             net_correction = np.clip(net_correction, 0, self.max_increment)
@@ -523,7 +523,7 @@ if __name__ == "__main__":
             obs_list.append(obs)
             sim.render()
         except PhysicsError:
-            print("Simulation was interupted because of a physics error")
+            print("Simulation was interrupted because of a physics error")
             break
 
     x_pos = obs_list[-1]["fly"][0][0]

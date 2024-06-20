@@ -88,7 +88,7 @@ NeuroMechFly can be used to emulate a wide range of behaviours and scenarios. He
         <div class="gallery-item">
             <a href="video_13_plume_navigation.html">
                 <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_13_plume_navigation_v2_SWC_thumbnail.jpeg/?raw=true" alt="Plume navigation">
-                <p>Navigating dynamic olfactive environements</p>
+                <p>Navigating dynamic olfactive environments</p>
             </a>
         </div>
         <div class="gallery-item">

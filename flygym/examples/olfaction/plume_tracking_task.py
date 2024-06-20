@@ -153,7 +153,7 @@ class PlumeNavigationTask(HybridTurningController):
         fc_y_fov = np.tan(fc_fov / 2) * fc_pos[2] * 2
         fc_x_fov = fc_y_fov * self.fc_width / self.fc_height
 
-        # get a grid of points in the physical flygym space centered arround the fly
+        # get a grid of points in the physical flygym space centered around the fly
         xs_physical_fov = (
             np.arange(
                 0, np.ceil(fc_x_fov).astype(int) + 5, self.arena.dimension_scale_factor

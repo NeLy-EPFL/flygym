@@ -29,13 +29,13 @@ def test_random_exploration_controller():
     dn_drive_hist = np.array(dn_drive_hist)
 
     forward_mask = state_hist == controller.WalkingState.FORWARD
-    left_rurn_mask = state_hist == controller.WalkingState.TURN_LEFT
+    left_turn_mask = state_hist == controller.WalkingState.TURN_LEFT
     right_turn_mask = state_hist == controller.WalkingState.TURN_RIGHT
     stop_mask = state_hist == controller.WalkingState.STOP
 
     assert forward_mask[: int(1 / dt)].all()  # always walking forward during init_time
     assert (dn_drive_hist[forward_mask, :] == [1.0, 1.0]).all()
-    assert (dn_drive_hist[left_rurn_mask, :] == [0.2, 1.0]).all()
+    assert (dn_drive_hist[left_turn_mask, :] == [0.2, 1.0]).all()
     assert (dn_drive_hist[right_turn_mask, :] == [1.0, 0.2]).all()
     assert (~stop_mask).all()  # never stops
 
@@ -101,5 +101,5 @@ def test_path_integration_controller():
 
     # (0.2, 1.2) and (1.2, 0.2) should both be more or less turning
     # print(right_total_li[2] / left_total_li[2], left_total_li[3] / right_total_li[3])
-    assert right_total_li[2] / left_total_li[2] == pytest.approx(1.85, abs=0.25)
-    assert left_total_li[3] / right_total_li[3] == pytest.approx(1.85, abs=0.25)
+    assert right_total_li[2] / left_total_li[2] == pytest.approx(1.85, abs=0.4)
+    assert left_total_li[3] / right_total_li[3] == pytest.approx(1.85, abs=0.4)

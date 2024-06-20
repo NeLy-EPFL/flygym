@@ -21,6 +21,7 @@ def run_simulation(
     target_pos=None,
     distance_threshold=2,
     video_path=None,
+    enable_rendering: bool = False,
 ):
     """
     Parameters
@@ -63,7 +64,10 @@ def run_simulation(
     distance_threshold : float, optional
         Distance threshold to stop the simulation, by default 2
     video_path : str, optional
-        Path to save the video, by default None
+        Path to save the video, by default None. If enable_rendering is False,
+        this parameter is ignored.
+    enable_rendering : bool, optional
+        Whether to enable rendering, by default False.
     """
     # Define the arena
     arena = OdorArena(
@@ -101,7 +105,7 @@ def run_simulation(
 
     sim = HybridTurningController(
         fly=fly,
-        cameras=[cam],
+        cameras=[cam] if enable_rendering else [],
         arena=arena,
         timestep=1e-4,
     )
@@ -146,7 +150,7 @@ def run_simulation(
         for j in range(physics_steps_per_decision_step):
             obs, _, _, _, _ = sim.step(control_signal)
 
-            if video_path is not None:
+            if enable_rendering and video_path is not None:
                 rendered_img = sim.render()
                 if rendered_img is not None:
                     # record odor intensity too for video
@@ -158,7 +162,7 @@ def run_simulation(
         if np.linalg.norm(obs["fly"][0, :2] - target_pos) < distance_threshold:
             break
 
-    if video_path is not None:
+    if enable_rendering and video_path is not None:
         cam.save_video(video_path)
 
     return obs_hist
@@ -193,4 +197,5 @@ if __name__ == "__main__":
         attractive_palps_antennae_weights=(1, 9),
         aversive_palps_antennae_weights=(0, 10),
         video_path="./outputs/odor_taxis.mp4",
+        enable_rendering=True,
     )

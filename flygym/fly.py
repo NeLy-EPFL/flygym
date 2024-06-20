@@ -257,7 +257,7 @@ class Fly:
             Damping coefficient of actuated joints, by default 0.06.
         non_actuated_joint_stiffness : float
             Stiffness of non-actuated joints, by default 1.0. If set to 0,
-            the DoF would passivly drift over time. Therefore it is set
+            the DoF would passively drift over time. Therefore it is set
             explicitly here for better stability.
         non_actuated_joint_damping : float
             Damping coefficient of non-actuated joints, by default 1.0.
@@ -282,7 +282,7 @@ class Fly:
             the number of actuated joints and will be applied to every joint
         actuator_forcerange : Union[float, Tuple[float, float], List]
             The force limit of the actuators. If a single value is
-            provided, it will be symetrically applied to all actuators
+            provided, it will be symmetrically applied to all actuators
             (-a, a). If a tuple is provided, the first value is the lower
             limit and the second value is the upper limit. If a list is
             provided, it should have the same length as the number of
