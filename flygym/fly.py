@@ -466,6 +466,8 @@ class Fly:
 
         # Define list of actuated joints
         self.actuators = self._add_joint_actuators(actuator_gain, actuator_forcerange)
+        self._remove_nonactuated_joints()
+
         if self.head_stabilization_model is not None:
             self.neck_actuators = [
                 self.model.actuator.add(
@@ -966,6 +968,30 @@ class Fly:
             actuators.append(actuator)
 
         return actuators
+    
+    def _remove_nonactuated_joints(self):
+        """
+        This function removes unused joints
+        As joint definitions are more complex and
+        variable across joints it is desirable to 
+        add those in the xml and remove them from the model
+        """
+
+        remove_head_joints = self.head_stabilization_model is None
+        for joint in self.model.find_all("joint"):
+            
+            is_actuated = joint.name in self.actuated_joints
+            is_head = "Head" in joint.name
+            is_tarsus = "Tarsus" in joint.name
+
+            print(joint.name,  not (is_actuated or is_tarsus),  (is_head and remove_head_joints), is_actuated, is_tarsus, is_head, remove_head_joints)
+            if (not (is_actuated or is_tarsus) and (is_head and remove_head_joints)):
+               
+                # remove the joint
+                joint.remove()
+
+        return 
+
 
     def _add_adhesion_actuators(self, gain):
         adhesion_actuators = []
