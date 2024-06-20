@@ -74,7 +74,7 @@ def set_mirrored_meshes(xml, symmetrical_bodies):
             L_mesh_scaling[1] *= -1
             R_mesh_rot.set(
                 "scale", " ".join([str(a) for a in L_mesh_scaling])
-            )  # flip arround the plane x=0
+            )  # flip around the plane x=0
             R_mesh_rot.set("name", L_mesh_name)
             mesh_parent.remove(L_mesh)
             mesh_parent.append(R_mesh_rot)
@@ -84,7 +84,7 @@ def set_mirrored_meshes(xml, symmetrical_bodies):
 
 
 def make_symmetric(xml, symmetrical_bodies, centered_bodies):
-    # Make the xml symmetrical by setting the orgin of every body symmetric to the origin
+    # Make the xml symmetrical by setting the origin of every body symmetric to the origin
     # This is done for now by taking the mean of the two possible non symmetrical position
 
     symmetry_vect = np.array([1, -1, 1])
@@ -145,7 +145,7 @@ def clean_geoms(xml):
         ), f"Visual geom {final_geom_name}_visual not found the file does not follow the basic naming convention"
 
         if (not collision_geom is None) and (not visual_geom is None):
-            # This geom has both a visual and a collision geom: we shoudl remove the visual geom and the mesh referencing it and rename the collsion geom
+            # This geom has both a visual and a collision geom: we should remove the visual geom and the mesh referencing it and rename the collision geom
             visual_mesh_name = visual_geom.get("mesh")
             visual_mesh = xml.find(f".//mesh[@name='{visual_mesh_name}']")
             collision_mesh_name = collision_geom.get("mesh")
@@ -230,7 +230,7 @@ def get_body_min_descendant(xml, names):
 
 
 def remove_dummy_bodies(xml, kin_chain_order=["yaw", "pitch", "roll"]):
-    # remove dummy bodies that form the muli dof joints
+    # remove dummy bodies that form the multi dof joints
 
     multi_dof_joint = get_all_multidof_joints(xml)
     # start at the bottom of the chain for safety not sure this is necessary
@@ -324,7 +324,7 @@ def remove_inertials(xml):
 def save_xml(xml, path):
     # xml.write(path)
 
-    # reparse the xml wiht nicely aligned children
+    # reparse the xml with nicely aligned children
     rough_string = etree.tostring(xml).decode("utf-8")
     reparsed = minidom.parseString(rough_string)
     smooth_string = reparsed.toprettyxml()

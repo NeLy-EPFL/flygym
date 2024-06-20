@@ -5,7 +5,7 @@ from tqdm import trange
 from pathlib import Path
 from typing import Optional
 
-from flygym import Fly, Camera
+from flygym import Fly, Camera, is_rendering_skipped
 from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration.arena import (
@@ -132,7 +132,7 @@ def run_simulation(
         phase_biases=get_cpg_biases(gait),
         fly=fly,
         arena=arena,
-        cameras=[cam],
+        cameras=[] if is_rendering_skipped else [cam],
         timestep=1e-4,
         correction_rates={"retraction": (0, 0), "stumbling": (0, 0)},
     )

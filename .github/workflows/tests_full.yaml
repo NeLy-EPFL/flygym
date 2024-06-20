@@ -1,28 +1,23 @@
-name: MuJoCo Tests
+name: Unit tests (full)
 
 on: [push]
 
-# env:
-#   LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libGLEW.so
-
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set up renderer
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libgl1-mesa-glx libosmesa6-dev
+          sudo apt-get install -y libegl1-mesa-dev
           echo "MUJOCO_GL=egl" >> $GITHUB_ENV
           echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
       - name: Install dependencies
@@ -30,8 +25,8 @@ jobs:
           sudo apt-get install ffmpeg
           pip install --upgrade pip
           pip cache purge
-          pip install -e ."[dev,examples]"
-          pip install toolz
+          pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
+          pip install -e ".[dev,examples]"
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names

@@ -81,14 +81,17 @@ def run_simulation(
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(*spawn_xy, 0.25),
     )
-    cam = Camera(
-        fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
-    )
+    if enable_rendering:
+        cam = Camera(
+            fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
+        )
+    else:
+        cam = None
     sim = HybridTurningController(
         arena=arena,
         phase_biases=get_cpg_biases(gait),
         fly=fly,
-        cameras=[cam],
+        cameras=[cam] if enable_rendering else [],
         timestep=1e-4,
     )
 

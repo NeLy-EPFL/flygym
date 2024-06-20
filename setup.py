@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.0.0-pre.3",
+    version="1.0.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description="Gym environments for NeuroMechFly in various physics simulators",
@@ -17,7 +17,7 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy",
+        "numpy<2",
         "scipy",
         "pyyaml",
         "jupyter",
@@ -46,6 +46,7 @@ setup(
             "requests",
         ],
         "examples": [
+            "joblib",
             "networkx",
             "lightning",
             "tensorboardX",
@@ -54,7 +55,8 @@ setup(
             "seaborn",
             "torch",
             "phiflow",
-            "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip",
+            "h5py",
+            "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
         ],
     },
     url="https://neuromechfly.org/",

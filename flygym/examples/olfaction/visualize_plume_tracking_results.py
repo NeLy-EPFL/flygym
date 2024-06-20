@@ -45,6 +45,10 @@ for trial, traj in trajectories_all.items():
     dist_argmin = np.argmin(dist_to_target)
     if dist_to_target[dist_argmin] < success_radius:
         successful_trials[trial] = traj[: dist_argmin + 1]
+print(f"Number of successful trials: {len(successful_trials)}")
+print("Successful trials:")
+for key in successful_trials.keys():
+    print(f" * {key}")
 
 
 # Plot the mean intensity
@@ -105,7 +109,7 @@ def trim_video_by_fraction(input_file: Path, output_file: Path, fraction: float)
     out.release()
 
 
-chosen_trial = "plume_navigation_seed42_controlFalse"
+chosen_trial = input("Enter the trial to visualize (one of the trials above): ")
 assert chosen_trial in successful_trials, "Chosen trial is not successful"
 trimmed_len = successful_trials[chosen_trial].shape[0]
 total_len = trajectories_all[chosen_trial].shape[0]

@@ -9,6 +9,11 @@
 [![PyPI version](https://badge.fury.io/py/flygym.svg)](https://badge.fury.io/py/flygym)
 ![Repo Size](https://img.shields.io/github/repo-size/NeLy-EPFL/flygym)
 
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/nelyepfl/flygym)
+![Docker image size](https://img.shields.io/docker/image-size/nelyepfl/flygym/latest)
+
+
+
 ![overview_video](https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true)
 
 This repository contains the source code for FlyGym, the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila* melanogaster that can see, smell, walk over challenging terrain, and interact with the environment (see our [NeuroMechFly v2 paper](https://www.biorxiv.org/content/10.1101/2023.09.18.556649)).
@@ -29,9 +34,10 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
 In brief:
 ```bash
 pip install "flygym"
+# or pip install "flygym[examples]" to install additional dependencies needed for examples
 ```
 
-See [our website](https://neuromechfly.org/installation.html) for details, especially if you plan to install FlyGym in the developer mode (i.e. if you plan to make changes to the code). Dependencies are specified in [`setup.py`](https://github.com/NeLy-EPFL/flygym/blob/main/setup.py) and will be installed automatically upon installation using pip. Installation should take no more than a few minutes. NeuroMechFly has been tested on Linux (Ubuntu 22.04.3) and macOS (13.5.2). All commits are tested automatically using the latest Ubuntu version on Python versions 3.9 through 3.12 (see [CI workflow](https://github.com/NeLy-EPFL/flygym/blob/main/.github/workflows/tests.yaml) for exact test specification). The PyPI version of the current release of FlyGym is indicated on the shield at the top of this page. No special or paid software is required to use FlyGym.
+Alternatively, we provide a [Docker image](https://hub.docker.com/r/nelyepfl/flygym). See [our website](https://neuromechfly.org/installation.html) for details, especially if you plan to install FlyGym in the developer mode (i.e. if you plan to make changes to the code). Dependencies are specified in [`setup.py`](https://github.com/NeLy-EPFL/flygym/blob/main/setup.py) and will be installed automatically upon installation using pip. Installation should take no more than a few minutes. The PyPI version of the current release of FlyGym is indicated on the shield at the top of this page. No special, paid software is required to use FlyGym.
 
 ## Demos
 See [our website](https://neuromechfly.org/tutorials/index.html) for tutorials, including expected outputs. For code blocks that take more than a few seconds to run, the running time (on a 2020 MacBook Pro with M1 processor running macOS 13.5.2) is indicated, typically in the form of a progress bar.

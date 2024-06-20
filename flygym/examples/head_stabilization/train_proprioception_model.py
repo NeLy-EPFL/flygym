@@ -13,7 +13,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 
 from shutil import copyfile
 from typing import List
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, root_mean_squared_error
 from pathlib import Path
 from copy import deepcopy
 
@@ -121,8 +121,8 @@ def evaluate_model(
         y_pred = model(x).detach().cpu().numpy()
         r2_roll = r2_score(y[:, 0], y_pred[:, 0])
         r2_pitch = r2_score(y[:, 1], y_pred[:, 1])
-        rmse_roll = mean_squared_error(y[:, 0], y_pred[:, 0], squared=True)
-        rmse_pitch = mean_squared_error(y[:, 1], y_pred[:, 1], squared=True)
+        rmse_roll = root_mean_squared_error(y[:, 0], y_pred[:, 0])
+        rmse_pitch = root_mean_squared_error(y[:, 1], y_pred[:, 1])
         stats.append(
             {
                 "r2_roll": r2_roll,
@@ -191,8 +191,8 @@ dof_subsets = {
 
 # Exclude these videos: fly flips
 excluded_videos = [
-    ("wave", "blocks", "train", "1.12_0.64"),
-    ("tripod", "blocks", "test", "1.14_0.58"),
+    # ("wave", "blocks", "train", "1.12_0.64"),
+    # ("tripod", "blocks", "test", "1.14_0.58"),
 ]
 
 

@@ -1,17 +1,12 @@
 import numpy as np
-from flygym.examples.locomotion import CPGNetwork
-
-from flygym import Fly, Camera, SingleFlySimulation
-from flygym.examples import PreprogrammedSteps
-from flygym.arena import FlatTerrain, GappedTerrain, BlocksTerrain, MixedTerrain
-from dm_control.rl.control import PhysicsError
-
 from tqdm import trange
-import pickle
-
-
-from scipy.interpolate import CubicSpline
 from scipy.interpolate import interp1d
+
+from flygym.examples.locomotion import CPGNetwork
+from flygym import Fly, Camera, SingleFlySimulation
+from flygym.examples.locomotion import PreprogrammedSteps
+from flygym.arena import MixedTerrain
+from dm_control.rl.control import PhysicsError
 
 
 intrinsic_freqs = np.ones(6) * 12
@@ -193,7 +188,7 @@ def run_hybrid_simulation(sim, cpg_network, preprogrammed_steps, run_time):
 
             sim.render()
         except PhysicsError:
-            print("Simulation was interupted because of a physics error")
+            print("Simulation was interrupted because of a physics error")
             return obs_hist, info_hist, True
 
     return obs_hist, info_hist, False
@@ -219,7 +214,7 @@ if __name__ == "__main__":
         control="position",
         contact_sensor_placements=contact_sensor_placements,
     )
-    cam = Camera(fly=fly, play_speed=0.1, camera_id=f"{fly.name}/camera_right")
+    cam = Camera(fly=fly, play_speed=0.1)
 
     sim = SingleFlySimulation(
         fly=fly,
