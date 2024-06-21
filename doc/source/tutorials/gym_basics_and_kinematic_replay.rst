@@ -1,16 +1,12 @@
 Interacting with NeuroMechFly
 =============================
 
-**Author:** Sibo Wang-Chen
+.. note::
 
-**Note:** The code presented in this notebook has been simplified and
-restructured for display in a notebook format. A more complete and
-better structured implementation can be found in the `examples folder of
-the FlyGym repository on
-GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+    **Author:** Sibo Wang-Chen
 
-**Notebook Format:** This tutorial is available in `.ipynb` format in the
-`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+    This tutorial is available in ``.ipynb`` format in the
+    `notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
 
 **Summary:** In this tutorial, we will introduce the basic concepts of
 interacting with the simulated fly in a Markov Decision Process using
