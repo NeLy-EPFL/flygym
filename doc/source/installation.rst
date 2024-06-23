@@ -20,7 +20,7 @@ Then, to install the FlyGym package:
 
    pip install "flygym"
 
-.. warning::
+.. important::
    
    **Headless machines**: If you want to run FlyGym on a machine without a display (e.g. a server or a node on a cluster), please check the special instructions at the bottom of this page.
 
