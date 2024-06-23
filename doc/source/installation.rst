@@ -2,6 +2,9 @@ Installation
 ============
 
 
+FlyGym can be installed as a regular Python package via `PyPI <https://pypi.org/project/flygym/>`_ or as a developer installation from the source code. In addition, we provide a Docker image with FlyGym and its dependencies pre-installed. Below, we provide instructions for each of these methods.
+
+
 Installation via PyPI 
 ---------------------
 The easiest way to install FlyGym is via PyPI. Before you start, you might want to create a Python virtual environment with virtualenv or Conda. For example, with Conda:
@@ -11,32 +14,39 @@ The easiest way to install FlyGym is via PyPI. Before you start, you might want 
    conda create -n flygym python=3.12    # flygym is tested on Python 3.9-3.12
    conda activate flygym    # run this every time you use the environment
 
-(Optional) If you would like to interface FlyGym with the `connectome-constrained vision model <https://github.com/TuragaLab/flyvis>`_ from `Lappalainen et al. (2023) <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`_, you need to install the FlyVision package separately. Since FlyVision is not published on the Python Package Index (PyPI), you must either install it manually following `its installation instructions <https://github.com/TuragaLab/flyvis?tab=readme-ov-file#install-locally->`_, or install it with ``pip`` from our fork on GitHub:
+Then, to install the FlyGym package:
 
 .. code-block:: bash
 
-   pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
-
-(Required) Then, to install the FlyGym package:
-
-.. code-block:: bash
-
-   # if you only want the basic package:
    pip install "flygym"
 
-   # to install additional dependencies required to run the provided examples:
-   pip install "flygym[examples]"
-
-   # to install dev tools such as pytest (automated testing) and sphinx (docs building):
-   pip install "flygym[dev]"
+.. warning::
    
-   # to install everything:
-   pip install "flygym[examples,dev]"
+   **Headless machines**: If you want to run FlyGym on a machine without a display (e.g. a server or a node on a cluster), please check the special instructions at the bottom of this page.
+
+.. note::
+
+   **(Optional) Additional dependencies for provided tutorials and examples:** A number of additional dependencies are required to run the provided `tutorials <https://neuromechfly.org/tutorials/index.html>`_ and `examples <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`_. To install these dependencies, you can run the following command:
+
+   .. code-block:: bash
+
+      pip install "flygym[examples]"
    
+   The tutorial and example on interfacing FlyGym with the `connectome-constrained vision model <https://github.com/TuragaLab/flyvis>`_ from `Lappalainen et al. (2023) <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`_ further requires the FlyVision package, which is not published on the Python Package Index (PyPI). As a result, the command above does not install FlyVision. Instead, you must either install it manually following `its installation instructions <https://github.com/TuragaLab/flyvis?tab=readme-ov-file#install-locally->`_, or install it with ``pip`` from our fork on GitHub:
 
-Please note that the ``pip`` installation does not easily allow the user to modify the source code. If you want to modify the source code, please follow the instructions below for developer installation.
+   .. code-block:: bash
 
-If you want to run FlyGym on a machine without a display (e.g. a server or a node on a cluster), please check the special instructions at the bottom of this page.
+      pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
+
+.. Note::
+
+   **(Optional) Additional tools for developers:** Developers of FlyGym use a number of other tools for automated documentation generation, testing, and code linting. These tools are not required to use FlyGym as it is, but can be useful if you wish to modify the code or contribute to the project. To install these tools, you can run:
+
+   .. code-block:: bash
+
+      pip install "flygym[dev]"
+
+   Note, however, that ``pip`` installation does not easily allow the user to modify the source code. If you want to modify the source code, please follow the instructions below for developer installation.
 
 
 Developer installation
@@ -142,7 +152,7 @@ Docker image
 
 `"Containerization" <https://en.wikipedia.org/wiki/Containerization_(computing)>`_ is a way of virtualization that aims to bundle an application and its dependencies into a single portable, executable unit called a *container*. `Docker <https://docs.docker.com/guides/docker-overview/>`_ is a popular platform for developing, shipping, and running containers, making it easier to manage and deploy applications in a consistent manner.
 
-Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (CaaS) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to `Docker Hub <https://hub.docker.com/r/nelyepfl/flygym>`_. This image is defined by the `Dockerfile <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/Dockerfile>`_ at the root level of the directory.
+Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (CaaS) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to `Docker Hub <https://hub.docker.com/r/nelyepfl/flygym>`_. This image is defined by the `Dockerfile <https://github.com/NeLy-EPFL/flygym/blob/main/Dockerfile>`_ at the root level of the directory.
 
 For more information about how to interact with Docker, please refer to the `official Docker guides <https://docs.docker.com/guides/>`_. Note that you need to `install NVIDIA Container Toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html>`_ if you would like to use an NVIDIA GPU from the container.
 

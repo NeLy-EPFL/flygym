@@ -42,10 +42,10 @@ To overcome this limitation, we can implement the core logic of the
 hybrid turning controller at the level of the Fly instead (see `API
 reference <https://neuromechfly.org/api_ref/examples/locomotion.html#hybrid-turning-fly>`__).
 Because we can have multiple Fly objects in the same Simulation, this
-approach allows us to separately control multiple “``HybridTurningFly``”
-instance. Let’s spawn two flies, a target fly and an observer fly that
-looks at the target fly perpendicular to the target fly’s heading
-direction:
+approach allows us to separately control multiple ``HybridTurningFly``
+instances. Let’s spawn two flies: a target fly that walks forward and an
+observer fly that observes the target fly perpendicular to the target fly's
+direction of movement.
 
 .. code:: ipython3
 
