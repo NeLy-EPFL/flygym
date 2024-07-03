@@ -22,6 +22,7 @@ jobs:
           pip install --upgrade pip
           pip cache purge
           pip install "flyvision @ https://github.com/nely-epfl/flyvis/archive/refs/heads/main.zip"
+          pip cache purge
           pip install -e .[dev,examples]
       - name: Lint with ruff
         run: |

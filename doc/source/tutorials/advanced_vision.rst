@@ -1,16 +1,18 @@
 Connectome-constrained visual system model
 ==========================================
 
-**Authors:** Thomas Ka Chung Lam, Sibo Wang-Chen
+.. note::
 
-**Note:** The code presented in this notebook has been simplified and
-restructured for display in a notebook format. A more complete and
-better structured implementation can be found in the `examples folder of
-the FlyGym repository on
-GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+    **Authors:** Thomas Ka Chung Lam, Sibo Wang-Chen
 
-**Notebook Format:** This tutorial is available in `.ipynb` format in the
-`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+    The code presented in this notebook has been simplified and
+    restructured for display in a notebook format. A more complete and
+    better structured implementation can be found in the `examples folder of
+    the FlyGym repository on
+    GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
+    This tutorial is available in ``.ipynb`` format in the
+    `notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
 
 **Summary**: In this tutorial, we will (1) simulate two flies in the
 same arena, and (2) integrate a connectome-constrained visual system
@@ -40,10 +42,10 @@ To overcome this limitation, we can implement the core logic of the
 hybrid turning controller at the level of the Fly instead (see `API
 reference <https://neuromechfly.org/api_ref/examples/locomotion.html#hybrid-turning-fly>`__).
 Because we can have multiple Fly objects in the same Simulation, this
-approach allows us to separately control multiple “``HybridTurningFly``”
-instance. Let’s spawn two flies, a target fly and an observer fly that
-looks at the target fly perpendicular to the target fly’s heading
-direction:
+approach allows us to separately control multiple ``HybridTurningFly``
+instances. Let’s spawn two flies: a target fly that walks forward and an
+observer fly that observes the target fly perpendicular to the target fly's
+direction of movement.
 
 .. code:: ipython3
 

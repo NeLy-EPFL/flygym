@@ -1,16 +1,18 @@
 Advanced olfaction: Navigating a complex odor plume
 ===================================================
 
-**Author:** Victor Alfred Stimpfling
+.. note::
 
-**Note:** The code presented in this notebook has been simplified and
-restructured for display in a notebook format. A more complete and
-better structured implementation can be found in the `examples folder of
-the FlyGym repository on
-GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+    **Author:** Victor Alfred Stimpfling
 
-**Notebook Format:** This tutorial is available in `.ipynb` format in the
-`notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
+    The code presented in this notebook has been simplified and
+    restructured for display in a notebook format. A more complete and
+    better structured implementation can be found in the `examples folder of
+    the FlyGym repository on
+    GitHub <https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/>`__.
+
+    This tutorial is available in ``.ipynb`` format in the
+    `notebooks folder of the FlyGym repository <https://github.com/NeLy-EPFL/flygym/tree/main/notebooks>`_.
 
 **Summary**: In this tutorial, we simulate a complex odor plume, replay
 the plume in MuJoCo, and build a simple controller to navigate it.
