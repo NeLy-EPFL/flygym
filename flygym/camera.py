@@ -216,9 +216,9 @@ class Camera:
 
         self._cam = self.fly.model.find("camera", camera_id.split("/")[-1])
         self._initialize_custom_camera_handling(camera_id)
-        self._last_render_time = -np.inf
         self._eff_render_interval = self.play_speed / self.fps
         self._frames: list[np.ndarray] = []
+        self._timestamp_per_frame: list[float] = []
 
     def _initialize_custom_camera_handling(self, camera_name: str):
         """
@@ -463,7 +463,7 @@ class Camera:
             )
 
         self._frames.append(img)
-        self._last_render_time = curr_time
+        self._timestamp_per_frame.append(curr_time)
         return img
 
     def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float):
@@ -662,17 +662,16 @@ class Camera:
                 "loop."
             )
 
-        num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
-
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
         with imageio.get_writer(path, fps=self.fps) as writer:
-            for frame in self._frames[num_stab_frames:]:
-                writer.append_data(frame)
+            for frame, timestamp in zip(self._frames, self._timestamp_per_frame):
+                if timestamp >= stabilization_time:
+                    writer.append_data(frame)
 
     def reset(self):
         self._frames.clear()
-        self._last_render_time = -np.inf
+        self._timestamp_per_frame = []
 
     def _correct_camera_orientation(self, camera_name: str):
         # Correct the camera orientation by incorporating the spawn rotation
