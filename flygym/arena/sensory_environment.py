@@ -209,3 +209,12 @@ class OdorArena(BaseArena):
     @property
     def odor_dimensions(self) -> int:
         return self.peak_odor_intensity.shape[1]
+    
+    def _get_max_floor_height(self) -> float:
+        geom = self.root_element.find("geom", "ground")
+        try:
+            plane_height = geom.pos[2]
+        except TypeError:
+            plane_height = 0.0
+
+        return plane_height
