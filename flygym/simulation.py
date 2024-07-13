@@ -80,7 +80,7 @@ class Simulation(gym.Env):
 
         for fly in self.flies:
             self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
-
+        
         arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
@@ -90,7 +90,8 @@ class Simulation(gym.Env):
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
 
         for camera in self.cameras:
-            camera.initialize_dm_camera(self.physics)
+            if not hasattr(camera, "iscustom"):
+                camera.initialize_dm_camera(self.physics)
 
         self.gravity = gravity
 
@@ -114,7 +115,8 @@ class Simulation(gym.Env):
         self.physics.model.opt.gravity[:] = value
 
         for camera in self.cameras:
-            camera.set_gravity(value)
+            if not hasattr(camera, "iscustom"):
+                camera.set_gravity(value)
 
     @property
     def action_space(self):
