@@ -30,6 +30,12 @@ all_tarsi_links = [
     f"{side}{pos}Tarsus{i}" for side in "LR" for pos in "FMH" for i in range(1, 6)
 ]
 
+default_leg_sensor_placements = [
+    f"{leg}{segment}"
+    for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
+    for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
+]
+
 
 def get_preprogrammed_pose(pose: str) -> KinematicPose:
     """Load the preprogrammed pose given the key. Available poses are found
