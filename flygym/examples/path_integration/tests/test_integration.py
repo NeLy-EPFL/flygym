@@ -205,7 +205,7 @@ def test_path_integration():
     # Name: (tripod, 0.64, 0.5, 1, 3, FMH), dtype: float64
 
     time_scale = 0.64
-    running_time = 1.0
+    running_time = 2.0
     dt = 1e-4
     heading_model = LinearModel(
         coefs_all=np.array([0.250722, 0.176886, 0.032141]),
