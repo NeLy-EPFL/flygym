@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import r2_score
@@ -214,5 +215,20 @@ def make_model_prediction_scatte_plot(
     axs[1].set_ylim(2, 12)
     axs[1].set_aspect("equal")
     sns.despine(ax=axs[1])
-
     fig.savefig(output_path)
+
+    # Save raw data as CSV
+    df_heading = pd.DataFrame(
+        {
+            "Actual Δheading [rad]": heading_diff_real_all,
+            "Predicted Δheading [rad]": heading_diff_pred_all,
+        }
+    )
+    df_disp = pd.DataFrame(
+        {
+            "Actual Δdisplacement [mm]": disp_diff_real_all,
+            "Predicted Δdisplacement [mm]": disp_diff_pred_all,
+        }
+    )
+    df_heading.to_csv(str(output_path).replace(".pdf", "_heading.csv"), index=False)
+    df_disp.to_csv(str(output_path).replace(".pdf", "_displacement.csv"), index=False)
