@@ -12,7 +12,6 @@ from dm_control.utils import transformations
 import flygym.examples.head_stabilization.viz as viz
 from flygym.examples.vision import RealisticVisionFly, RetinaMapper
 from flygym.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym.preprogrammed import default_leg_sensor_placements
 
 
 contact_sensor_placements = [
