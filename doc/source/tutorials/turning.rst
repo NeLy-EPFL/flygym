@@ -173,7 +173,7 @@ as before:
 
 Now, we will define the ``__init__`` method of our ``HybridTurningController``
 class. The `complete, functional class
-definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/hybrid_turning_controller.py>`__
+definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/locomotion/turning_controller.py>`__
 can be found on our GitHub repository. You can import it with
 ``from flygym.examples.locomotion import HybridTurningController``.
 
