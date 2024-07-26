@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,8 +21,8 @@ plt.rcParams["pdf.fonttype"] = 42
 
 
 _color_config = {
-    "roll": ("royalblue", "midnightblue"),
-    "pitch": ("peru", "saddlebrown"),
+    "roll": ("midnightblue", "tab:blue"),
+    "pitch": ("darkgoldenrod", "tab:orange"),
 }
 _marker_config = {
     "tripod": "^",
@@ -387,6 +388,21 @@ def plot_rotation_time_series(
                 ax.set_ylabel(rf"{dof.title()} [$^\circ$]")
             if idof == 0 and iterrain == 1:
                 ax.legend(frameon=False, bbox_to_anchor=(1.04, 1), loc="upper left")
+
+            # Save raw data as CSV
+            df = pd.DataFrame(
+                {
+                    "Time [s]": t_grid,
+                    "Head [deg]": np.rad2deg(head_angle),
+                    "Thorax [deg]": np.rad2deg(thorax_angle),
+                }
+            )
+            csv_path = (
+                output_path.parent
+                / f"{output_path.stem}_{terrain_type}_terrain_{dof}.csv"
+            )
+            df.to_csv(csv_path, index=False)
+
     fig.savefig(output_path)
 
 

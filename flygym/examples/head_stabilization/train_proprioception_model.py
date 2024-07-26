@@ -297,3 +297,4 @@ if __name__ == "__main__":
         base_dir / "figs/feature_selection_blocks.pdf",
         title="Blocks terrain",
     )
+    all_test_perf.to_csv(base_dir / "models/stats/all_test_perf.csv", index=False)
