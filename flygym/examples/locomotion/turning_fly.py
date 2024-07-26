@@ -127,7 +127,7 @@ class HybridTurningFly(Fly):
         # Check if we have the correct list of actuated joints
         if self.actuated_joints != all_leg_dofs:
             raise ValueError(
-                "``HybridTurningNMF`` requires a specific set of DoFs, namely "
+                "``HybridTurningFly`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
                 "set of DoFs was provided."
             )

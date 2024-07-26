@@ -568,7 +568,7 @@ high plume FPS to make the simulation easier to run.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.plume_tracking_arena import OdorPlumeArena
+    from flygym.examples.olfaction import OdorPlumeArena
     
     arena = OdorPlumeArena(
         output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25
@@ -855,7 +855,7 @@ Let’s run a sample simulation where the fly walks blindly forward:
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.plume_tracking_task import PlumeNavigationTask
+    from flygym.examples.olfaction import PlumeNavigationTask
     
     arena = OdorPlumeArena(
         output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25

@@ -473,7 +473,7 @@ per side).
 
 .. code:: python
 
-   class VisualTaxis(HybridTurningNMF):
+   class VisualTaxis(HybridTurningController):
        def __init__(self, obj_threshold=0.15, decision_interval=0.05, **kwargs):
            super().__init__(**kwargs)
 

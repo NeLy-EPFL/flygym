@@ -80,15 +80,19 @@ Plume tracking task (``PlumeNavigationTask``)
 
 
 
-NeuroMechFly with connectome-constrained vision network (``RealisticVisionController``)
+NeuroMechFly with connectome-constrained vision network (``RealisticVisionFly``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Action, reward, termination, and truncation:** The ``flygym.examples.realistic_vision.RealisticVisionController`` class expects the same action and returns the same reward, "terminated" flag, and "truncated" flags as ``HybridTurningController``.
+.. important::
 
-**Observation:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.realistic_vision.RealisticVisionController`` class also provides the following in the observation dictionary:
+   Note that ``RealisticVisionFly`` is an extension of ``Fly``, not ``Simulation``. The action and observation spaces of the simulation are modified accordingly nonetheless at the level of each flies.
+
+**Action, reward, termination, and truncation:** The ``flygym.examples.vision.RealisticVisionFly`` class expects the same action and returns the same reward, "terminated" flag, and "truncated" flags as ``HybridTurningController``.
+
+**Observation:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.vision.RealisticVisionFly`` class also provides the following in the observation dictionary:
 
 * "nn_activities_arr": The activities of the visual system neurons, represented as a NumPy array of shape (2, num_cells_per_eye). The 0th dimension corresponds to the eyes in the order (left, right).
 
-**Info:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.realistic_vision.RealisticVisionController`` class also provides the following in the "info" dictionary:
+**Info:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.vision.RealisticVisionFly`` class also provides the following in the "info" dictionary:
 
 * "nn_activities": Activities of the visual system neurons as a ``flyvision.LayerActivity`` object. This is similar to ``obs["nn_activities_arr"]`` but in the form of a ``flyvision.LayerActivity`` object rather than a plain array.
