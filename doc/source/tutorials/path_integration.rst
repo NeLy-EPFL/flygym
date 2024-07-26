@@ -150,10 +150,7 @@ but with the correction amounts set to 0 for simplicity.
     
     from flygym import Fly, Camera
     from flygym.preprogrammed import get_cpg_biases
-    from flygym.examples.path_integration.arena import (
-        PathIntegrationArenaFlat,
-        PathIntegrationArenaBlocks,
-    )
+    from flygym.examples.path_integration import PathIntegrationArenaFlat
 
 
 Let’s define the discrete walking states as an ``Enum`` class (see
@@ -390,7 +387,6 @@ simulation:
     def run_simulation(
         seed: int = 0,
         running_time: float = 20.0,
-        terrain_type: str = "flat",
         gait: str = "tripod",
         output_dir: Optional[Path] = None,
     ):
@@ -407,15 +403,8 @@ simulation:
             spawn_pos=(0, 0, 0.25),
         )
     
-        if terrain_type == "flat":
-            arena = PathIntegrationArenaFlat()
-        elif terrain_type == "blocks":
-            arena = PathIntegrationArenaBlocks(
-                height_range=(0.2, 0.2), x_range=(-50, 50), y_range=(-50, 50)
-            )
-        else:
-            raise ValueError(f"Unknown terrain type: {terrain_type}")
-    
+        arena = PathIntegrationArenaFlat()
+        
         cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
         sim = PathIntegrationController(
             phase_biases=get_cpg_biases(gait),
@@ -472,7 +461,7 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
     output_dir.mkdir(parents=True, exist_ok=True)
     
     run_simulation(
-        seed=0, running_time=1.0, terrain_type="flat", gait="tripod", output_dir=output_dir
+        seed=0, running_time=1.0, gait="tripod", output_dir=output_dir
     )
 
 
