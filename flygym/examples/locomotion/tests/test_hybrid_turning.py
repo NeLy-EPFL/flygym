@@ -6,7 +6,7 @@ from flygym.examples.locomotion import HybridTurningController, HybridTurningNMF
 from flygym.preprogrammed import default_leg_sensor_placements
 
 
-def test_rule_based_controller_nophysics():
+def test_turning():
     run_time = 0.1
     timestep = 1e-4
 
