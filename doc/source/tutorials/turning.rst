@@ -146,8 +146,7 @@ as before:
     from gymnasium.utils.env_checker import check_env
     
     from flygym import Fly, Camera, SingleFlySimulation
-    from flygym.examples.locomotion import PreprogrammedSteps
-    from flygym.examples.locomotion.cpg_controller import CPGNetwork
+    from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
     
     
     _tripod_phase_biases = np.pi * np.array(
@@ -172,11 +171,11 @@ as before:
     
     _default_correction_rates = {"retraction": (800, 700), "stumbling": (2200, 1800)}
 
-Now, we will define the ``__init__`` method of our ``HybridTurningNMF``
+Now, we will define the ``__init__`` method of our ``HybridTurningController``
 class. The `complete, functional class
 definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/hybrid_turning_controller.py>`__
 can be found on our GitHub repository. You can import it with
-``from flygym.examples.turning_controller import HybridTurningNMF``.
+``from flygym.examples.locomotion import HybridTurningController``.
 
 We start with initializing the parent class by calling
 ``super().__init__(...)``. This basically calls the ``__init__`` logic
@@ -184,7 +183,7 @@ of the parent ``NeuroMechFly`` class using the specified parameters:
 
 .. code:: python
 
-   class HybridTurningNMF(NeuroMechFly):
+   class HybridTurningController(NeuroMechFly):
        def __init__(
            self,
            fly: Fly,
@@ -585,7 +584,7 @@ Let’s import this class and instantiate it:
 
 .. code:: ipython3
 
-    from flygym.examples.locomotion.turning_controller import HybridTurningController
+    from flygym.examples.locomotion import HybridTurningController
     from flygym import Fly, Camera
     
     run_time = 1
@@ -616,7 +615,7 @@ Let’s import this class and instantiate it:
     )
 
 In fact, we can use Gymnasium’s ``env_checker`` utility to check if our
-``HybridTurningNMF`` class fully complies with the Gym API. To do this,
+``HybridTurningController`` class fully complies with the Gym API. To do this,
 ``env_checker`` will reset our environment a few times with random
 parameters and step it with random actions. It will then check if the
 observations are as specified in the observation space definition. If no
