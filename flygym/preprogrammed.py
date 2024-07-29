@@ -1,5 +1,4 @@
 import numpy as np
-from typing import List
 from flygym.state import KinematicPose
 from flygym.util import get_data_path
 
@@ -56,7 +55,7 @@ def get_preprogrammed_pose(pose: str) -> KinematicPose:
     return KinematicPose.from_yaml(data_path)
 
 
-def get_collision_geometries(config: str = "all") -> List[str]:
+def get_collision_geometries(config: str = "all") -> list[str]:
     """Get the list of collision geometries given the key: "all" (all body
     segments), "legs-no-coxa" (all leg segments excluding the coxa
     segments), "tarsi" (all tarsus segments), and "none" (nothing).

@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from typing import Optional, Tuple, List, Dict
+from typing import Optional
 from flygym import Camera, SingleFlySimulation
 from dm_control.rl.control import PhysicsError
 
@@ -64,14 +64,14 @@ if not stabilization_model_path.exists() or not scaler_param_path.exists():
 
 def run_simulation(
     arena: MovingFlyArena,
-    tracking_cells: List[str],
+    tracking_cells: list[str],
     run_time: float,
     baseline_response: np.ndarray,
     z_score_threshold: float,
     tracking_gain: float,
     head_stabilization_model: Optional[HeadStabilizationInferenceWrapper] = None,
-    spawn_xy: Tuple[float, float] = (0, 0),
-) -> Dict:
+    spawn_xy: tuple[float, float] = (0, 0),
+) -> dict:
     # Setup NMF simulation
     fly = RealisticVisionFly(
         contact_sensor_placements=contact_sensor_placements,
@@ -191,7 +191,7 @@ def process_trial(
     terrain_type: str,
     stabilization_on: bool,
     cells_selection: str,
-    spawn_xy: Tuple[float, float],
+    spawn_xy: tuple[float, float],
 ):
     variation_name = f"{terrain_type}terrain_stabilization{stabilization_on}"
     trial_name = f"{cells_selection}_x{spawn_xy[0]:.4f}y{spawn_xy[1]:.4f}"

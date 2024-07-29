@@ -62,7 +62,7 @@ implement the following function:
     import cv2
     from tqdm import trange
     from pathlib import Path
-    from typing import Optional, Tuple
+    from typing import Optional
     from dm_control.utils import transformations
     from dm_control.rl.control import PhysicsError
     
@@ -75,8 +75,8 @@ implement the following function:
     def run_simulation(
         gait: str = "tripod",
         terrain: str = "flat",
-        spawn_xy: Tuple[float, float] = (0, 0),
-        dn_drive: Tuple[float, float] = (1, 1),
+        spawn_xy: tuple[float, float] = (0, 0),
+        dn_drive: tuple[float, float] = (1, 1),
         sim_duration: float = 0.5,
         enable_rendering: bool = False,
         live_display: bool = False,
@@ -94,10 +94,10 @@ implement the following function:
         terrain : str, optional
             The type of terrain for the fly. Choose from ['flat', 'blocks'].
             Defaults to "flat".
-        spawn_xy : Tuple[float, float], optional
+        spawn_xy : tuple[float, float], optional
             The x and y coordinates of the fly's spawn position. Defaults to
             (0, 0).
-        dn_drive : Tuple[float, float], optional
+        dn_drive : tuple[float, float], optional
             The DN drive values for the left and right wings. Defaults to
             (1, 1).
         sim_duration : float, optional
@@ -581,7 +581,7 @@ for more details on the Dataset interface.
 .. code:: ipython3
 
     from torch.utils.data import Dataset
-    from typing import Tuple, Optional, Callable
+    from typing import Optional, Callable
     
     
     class WalkingDataset(Dataset):
@@ -592,7 +592,7 @@ for more details on the Dataset interface.
         ----------
         sim_data_file : Path
             The path to the simulation data file.
-        contact_force_thr : Tuple[float, float, float], optional
+        contact_force_thr : tuple[float, float, float], optional
             The threshold values for contact forces, by default (0.5, 1, 3).
         joint_angle_scaler : Optional[Callable], optional
             A callable object used to scale joint angles, by default None.
@@ -639,7 +639,7 @@ for more details on the Dataset interface.
         def __init__(
             self,
             sim_data_file: Path,
-            contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+            contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
             joint_angle_scaler: Optional[Callable] = None,
             ignore_first_n: int = 200,
             joint_mask=None,
@@ -1165,7 +1165,7 @@ that simplifies making single-step predictions natively on the CPU:
             self,
             model_path: Path,
             scaler_param_path: Path,
-            contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+            contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
         ):
             """
             Parameters
@@ -1174,7 +1174,7 @@ that simplifies making single-step predictions natively on the CPU:
                 The path to the trained model.
             scaler_param_path : Path
                 The path to the pickle file containing scaler parameters.
-            contact_force_thr : Tuple[float, float, float], optional
+            contact_force_thr : tuple[float, float, float], optional
                 The threshold values for contact forces that are used to
                 determine the floor contact flags, by default (0.5, 1, 3).
             """

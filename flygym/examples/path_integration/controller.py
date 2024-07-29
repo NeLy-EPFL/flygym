@@ -1,6 +1,6 @@
 import numpy as np
 from enum import Enum
-from typing import Tuple, Union
+from typing import Union
 
 from flygym.examples.locomotion import HybridTurningController
 
@@ -22,9 +22,9 @@ class RandomExplorationController:
     def __init__(
         self,
         dt: float,
-        forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
-        left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
-        right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
+        forward_dn_drive: tuple[float, float] = (1.0, 1.0),
+        left_turn_dn_drive: tuple[float, float] = (-0.4, 1.2),
+        right_turn_dn_drive: tuple[float, float] = (1.2, -0.4),
         turn_duration_mean: float = 0.4,
         turn_duration_std: float = 0.1,
         lambda_turn: float = 1.0,
@@ -36,11 +36,11 @@ class RandomExplorationController:
         ----------
         dt : float
             Time step of the simulation.
-        forward_dn_drive : Tuple[float, float], optional
+        forward_dn_drive : tuple[float, float], optional
             DN drives for forward walking, by default (1.0, 1.0).
-        left_turn_dn_drive : Tuple[float, float], optional
+        left_turn_dn_drive : tuple[float, float], optional
             DN drives for turning left, by default (-0.4, 1.2).
-        right_turn_dn_drive : Tuple[float, float], optional
+        right_turn_dn_drive : tuple[float, float], optional
             DN drives for turning right, by default (1.2, -0.4).
         turn_duration_mean : float, optional
             Mean of the turn duration distribution in seconds, by default
@@ -83,7 +83,7 @@ class RandomExplorationController:
         -------
         WalkingState
             The next state of the fly.
-        Tuple[float, float]
+        tuple[float, float]
             The next DN drives.
         """
         # Upon spawning, just walk straight for a bit (init_time) for things to settle

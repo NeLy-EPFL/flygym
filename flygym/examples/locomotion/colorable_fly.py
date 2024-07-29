@@ -75,7 +75,7 @@ class ColorableFly(Fly):
             The physics object of the simulation.
         segment : str
             The name of the segment to change the color of.
-        color : Tuple[float, float, float, float]
+        color : tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
         if not color:

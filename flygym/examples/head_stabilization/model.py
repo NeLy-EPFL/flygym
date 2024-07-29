@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import lightning as pl
 from torchmetrics.regression import R2Score
 from pathlib import Path
-from typing import Tuple
 
 
 class ThreeLayerMLP(pl.LightningModule):
@@ -84,7 +83,7 @@ class HeadStabilizationInferenceWrapper:
         self,
         model_path: Path,
         scaler_param_path: Path,
-        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+        contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
     ):
         """
         Parameters
@@ -93,7 +92,7 @@ class HeadStabilizationInferenceWrapper:
             The path to the trained model.
         scaler_param_path : Path
             The path to the pickle file containing scaler parameters.
-        contact_force_thr : Tuple[float, float, float], optional
+        contact_force_thr : tuple[float, float, float], optional
             The threshold values for contact forces that are used to
             determine the floor contact flags, by default (0.5, 1, 3).
         """

@@ -36,10 +36,10 @@ def run_simulation(
     marker_colors : np.ndarray
         Array of shape (num_odor_sources, 4) - RGBA values for each marker,
         normalized to [0, 1]
-    spawn_pos : Tuple[float, float, float], optional
+    spawn_pos : tuple[float, float, float], optional
         The (x, y, z) position in the arena defining where the fly will be
         spawned, in mm. By default (0, 0, 0.5).
-    spawn_orientation : Tuple[float, float, float], optional
+    spawn_orientation : tuple[float, float, float], optional
         The spawn orientation of the fly in the Euler angle format: (x, y, z),
         where x, y, z define the rotation around x, y and z in radian. By
         default (0.0, 0.0, pi/2), which leads to a position facing the
@@ -52,13 +52,13 @@ def run_simulation(
         Gain for attractive odor, by default -500
     aversive_gain : int, optional
         Gain for aversive odor, by default 80
-    attractive_palps_antennae_weights : Tuple[int, int], optional
+    attractive_palps_antennae_weights : tuple[int, int], optional
         Weights for averaging attractive intensities from maxillary palps and
         antenna, by default (1, 9)
-    aversive_palps_antennae_weights : Tuple[int, int], optional
+    aversive_palps_antennae_weights : tuple[int, int], optional
         Weights for averaging aversive intensities from maxillary palps and
         antenna, by default (0, 10)
-    target_pos : Tuple[float, float], optional
+    target_pos : tuple[float, float], optional
         The (x, y) position in the arena defining the target position, in mm.
         By default the position of the first odor source.
     distance_threshold : float, optional

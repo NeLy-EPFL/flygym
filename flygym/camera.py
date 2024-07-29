@@ -1,7 +1,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import cv2
 import dm_control.mujoco
@@ -23,7 +23,7 @@ class Camera:
     ----------
     fly : Fly
         The fly to which the camera is associated.
-    window_size : Tuple[int, int]
+    window_size : tuple[int, int]
         Size of the rendered images in pixels.
     play_speed : float
         Play speed of the rendered video.
@@ -80,7 +80,7 @@ class Camera:
         self,
         fly: Fly,
         camera_id: str = "Animat/camera_left",
-        window_size: Tuple[int, int] = (640, 480),
+        window_size: tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
         fps: int = 30,
         timestamp_text: bool = False,
@@ -94,8 +94,8 @@ class Camera:
         gravity_arrow_scaling: float = 1e-4,
         align_camera_with_gravity: bool = False,
         camera_follows_fly_orientation: bool = False,
-        decompose_colors: Tuple[
-            Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]
+        decompose_colors: tuple[
+            tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]
         ] = ((255, 0, 0), (0, 255, 0), (0, 0, 255)),
         output_path: Optional[Union[str, Path]] = None,
         perspective_arrow_length=False,
@@ -109,7 +109,7 @@ class Camera:
         camera_id : str
             The camera that will be used for rendering, by default
             "Animat/camera_left".
-        window_size : Tuple[int, int]
+        window_size : tuple[int, int]
             Size of the rendered images in pixels, by default (640, 480).
         play_speed : float
             Play speed of the rendered video, by default 0.2.

@@ -1,7 +1,6 @@
 import numpy as np
 import h5py
 from dm_control.mujoco import Camera
-from typing import Tuple
 from dm_control import mjcf
 from pathlib import Path
 
@@ -23,7 +22,7 @@ class OdorPlumeArena(BaseArena):
         dimension_scale_factor: float = 0.5,
         plume_simulation_fps: float = 200,
         intensity_scale_factor: float = 1.0,
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
     ):
         """
@@ -41,7 +40,7 @@ class OdorPlumeArena(BaseArena):
             simulation. By default 200.
         intensity_scale_factor : float, optional
             Scaling factor for the intensity of the odor. By default 1.0.
-        friction : Tuple[float, float, float], optional
+        friction : tuple[float, float, float], optional
             Friction parameters for the floor geom. By default (1, 0.005,
             0.0001).
         num_sensors : int, optional
@@ -147,7 +146,7 @@ class OdorPlumeArena(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
 
     def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:

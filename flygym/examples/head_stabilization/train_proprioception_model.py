@@ -12,7 +12,6 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 
 from shutil import copyfile
-from typing import List
 from sklearn.metrics import r2_score, root_mean_squared_error
 from pathlib import Path
 from copy import deepcopy
@@ -61,7 +60,7 @@ def make_concat_subdataset(individual_subdatasets, dofs):
 
 def train_model(
     train_ds: WalkingDataset,
-    dofs: List[str],
+    dofs: list[str],
     trial_name: str,
     max_epochs: int = 20,
     num_workers: int = 8,
@@ -104,8 +103,8 @@ def train_model(
 
 
 def evaluate_model(
-    individual_test_datasets: List[WalkingDataset],
-    dofs: List[str],
+    individual_test_datasets: list[WalkingDataset],
+    dofs: list[str],
     model: ThreeLayerMLP,
 ):
     stats = []
