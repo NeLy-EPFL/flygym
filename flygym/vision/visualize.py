@@ -149,6 +149,8 @@ def visualize_visual_input(
 
     Parameters
     ----------
+    retina : Retina
+        The retina object used to generate the visual input.
     output_path : Path
         Path of the output video will be saved. Should end with ".mp4".
     vision_data_li : list[np.ndarray]
