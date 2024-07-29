@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Tuple
 from dm_control import mjcf
 from flygym.arena import FlatTerrain, BlocksTerrain
 
@@ -39,7 +38,7 @@ class PathIntegrationArenaBase:
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
 
     def update_cam_pos(self, physics: mjcf.Physics, fly_pos: np.ndarray) -> None:
@@ -63,6 +62,6 @@ class PathIntegrationArenaBlocks(PathIntegrationArenaBase, BlocksTerrain):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle

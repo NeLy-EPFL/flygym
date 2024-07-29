@@ -8,7 +8,6 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from pathlib import Path
 from joblib import Parallel, delayed
-from typing import Dict, Tuple
 from tqdm import tqdm, trange
 from flygym.examples.path_integration import model, util, viz
 
@@ -50,7 +49,7 @@ viz.plot_contact_forces(
 )
 
 
-def fit_1d_linear_model(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, float]:
+def fit_1d_linear_model(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     model = LinearRegression()
     model.fit(x, y)
     r2 = model.score(x, y)
@@ -58,8 +57,8 @@ def fit_1d_linear_model(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, flo
 
 
 def model_info_to_dict(
-    model_info: Tuple[float, float, float], model_name: str, legs: str
-) -> Dict[str, float]:
+    model_info: tuple[float, float, float], model_name: str, legs: str
+) -> dict[str, float]:
     coefs, intercept, r2 = model_info
     leg_mask = util.get_leg_mask(legs)
     coefs_all = np.full(3, np.nan)
@@ -74,9 +73,9 @@ def model_info_to_dict(
 
 
 def fit_models(
-    trial_data: Dict[str, np.ndarray],
+    trial_data: dict[str, np.ndarray],
     time_scale: float,
-    contact_force_thr: Tuple[float, float, float],
+    contact_force_thr: tuple[float, float, float],
     legs: str,
     dt: float = 1e-4,
 ):

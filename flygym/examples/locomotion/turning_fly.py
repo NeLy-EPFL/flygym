@@ -300,7 +300,7 @@ class HybridTurningFly(Fly):
             Whether the correction condition is met.
         curr_amount : float
             Current correction amount.
-        correction_rates : Tuple[float, float]
+        correction_rates : tuple[float, float]
             Correction rates for increment and decrement.
         viz_segment : str
             Name of the segment to color code. If None, no color coding is
