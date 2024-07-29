@@ -490,7 +490,6 @@ class ObstacleOdorArena(BaseArena):
         if marker_colors is None:
             rgb = np.array([255, 127, 14]) / 255
             marker_colors = [(*rgb, 1)] * self.num_odor_sources
-            num_odor_sources = self.odor_source.shape[0]
         self.marker_colors = marker_colors
         self._odor_marker_geoms = []
         for i, (pos, rgba) in enumerate(zip(self.odor_source, marker_colors)):
