@@ -251,8 +251,8 @@ class Retina:
                 dst_col_norm = ((2 * dst_col - ncols) / ncols) / zoom
 
                 # get normalized row and col dist from center, +1e-6 to avoid div by 0
-                dst_radius_norm = np.sqrt(dst_col_norm**2 + dst_row_norm**2)
-                denom = 1 - (distortion_coefficient * (dst_radius_norm**2)) + 1e-6
+                dst_radius_norm_sq = dst_col_norm**2 + dst_row_norm**2
+                denom = 1 - (distortion_coefficient * dst_radius_norm_sq) + 1e-6
                 src_row_norm = dst_row_norm / denom
                 src_col_norm = dst_col_norm / denom
 

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, Any
+from typing import Any
 from dm_control import mjcf
 
 from .base import BaseArena
@@ -13,14 +13,14 @@ class Tethered(BaseArena):
     root_element : Any
         The arena object that the terrain is built on. Exactly what it
         is depends on the physics simulator.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
     """
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
 
     def spawn_entity(
@@ -55,7 +55,7 @@ class Ball(Tethered):
     ----------
     root_element : mjcf.RootElement
         The arena object that the terrain is built on.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
 
@@ -63,7 +63,7 @@ class Ball(Tethered):
     ----------
     radius : float, optional
         Radius of the ball, by default 5.390852782067457
-    ball_pos : Tuple[float, float, float], optional
+    ball_pos : tuple[float, float, float], optional
         (x, y, z) mounting position of the ball, by default
         (-0.09867235483, -0.05435809692, -5.20309506806)
     mass : float, optional
@@ -79,7 +79,7 @@ class Ball(Tethered):
     def __init__(
         self,
         radius: float = 5.390852782067457,
-        ball_pos: Tuple[float, float, float] = (
+        ball_pos: tuple[float, float, float] = (
             -0.09867235483,
             -0.05435809692,
             -5.20309506806,

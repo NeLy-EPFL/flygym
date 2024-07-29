@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Dict, Any, Optional
+from typing import Any, Optional
 from dm_control import mjcf
 
 
@@ -12,7 +12,7 @@ class BaseArena(ABC):
     root_element : Any
         The arena object that the terrain is built on. Exactly what it
         is depends on the physics simulator.
-    friction : Tuple [float]
+    friction : tuple [float]
         Default sliding, torsional, and rolling friction coefficients of
         surfaces. This is provided for the user's convenience but can be
         overridden for either all or some surfaces.
@@ -20,7 +20,7 @@ class BaseArena(ABC):
 
     friction = (100.0, 0.005, 0.0001)
 
-    def __init__(self, *args: List, **kwargs: Dict):
+    def __init__(self, *args: list, **kwargs: dict):
         """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
         self.init_lights()
@@ -63,7 +63,7 @@ class BaseArena(ABC):
     @abstractmethod
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Given a relative entity spawn position and orientation (as if it
         was a simple flat terrain), return the adjusted position and
         orientation. This is useful for environments that have complex
@@ -197,29 +197,29 @@ class FlatTerrain(BaseArena):
     ----------
     root_element : mjcf.RootElement
         The root MJCF element of the arena.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
 
     Parameters
     ----------
-    size : Tuple[float, float], optional
+    size : tuple[float, float], optional
         The size of the arena in mm, by default (50, 50).
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
     ground_alpha : float
         Opacity of the ground, by default 1 (fully opaque).
-    scale_bar_pos : Tuple[float, float, float], optional
+    scale_bar_pos : tuple[float, float, float], optional
         If supplied, a 1 mm scale bar will be placed at this location.
     """
 
     def __init__(
         self,
-        size: Tuple[float, float] = (100, 100),
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        size: tuple[float, float] = (100, 100),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         ground_alpha: float = 1.0,
-        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
+        scale_bar_pos: Optional[tuple[float, float, float]] = None,
     ):
         super().__init__()
 
@@ -262,5 +262,5 @@ class FlatTerrain(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle

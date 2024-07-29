@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 import numpy as np
 from dm_control import mjcf
@@ -27,14 +27,14 @@ class Fly:
     ----------
     name : str
         The name of the fly model.
-    actuated_joints : List[str]
+    actuated_joints : list[str]
         List of names of actuated joints.
-    contact_sensor_placements : List[str]
+    contact_sensor_placements : list[str]
         List of body segments where contact sensors are placed.
-    spawn_pos : Tuple[float, float, float]
+    spawn_pos : tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
-    spawn_orientation : Tuple[float, float, float, float]
+    spawn_orientation : tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
     control : str
@@ -83,14 +83,14 @@ class Fly:
         Damping coefficient of the passive, compliant tarsus joints.
     friction : float
         Sliding, torsional, and rolling friction coefficients.
-    contact_solref: Tuple[float, float]
+    contact_solref: tuple[float, float]
         MuJoCo contact reference parameters (see `MuJoCo documentation
         <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
         for details). Under the default configuration, contacts are very
         stiff. This is to avoid penetration of the leg tips into the ground
         when leg adhesion is enabled. The user might want to decrease the
         stiffness if the stability becomes an issue.
-    contact_solimp: Tuple[float, float, float, float, float]
+    contact_solimp: tuple[float, float, float, float, float]
         MuJoCo contact reference parameters (see `MuJoCo docs
         <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
         for details). Under the default configuration, contacts are very
@@ -147,8 +147,8 @@ class Fly:
         f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
     )
     n_legs = 6
-    _floor_contacts: Dict[str, mjcf.Element]
-    _self_contacts: Dict[str, mjcf.Element]
+    _floor_contacts: dict[str, mjcf.Element]
+    _self_contacts: dict[str, mjcf.Element]
     _adhesion_actuator_geom_id: np.ndarray
     _default_fly_name = 0
     _existing_fly_names = set()
@@ -157,28 +157,28 @@ class Fly:
     def __init__(
         self,
         name: Optional[str] = None,
-        actuated_joints: List = preprogrammed.all_leg_dofs,
-        contact_sensor_placements: List = preprogrammed.all_tarsi_links,
+        actuated_joints: list = preprogrammed.all_leg_dofs,
+        contact_sensor_placements: list = preprogrammed.all_tarsi_links,
         xml_variant: Union[str, Path] = "seqik",
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_pos: tuple[float, float, float] = (0.0, 0.0, 0.5),
+        spawn_orientation: tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
         init_pose: Union[str, state.KinematicPose] = "stretch",
-        floor_collisions: Union[str, List[str]] = "legs",
-        self_collisions: Union[str, List[str]] = "legs",
+        floor_collisions: Union[str, list[str]] = "legs",
+        self_collisions: Union[str, list[str]] = "legs",
         detect_flip: bool = False,
         joint_stiffness: float = 0.05,
         joint_damping: float = 0.06,
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
         neck_stiffness: Union[float, None] = 10.0,
-        actuator_gain: Union[float, List] = 45.0,
-        actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
+        actuator_gain: Union[float, list] = 45.0,
+        actuator_forcerange: Union[float, tuple[float, float], list] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
-        contact_solref: Tuple[float, float] = (2e-4, 1e3),
-        contact_solimp: Tuple[float, float, float, float, float] = (
+        contact_solref: tuple[float, float] = (2e-4, 1e3),
+        contact_solimp: tuple[float, float, float, float, float] = (
             9.99e-01,
             9.999e-01,
             1.0e-03,
@@ -203,10 +203,10 @@ class Fly:
         name : str, optional
             The name of the fly model. Will be automatically generated if
             not provided.
-        actuated_joints : List[str], optional
+        actuated_joints : list[str], optional
             List of names of actuated joints. By default all active leg
             DoFs.
-        contact_sensor_placements : List[str], optional
+        contact_sensor_placements : list[str], optional
             List of body segments where contact sensors are placed. By
             default all tarsus segments.
         xml_variant: str or Path, optional
@@ -218,10 +218,10 @@ class Fly:
             legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
             The ordering of DoFs can be seen from the XML files under
             ``flygym/data/mjcf/``.
-        spawn_pos : Tuple[float, float, float], optional
+        spawn_pos : tuple[float, float, float], optional
             The (x, y, z) position in the arena defining where the fly
             will be spawn, in mm. By default (0, 0, 0.5).
-        spawn_orientation : Tuple[float, float, float], optional
+        spawn_orientation : tuple[float, float, float], optional
             The spawn orientation of the fly in the Euler angle format:
             (x, y, z), where x, y, z define the rotation around x, y and
             z in radian. By default (0.0, 0.0, pi/2), which leads to a
@@ -271,7 +271,7 @@ class Fly:
             that the visual input is not perturbed by unintended passive
             head movements. If set, this value overrides
             ``non_actuated_joint_stiffness``.
-        actuator_gain : Union[float, List[float]]
+        actuator_gain : Union[float, list[float]]
             Gain of the actuator:
             If ``control`` is "position", it is the position gain of the
             actuators.
@@ -280,7 +280,7 @@ class Fly:
             If ``control`` is "motor", it is not used
             if the actuator gain is a list, it needs to be of same length as
             the number of actuated joints and will be applied to every joint
-        actuator_forcerange : Union[float, Tuple[float, float], List]
+        actuator_forcerange : Union[float, tuple[float, float], list]
             The force limit of the actuators. If a single value is
             provided, it will be symmetrically applied to all actuators
             (-a, a). If a tuple is provided, the first value is the lower
@@ -296,7 +296,7 @@ class Fly:
         friction : float
             Sliding, torsional, and rolling friction coefficients, by
             default (1, 0.005, 0.0001)
-        contact_solref: Tuple[float, float]
+        contact_solref: tuple[float, float]
             MuJoCo contact reference parameters (see `MuJoCo documentation
             <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
             for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
@@ -305,7 +305,7 @@ class Fly:
             into the ground when leg adhesion is enabled. The user might
             want to decrease the stiffness if the stability becomes an
             issue.
-        contact_solimp: Tuple[float, float, float, float, float]
+        contact_solimp: tuple[float, float, float, float, float]
             MuJoCo contact reference parameters (see `MuJoCo docs
             <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
             for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
@@ -459,7 +459,7 @@ class Fly:
         self._curr_raw_visual_input = None
         self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
-        self._vision_update_mask: List[bool] = []
+        self._vision_update_mask: list[bool] = []
         if self.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -537,10 +537,8 @@ class Fly:
 
         Parameters
         ----------
-        arena : BaseArena
-            The arena in which the fly is placed.
-        physics : mjcf.Physics
-            The physics object of the simulation.
+        sim : Simulation
+            Simulation object.
         """
         self._adhesion_actuator_geom_id = np.array(
             [
@@ -579,7 +577,7 @@ class Fly:
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = self.config["vision"]["hidden_segments"]
 
-    def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
+    def _parse_collision_specs(self, collision_spec: Union[str, list[str]]):
         if collision_spec == "all":
             return [geom.name for geom in self.model.find_all("geom")]
         elif isinstance(collision_spec, str):
@@ -712,7 +710,7 @@ class Fly:
 
     def _init_self_contacts(self):
         self_collision_geoms = self._parse_collision_specs(self.self_collisions)
-        self_contacts: Dict[str, mjcf.Element] = {}
+        self_contacts: dict[str, mjcf.Element] = {}
 
         for geom1 in self_collision_geoms:
             for geom2 in self_collision_geoms:
@@ -762,7 +760,7 @@ class Fly:
         """
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
 
-        floor_contacts: Dict[str, mjcf.Element] = {}
+        floor_contacts: dict[str, mjcf.Element] = {}
         ground_id = 0
 
         arena_root = arena.root_element
@@ -1088,7 +1086,7 @@ class Fly:
             The physics object of the simulation.
         segment : str
             The name of the segment to change the color of.
-        color : Tuple[float, float, float, float]
+        color : tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
         physics.named.model.geom_rgba[f"{self.name}/{segment}"] = color
@@ -1257,7 +1255,7 @@ class Fly:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             The dictionary containing additional information.
         """
         info = {}

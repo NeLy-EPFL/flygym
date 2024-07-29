@@ -9,7 +9,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from matplotlib.animation import FuncAnimation
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Callable
+from typing import Optional, Callable
 from pandas import DataFrame
 from sklearn.metrics import r2_score
 from flygym.examples.head_stabilization import WalkingDataset
@@ -32,7 +32,7 @@ _marker_config = {
 
 def visualize_one_dataset(
     model: Callable,
-    test_datasets: Dict[str, Dict[str, Dict[str, WalkingDataset]]],
+    test_datasets: dict[str, dict[str, dict[str, WalkingDataset]]],
     output_path: Path,
     joint_angles_mask: Optional[np.ndarray] = None,
     dof_subset_tag: Optional[str] = None,
@@ -199,11 +199,11 @@ def make_feature_selection_summary_plot(
 
 
 def closed_loop_comparison_video(
-    data: Dict[Tuple[bool, str], List[np.ndarray]],
+    data: dict[tuple[bool, str], list[np.ndarray]],
     fps: int,
     video_path: Path,
     run_time: float,
-    action_range: Tuple[float, float] = (-20, 20),
+    action_range: tuple[float, float] = (-20, 20),
     dpi: int = 300,
 ):
     fig, axs = plt.subplots(
@@ -363,7 +363,7 @@ def closed_loop_comparison_video(
 
 
 def plot_rotation_time_series(
-    rotation_data: Dict[str, np.ndarray], output_path: Path, dt: float = 1e-4
+    rotation_data: dict[str, np.ndarray], output_path: Path, dt: float = 1e-4
 ):
     fig, axs = plt.subplots(
         2, 2, figsize=(6, 3), tight_layout=True, sharex=True, sharey=True

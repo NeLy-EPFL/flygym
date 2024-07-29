@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from torch.utils.data import Dataset
 from pathlib import Path
-from typing import Tuple, Optional, Callable
+from typing import Optional, Callable
 
 
 class JointAngleScaler:
@@ -91,7 +91,7 @@ class WalkingDataset(Dataset):
     ----------
     sim_data_file : Path
         The path to the simulation data file.
-    contact_force_thr : Tuple[float, float, float], optional
+    contact_force_thr : tuple[float, float, float], optional
         The threshold values for contact forces, by default (0.5, 1, 3).
     joint_angle_scaler : Optional[Callable], optional
         A callable object used to scale joint angles, by default None.
@@ -138,7 +138,7 @@ class WalkingDataset(Dataset):
     def __init__(
         self,
         sim_data_file: Path,
-        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+        contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
         joint_angle_scaler: Optional[Callable] = None,
         ignore_first_n: int = 200,
         joint_mask=None,

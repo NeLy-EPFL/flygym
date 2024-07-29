@@ -2,7 +2,6 @@ import numpy as np
 import pickle
 import gc
 from pathlib import Path
-from typing import Tuple, Dict
 from scipy.signal import convolve2d
 
 
@@ -26,7 +25,7 @@ def get_leg_mask(legs: str) -> np.ndarray:
     return leg_mask
 
 
-def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
+def load_trial_data(trial_dir: Path) -> dict[str, np.ndarray]:
     """Load simulation data from trial.
     The difference between ``load_trial_data`` and ``extract_variables`` is
     that the former loads the raw data from the trial (i.e., physics
@@ -43,7 +42,7 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
 
     Returns
     -------
-    Dict[str, np.ndarray]
+    dict[str, np.ndarray]
         Dictionary containing the following keys, each mapping to a time
         series saved as a numpy array:
         * "end_effector_pos_diff": End effector positions.
@@ -101,12 +100,12 @@ def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
 
 
 def extract_variables(
-    trial_data: Dict[str, np.ndarray],
+    trial_data: dict[str, np.ndarray],
     time_scale: float,
-    contact_force_thr: Tuple[float, float, float],
+    contact_force_thr: tuple[float, float, float],
     legs: str,
     dt: float = 1e-4,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Extract variables used for path integration from trial data.
     The difference between ``load_trial_data`` and ``extract_variables`` is
@@ -118,11 +117,11 @@ def extract_variables(
 
     Parameters
     ----------
-    trial_data : Dict[str, np.ndarray]
+    trial_data : dict[str, np.ndarray]
         Dictionary containing trial data.
     time_scale : float
         Time scale for path integration.
-    contact_force_thr : Tuple[float, float, float]
+    contact_force_thr : tuple[float, float, float]
         Thresholds for contact forces. These are used to determine whether
         a leg is in contact with the ground.
     legs : str

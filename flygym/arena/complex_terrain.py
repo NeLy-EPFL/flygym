@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, Optional
+from typing import Optional
 from dm_control import mjcf
 
 from .base import BaseArena
@@ -12,14 +12,14 @@ class GappedTerrain(BaseArena):
     ----------
     root_element : mjcf.RootElement
         The root MJCF element of the arena.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
-    x_range : Tuple[float, float]
+    x_range : tuple[float, float]
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
         (-10, 20).
-    y_range : Tuple[float, float]Í
+    y_range : tuple[float, float]Í
         Same as above in y, by default (-10, 10)
     gap_width : float
         Width of each gap, by default 0.4
@@ -30,13 +30,13 @@ class GappedTerrain(BaseArena):
 
     Parameters
     ----------
-    x_range : Tuple[float, float], optional
+    x_range : tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
         (-10, 20)
-    y_range : Tuple[float, float], optional
+    y_range : tuple[float, float], optional
         Same as above in y, by default (-10, 10).
-    friction : Tuple[float, float, float], optional
+    friction : tuple[float, float, float], optional
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001).
     gap_width : float, optional
@@ -47,20 +47,20 @@ class GappedTerrain(BaseArena):
         Height of the gaps, by default 2.
     ground_alpha : float, optional
         Opacity of the ground, by default 1 (fully opaque).
-    scale_bar_pos : Tuple[float, float, float], optional
+    scale_bar_pos : tuple[float, float, float], optional
         If supplied, a 1 mm scale bar will be placed at this location.
     """
 
     def __init__(
         self,
-        x_range: Tuple[float, float] = (-10, 25),
-        y_range: Tuple[float, float] = (-20, 20),
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        x_range: tuple[float, float] = (-10, 25),
+        y_range: tuple[float, float] = (-20, 20),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         gap_width: float = 0.3,
         block_width: float = 1.0,
         gap_depth: float = 2.0,
         ground_alpha: float = 1.0,
-        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
+        scale_bar_pos: Optional[tuple[float, float, float]] = None,
     ) -> None:
         super().__init__()
 
@@ -110,7 +110,7 @@ class GappedTerrain(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, self.gap_depth / 2])
         return adj_pos, rel_angle
 
@@ -122,38 +122,38 @@ class BlocksTerrain(BaseArena):
     ----------
     root_element : mjcf.RootElement
         The root MJCF element of the arena.
-    x_range : Tuple[float, float], optional
+    x_range : tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
         (-10, 20).
-    y_range : Tuple[float, float], optional
+    y_range : tuple[float, float], optional
         Same as above in y, by default (-10, 10).
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001).
     block_size : float
         The side length of the rectangular blocks forming the terrain in
         mm, by default 1.3.
-    height_range : Tuple[float, float]
+    height_range : tuple[float, float]
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
         extruded, by default (0.35, 0.35).
 
     Parameters
     ----------
-    x_range : Tuple[float, float], optional
+    x_range : tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
         (-10, 20).
-    y_range : Tuple[float, float], optional
+    y_range : tuple[float, float], optional
         Same as above in y, by default (-10, 10).
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001).
     block_size : float, optional
         The side length of the rectangular blocks forming the terrain in
         mm, by default 1.3.
-    height_range : Tuple[float, float], optional
+    height_range : tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
         extruded, by default (0.35, 0.35).
@@ -161,20 +161,20 @@ class BlocksTerrain(BaseArena):
         Opacity of the ground, by default 1 (fully opaque).
     rand_seed : int, optional
         Seed for generating random block heights, by default 0.
-    scale_bar_pos : Tuple[float, float, float], optional
+    scale_bar_pos : tuple[float, float, float], optional
         If supplied, a 1 mm scale bar will be placed at this location.
     """
 
     def __init__(
         self,
-        x_range: Tuple[float, float] = (-10, 25),
-        y_range: Tuple[float, float] = (-20, 20),
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        x_range: tuple[float, float] = (-10, 25),
+        y_range: tuple[float, float] = (-20, 20),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         block_size: float = 1.3,
-        height_range: Tuple[float, float] = (0.35, 0.35),
+        height_range: tuple[float, float] = (0.35, 0.35),
         ground_alpha: float = 1.0,
         rand_seed: int = 0,
-        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
+        scale_bar_pos: Optional[tuple[float, float, float]] = None,
     ):
         super().__init__()
 
@@ -227,7 +227,7 @@ class BlocksTerrain(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
 
@@ -239,13 +239,13 @@ class MixedTerrain(BaseArena):
     ----------
     root_element : mjcf.RootElement
         The root MJCF element of the arena.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001).
 
     Parameters
     ----------
-    friction : Tuple[float, float, float], optional
+    friction : tuple[float, float, float], optional
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     gap_width : float, optional
@@ -257,7 +257,7 @@ class MixedTerrain(BaseArena):
     block_size : float, optional
         The side length of the rectangular blocks forming the terrain in
         mm, by default 1.3.
-    height_range : Tuple[float, float], optional
+    height_range : tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
         extruded, by default (0.35, 0.35).
@@ -265,21 +265,21 @@ class MixedTerrain(BaseArena):
         Opacity of the ground, by default 1 (fully opaque).
     rand_seed : int, optional
         Seed for generating random block heights, by default 0.
-    scale_bar_pos : Tuple[float, float, float], optional
+    scale_bar_pos : tuple[float, float, float], optional
         If supplied, a 1 mm scale bar will be placed at this location.
     """
 
     def __init__(
         self,
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         gap_width: float = 0.3,
         gapped_block_width: float = 1.0,
         gap_depth: float = 2,
         block_size: float = 1.3,
-        height_range: Tuple[float, float] = (0.35, 0.35),
+        height_range: tuple[float, float] = (0.35, 0.35),
         ground_alpha: float = 1.0,
         rand_seed: int = 0,
-        scale_bar_pos: Optional[Tuple[float, float, float]] = None,
+        scale_bar_pos: Optional[tuple[float, float, float]] = None,
     ):
         super().__init__()
 
@@ -388,6 +388,6 @@ class MixedTerrain(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, -1 * self._height_expected_value])
         return adj_pos, rel_angle
