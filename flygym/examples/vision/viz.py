@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import matplotlib.style
 from tqdm import trange
 from sys import stderr
-from typing import Tuple, List, Dict
 from pathlib import Path
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
@@ -24,13 +23,13 @@ def visualize_vision(
     video_path: Path,
     retina: Retina,
     retina_mapper: RetinaMapper,
-    viz_data_all: List[Dict[str, np.ndarray]],
+    viz_data_all: list[dict[str, np.ndarray]],
     fps: int,
-    figsize: Tuple[float, float] = (12, 9),
+    figsize: tuple[float, float] = (12, 9),
     dpi: int = 300,
-    cell_activity_range: Tuple[float, float] = (-3, 3),
+    cell_activity_range: tuple[float, float] = (-3, 3),
     cell_activity_cmap: LinearSegmentedColormap = matplotlib.colormaps["seismic"],
-    object_score_range: Tuple[float, float] = (0, 20),
+    object_score_range: tuple[float, float] = (0, 20),
     object_score_cmap: LinearSegmentedColormap = matplotlib.colormaps["viridis"],
 ) -> FuncAnimation:
     viz_mosaic_pattern = """
@@ -209,7 +208,7 @@ def visualize_vision(
 
 
 def save_single_eye_video(
-    vision_observation_hist: List[np.ndarray],
+    vision_observation_hist: list[np.ndarray],
     retina: Retina,
     fps: int,
     output_path: Path,

@@ -3,7 +3,6 @@ import cv2
 import matplotlib.pyplot as plt
 import imageio
 import logging
-from typing import List
 from pathlib import Path
 from matplotlib.animation import FuncAnimation
 
@@ -108,7 +107,7 @@ def save_video_with_vision_insets(
         The Camera object that has been used to generate the frames.
     path : Path
         Path of the output video will be saved. Should end with ".mp4".
-    visual_input_hist : List[np.ndarray]
+    visual_input_hist : list[np.ndarray]
         List of ommatidia readings. Each element is an array of shape
         (2, N, 2) where N is the number of ommatidia per eye.
     stabilization_time : float, optional
@@ -140,8 +139,8 @@ def save_video_with_vision_insets(
 def visualize_visual_input(
     retina: Retina,
     output_path: Path,
-    vision_data_li: List[np.ndarray],
-    raw_vision_data_li: List[np.ndarray],
+    vision_data_li: list[np.ndarray],
+    raw_vision_data_li: list[np.ndarray],
     vision_update_mask: np.ndarray,
     vision_refresh_rate: float = 500,
     playback_speed: float = 0.1,
@@ -150,15 +149,17 @@ def visualize_visual_input(
 
     Parameters
     ----------
+    retina : Retina
+        The retina object used to generate the visual input.
     output_path : Path
         Path of the output video will be saved. Should end with ".mp4".
-    vision_data_li : List[np.ndarray]
+    vision_data_li : list[np.ndarray]
         List of ommatidia readings. Each element is an array of shape
         (2, N, 2) where the first dimension is for the left and right eyes,
         the second dimension is for the N ommatidia, and the third
         dimension is for the two channels. The length of this list is the
         number of simulation steps.
-    raw_vision_data_li : List[np.ndarray]
+    raw_vision_data_li : list[np.ndarray]
         Same as ``vision_data_li`` but with the raw RGB images from the
         cameras instead of the simulated ommatidia readings. The shape of
         each element is therefore (2, H, W, 3) where the first dimension is

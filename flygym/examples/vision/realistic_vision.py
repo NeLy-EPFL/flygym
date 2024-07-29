@@ -17,8 +17,8 @@ class RealisticVisionFly(HybridTurningFly):
 
     Notes
     -----
-    Please refer to the `"MPD Task Specifications" page
-    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisioncontroller>`__
+    Please refer to the `"MDP Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisionfly>`__
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.

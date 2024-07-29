@@ -1,6 +1,8 @@
 Change Log
 ==========
 
+* **1.0.1:** Fixed minor bugs related to the set of DoFs in the predefined poses, and to rendering at extremely high frequencies. Fixed outdated class names and links in the docs. In addition, contact sensor placements used by the hybrid turning controller are now added to the ``preprogrammed`` module.
+
 * **1.0.0:** In spring 2024, NeuroMechFly was used, for the second time, in a course titled "`Controlling behavior in animals and robots <https://edu.epfl.ch/coursebook/en/controlling-behavior-in-animals-and-robots-BIOENG-456>`_" at EPFL. At the same time, we revised the NeuroMechFly v2 manuscript. In these processes, we significantly improved the FlyGym package, added new functionalities, and incorporated changes as we received feedback from the students. These enhancements are released as FlyGym version 1.0.0. This release is not backward compatible; please refer to the `tutorials <https://neuromechfly.org/tutorials/index.html>`_ and `API references <https://neuromechfly.org/api_ref/index.html>`_ for more information. The main changes are:
   
   * Major API changes:

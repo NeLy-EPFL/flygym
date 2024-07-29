@@ -127,7 +127,7 @@ class HybridTurningFly(Fly):
         # Check if we have the correct list of actuated joints
         if self.actuated_joints != all_leg_dofs:
             raise ValueError(
-                "``HybridTurningNMF`` requires a specific set of DoFs, namely "
+                "``HybridTurningFly`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
                 "set of DoFs was provided."
             )
@@ -300,7 +300,7 @@ class HybridTurningFly(Fly):
             Whether the correction condition is met.
         curr_amount : float
             Current correction amount.
-        correction_rates : Tuple[float, float]
+        correction_rates : tuple[float, float]
             Correction rates for increment and decrement.
         viz_segment : str
             Name of the segment to color code. If None, no color coding is
@@ -336,6 +336,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         seed : int, optional
             Seed for the random number generator. If None, the simulation
             is re-seeded without a specific seed. For reproducibility,
@@ -369,6 +371,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         action : np.ndarray
             Array of shape (2,) containing descending signal encoding
             turning.

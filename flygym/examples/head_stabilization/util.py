@@ -1,9 +1,8 @@
 from flygym.util import get_data_path
 from pathlib import Path
-from typing import Tuple
 
 
-def get_head_stabilization_model_paths() -> Tuple[Path, Path]:
+def get_head_stabilization_model_paths() -> tuple[Path, Path]:
     """
     Get the paths to the head stabilization models.
 

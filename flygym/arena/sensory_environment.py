@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, List, Optional, Callable
+from typing import Optional, Callable
 from dm_control import mjcf
 
 from flygym.util import load_config
@@ -13,7 +13,7 @@ class OdorArena(BaseArena):
     ----------
     root_element : mjcf.RootElement
         The root MJCF element of the arena.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001)
     num_sensors : int
@@ -42,9 +42,9 @@ class OdorArena(BaseArena):
 
     Parameters
     ----------
-    size : Tuple[float, float], optional
+    size : tuple[float, float], optional
         The size of the arena in mm, by default (300, 300).
-    friction : Tuple[float, float, float], optional
+    friction : tuple[float, float, float], optional
         The sliding, torsional, and rolling friction coefficients of the
         ground, by default (1, 0.005, 0.0001).
     num_sensors : int, optional
@@ -61,7 +61,7 @@ class OdorArena(BaseArena):
         The function that, given a distance from the odor source, returns
         the relative intensity of the odor. By default, this is an inverse
         square relationship.
-    marker_colors : List[Tuple[float, float, float, float]], optional
+    marker_colors : list[tuple[float, float, float, float]], optional
         A list of n_sources RGBA values (each as a tuple) indicating the
         colors of the markers indicating the positions of the odor sources.
         The RGBA values should be given in the range [0, 1]. By default,
@@ -72,13 +72,13 @@ class OdorArena(BaseArena):
 
     def __init__(
         self,
-        size: Tuple[float, float] = (300, 300),
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        size: tuple[float, float] = (300, 300),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
         odor_source: np.ndarray = np.array([[10, 0, 0]]),
         peak_odor_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
-        marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
+        marker_colors: Optional[list[tuple[float, float, float, float]]] = None,
         marker_size: float = 0.25,
     ):
         super().__init__()
@@ -171,7 +171,7 @@ class OdorArena(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
 
     def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:

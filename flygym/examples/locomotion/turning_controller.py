@@ -1,19 +1,16 @@
 import numpy as np
+import warnings
 from tqdm import trange
+from scipy.interpolate import interp1d
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
+from dm_control.rl.control import PhysicsError
 
 from flygym.fly import Fly
 from flygym.simulation import SingleFlySimulation
 from flygym.preprogrammed import all_leg_dofs
 from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
-
-from dm_control.rl.control import PhysicsError
-import pickle
-
 from flygym.arena import MixedTerrain
-
-from scipy.interpolate import interp1d
 
 
 _tripod_phase_biases = np.pi * np.array(
@@ -134,7 +131,7 @@ class HybridTurningController(SingleFlySimulation):
         # Check if we have the correct list of actuated joints
         if fly.actuated_joints != all_leg_dofs:
             raise ValueError(
-                "``HybridTurningNMF`` requires a specific set of DoFs, namely "
+                "``HybridTurningController`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
                 "set of DoFs was provided."
             )
@@ -307,7 +304,7 @@ class HybridTurningController(SingleFlySimulation):
             Whether the correction condition is met.
         curr_amount : float
             Current correction amount.
-        correction_rates : Tuple[float, float]
+        correction_rates : tuple[float, float]
             Correction rates for increment and decrement.
         viz_segment : str
             Name of the segment to color code. If None, no color coding is
@@ -460,6 +457,19 @@ class HybridTurningController(SingleFlySimulation):
         info["net_corrections"] = np.array(all_net_corrections)
         info.update(action)  # add lower-level action to info
         return obs, reward, terminated, truncated, info
+
+
+class HybridTurningNMF(HybridTurningController):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            (
+                "`HybridTurningNMF` has been renamed `HybridTurningController` ."
+                "Please use `HybridTurningController`. `HybridTurningNMF` is "
+                "deprecated and will be removed in a future release."
+            ),
+            DeprecationWarning,
+        )
 
 
 if __name__ == "__main__":
