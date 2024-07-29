@@ -27,8 +27,8 @@ def get_symmetrical_bodies(xml):
         else:
             if (
                 xml.find(f"//body[@name='R{name[1:]}']") is None
-                and not "roll" in name
-                and not "yaw" in name
+                and "roll" not in name
+                and "yaw" not in name
             ):
                 centered_bodies.append(name)
 
@@ -66,7 +66,7 @@ def set_mirrored_meshes(xml, symmetrical_bodies):
         R_mesh = xml.find(f"//mesh[@name='{R_mesh_name}']")
         L_mesh = xml.find(f"//mesh[@name='{L_mesh_name}']")
 
-        if not L_mesh is None and not R_mesh is None:
+        if L_mesh is not None and R_mesh is not None:
             R_mesh_rot = deepcopy(R_mesh)
             L_mesh_scaling = np.array(
                 [float(a) for a in L_mesh.get("scale").split()], dtype=np.int32
@@ -128,14 +128,14 @@ def clean_geoms(xml):
     for geom in xml.findall("//geom"):
         geom_name = geom.get("name")
         final_geom_name = geom_name.split("_")[0]
-        if not final_geom_name in final_geom_names:
+        if final_geom_name not in final_geom_names:
             final_geom_names.append(final_geom_name)
 
     for final_geom_name in final_geom_names:
         visual_geom = xml.find(f".//geom[@name='{final_geom_name}_visual']")
         collision_geom = xml.find(f".//geom[@name='{final_geom_name}_collision']")
         final_mesh_name = ""
-        if not collision_geom is None:
+        if collision_geom is not None:
             final_mesh_name = collision_geom.get("mesh").replace("_collision", "")
         else:
             final_mesh_name = visual_geom.get("mesh").replace("_visual", "")
@@ -144,7 +144,7 @@ def clean_geoms(xml):
             visual_geom is not None
         ), f"Visual geom {final_geom_name}_visual not found the file does not follow the basic naming convention"
 
-        if (not collision_geom is None) and (not visual_geom is None):
+        if (collision_geom is not None) and (visual_geom is not None):
             # This geom has both a visual and a collision geom: we should remove the visual geom and the mesh referencing it and rename the collision geom
             visual_mesh_name = visual_geom.get("mesh")
             visual_mesh = xml.find(f".//mesh[@name='{visual_mesh_name}']")
@@ -153,14 +153,14 @@ def clean_geoms(xml):
 
             # remove the visual geom and the mesh
             visual_geom.getparent().remove(visual_geom)
-            if not visual_mesh is None:
+            if visual_mesh is not None:
                 visual_mesh.getparent().remove(visual_mesh)
             else:
                 geom_name = visual_geom.get("name")
                 print(f"Mesh {visual_mesh_name} for geom {geom_name} not found")
 
             # set to the right values
-            if not collision_mesh is None:
+            if collision_mesh is not None:
                 collision_mesh.set("name", final_mesh_name)
             else:
                 print(
@@ -177,7 +177,7 @@ def clean_geoms(xml):
             mesh_name = visual_geom.get("mesh")
             mesh = xml.find(f".//mesh[@name='{mesh_name}']")
             # set to the right values
-            if not mesh is None:
+            if mesh is not None:
                 mesh.set("name", final_mesh_name)
             else:
                 print(f"Mesh {mesh_name} for geom {visual_geom.get('name')} not found")
@@ -210,9 +210,9 @@ def get_all_multidof_joints(xml):
                 ):
                     multi_dof_joint.append(deepcopy(body_name))
                     n_dofs += 1
-                    assert has_dof_child == False, f"{body_name} {child_name}"
+                    assert not has_dof_child, f"{body_name} {child_name}"
                     has_dof_child = True
-            if n_dofs > 0 and has_dof_child == False:
+            if n_dofs > 0 and not has_dof_child:
                 n_dofs = 0
                 multi_dof_joint.append(body_name)
                 multi_dof_joints.append(multi_dof_joint)
@@ -261,7 +261,7 @@ def remove_dummy_bodies(xml, kin_chain_order=["yaw", "pitch", "roll"]):
 
             # handle the joints
             joint = body.find("joint")
-            if not joint is None:
+            if joint is not None:
                 joints.append(joint)
                 joints_names.append(joint.get("name"))
             else:
@@ -269,7 +269,7 @@ def remove_dummy_bodies(xml, kin_chain_order=["yaw", "pitch", "roll"]):
 
             # handle the inertia
             inertial = body.find("inertial")
-            if not inertial is None and not check_is_dummy(inertial):
+            if inertial is not None and not check_is_dummy(inertial):
                 base_body.append(inertial)
 
             # handle the geoms
@@ -290,7 +290,7 @@ def remove_dummy_bodies(xml, kin_chain_order=["yaw", "pitch", "roll"]):
         new_joint_order = [None, None, None]
         for j, joints_name in enumerate(joints_names):
             dof = joints_name.split("_")[-1]
-            if not dof in ["yaw", "roll"]:
+            if dof not in ["yaw", "roll"]:
                 dof = "pitch"
             new_joint_order[kin_chain_order.index(dof)] = j
         # remove the None values
@@ -355,7 +355,7 @@ def clean_xml(
         symmetrical_bodies = [
             body
             for body in symmetrical_bodies
-            if not "roll" in body and not "yaw" in body
+            if "roll" not in body and "yaw" not in body
         ]
 
         tree = remove_inertials(tree)

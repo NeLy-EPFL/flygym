@@ -234,7 +234,7 @@ class Simulation(gym.Env):
             info,
         )
 
-    def render(self):
+    def render(self, *args, **kwargs):
         for fly in self.flies:
             fly.update_colors(self.physics)
 
