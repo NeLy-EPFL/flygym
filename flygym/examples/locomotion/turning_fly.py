@@ -336,6 +336,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         seed : int, optional
             Seed for the random number generator. If None, the simulation
             is re-seeded without a specific seed. For reproducibility,
@@ -369,6 +371,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         action : np.ndarray
             Array of shape (2,) containing descending signal encoding
             turning.

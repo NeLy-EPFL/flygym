@@ -1,6 +1,7 @@
 import numpy as np
 from enum import Enum
 
+
 class WalkingState(Enum):
     FORWARD = 0, "forward"
     TURN_LEFT = 1, "left turn"

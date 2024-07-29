@@ -537,10 +537,8 @@ class Fly:
 
         Parameters
         ----------
-        arena : BaseArena
-            The arena in which the fly is placed.
-        physics : mjcf.Physics
-            The physics object of the simulation.
+        sim : Simulation
+            Simulation object.
         """
         self._adhesion_actuator_geom_id = np.array(
             [
