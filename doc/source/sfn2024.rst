@@ -15,7 +15,7 @@ Workshop @ SfN
     <p class="admonition-title" style="font-weight: bold; font-size: 12pt">Important</p>
     <p style="font-size: 12pt">
     <b>When:</b> Monday October 7 (SfN Day 3), 6:30 pm &ndash; 8:30 pm</br>
-    <b>When:</b> <a href="https://maps.app.goo.gl/RAt117EM99RaRHeNA" target="_blank" rel="noopener noreferrer"> Hyatt Regency McCormick Place, 2233 S. Martin Luther King Drive, Chicago</a></br>
+    <b>Where:</b> <a href="https://maps.app.goo.gl/RAt117EM99RaRHeNA" target="_blank" rel="noopener noreferrer"> Hyatt Regency McCormick Place, 2233 S. Martin Luther King Drive, Chicago</a></br>
     <b>Organized by:</b> Pavan Ramdya, Sibo Wang-Chen, Victor Stimpfling, Thomas Lam</br>
     <b>Practical information:</b></br>
     &#8227; To attend, please register using <a href="https://forms.gle/a6mMxM3A3c8287pW8" target="_blank" rel="noopener noreferrer">this Google Form</a>.</br>
