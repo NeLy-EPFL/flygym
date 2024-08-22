@@ -22,10 +22,17 @@ Workshop @ SfN
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .register-button:hover {
+        .register-button:hover,
+        .register-button:visited:hover,
+        .register-button:active:hover {
             background-color: #dfd3fd; /* Darker shade for hover effect */
             color: #5c24f5; /* Text color for hover effect */
             box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .register-button:visited,
+        .register-button:active {
+            color: #dfd3fd; /* Maintain the original text color */
         }
 
     </style>
