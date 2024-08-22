@@ -11,6 +11,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    :maxdepth: 2
    :hidden:
 
+   sfn2024
    neuromechfly
    gallery/index
    installation
