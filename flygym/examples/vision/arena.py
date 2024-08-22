@@ -362,6 +362,24 @@ class MovingFlyArena(BaseArena):
 
 
 class MovingBarArena(Tethered):
+    """Flat or blocks terrain with a moving cylinder to simulate a
+    moving bar on a circular screen.
+
+    Parameters
+    ----------
+    azimuth_func : Callable[[float], float]
+        Function that takes time as input and returns the azimuth angle
+        of the cylinder.
+    visual_angle : tuple[float, float]
+        Width and height of the cylinder in degrees.
+    distance : float
+        Distance from the center of the arena to the center of the
+        cylinders.
+    rgba : tuple[float, float, float, float]
+        Color of the cylinder.
+    kwargs : dict
+        Additional arguments to passed to the superclass.
+    """
     def __init__(
         self,
         azimuth_func: Callable[[float], float],
@@ -370,24 +388,6 @@ class MovingBarArena(Tethered):
         rgba=(0, 0, 0, 1),
         **kwargs,
     ):
-        """Flat or blocks terrain with a moving cylinder to simulate a
-        moving bar on a circular screen.
-
-        Parameters
-        ----------
-        azimuth_func : Callable[[float], float]
-            Function that takes time as input and returns the azimuth angle
-            of the cylinder.
-        visual_angle : tuple[float, float]
-            Width and height of the cylinder in degrees.
-        distance : float
-            Distance from the center of the arena to the center of the
-            cylinders.
-        rgba : tuple[float, float, float, float]
-            Color of the cylinder.
-        kwargs : dict
-            Additional arguments to passed to the superclass.
-        """
         super().__init__(**kwargs)
 
         self.azimuth_func = azimuth_func

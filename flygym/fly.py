@@ -140,6 +140,157 @@ class Fly:
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
+    
+    Parameters
+    ----------
+    name : str, optional
+        The name of the fly model. Will be automatically generated if
+        not provided.
+    actuated_joints : list[str], optional
+        List of names of actuated joints. By default all active leg
+        DoFs.
+    contact_sensor_placements : list[str], optional
+        List of body segments where contact sensors are placed. By
+        default all tarsus segments.
+    xml_variant: str or Path, optional
+        The variant of the fly model to use. Multiple variants exist
+        because when replaying experimentally recorded behavior, the
+        ordering of DoF angles in multi-DoF joints depends on how they
+        are configured in the upstream inverse kinematics program. Two
+        variants are provided: "seqik" (default) and "deepfly3d" (for
+        legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+        The ordering of DoFs can be seen from the XML files under
+        ``flygym/data/mjcf/``.
+    spawn_pos : tuple[float, float, float], optional
+        The (x, y, z) position in the arena defining where the fly
+        will be spawn, in mm. By default (0, 0, 0.5).
+    spawn_orientation : tuple[float, float, float], optional
+        The spawn orientation of the fly in the Euler angle format:
+        (x, y, z), where x, y, z define the rotation around x, y and
+        z in radian. By default (0.0, 0.0, pi/2), which leads to a
+        position facing the positive direction of the x-axis.
+    control : str, optional
+        The joint controller type. Can be "position", "velocity", or
+        "motor", by default "position".
+    init_pose : BaseState, optional
+        Which initial pose to start the simulation from. By default
+        "stretch" kinematic pose with all legs fully stretched.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names. By default
+        "legs".
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+        body names. By default "legs".
+    detect_flip : bool
+        If True, the simulation will indicate whether the fly has
+        flipped in the ``info`` returned by ``.step(...)``. Flip
+        detection is achieved by checking whether the leg tips are free
+        of any contact for a duration defined in the configuration
+        file. Flip detection is disabled for a period of time at the
+        beginning of the simulation as defined in the configuration
+        file. This avoids spurious detection when the fly is not
+        standing reliably on the ground yet. By default False.
+    joint_stiffness : float
+        Stiffness of actuated joints, by default 0.05.
+        joint_stiffness : float
+        Stiffness of actuated joints, by default 0.05.
+    joint_damping : float
+        Damping coefficient of actuated joints, by default 0.06.
+    non_actuated_joint_stiffness : float
+        Stiffness of non-actuated joints, by default 1.0. If set to 0,
+        the DoF would passively drift over time. Therefore it is set
+        explicitly here for better stability.
+    non_actuated_joint_damping : float
+        Damping coefficient of non-actuated joints, by default 1.0.
+        Similar to ``non_actuated_joint_stiffness``, it is set
+        explicitly here for better stability.
+    neck_stiffness : Union[float, None]
+        Stiffness of the neck joints (``joint_Head``,
+        ``joint_Head_roll``, and ``joint_Head_yaw``), by default 10.0.
+        The head joints have their stiffness set separately, typically
+        to a higher value than the other non-actuated joints, to ensure
+        that the visual input is not perturbed by unintended passive
+        head movements. If set, this value overrides
+        ``non_actuated_joint_stiffness``.
+    actuator_gain : Union[float, list[float]]
+        Gain of the actuator:
+        If ``control`` is "position", it is the position gain of the
+        actuators.
+        If ``control`` is "velocity", it is the velocity gain of the
+        actuators.
+        If ``control`` is "motor", it is not used
+        if the actuator gain is a list, it needs to be of same length as
+        the number of actuated joints and will be applied to every joint
+    actuator_forcerange : Union[float, tuple[float, float], list]
+        The force limit of the actuators. If a single value is
+        provided, it will be symmetrically applied to all actuators
+        (-a, a). If a tuple is provided, the first value is the lower
+        limit and the second value is the upper limit. If a list is
+        provided, it should have the same length as the number of
+        actuators. By default 65.0.
+    tarsus_stiffness : float
+        Stiffness of the passive, compliant tarsus joints, by default
+        7.5.
+    tarsus_damping : float
+        Damping coefficient of the passive, compliant tarsus joints, by
+        default 1e-2.
+    friction : float
+        Sliding, torsional, and rolling friction coefficients, by
+        default (1, 0.005, 0.0001)
+    contact_solref: tuple[float, float]
+        MuJoCo contact reference parameters (see `MuJoCo documentation
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+        5.0e-01, 2.0e+00). Under the default configuration, contacts
+        are very stiff. This is to avoid penetration of the leg tips
+        into the ground when leg adhesion is enabled. The user might
+        want to decrease the stiffness if the stability becomes an
+        issue.
+    contact_solimp: tuple[float, float, float, float, float]
+        MuJoCo contact reference parameters (see `MuJoCo docs
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+        5.0e-01, 2.0e+00). Under the default configuration, contacts
+        are very stiff. This is to avoid penetration of the leg tips
+        into the ground when leg adhesion is enabled. The user might
+        want to decrease the stiffness if the stability becomes an
+        issue.
+    enable_olfaction : bool
+        Whether to enable olfaction, by default False.
+    enable_vision : bool
+        Whether to enable vision, by default False.
+    render_raw_vision : bool
+        If ``enable_vision`` is True, whether to render the raw vision
+        (raw pixel values before binning by ommatidia), by default
+        False.
+    vision_refresh_rate : int
+        The rate at which the vision sensor is updated, in Hz, by
+        default
+        500.
+    enable_adhesion : bool
+        Whether to enable adhesion. By default False.
+    adhesion_force : float
+        The magnitude of the adhesion force. By default 20.
+    draw_adhesion : bool
+        Whether to signal that adhesion is on by changing the color of
+        the concerned leg. By default False.
+    draw_sensor_markers : bool
+        If True, colored spheres will be added to the model to indicate
+        the positions of the cameras (for vision) and odor sensors. By
+        default False.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators.
+        Otherwise, ``actuator_kp`` will be used.
+    head_stabilization_model : Callable or str optional
+        If callable, it should be a function that, given the observation,
+        predicts signals that need to be applied to the neck DoFs to
+        stabilizes the head of the fly. If "thorax", the rotation (roll
+        and pitch) of the thorax is inverted and applied to the head by
+        the neck actuators. If None (default), no head stabilization is
+        applied.
     """
 
     config = util.load_config()
@@ -196,159 +347,6 @@ class Fly:
         neck_kp: Optional[float] = None,
         head_stabilization_model: Optional[Union[Callable, str]] = None,
     ) -> None:
-        """Initialize a NeuroMechFly environment.
-
-        Parameters
-        ----------
-        name : str, optional
-            The name of the fly model. Will be automatically generated if
-            not provided.
-        actuated_joints : list[str], optional
-            List of names of actuated joints. By default all active leg
-            DoFs.
-        contact_sensor_placements : list[str], optional
-            List of body segments where contact sensors are placed. By
-            default all tarsus segments.
-        xml_variant: str or Path, optional
-            The variant of the fly model to use. Multiple variants exist
-            because when replaying experimentally recorded behavior, the
-            ordering of DoF angles in multi-DoF joints depends on how they
-            are configured in the upstream inverse kinematics program. Two
-            variants are provided: "seqik" (default) and "deepfly3d" (for
-            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
-            The ordering of DoFs can be seen from the XML files under
-            ``flygym/data/mjcf/``.
-        spawn_pos : tuple[float, float, float], optional
-            The (x, y, z) position in the arena defining where the fly
-            will be spawn, in mm. By default (0, 0, 0.5).
-        spawn_orientation : tuple[float, float, float], optional
-            The spawn orientation of the fly in the Euler angle format:
-            (x, y, z), where x, y, z define the rotation around x, y and
-            z in radian. By default (0.0, 0.0, pi/2), which leads to a
-            position facing the positive direction of the x-axis.
-        control : str, optional
-            The joint controller type. Can be "position", "velocity", or
-            "motor", by default "position".
-        init_pose : BaseState, optional
-            Which initial pose to start the simulation from. By default
-            "stretch" kinematic pose with all legs fully stretched.
-        floor_collisions :str
-            Which set of collisions should collide with the floor. Can be
-            "all", "legs", "tarsi" or a list of body names. By default
-            "legs".
-        self_collisions : str
-            Which set of collisions should collide with each other. Can be
-            "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
-            body names. By default "legs".
-        detect_flip : bool
-            If True, the simulation will indicate whether the fly has
-            flipped in the ``info`` returned by ``.step(...)``. Flip
-            detection is achieved by checking whether the leg tips are free
-            of any contact for a duration defined in the configuration
-            file. Flip detection is disabled for a period of time at the
-            beginning of the simulation as defined in the configuration
-            file. This avoids spurious detection when the fly is not
-            standing reliably on the ground yet. By default False.
-        joint_stiffness : float
-            Stiffness of actuated joints, by default 0.05.
-            joint_stiffness : float
-            Stiffness of actuated joints, by default 0.05.
-        joint_damping : float
-            Damping coefficient of actuated joints, by default 0.06.
-        non_actuated_joint_stiffness : float
-            Stiffness of non-actuated joints, by default 1.0. If set to 0,
-            the DoF would passively drift over time. Therefore it is set
-            explicitly here for better stability.
-        non_actuated_joint_damping : float
-            Damping coefficient of non-actuated joints, by default 1.0.
-            Similar to ``non_actuated_joint_stiffness``, it is set
-            explicitly here for better stability.
-        neck_stiffness : Union[float, None]
-            Stiffness of the neck joints (``joint_Head``,
-            ``joint_Head_roll``, and ``joint_Head_yaw``), by default 10.0.
-            The head joints have their stiffness set separately, typically
-            to a higher value than the other non-actuated joints, to ensure
-            that the visual input is not perturbed by unintended passive
-            head movements. If set, this value overrides
-            ``non_actuated_joint_stiffness``.
-        actuator_gain : Union[float, list[float]]
-            Gain of the actuator:
-            If ``control`` is "position", it is the position gain of the
-            actuators.
-            If ``control`` is "velocity", it is the velocity gain of the
-            actuators.
-            If ``control`` is "motor", it is not used
-            if the actuator gain is a list, it needs to be of same length as
-            the number of actuated joints and will be applied to every joint
-        actuator_forcerange : Union[float, tuple[float, float], list]
-            The force limit of the actuators. If a single value is
-            provided, it will be symmetrically applied to all actuators
-            (-a, a). If a tuple is provided, the first value is the lower
-            limit and the second value is the upper limit. If a list is
-            provided, it should have the same length as the number of
-            actuators. By default 65.0.
-        tarsus_stiffness : float
-            Stiffness of the passive, compliant tarsus joints, by default
-            7.5.
-        tarsus_damping : float
-            Damping coefficient of the passive, compliant tarsus joints, by
-            default 1e-2.
-        friction : float
-            Sliding, torsional, and rolling friction coefficients, by
-            default (1, 0.005, 0.0001)
-        contact_solref: tuple[float, float]
-            MuJoCo contact reference parameters (see `MuJoCo documentation
-            <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
-            5.0e-01, 2.0e+00). Under the default configuration, contacts
-            are very stiff. This is to avoid penetration of the leg tips
-            into the ground when leg adhesion is enabled. The user might
-            want to decrease the stiffness if the stability becomes an
-            issue.
-        contact_solimp: tuple[float, float, float, float, float]
-            MuJoCo contact reference parameters (see `MuJoCo docs
-            <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
-            5.0e-01, 2.0e+00). Under the default configuration, contacts
-            are very stiff. This is to avoid penetration of the leg tips
-            into the ground when leg adhesion is enabled. The user might
-            want to decrease the stiffness if the stability becomes an
-            issue.
-        enable_olfaction : bool
-            Whether to enable olfaction, by default False.
-        enable_vision : bool
-            Whether to enable vision, by default False.
-        render_raw_vision : bool
-            If ``enable_vision`` is True, whether to render the raw vision
-            (raw pixel values before binning by ommatidia), by default
-            False.
-        vision_refresh_rate : int
-            The rate at which the vision sensor is updated, in Hz, by
-            default
-            500.
-        enable_adhesion : bool
-            Whether to enable adhesion. By default False.
-        adhesion_force : float
-            The magnitude of the adhesion force. By default 20.
-        draw_adhesion : bool
-            Whether to signal that adhesion is on by changing the color of
-            the concerned leg. By default False.
-        draw_sensor_markers : bool
-            If True, colored spheres will be added to the model to indicate
-            the positions of the cameras (for vision) and odor sensors. By
-            default False.
-        neck_kp : float, optional
-            Position gain of the neck position actuators. If supplied, this
-            will overwrite ``actuator_kp`` for the neck actuators.
-            Otherwise, ``actuator_kp`` will be used.
-        head_stabilization_model : Callable or str optional
-            If callable, it should be a function that, given the observation,
-            predicts signals that need to be applied to the neck DoFs to
-            stabilizes the head of the fly. If "thorax", the rotation (roll
-            and pitch) of the thorax is inverted and applied to the head by
-            the neck actuators. If None (default), no head stabilization is
-            applied.
-        """
         actuated_joints = list(actuated_joints)
 
         # Check neck actuation if head stabilization is enabled
