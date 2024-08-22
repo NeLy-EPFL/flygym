@@ -253,6 +253,63 @@ class NeuroMechFly(SingleFlySimulation):
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
+
+    Parameters
+    ----------
+    sim_params : flygym.Parameters
+        Parameters of the MuJoCo simulation.
+    actuated_joints : list[str], optional
+        List of names of actuated joints. By default all active leg
+        DoFs.
+    contact_sensor_placements : list[str], optional
+        List of body segments where contact sensors are placed. By
+        default all tarsus segments.
+    output_dir : Path, optional
+        Directory to save simulation data. If ``None``, no data will
+        be saved. By default None.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    xml_variant: str or Path, optional
+        The variant of the fly model to use. Multiple variants exist
+        because when replaying experimentally recorded behavior, the
+        ordering of DoF angles in multi-DoF joints depends on how they
+        are configured in the upstream inverse kinematics program. Two
+        variants are provided: "seqik" (default) and "deepfly3d" (for
+        legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+        The ordering of DoFs can be seen from the XML files under
+        ``flygym/data/mjcf/``.
+    spawn_pos : tuple[float, float, float], optional
+        The (x, y, z) position in the arena defining where the fly
+        will be spawn, in mm. By default (0, 0, 0.5).
+    spawn_orientation : tuple[float, float, float], optional
+        The spawn orientation of the fly in the Euler angle format:
+        (x, y, z), where x, y, z define the rotation around x, y and
+        z in radian. By default (0.0, 0.0, pi/2), which leads to a
+        position facing the positive direction of the x-axis.
+    control : str, optional
+        The joint controller type. Can be "position", "velocity", or
+        "torque", by default "position".
+    init_pose : BaseState, optional
+        Which initial pose to start the simulation from. By default
+        "stretch" kinematic pose with all legs fully stretched.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names. By default
+        "legs".
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+        body names. By default "legs".
+    detect_flip : bool
+        If True, the simulation will indicate whether the fly has
+        flipped in the ``info`` returned by ``.step(...)``. Flip
+        detection is achieved by checking whether the leg tips are free
+        of any contact for a duration defined in the configuration
+        file. Flip detection is disabled for a period of time at the
+        beginning of the simulation as defined in the configuration
+        file. This avoids spurious detection when the fly is not
+        standing reliably on the ground yet. By default False.
     """
 
     def __init__(
@@ -271,66 +328,6 @@ class NeuroMechFly(SingleFlySimulation):
         self_collisions: Union[str, list[str]] = "legs",
         detect_flip: bool = False,
     ) -> None:
-        """Initialize a NeuroMechFly environment.
-
-        Parameters
-        ----------
-        sim_params : flygym.Parameters
-            Parameters of the MuJoCo simulation.
-        actuated_joints : list[str], optional
-            List of names of actuated joints. By default all active leg
-            DoFs.
-        contact_sensor_placements : list[str], optional
-            List of body segments where contact sensors are placed. By
-            default all tarsus segments.
-        output_dir : Path, optional
-            Directory to save simulation data. If ``None``, no data will
-            be saved. By default None.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        xml_variant: str or Path, optional
-            The variant of the fly model to use. Multiple variants exist
-            because when replaying experimentally recorded behavior, the
-            ordering of DoF angles in multi-DoF joints depends on how they
-            are configured in the upstream inverse kinematics program. Two
-            variants are provided: "seqik" (default) and "deepfly3d" (for
-            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
-            The ordering of DoFs can be seen from the XML files under
-            ``flygym/data/mjcf/``.
-        spawn_pos : tuple[float, float, float], optional
-            The (x, y, z) position in the arena defining where the fly
-            will be spawn, in mm. By default (0, 0, 0.5).
-        spawn_orientation : tuple[float, float, float], optional
-            The spawn orientation of the fly in the Euler angle format:
-            (x, y, z), where x, y, z define the rotation around x, y and
-            z in radian. By default (0.0, 0.0, pi/2), which leads to a
-            position facing the positive direction of the x-axis.
-        control : str, optional
-            The joint controller type. Can be "position", "velocity", or
-            "torque", by default "position".
-        init_pose : BaseState, optional
-            Which initial pose to start the simulation from. By default
-            "stretch" kinematic pose with all legs fully stretched.
-        floor_collisions :str
-            Which set of collisions should collide with the floor. Can be
-            "all", "legs", "tarsi" or a list of body names. By default
-            "legs".
-        self_collisions : str
-            Which set of collisions should collide with each other. Can be
-            "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
-            body names. By default "legs".
-        detect_flip : bool
-            If True, the simulation will indicate whether the fly has
-            flipped in the ``info`` returned by ``.step(...)``. Flip
-            detection is achieved by checking whether the leg tips are free
-            of any contact for a duration defined in the configuration
-            file. Flip detection is disabled for a period of time at the
-            beginning of the simulation as defined in the configuration
-            file. This avoids spurious detection when the fly is not
-            standing reliably on the ground yet. By default False.
-        """
-
         warnings.warn(
             "Deprecation warning: The `NeuroMechFly` class has been "
             "restructured into `Simulation`, `Fly`, and `Camera`."

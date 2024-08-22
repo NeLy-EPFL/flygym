@@ -51,6 +51,57 @@ class HybridTurningController(SingleFlySimulation):
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.
+
+    Parameters
+    ----------
+    fly : Fly
+        The fly object to be simulated.
+    preprogrammed_steps : PreprogrammedSteps, optional
+        Preprogrammed steps to be used for leg movement.
+    intrinsic_freqs : np.ndarray, optional
+        Intrinsic frequencies of the CPGs. See ``CPGNetwork`` for
+        details.
+    intrinsic_amps : np.ndarray, optional
+        Intrinsic amplitudes of the CPGs. See ``CPGNetwork`` for
+        details.
+    phase_biases : np.ndarray, optional
+        Phase biases of the CPGs. See ``CPGNetwork`` for details.
+    coupling_weights : np.ndarray, optional
+        Coupling weights of the CPGs. See ``CPGNetwork`` for details.
+    convergence_coefs : np.ndarray, optional
+        Convergence coefficients of the CPGs. See ``CPGNetwork`` for
+        details.
+    init_phases : np.ndarray, optional
+        Initial phases of the CPGs. See ``CPGNetwork`` for details.
+    init_magnitudes : np.ndarray, optional
+        Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
+    stumble_segments : tuple, optional
+        Leg segments to be used for stumbling detection.
+    stumbling_force_threshold : float, optional
+        Threshold for stumbling detection.
+    correction_vectors : dict, optional
+        Correction vectors for each leg.
+    correction_rates : dict, optional
+        Correction rates for retraction and stumbling.
+    amplitude_range : tuple, optional
+        Range for leg lifting correction.
+    draw_corrections : bool, optional
+        Whether to color-code legs to indicate if correction rules
+        are active in the rendered video.
+    max_increment : float, optional
+        Maximum duration of the correction before it is capped.
+    retraction_persist3nce_duration : float, optional
+        Time spend in a persistent state (leg is further retracted)
+        even if the rule is no longer active
+    retraction_persist3nce_initiation_threshold : float, optional
+        Amount of time the leg had to be retracted for for the persistence
+        to be initiated (prevents activation of persistence for noise driven
+        rule activations)
+    seed : int, optional
+        Seed for the random number generator.
+    **kwargs
+        Additional keyword arguments to be passed to
+        ``SingleFlySimulation.__init__``.
     """
 
     def __init__(
@@ -76,58 +127,6 @@ class HybridTurningController(SingleFlySimulation):
         seed=0,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        fly : Fly
-            The fly object to be simulated.
-        preprogrammed_steps : PreprogrammedSteps, optional
-            Preprogrammed steps to be used for leg movement.
-        intrinsic_freqs : np.ndarray, optional
-            Intrinsic frequencies of the CPGs. See ``CPGNetwork`` for
-            details.
-        intrinsic_amps : np.ndarray, optional
-            Intrinsic amplitudes of the CPGs. See ``CPGNetwork`` for
-            details.
-        phase_biases : np.ndarray, optional
-            Phase biases of the CPGs. See ``CPGNetwork`` for details.
-        coupling_weights : np.ndarray, optional
-            Coupling weights of the CPGs. See ``CPGNetwork`` for details.
-        convergence_coefs : np.ndarray, optional
-            Convergence coefficients of the CPGs. See ``CPGNetwork`` for
-            details.
-        init_phases : np.ndarray, optional
-            Initial phases of the CPGs. See ``CPGNetwork`` for details.
-        init_magnitudes : np.ndarray, optional
-            Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
-        stumble_segments : tuple, optional
-            Leg segments to be used for stumbling detection.
-        stumbling_force_threshold : float, optional
-            Threshold for stumbling detection.
-        correction_vectors : dict, optional
-            Correction vectors for each leg.
-        correction_rates : dict, optional
-            Correction rates for retraction and stumbling.
-        amplitude_range : tuple, optional
-            Range for leg lifting correction.
-        draw_corrections : bool, optional
-            Whether to color-code legs to indicate if correction rules
-            are active in the rendered video.
-        max_increment : float, optional
-            Maximum duration of the correction before it is capped.
-        retraction_persist3nce_duration : float, optional
-            Time spend in a persistent state (leg is further retracted)
-            even if the rule is no longer active
-        retraction_persist3nce_initiation_threshold : float, optional
-            Amount of time the leg had to be retracted for for the persistence
-            to be initiated (prevents activation of persistence for noise driven
-            rule activations)
-        seed : int, optional
-            Seed for the random number generator.
-        **kwargs
-            Additional keyword arguments to be passed to
-            ``SingleFlySimulation.__init__``.
-        """
         # Check if we have the correct list of actuated joints
         if fly.actuated_joints != all_leg_dofs:
             raise ValueError(

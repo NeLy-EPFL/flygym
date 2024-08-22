@@ -32,6 +32,23 @@ class Simulation(gym.Env):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
+
+    Parameters
+    ----------
+    flies : Iterable[flygym.fly.Fly] or Fly
+        List of flies in the simulation.
+    cameras : Iterable[flygym.camera.Camera] or Camera, optional
+        List of cameras in the simulation. Defaults to the left camera
+        of the first fly.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    timestep : float
+        Simulation timestep in seconds, by default 0.0001.
+    gravity : tuple[float, float, float]
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+        that the gravity is -9.81 * 1000 due to the scaling of the
+        model.
     """
 
     def __init__(
@@ -42,24 +59,6 @@ class Simulation(gym.Env):
         timestep: float = 0.0001,
         gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
-        """
-        Parameters
-        ----------
-        flies : Iterable[flygym.fly.Fly] or Fly
-            List of flies in the simulation.
-        cameras : Iterable[flygym.camera.Camera] or Camera, optional
-            List of cameras in the simulation. Defaults to the left camera
-            of the first fly.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        timestep : float
-            Simulation timestep in seconds, by default 0.0001.
-        gravity : tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
-            that the gravity is -9.81 * 1000 due to the scaling of the
-            model.
-        """
         if isinstance(flies, Iterable):
             self.flies = list(flies)
         else:
@@ -351,6 +350,23 @@ class SingleFlySimulation(Simulation):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
+
+    Parameters
+    ----------
+    fly : Fly
+        The fly in the simulation.
+    cameras : Iterable[Fly] or Camera, optional
+        List of cameras in the simulation. Defaults to the left camera
+        of the first fly.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    timestep : float
+        Simulation timestep in seconds, by default 0.0001.
+    gravity : tuple[float, float, float]
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+        that the gravity is -9.81 * 1000 due to the scaling of the
+        model.
     """
 
     def __init__(
@@ -361,24 +377,6 @@ class SingleFlySimulation(Simulation):
         timestep: float = 0.0001,
         gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
-        """
-        Parameters
-        ----------
-        fly : Fly
-            The fly in the simulation.
-        cameras : Iterable[Fly] or Camera, optional
-            List of cameras in the simulation. Defaults to the left camera
-            of the first fly.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        timestep : float
-            Simulation timestep in seconds, by default 0.0001.
-        gravity : tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
-            that the gravity is -9.81 * 1000 due to the scaling of the
-            model.
-        """
         self.fly = fly
         super().__init__(
             flies=[fly],

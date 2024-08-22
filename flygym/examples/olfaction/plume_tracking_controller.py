@@ -22,6 +22,52 @@ class PlumeNavigationController:
     turning, and stopping. The transition among these states are governed by Poisson
     processes with encounter-dependent rates.
 
+    Parameters
+    ----------
+    dt : float
+        Time step of the physics simulation in seconds.
+    forward_dn_drive : tuple[float, float]
+        Drive values for forward walking.
+    left_turn_dn_drive : tuple[float, float]
+        Drive values for left turn.
+    right_turn_dn_drive : tuple[float, float]
+        Drive values for right turn.
+    stop_dn_drive : tuple[float, float]
+        Drive values for stopping.
+    turn_duration : float
+        Duration of the turn in seconds.
+    lambda_ws_0 : float
+        Baseline rate of transition from walking to stopping.
+    delta_lambda_ws : float
+        Change in the rate of transition from walking to stopping after an
+        encounter.
+    tau_s : float
+        Time constant for the transition from walking to stopping.
+    alpha : float
+        Parameter for the sigmoid function that determines the turning direction.
+    tau_freq_conv : float
+        Time constant for the exponential kernel that convolves the encounter
+        history to determine the turning direction.
+    cumulative_evidence_window : float
+        Window size for the cumulative evidence of the encounter history. In other
+        words, encounters more than this many seconds ago are ignored.
+    lambda_sw_0 : float
+        Baseline rate of transition from stopping to walking.
+    delta_lambda_sw : float
+        Maximum change in the rate of transition from stopping to walking after an
+        encounter.
+    tau_w : float
+        Time constant for evidence accumulation for the transition from stopping to
+        walking.
+    lambda_turn : float
+        Poisson rate for turning.
+    random_seed : int
+        Random seed.
+
+    Notes
+    -----
+    See `Demir et al., 2020`_ for details.
+
     .. _Demir et al., 2020: https://doi.org/10.7554/eLife.57524
     """
 
@@ -45,55 +91,6 @@ class PlumeNavigationController:
         lambda_turn: float = 1.33,  # s^-1
         random_seed: int = 0,
     ) -> None:
-        """
-        Parameters
-        ----------
-        dt : float
-            Time step of the physics simulation in seconds.
-        forward_dn_drive : tuple[float, float]
-            Drive values for forward walking.
-        left_turn_dn_drive : tuple[float, float]
-            Drive values for left turn.
-        right_turn_dn_drive : tuple[float, float]
-            Drive values for right turn.
-        stop_dn_drive : tuple[float, float]
-            Drive values for stopping.
-        turn_duration : float
-            Duration of the turn in seconds.
-        lambda_ws_0 : float
-            Baseline rate of transition from walking to stopping.
-        delta_lambda_ws : float
-            Change in the rate of transition from walking to stopping after an
-            encounter.
-        tau_s : float
-            Time constant for the transition from walking to stopping.
-        alpha : float
-            Parameter for the sigmoid function that determines the turning direction.
-        tau_freq_conv : float
-            Time constant for the exponential kernel that convolves the encounter
-            history to determine the turning direction.
-        cumulative_evidence_window : float
-            Window size for the cumulative evidence of the encounter history. In other
-            words, encounters more than this many seconds ago are ignored.
-        lambda_sw_0 : float
-            Baseline rate of transition from stopping to walking.
-        delta_lambda_sw : float
-            Maximum change in the rate of transition from stopping to walking after an
-            encounter.
-        tau_w : float
-            Time constant for evidence accumulation for the transition from stopping to
-            walking.
-        lambda_turn : float
-            Poisson rate for turning.
-        random_seed : int
-            Random seed.
-
-        Notes
-        -----
-        See `Demir et al., 2020`_ for details.
-
-        .. _Demir et al., 2020: https://doi.org/10.7554/eLife.57524
-        """
         self.dt = dt
         # DN drives
         self.dn_drives = {

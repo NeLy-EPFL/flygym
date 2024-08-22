@@ -17,6 +17,30 @@ class RandomExplorationController:
     between forward walking and turning in a Poisson process. When the fly
     turns, the turn direction is chosen randomly and the turn duration is
     drawn from a normal distribution.
+
+    Parameters
+    ----------
+    dt : float
+        Time step of the simulation.
+    forward_dn_drive : tuple[float, float], optional
+        DN drives for forward walking, by default (1.0, 1.0).
+    left_turn_dn_drive : tuple[float, float], optional
+        DN drives for turning left, by default (-0.4, 1.2).
+    right_turn_dn_drive : tuple[float, float], optional
+        DN drives for turning right, by default (1.2, -0.4).
+    turn_duration_mean : float, optional
+        Mean of the turn duration distribution in seconds, by default
+        0.4.
+    turn_duration_std : float, optional
+        Standard deviation of the turn duration distribution in
+        seconds, by default 0.1.
+    lambda_turn : float, optional
+        Rate of the Poisson process for turning, by default 1.0.
+    seed : int, optional
+        Random seed, by default 0.
+    init_time : float, optional
+        Initial time, in seconds, during which the fly walks straight,
+        by default 0.1.
     """
 
     def __init__(
@@ -31,31 +55,6 @@ class RandomExplorationController:
         seed: int = 0,
         init_time: float = 0.1,
     ) -> None:
-        """
-        Parameters
-        ----------
-        dt : float
-            Time step of the simulation.
-        forward_dn_drive : tuple[float, float], optional
-            DN drives for forward walking, by default (1.0, 1.0).
-        left_turn_dn_drive : tuple[float, float], optional
-            DN drives for turning left, by default (-0.4, 1.2).
-        right_turn_dn_drive : tuple[float, float], optional
-            DN drives for turning right, by default (1.2, -0.4).
-        turn_duration_mean : float, optional
-            Mean of the turn duration distribution in seconds, by default
-            0.4.
-        turn_duration_std : float, optional
-            Standard deviation of the turn duration distribution in
-            seconds, by default 0.1.
-        lambda_turn : float, optional
-            Rate of the Poisson process for turning, by default 1.0.
-        seed : int, optional
-            Random seed, by default 0.
-        init_time : float, optional
-            Initial time, in seconds, during which the fly walks straight,
-            by default 0.1.
-        """
         self.random_state = np.random.RandomState(seed)
         self.dt = dt
         self.init_time = init_time
