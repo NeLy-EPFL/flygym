@@ -6,6 +6,23 @@ from flygym.examples.locomotion import PreprogrammedSteps
 
 
 class RuleBasedController:
+    """
+    Parameters
+    ----------
+    timestep : float
+        The timestep of the simulation.
+    rules_graph : nx.MultiDiGraph
+        The rules graph that defines the interactions between the legs.
+    weights : dict
+        The weights for each rule.
+    preprogrammed_steps : PreprogrammedSteps, optional
+        Preprogrammed steps to be used for leg movement.
+    margin : float, optional
+        The margin for selecting the highest scoring leg.
+    seed : int, optional
+        The random seed to use for selecting the highest scoring leg.
+    """
+
     legs = ["LF", "LM", "LH", "RF", "RM", "RH"]
 
     def __init__(
@@ -20,22 +37,6 @@ class RuleBasedController:
         self._phase_inc_per_step = (
             2 * np.pi * (timestep / self.preprogrammed_steps.duration)
         )
-        """
-        Parameters
-        ----------
-        timestep : float
-            The timestep of the simulation.
-        rules_graph : nx.MultiDiGraph
-            The rules graph that defines the interactions between the legs.
-        weights : dict
-            The weights for each rule.
-        preprogrammed_steps : PreprogrammedSteps, optional
-            Preprogrammed steps to be used for leg movement.
-        margin : float, optional
-            The margin for selecting the highest scoring leg.
-        seed : int, optional
-            The random seed to use for selecting the highest scoring leg.
-        """
         self.curr_step = 0
 
         self.rule1_scores = np.zeros(6)

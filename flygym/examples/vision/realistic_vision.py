@@ -22,17 +22,16 @@ class RealisticVisionFly(HybridTurningFly):
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.
+
+    Parameters
+    ----------
+    vision_network_dir : str, optional
+        Path to the directory containing the vision network checkpoint.
+        If not provided, model 000 from Lappalainen et al., 2023 will
+        be used.
     """
 
     def __init__(self, vision_network_dir=None, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        vision_network_dir : str, optional
-            Path to the directory containing the vision network checkpoint.
-            If not provided, model 000 from Lappalainen et al., 2023 will
-            be used.
-        """
         super().__init__(*args, **kwargs, enable_vision=True)
         if vision_network_dir is None:
             vision_network_dir = flyvision.results_dir / "opticflow/000/0000"
