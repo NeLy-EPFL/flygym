@@ -72,7 +72,7 @@ class Camera:
     output_path : Optional[Union[str, Path]]
         Path to which the rendered video should be saved. If None, the
         video will not be saved.
-    
+
     Parameters
     ----------
     fly : Fly

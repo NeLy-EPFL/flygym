@@ -32,7 +32,7 @@ class Simulation(gym.Env):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
-    
+
     Parameters
     ----------
     flies : Iterable[flygym.fly.Fly] or Fly
@@ -350,7 +350,7 @@ class SingleFlySimulation(Simulation):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
-    
+
     Parameters
     ----------
     fly : Fly

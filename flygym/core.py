@@ -253,7 +253,7 @@ class NeuroMechFly(SingleFlySimulation):
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
-    
+
     Parameters
     ----------
     sim_params : flygym.Parameters

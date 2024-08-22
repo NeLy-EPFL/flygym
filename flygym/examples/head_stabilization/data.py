@@ -120,7 +120,7 @@ class WalkingDataset(Dataset):
     contact_mask : np.ndarray
         The contact force mask (i.e., 1 if leg touching the floor, 0
         otherwise). The shape is (n_samples, 6).
-    
+
     Parameters
     ----------
     sim_data_file : Path
