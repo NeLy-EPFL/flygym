@@ -14,6 +14,26 @@ class OdorPlumeArena(BaseArena):
     odor plume. The plume simulation is stored in an HDF5 file. In this
     class, we implement logics that calculate the intensity of the odor
     at the fly's location at the correct time.
+
+    Parameters
+    ----------
+    plume_data_path : Path
+        Path to the HDF5 file containing the plume simulation data.
+    dimension_scale_factor : float, optional
+        Scaling factor for the plume simulation grid. Each cell in the
+        plume grid is this many millimeters in the simulation. By
+        default 0.5.
+    plume_simulation_fps : float, optional
+        Frame rate of the plume simulation. Each frame in the plume
+        dataset is ``1 / plume_simulation_fps`` seconds in the physics
+        simulation. By default 200.
+    intensity_scale_factor : float, optional
+        Scaling factor for the intensity of the odor. By default 1.0.
+    friction : tuple[float, float, float], optional
+        Friction parameters for the floor geom. By default (1, 0.005,
+        0.0001).
+    num_sensors : int, optional
+        Number of olfactory sensors on the fly. By default 4.
     """
 
     def __init__(
@@ -25,27 +45,6 @@ class OdorPlumeArena(BaseArena):
         friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
     ):
-        """
-        Parameters
-        ----------
-        plume_data_path : Path
-            Path to the HDF5 file containing the plume simulation data.
-        dimension_scale_factor : float, optional
-            Scaling factor for the plume simulation grid. Each cell in the
-            plume grid is this many millimeters in the simulation. By
-            default 0.5.
-        plume_simulation_fps : float, optional
-            Frame rate of the plume simulation. Each frame in the plume
-            dataset is ``1 / plume_simulation_fps`` seconds in the physics
-            simulation. By default 200.
-        intensity_scale_factor : float, optional
-            Scaling factor for the intensity of the odor. By default 1.0.
-        friction : tuple[float, float, float], optional
-            Friction parameters for the floor geom. By default (1, 0.005,
-            0.0001).
-        num_sensors : int, optional
-            Number of olfactory sensors on the fly. By default 4.
-        """
         super().__init__()
 
         self.dimension_scale_factor = dimension_scale_factor

@@ -21,7 +21,6 @@ class BaseArena(ABC):
     friction = (100.0, 0.005, 0.0001)
 
     def __init__(self, *args: list, **kwargs: dict):
-        """Create a new terrain object."""
         self.root_element = mjcf.RootElement()
         self.init_lights()
 
