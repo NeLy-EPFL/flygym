@@ -380,6 +380,7 @@ class MovingBarArena(Tethered):
     kwargs : dict
         Additional arguments to passed to the superclass.
     """
+
     def __init__(
         self,
         azimuth_func: Callable[[float], float],
