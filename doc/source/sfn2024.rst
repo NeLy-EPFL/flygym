@@ -5,7 +5,29 @@ Workshop @ SfN
 
     <style>
         h2.smaller {font-size: 25px;}
+
         h3.smaller {font-size: 20px;}
+        
+        .register-button {
+            display: inline-block;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: #5c24f5; /* Adjust this color to match your theme */
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .register-button:hover {
+            background-color: #dfd3fd; /* Darker shade for hover effect */
+            color: #5c24f5; /* Text color for hover effect */
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
     </style>
 
     <h2 class="smaller">Simulating embodied sensorimotor control with NeuroMechFly</h2>
@@ -18,9 +40,13 @@ Workshop @ SfN
     <b>Where:</b> <a href="https://maps.app.goo.gl/RAt117EM99RaRHeNA" target="_blank" rel="noopener noreferrer"> Hyatt Regency McCormick Place, 2233 S. Martin Luther King Drive, Chicago</a></br>
     <b>Organized by:</b> Pavan Ramdya, Sibo Wang-Chen, Victor Stimpfling, Thomas Lam</br>
     <b>Practical information:</b></br>
-    &#8227; To attend, please register using <a href="https://forms.gle/a6mMxM3A3c8287pW8" target="_blank" rel="noopener noreferrer">this Google Form</a>.</br>
+    &#8227; To attend, please register using the button below.</br>
     &#8227; Please bring your own laptop for the coding sessions.
     </p>
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://forms.gle/a6mMxM3A3c8287pW8"  target="_blank" rel="noopener noreferrer" class="register-button">Register</a>
     </div>
 
     <h3 class="smaller">Background</h3>
