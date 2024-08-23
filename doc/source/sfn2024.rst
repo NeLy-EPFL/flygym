@@ -32,7 +32,7 @@ Workshop @ SfN
 
         .register-button:visited,
         .register-button:active {
-            color: #dfd3fd; /* Maintain the original text color */
+            color: #ffffff; /* Maintain the original text color */
         }
 
     </style>
