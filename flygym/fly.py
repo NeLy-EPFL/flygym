@@ -837,7 +837,13 @@ class Fly:
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
         orient_sensor = self.model.sensor.add(
-            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
+            "framezaxis", name="thorax_orientz", objtype="body", objname="Head"
+        )
+        orienty_sensor = self.model.sensor.add(
+            "frameyaxis", name="thorax_orienty", objtype="body", objname="Head"
+        )
+        orientx_sensor = self.model.sensor.add(
+            "framexaxis", name="thorax_orientx", objtype="body", objname="Head"
         )
         return [
             lin_pos_sensor,
@@ -845,6 +851,8 @@ class Fly:
             ang_pos_sensor,
             ang_vel_sensor,
             orient_sensor,
+            orienty_sensor,
+            orientx_sensor,
         ]
 
     def _add_end_effector_sensors(self):
@@ -1188,6 +1196,11 @@ class Fly:
         ee_pos = ee_pos.reshape((self.n_legs, 3))
 
         orientation_vec = physics.bind(self._body_sensors[4]).sensordata.copy()
+        cardinal_vectors = [
+            physics.bind(self._body_sensors[6]).sensordata.copy(),
+            physics.bind(self._body_sensors[5]).sensordata.copy(),
+            physics.bind(self._body_sensors[4]).sensordata.copy(),
+        ]
 
         obs = {
             "joints": joint_obs.astype(np.float32),
@@ -1195,6 +1208,7 @@ class Fly:
             "contact_forces": contact_forces.astype(np.float32),
             "end_effectors": ee_pos.astype(np.float32),
             "fly_orientation": orientation_vec.astype(np.float32),
+            "cardinal_vectors": np.array(cardinal_vectors).astype(np.float32),
         }
 
         # olfaction
