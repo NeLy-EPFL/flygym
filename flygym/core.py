@@ -286,7 +286,10 @@ class NeuroMechFly(SingleFlySimulation):
         The spawn orientation of the fly in the Euler angle format:
         (x, y, z), where x, y, z define the rotation around x, y and
         z in radian. By default (0.0, 0.0, pi/2), which leads to a
-        position facing the positive direction of the x-axis.
+        position facing the positive direction of the x-axis. **Important:
+        the definition of the spawn orientation has changed. Please use
+        the new API (``flygym.Simulation`` and ``flygym.Fly``). See
+        tutorial at https://neuromechfly.org/. **
     control : str, optional
         The joint controller type. Can be "position", "velocity", or
         "torque", by default "position".

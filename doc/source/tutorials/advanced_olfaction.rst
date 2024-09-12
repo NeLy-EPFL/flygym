@@ -588,7 +588,7 @@ the fly stand still for the sake of this demonstration:
     fly = Fly(
         enable_olfaction=True,
         spawn_pos=(60.0, 30.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
     sim = SingleFlySimulation(fly=fly, arena=arena, cameras=[cam])
@@ -873,7 +873,7 @@ Let’s run a sample simulation where the fly walks blindly forward:
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(60.0, 30.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
     
@@ -1358,7 +1358,7 @@ Now, let’s run this controller:
         contact_sensor_placements=contact_sensor_placements,
         # Here the opposite spawn position can be tried (65.0, 15.0, 0.25)
         spawn_pos=(65.0, 45.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     
     wind_dir = [1.0, 0.0]

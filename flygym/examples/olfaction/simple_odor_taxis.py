@@ -11,7 +11,7 @@ def run_simulation(
     peak_odor_intensity,
     marker_colors=None,
     spawn_pos=(0, 0, 0.2),
-    spawn_orientation=(0, 0, np.pi / 2),
+    spawn_orientation=(0, 0, 0),
     run_time=5,
     decision_interval=0.05,
     attractive_gain=-500,
@@ -42,7 +42,7 @@ def run_simulation(
     spawn_orientation : tuple[float, float, float], optional
         The spawn orientation of the fly in the Euler angle format: (x, y, z),
         where x, y, z define the rotation around x, y and z in radian. By
-        default (0.0, 0.0, pi/2), which leads to a position facing the
+        default (0.0, 0.0, 0), which leads to a position facing the
         positive direction of the x-axis.
     run_time : float, optional
         Time to run the simulation for, by default 5
