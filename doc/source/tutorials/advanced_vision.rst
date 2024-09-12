@@ -76,7 +76,7 @@ direction of movement.
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(3, 3, 0.5),
-        spawn_orientation=(0, 0, 0),
+        spawn_orientation=(0, 0, -np.pi / 2),
     )
     
     observer_fly = HybridTurningFly(
@@ -89,7 +89,7 @@ direction of movement.
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(0, 0, 0.5),
-        spawn_orientation=(0, 0, np.pi / 2),
+        spawn_orientation=(0, 0, 0),
         # setting head_stabilization_model to "thorax" will make actuate
         # neck joints according to actual thorax rotations (i.e., using ideal
         # head stabilization signals)
@@ -191,13 +191,13 @@ replace the observer fly with an instance of ``RealisticVisionFly``:
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(3, 3, 0.5),
-        spawn_orientation=(0, 0, 0),
+        spawn_orientation=(0, 0, -np.pi / 2),
     )
     
     observer_fly = RealisticVisionFly(
         name="observer",
         spawn_pos=(0, 0, 0.5),
-        spawn_orientation=(0, 0, np.pi / 2),
+        spawn_orientation=(0, 0, 0),
         contact_sensor_placements=contact_sensor_placements,
         head_stabilization_model="thorax",
     )
