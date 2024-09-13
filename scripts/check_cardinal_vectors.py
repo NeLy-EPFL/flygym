@@ -75,7 +75,7 @@ class CameraWithCardinalVectors(Camera):
         return img
 
 
-run_time = 1.0
+run_time = 2.0
 timestep = 1e-4
 contact_sensor_placements = [
     f"{leg}{segment}"
@@ -117,7 +117,7 @@ print(f"Spawning fly at {obs['fly'][0]} mm")
 
 for i in trange(int(run_time / sim.timestep)):
     curr_time = i * sim.timestep
-    action = np.array([1, 1])
+    action = np.array([0.4, 1])
 
     try:
         obs, reward, terminated, truncated, info = sim.step(action)

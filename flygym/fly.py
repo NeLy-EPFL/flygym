@@ -838,13 +838,13 @@ class Fly:
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
         orient_sensor = self.model.sensor.add(
-            "framezaxis", name="thorax_orientz", objtype="body", objname="Head"
+            "framexaxis", name="thorax_orientx", objtype="body", objname="Thorax"
         )
         orienty_sensor = self.model.sensor.add(
-            "frameyaxis", name="thorax_orienty", objtype="body", objname="Head"
+            "frameyaxis", name="thorax_orienty", objtype="body", objname="Thorax"
         )
         orientx_sensor = self.model.sensor.add(
-            "framexaxis", name="thorax_orientx", objtype="body", objname="Head"
+            "framezaxis", name="thorax_orientz", objtype="body", objname="Thorax"
         )
         return [
             lin_pos_sensor,
@@ -1196,11 +1196,11 @@ class Fly:
         ee_pos = physics.bind(self._end_effector_sensors).sensordata.copy()
         ee_pos = ee_pos.reshape((self.n_legs, 3))
 
-        orientation_vec = physics.bind(self._body_sensors[4]).sensordata.copy()
+        orientation_vec = physics.bind(self._body_sensors[6]).sensordata.copy()
         cardinal_vectors = [
-            physics.bind(self._body_sensors[6]).sensordata.copy(),
-            physics.bind(self._body_sensors[5]).sensordata.copy(),
             physics.bind(self._body_sensors[4]).sensordata.copy(),
+            physics.bind(self._body_sensors[5]).sensordata.copy(),
+            physics.bind(self._body_sensors[6]).sensordata.copy(),
         ]
 
         obs = {
