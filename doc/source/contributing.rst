@@ -8,6 +8,9 @@ Code of conduct & licensing
 ---------------------------
 Please respect the `Contributor Covenant Code of Conduct <https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.txt>`_. FlyGym is made open source under `Apache License 2.0 <https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE>`_. By contributing to this package (including any issue, pull request, and discussion), you agree that your content will be shared under the same license.
 
+Versioning
+----------
+FlyGym uses `EffVer <https://jacobtomlinson.dev/effver/>`_ versioning system, which is based on the amount of effort that users are expected to spend to adopt the new version. The version number is in the format of ``X.Y.Z``, where ``X`` is the macro version, ``Y`` is the meso version, and ``Z`` is the micro version. When a macro version is updated, it means that a large effort is required to adopt the new version. When a meso version is updated, it means that a some effort is required to adopt the new version. When a micro version is updated, it means that no effort is required at all (e.g. bug fixes or optimizations that are not exposed to the API).
 
 Branches
 --------
