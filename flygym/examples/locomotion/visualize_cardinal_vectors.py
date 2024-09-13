@@ -1,5 +1,4 @@
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import trange
 from flygym import Camera, PhysicsError
@@ -131,18 +130,5 @@ x_pos = obs_list[-1]["fly"][0][0]
 print(f"Final x position: {x_pos:.4f} mm")
 print(f"Simulation terminated: {obs_list[-1]['fly'][0] - obs_list[0]['fly'][0]}")
 
-# cam.save_video("./outputs/debug/hybrid_turning_fly.mp4", 0)
 for pos, cam in cameras.items():
-    cam.save_video(f"./outputs/debug/camera_{pos}.mp4", 0)
-
-cardinal_vectors = np.array([obs["cardinal_vectors"] for obs in obs_list])
-print(cardinal_vectors.shape)
-fig, axs = plt.subplots(3, 1, figsize=(4, 6), tight_layout=True)
-t_grid = np.arange(0, run_time, sim.timestep)
-for i in range(3):
-    for j in range(3):
-        axs[i].plot(t_grid, cardinal_vectors[:, i, j], label=["x", "y", "z"][j])
-    axs[i].set_title(["Front", "Side", "Up"][i])
-    axs[i].legend()
-    axs[i].set_xlabel("Time (s)")
-fig.savefig("./outputs/debug/cardinal_vectors.png")
+    cam.save_video(f"./outputs/cardinal_vectors/camera_{pos}.mp4", 0)
