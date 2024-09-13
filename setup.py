@@ -3,10 +3,13 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.0.1",
+    version="1.1.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
-    description="Gym environments for NeuroMechFly in various physics simulators",
+    description=(
+        "Implementation of NeuroMechFly v2, framework for simulating embodied "
+        "sensorimotor control in adult Drosophila"
+    ),
     packages=find_packages(),
     package_data={"flygym": ["data/*", "config.yaml"]},
     include_package_data=True,
@@ -26,8 +29,8 @@ setup(
         "imageio[pyav]",
         "imageio[ffmpeg]",
         "tqdm",
-        "mujoco>=2.1.2",
-        "dm_control",
+        "mujoco>=3.2.3",
+        "dm_control>=1.0.22",
         "numba",
         "opencv-python",
     ],
