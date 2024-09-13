@@ -837,13 +837,13 @@ class Fly:
         ang_vel_sensor = self.model.sensor.add(
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
-        orient_sensor = self.model.sensor.add(
+        cardinal_sensor_x = self.model.sensor.add(
             "framexaxis", name="thorax_orientx", objtype="body", objname="Thorax"
         )
-        orienty_sensor = self.model.sensor.add(
+        cardinal_sensor_y = self.model.sensor.add(
             "frameyaxis", name="thorax_orienty", objtype="body", objname="Thorax"
         )
-        orientx_sensor = self.model.sensor.add(
+        cardinal_sensor_z = self.model.sensor.add(
             "framezaxis", name="thorax_orientz", objtype="body", objname="Thorax"
         )
         return [
@@ -851,9 +851,9 @@ class Fly:
             lin_vel_sensor,
             ang_pos_sensor,
             ang_vel_sensor,
-            orient_sensor,
-            orienty_sensor,
-            orientx_sensor,
+            cardinal_sensor_x,
+            cardinal_sensor_y,
+            cardinal_sensor_z,
         ]
 
     def _add_end_effector_sensors(self):
