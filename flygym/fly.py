@@ -37,6 +37,8 @@ class Fly:
     spawn_orientation : tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
+        If the spawn orientation is (0, 0, 0), the fly is spawned facing
+        the +x direction; the +y direction is on the fly's left.
     control : str
         The joint controller type. Can be "position", "velocity", or
         "torque".
@@ -167,8 +169,9 @@ class Fly:
     spawn_orientation : tuple[float, float, float], optional
         The spawn orientation of the fly in the Euler angle format:
         (x, y, z), where x, y, z define the rotation around x, y and
-        z in radian. By default (0.0, 0.0, pi/2), which leads to a
-        position facing the positive direction of the x-axis.
+        z in radian. By default (0.0, 0.0, 0.0). In the default
+        configuration, the fly is spawned facing the +x direction; the +y
+        direction is on the fly's left.
     control : str, optional
         The joint controller type. Can be "position", "velocity", or
         "motor", by default "position".
@@ -312,7 +315,7 @@ class Fly:
         contact_sensor_placements: list = preprogrammed.all_tarsi_links,
         xml_variant: Union[str, Path] = "seqik",
         spawn_pos: tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orientation: tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_orientation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         control: str = "position",
         init_pose: Union[str, state.KinematicPose] = "stretch",
         floor_collisions: Union[str, list[str]] = "legs",
@@ -406,10 +409,7 @@ class Fly:
         self.model.model = str(name)
 
         self.spawn_pos = np.array(spawn_pos)
-        # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
-        # but the output fly_orientation from framequat would be [0, 0, pi/2] for
-        # spawn_orient = [0, 0, 0]
-        self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
+        self.spawn_orientation = spawn_orientation
         self.control = control
         if isinstance(init_pose, str):
             self.init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
@@ -646,6 +646,7 @@ class Fly:
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(6, 3)),
             "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
+            "cardinal_vectors": spaces.Box(low=-1, high=1, shape=(3, 3)),
         }
         if self.enable_vision:
             _observation_space["vision"] = spaces.Box(
@@ -836,15 +837,23 @@ class Fly:
         ang_vel_sensor = self.model.sensor.add(
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
-        orient_sensor = self.model.sensor.add(
-            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
+        cardinal_sensor_x = self.model.sensor.add(
+            "framexaxis", name="thorax_orientx", objtype="body", objname="Thorax"
+        )
+        cardinal_sensor_y = self.model.sensor.add(
+            "frameyaxis", name="thorax_orienty", objtype="body", objname="Thorax"
+        )
+        cardinal_sensor_z = self.model.sensor.add(
+            "framezaxis", name="thorax_orientz", objtype="body", objname="Thorax"
         )
         return [
             lin_pos_sensor,
             lin_vel_sensor,
             ang_pos_sensor,
             ang_vel_sensor,
-            orient_sensor,
+            cardinal_sensor_x,
+            cardinal_sensor_y,
+            cardinal_sensor_z,
         ]
 
     def _add_end_effector_sensors(self):
@@ -1187,7 +1196,12 @@ class Fly:
         ee_pos = physics.bind(self._end_effector_sensors).sensordata.copy()
         ee_pos = ee_pos.reshape((self.n_legs, 3))
 
-        orientation_vec = physics.bind(self._body_sensors[4]).sensordata.copy()
+        orientation_vec = physics.bind(self._body_sensors[6]).sensordata.copy()
+        cardinal_vectors = [
+            physics.bind(self._body_sensors[4]).sensordata.copy(),
+            physics.bind(self._body_sensors[5]).sensordata.copy(),
+            physics.bind(self._body_sensors[6]).sensordata.copy(),
+        ]
 
         obs = {
             "joints": joint_obs.astype(np.float32),
@@ -1195,6 +1209,7 @@ class Fly:
             "contact_forces": contact_forces.astype(np.float32),
             "end_effectors": ee_pos.astype(np.float32),
             "fly_orientation": orientation_vec.astype(np.float32),
+            "cardinal_vectors": np.array(cardinal_vectors).astype(np.float32),
         }
 
         # olfaction

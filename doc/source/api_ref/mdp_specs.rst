@@ -20,6 +20,7 @@ Default ``Simulation``
 * "fly_orientation": NumPy array of shape (3,). This is the vector (x, y, z) pointing toward the direction that the fly is facing.
 * "vision" (if ``Fly.enable_vision`` is True): The light intensities sensed by the ommatidia on the compound eyes. This is a NumPy array of shape (2, num_ommatidia_per_eye, 2), where the zeroth dimension is the side (left, right in that order); the second dimension specifies the ommatidium, and the last column is for the spectral channel (yellow-type, pale-type in that order). Each ommatidium only has one channel with nonzero reading. The intensities are given on a [0, 1] scale.
 * "odor_intensity" (if ``Fly.enable_olfaction`` is True): The odor intensities sensed by the odor sensors (by default 2 antennae and 2 maxillary palps). This is a NumPy array of shape (odor_space_dimension, num_sensors).
+* "cardinal_vectors": The cardinal vectors (left, up, forward) of the fly's spatial orientation in the global frame. This is a NumPy array of shape (3, 3) where the 0th dimension specifies left/up/forward in that order, and the 1st dimension specifies the x/y/z components of the vector. Note that the forward vector is a bit tiled up; therefore if the fly is walking perfectly forward on the floor, one should expect a non-negligible positive z component in the forward vector (and a non-negligible negative value in the x component of the up vector).
 
 **Info:** The info dictionary contains the following:
 

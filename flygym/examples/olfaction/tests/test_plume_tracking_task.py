@@ -27,7 +27,7 @@ def test_plume_tracking_task():
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(40, 80, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = PlumeNavigationTask(
@@ -55,6 +55,7 @@ def test_plume_tracking_task():
         "end_effectors",
         "fly_orientation",
         "odor_intensity",
+        "cardinal_vectors",
     }
     expected_info_keys = {"net_corrections", "joints", "adhesion"}
     for obs in obs_hist:
