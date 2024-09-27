@@ -1,4 +1,5 @@
 import logging
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
@@ -378,9 +379,12 @@ class Fly:
         self.head_stabilization_model = head_stabilization_model
 
         if detect_flip:
-            raise DeprecationWarning(
-                "The `detect_flip` parameter is deprecated and will be removed in "
-                "future releases. Flips are now always detected."
+            warnings.warn(
+                (
+                    "DeprecationWarning: The `detect_flip` parameter is deprecated and "
+                    "will be removed in future releases. Flips are now always detected."
+                ),
+                DeprecationWarning,
             )
 
         # Load NMF model
