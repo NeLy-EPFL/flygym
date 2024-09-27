@@ -57,7 +57,7 @@ def test_plume_tracking_task():
         "odor_intensity",
         "cardinal_vectors",
     }
-    expected_info_keys = {"net_corrections", "joints", "adhesion"}
+    expected_info_keys = {"net_corrections", "joints", "adhesion", "flip"}
     for obs in obs_hist:
         assert set(obs.keys()) == expected_obs_keys
     for info in info_hist:
