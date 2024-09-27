@@ -58,12 +58,6 @@ First, clone this repository:
 
    git clone git@github.com:NeLy-EPFL/flygym.git
 
-If you want to install code from a specific branch, you can checkout to the branch of your choice:
-
-.. code-block:: bash
-
-   git checkout <branch_name>
-
 Change into the cloned directory:
 
 .. code-block:: bash
