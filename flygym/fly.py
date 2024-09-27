@@ -151,6 +151,9 @@ class Fly:
     actuated_joints : list[str], optional
         List of names of actuated joints. By default all active leg
         DoFs.
+    monitored_joints : list[str], optional
+        List of names of joints to monitor with sensors. By default
+        all active leg DoFs.
     contact_sensor_placements : list[str], optional
         List of body segments where contact sensors are placed. By
         default all tarsus segments.
@@ -312,6 +315,7 @@ class Fly:
         self,
         name: Optional[str] = None,
         actuated_joints: list = preprogrammed.all_leg_dofs,
+        monitored_joints: list = preprogrammed.all_leg_dofs,
         contact_sensor_placements: list = preprogrammed.all_tarsi_links,
         xml_variant: Union[str, Path] = "seqik",
         spawn_pos: tuple[float, float, float] = (0.0, 0.0, 0.5),
@@ -365,6 +369,7 @@ class Fly:
             self._last_neck_actuation = None  # tracked only for head stabilization
 
         self.actuated_joints = actuated_joints
+        self.monitored_joints = monitored_joints
         self.contact_sensor_placements = contact_sensor_placements
         self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
@@ -487,7 +492,11 @@ class Fly:
         self._init_self_contacts()
 
         # Add sensors
-        self._joint_sensors = self._add_joint_sensors()
+        (
+            self._actuated_joint_sensors,
+            self._non_actuated_joint_sensors,
+            self._monitored_joint_order,
+        ) = self._add_joint_sensors()
         self._body_sensors = self._add_body_sensors()
         self._end_effector_sensors = self._add_end_effector_sensors()
         self._antennae_sensors = (
@@ -805,24 +814,47 @@ class Fly:
         self._floor_contacts = floor_contacts
 
     def _add_joint_sensors(self):
-        joint_sensors = []
-        for joint in self.actuated_joints:
-            joint_sensors.extend(
-                [
-                    self.model.sensor.add(
-                        "jointpos", name=f"jointpos_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "jointvel", name=f"jointvel_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_{self.control}_{joint}",
-                        actuator=f"actuator_{self.control}_{joint}",
-                    ),
-                ]
+        actuated_joint_sensors = []
+        non_actuated_joint_sensors = []
+
+        monitored_joints_order = []
+
+        for joint in self.monitored_joints:
+            joint_pos_sensor = self.model.sensor.add(
+                "jointpos", name=f"jointpos_{joint}", joint=joint
             )
-        return joint_sensors
+            joint_vel_sensor = self.model.sensor.add(
+                "jointvel", name=f"jointvel_{joint}", joint=joint
+            )
+            if joint in self.actuated_joints:
+                joint_torque_sensor = self.model.sensor.add(
+                    "actuatorfrc",
+                    name=f"actuatorfrc_{self.control}_{joint}",
+                    actuator=f"actuator_{self.control}_{joint}",
+                )
+                actuated_joint_sensors.extend(
+                    [joint_pos_sensor, joint_vel_sensor, joint_torque_sensor]
+                )
+                monitored_joints_order.append(len(actuated_joint_sensors) // 3 - 1)
+            else:
+                site = self.model.find("joint", joint).parent.add(
+                    "site", name=f"site_{joint}", pos=[0, 0, 0]
+                )
+                joint_torque_sensor = self.model.sensor.add(
+                    "torque", name=f"torque_{joint}", site=site.name
+                )
+                non_actuated_joint_sensors.extend(
+                    [joint_pos_sensor, joint_vel_sensor, joint_torque_sensor]
+                )
+                monitored_joints_order.append(
+                    len(non_actuated_joint_sensors) // 3 + len(self.actuated_joints) - 1
+                )
+
+        return (
+            actuated_joint_sensors,
+            non_actuated_joint_sensors,
+            monitored_joints_order,
+        )
 
     def _add_body_sensors(self):
         lin_pos_sensor = self.model.sensor.add(
@@ -1121,13 +1153,31 @@ class Fly:
         physics = sim.physics
 
         # joint sensors
-        joint_obs = np.zeros((3, len(self.actuated_joints)))
-        joint_sensordata = physics.bind(self._joint_sensors).sensordata
+        joint_obs = np.zeros((3, len(self.monitored_joints)))
+
+        actuated_joint_sensordata = physics.bind(
+            self._actuated_joint_sensors
+        ).sensordata
+        non_actuated_joint_sensordata = physics.bind(
+            self._non_actuated_joint_sensors
+        ).sensordata
+
         for i, joint in enumerate(self.actuated_joints):
             base_idx = i * 3
             # pos and vel and torque from the joint sensors
-            joint_obs[:3, i] = joint_sensordata[base_idx : base_idx + 3]
+            joint_obs[:3, i] = actuated_joint_sensordata[base_idx : base_idx + 3]
+
+        for i in range(len(self.monitored_joints) - len(self.actuated_joints)):
+            base_idx = i * 5
+            joint_torques = np.linalg.norm(
+                non_actuated_joint_sensordata[base_idx + 1 : base_idx + 5]
+            )
+            joint_obs[:3, len(self.actuated_joints) + i] = [
+                *non_actuated_joint_sensordata[base_idx : base_idx + 2],
+                joint_torques,
+            ]
         joint_obs[2, :] *= 1e-9  # convert to N
+        joint_obs = joint_obs[:, self._monitored_joint_order]
 
         # fly position and orientation
         cart_pos = physics.bind(self._body_sensors[0]).sensordata
