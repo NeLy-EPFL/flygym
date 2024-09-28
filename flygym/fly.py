@@ -1,4 +1,5 @@
 import logging
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
@@ -52,13 +53,8 @@ class Fly:
         "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
         body names.
     detect_flip : bool
-        If True, the simulation will indicate whether the fly has flipped
-        in the ``info`` returned by ``.step(...)``. Flip detection is
-        achieved by checking whether the leg tips are free of any contact
-        for a duration defined in the configuration file. Flip detection is
-        disabled for a period of time at the beginning of the simulation as
-        defined in the configuration file. This avoids spurious detection
-        when the fly is not standing reliably on the ground yet.
+        [Deprecated] Fly flips are now detected regardless of this
+        parameter. This will be removed in future releases.
     joint_stiffness : float
         Stiffness of actuated joints.
         joint_stiffness : float
@@ -190,14 +186,8 @@ class Fly:
         "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
         body names. By default "legs".
     detect_flip : bool
-        If True, the simulation will indicate whether the fly has
-        flipped in the ``info`` returned by ``.step(...)``. Flip
-        detection is achieved by checking whether the leg tips are free
-        of any contact for a duration defined in the configuration
-        file. Flip detection is disabled for a period of time at the
-        beginning of the simulation as defined in the configuration
-        file. This avoids spurious detection when the fly is not
-        standing reliably on the ground yet. By default False.
+        [Deprecated] Fly flips are now detected regardless of this
+        parameter. This will be removed in future releases.
     joint_stiffness : float
         Stiffness of actuated joints, by default 0.05.
         joint_stiffness : float
@@ -371,7 +361,6 @@ class Fly:
         self.actuated_joints = actuated_joints
         self.monitored_joints = monitored_joints
         self.contact_sensor_placements = contact_sensor_placements
-        self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
         self.joint_damping = joint_damping
         self.non_actuated_joint_stiffness = non_actuated_joint_stiffness
@@ -393,6 +382,15 @@ class Fly:
         self.floor_collisions = floor_collisions
         self.self_collisions = self_collisions
         self.head_stabilization_model = head_stabilization_model
+
+        if detect_flip:
+            warnings.warn(
+                (
+                    "DeprecationWarning: The `detect_flip` parameter is deprecated and "
+                    "will be removed in future releases. Flips are now always detected."
+                ),
+                DeprecationWarning,
+            )
 
         # Load NMF model
         if isinstance(xml_variant, str):
@@ -518,9 +516,6 @@ class Fly:
                 ):
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
-
-        # flip detection
-        self._flip_counter = 0
 
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
@@ -1332,7 +1327,6 @@ class Fly:
         self._curr_raw_visual_input = None
         self._curr_visual_input = None
         self._vision_update_mask = []
-        self._flip_counter = 0
 
         obs = self.get_observation(sim)
         info = self.get_info()
@@ -1390,21 +1384,8 @@ class Fly:
             self._vision_update_mask.append(vision_updated_this_step)
             info["vision_updated"] = vision_updated_this_step
 
-        if self.detect_flip:
-            if obs["contact_forces"].sum() < 1:
-                self._flip_counter += 1
-            else:
-                self._flip_counter = 0
-
-            flip_config = self.config["flip_detection"]
-            has_passed_init = sim.curr_time > flip_config["ignore_period"]
-            contact_lost_time = self._flip_counter * sim.timestep
-            lost_contact_long_enough = (
-                contact_lost_time > flip_config["min_flip_duration"]
-            )
-            info["flip"] = has_passed_init and lost_contact_long_enough
-            info["flip_counter"] = self._flip_counter
-            info["contact_forces"] = obs["contact_forces"].copy()
+        # Fly has flipped if the z component of the "up" cardinal vector is negative
+        info["flip"] = obs["cardinal_vectors"][2, 2] < 0
 
         if self.head_stabilization_model is not None:
             # this is tracked to decide neck actuation for the next step
