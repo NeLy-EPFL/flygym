@@ -20,7 +20,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    changelog
    contributing
 
-`Paper <https://www.epfl.ch/labs/ramdya-lab/wp-content/uploads/2024/08/NMF2_postprint.pdf>`_ |
+`Paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ |
 `GitHub <https://github.com/NeLy-EPFL/flygym>`_
 
 .. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
@@ -33,7 +33,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
 
 
-FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.epfl.ch/labs/ramdya-lab/wp-content/uploads/2024/08/NMF2_postprint.pdf>`_).
+FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
 
 FlyGym consists of the following components:
 

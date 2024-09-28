@@ -62,7 +62,7 @@ Workshop @ SfN
     </p>
 
     <p>
-        To bridge this gap, we developed NeuroMechFly (<a href="https://doi.org/10.1038/s41592-022-01466-7" target="_blank" rel="noopener noreferrer">Lobato-Rios et al., <em>Nature Methods</em>, 2022; <a href="https://www.epfl.ch/labs/ramdya-lab/wp-content/uploads/2024/08/NMF2_postprint.pdf" target="_blank" rel="noopener noreferrer">Wang-Chen et al., <em>Nature Methods</em>, 2024</a>). With NeuroMechFly, one can test models of the following embodied in an anatomically realistic body model:
+        To bridge this gap, we developed NeuroMechFly (<a href="https://doi.org/10.1038/s41592-022-01466-7" target="_blank" rel="noopener noreferrer">Lobato-Rios et al., <em>Nature Methods</em>, 2022; <a href="https://www.biorxiv.org/content/10.1101/2023.09.18.556649" target="_blank" rel="noopener noreferrer">Wang-Chen et al., <em>Nature Methods</em>, 2024</a>). With NeuroMechFly, one can test models of the following embodied in an anatomically realistic body model:
     </p>
 
     <ul>
