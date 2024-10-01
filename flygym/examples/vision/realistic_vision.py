@@ -9,11 +9,11 @@ from flygym.simulation import Simulation
 class RealisticVisionFly(HybridTurningFly):
     """
     This class extends the ``HybridTurningFly`` to couple it with
-    the visual system network from `Lappalainen et al., 2023`_. This allows
+    the visual system network from `Lappalainen et al., 2024`_. This allows
     the user to receive, as a part of the observation, the activities
     of visual system neurons.
 
-    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
 
     Notes
     -----
@@ -27,7 +27,7 @@ class RealisticVisionFly(HybridTurningFly):
     ----------
     vision_network_dir : str, optional
         Path to the directory containing the vision network checkpoint.
-        If not provided, model 000 from Lappalainen et al., 2023 will
+        If not provided, model 000 from Lappalainen et al., 2024 will
         be used.
     """
 
