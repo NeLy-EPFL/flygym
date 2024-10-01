@@ -17,7 +17,7 @@ Connectome-constrained visual system model
 **Summary**: In this tutorial, we will (1) simulate two flies in the
 same arena, and (2) integrate a connectome-constrained visual system
 model `(Lappalainen et al.,
-2023) <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`__
+2024) <https://doi.org/10.1038/s41586-024-07939-3>`__
 into NeuroMechFly. Combining these, we will simulate a scenario where a
 stationary fly observes another fly walking in front of it and examine
 the responses of different neurons in the visual system.
@@ -76,7 +76,7 @@ direction of movement.
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(3, 3, 0.5),
-        spawn_orientation=(0, 0, 0),
+        spawn_orientation=(0, 0, -np.pi / 2),
     )
     
     observer_fly = HybridTurningFly(
@@ -89,7 +89,7 @@ direction of movement.
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(0, 0, 0.5),
-        spawn_orientation=(0, 0, np.pi / 2),
+        spawn_orientation=(0, 0, 0),
         # setting head_stabilization_model to "thorax" will make actuate
         # neck joints according to actual thorax rotations (i.e., using ideal
         # head stabilization signals)
@@ -159,7 +159,7 @@ projects for the VNC).
 To illustrate how this might be accomplished, we will interface
 NeuroMechFly a recently established connectome-constrained neural
 network model (`Lappalainen et al.,
-2023 <https://www.biorxiv.org/content/10.1101/2023.03.11.532232>`__;
+2023 <https://doi.org/10.1038/s41586-024-07939-3>`__;
 `code <https://github.com/TuragaLab/flyvis>`__). This study has
 constructed an artificial neural network (ANN) representing the retina,
 lamina, medulla, lobula plate, and lobula of the fly visual system (see
@@ -170,7 +170,7 @@ variables such as voltage.
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/advanced_vision/lappalainen_model_schematic.png?raw=true
    :width: 400
 
-*Image from Lappalainen et al., 2023.*
+*Image from Lappalainen et al., 2024.*
 
 We will pass the visual experience of the simulated fly as inputs to
 this pretrained model and simulate the activities of real neurons. For
@@ -191,13 +191,13 @@ replace the observer fly with an instance of ``RealisticVisionFly``:
         draw_corrections=True,
         timestep=timestep,
         spawn_pos=(3, 3, 0.5),
-        spawn_orientation=(0, 0, 0),
+        spawn_orientation=(0, 0, -np.pi / 2),
     )
     
     observer_fly = RealisticVisionFly(
         name="observer",
         spawn_pos=(0, 0, 0.5),
-        spawn_orientation=(0, 0, np.pi / 2),
+        spawn_orientation=(0, 0, 0),
         contact_sensor_placements=contact_sensor_placements,
         head_stabilization_model="thorax",
     )

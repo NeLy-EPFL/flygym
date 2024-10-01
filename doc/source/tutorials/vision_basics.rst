@@ -116,7 +116,7 @@ on the floor in a stable manner:
     
     fly = Fly(
         spawn_pos=(13, -5, 0.2),
-        spawn_orientation=(0, 0, np.pi / 2 + np.deg2rad(70)),
+        spawn_orientation=(0, 0, np.deg2rad(70)),
         contact_sensor_placements=contact_sensor_placements,
         enable_vision=True,
         render_raw_vision=True,
