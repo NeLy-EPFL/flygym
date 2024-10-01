@@ -1,7 +1,7 @@
 Fly chasing with a connectome constrained visual system
 =======================================================
 
-Our simulated fly chases another fly on a complex terrain. The chased fly is detected using the simulated responses of visual neurons. Visual neurons responses are simulated using the connectome constrained neural network constructed in `Lappalainen et al. 2023 <https://doi.org/10.1101/2023.03.11.532232>`_.
+Our simulated fly chases another fly on a complex terrain. The chased fly is detected using the simulated responses of visual neurons. Visual neurons responses are simulated using the connectome constrained neural network constructed in `Lappalainen et al. 2024 <https://doi.org/10.1101/2023.03.11.532232>`_.
 
 .. raw:: html
 
