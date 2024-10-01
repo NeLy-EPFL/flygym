@@ -66,7 +66,7 @@ class CameraWithCardinalVectors(Camera):
         for i, color in enumerate([(255, 0, 0), (0, 255, 0), (0, 0, 255)]):
             img = cv2.arrowedLine(
                 img,
-                (int(disp_x_thorax), int(disp_y_thorax)),
+                (int(disp_x_thorax.item()), int(disp_y_thorax.item())),
                 (int(disp_xs_arrowtips[i]), int(disp_ys_arrowtips[i])),
                 color,
                 3,
