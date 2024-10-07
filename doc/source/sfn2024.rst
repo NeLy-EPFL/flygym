@@ -52,8 +52,9 @@ Workshop @ SfN
     </p>
     </div>
 
-    <div style="text-align: center;">
-        <a href="https://forms.gle/a6mMxM3A3c8287pW8"  target="_blank" rel="noopener noreferrer" class="register-button">Register</a>
+    <div style="text-align: center; color: #5c24f5; font-weight: bold">
+        <!-- <a href="https://forms.gle/a6mMxM3A3c8287pW8"  target="_blank" rel="noopener noreferrer" class="register-button">Register</a> -->
+        Registration is now closed. You can still come to the venue; we might have a few free seats as some registrants might not be able to attend.
     </div>
 
     <h3 class="smaller">Background</h3>
