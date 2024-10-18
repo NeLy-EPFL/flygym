@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+.. note:: 
+
+   FlyGym uses `EffVer <https://jacobtomlinson.dev/effver/>`_ as its versioning policy. The version number will communicate how much effort we expect a user to spend to adopt the new version. 
+
 * **1.1.0:**
 
   * Added cardinal direction sensing (vectors describing +x, +y, +z of the fly) to the observation space.
