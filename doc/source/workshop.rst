@@ -18,4 +18,4 @@ Jupyter Notebooks used in the demos can be cloned from `this GitHub repository <
 
 Slides
 ------
-Educators my request the slides of the presentations by emailing `Prof. Pavan Ramdya <https://people.epfl.ch/pavan.ramdya?lang=en>`_.
+Educators may request the slides of the presentations by emailing `Prof. Pavan Ramdya <https://people.epfl.ch/pavan.ramdya?lang=en>`_.
