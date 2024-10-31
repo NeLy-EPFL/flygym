@@ -56,7 +56,7 @@ setup(
             "pandas",
             "scikit-learn",
             "seaborn",
-            "torch",
+            "torch<=2.5.0",
             "phiflow",
             "h5py",
             "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
