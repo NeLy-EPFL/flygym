@@ -64,7 +64,7 @@ def run_simulation(
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(*initial_position, 0.25),
-        spawn_orientation=(0, 0, -np.pi),
+        spawn_orientation=(0, 0, -np.pi / 2),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
     sim = PlumeNavigationTask(

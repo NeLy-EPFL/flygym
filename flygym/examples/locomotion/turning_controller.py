@@ -108,8 +108,8 @@ class HybridTurningController(SingleFlySimulation):
         self,
         fly: Fly,
         preprogrammed_steps=None,
-        intrinsic_freqs=np.ones(6) * 12,
-        intrinsic_amps=np.ones(6) * 1,
+        intrinsic_freqs=np.ones(6) * 36, #np.ones(6) * 12,
+        intrinsic_amps=np.ones(6) * 6,
         phase_biases=_tripod_phase_biases,
         coupling_weights=_tripod_coupling_weights,
         convergence_coefs=np.ones(6) * 20,
@@ -189,6 +189,7 @@ class HybridTurningController(SingleFlySimulation):
         # Define the gain applied to the correction based on the phase of the CPG
         # (retracting the leg more during the swing phase, less during the stance phase)
         self.phasic_multiplier = self._init_phasic_gain()
+
 
     def _init_phasic_gain(self, swing_extension=np.pi / 4):
         """
@@ -360,7 +361,7 @@ class HybridTurningController(SingleFlySimulation):
         self.stumbling_correction = np.zeros(6)
         return obs, info
 
-    def step(self, action):
+    def step(self, action, activated_legs):
         """Step the simulation forward one timestep.
 
         Parameters
@@ -368,12 +369,18 @@ class HybridTurningController(SingleFlySimulation):
         action : np.ndarray
             Array of shape (2,) containing descending signal encoding
             turning.
+        activated_legs : np.ndarray
+            Array of shape (6,) containing the legs we want to activate
         """
         # update CPG parameters
-        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
+        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel() * activated_legs
         freqs = self.intrinsic_freqs.copy()
-        freqs[:3] *= 1 if action[0] > 0 else -1
-        freqs[3:] *= 1 if action[1] > 0 else -1
+        freqs[0] *= 1 if action[0]*activated_legs[0] > 0 else -1
+        freqs[1] *= 1 if action[0]*activated_legs[1] > 0 else -1
+        freqs[2] *= 1 if action[0]*activated_legs[2] > 0 else -1
+        freqs[3] *= 1 if action[1]*activated_legs[3] > 0 else -1
+        freqs[4] *= 1 if action[1]*activated_legs[4] > 0 else -1
+        freqs[5] *= 1 if action[1]*activated_legs[5] > 0 else -1
         self.cpg_network.intrinsic_amps = amps
         self.cpg_network.intrinsic_freqs = freqs
 
