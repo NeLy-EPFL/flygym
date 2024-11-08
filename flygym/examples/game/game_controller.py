@@ -103,7 +103,6 @@ class TurningController(SingleFlySimulation):
 
         # Initialize core NMF simulation
         super().__init__(fly=fly, **kwargs)
-
         if preprogrammed_steps is None:
             preprogrammed_steps = PreprogrammedSteps()
         self.preprogrammed_steps = preprogrammed_steps
