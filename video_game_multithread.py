@@ -68,71 +68,73 @@ def set_state(value):
     with lock:
         _state = value
 
-switch_joystick_key = 1
-quit_joystick_key =  0
-
-print("Discovering joystick")
 joystick_connected = False
 # Initialize pygame and joystick
 pygame.init()
 pygame.joystick.init()
-print("Done initializing pygame")
 
 # Check for connected joysticks at the beginning
 if pygame.joystick.get_count() > 0:
-    print("Joystick connected")
     joystick_connected = True
-    print(joystick_connected)
 
 # Define the listener function that will run on a separate thread
 def joystick_listener():
-
     print("done with global")
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
+    pygame.event.get()  # Flush any residual events
+    pygame.event.clear()
     print(f"Joystick {joystick.get_instance_id()} connected and ready for use.")
     n_axes = joystick.get_numaxes() - 1
     n_buttons = joystick.get_numbuttons()
     joystick_buttons_order = [10, 11, 12, 4, 5, 6]
 
-    while True:
+    # Initialize button states
+    buttons = np.zeros(n_buttons)
+    time.sleep(0.1)  # Allow joystick to fully initialize
 
-        # Check for joystick events
+    while get_quit() == False:
         for event in pygame.event.get():
             if event.type == pygame.JOYDEVICEREMOVED and event.instance_id == joystick.get_instance_id():
                 print(f"Error: Joystick {joystick.get_instance_id()} disconnected.")
                 set_quit(True)
-                
-                pygame.joystick.quit()
-                pygame.quit()
-                
-                return
-
+        
         # Poll button states
         for i in range(n_buttons):
-            but = joystick.get_button(i)
-            if but == switch_joystick_key:
-                set_reset(True)
-                if get_state() == "CPG":
-                    set_state("tripod")
-                elif get_state() == "tripod":
-                    set_state("single")
-                elif get_state() == "single":
-                    set_state("CPG")
-            elif but == quit_joystick_key:
-                set_quit(True)
-            elif but in joystick_buttons_order:
-                with lock:
-                    joystick_keys.add(joystick_buttons_order.index(but))
+            buttons[i] = joystick.get_button(i)
 
-        # Poll axis states
-        for i in range(n_axes):
+        if buttons[3] == 1 and not get_reset():
+            set_reset(True)
+            print("harder")
+            if get_state() == "CPG":
+                set_state("tripod")
+            elif get_state() == "tripod":
+                set_state("single")
+        if buttons[2] == 1:
+            set_reset(True)
+            print("Easier")
+            if get_state() == "tripod":
+                set_state("CPG")
+            elif get_state() == "single":
+                set_state("tripod")
+        if buttons[1] == 1:
+            print("QUIT")
+            set_quit(True)
+        for j, pressed in enumerate(buttons[joystick_buttons_order]):
+            if pressed:
+                with lock:
+                    joystick_keys.add(j)
+        
+        for i in range(n_axes - 1):
             axis = joystick.get_axis(i)
             with lock:
                 joystick_axis[i] = axis
         
-        # Short delay to avoid excessive CPU usage
-        #time.sleep(0.01)  # Adjust as needed for responsiveness
+        time.sleep(0.01)
+
+    pygame.joystick.quit()
+    pygame.quit()
+
 
 def retrieve_joystick_axis():
     with lock:
@@ -158,7 +160,7 @@ def joystick_control(state):
             initiated_legs[0] = 1
             initiated_legs[2] = 1
             initiated_legs[4] = 1
-        if 3 in joystick_keys:
+        if 5 in joystick_keys:
             initiated_legs[1] = 1
             initiated_legs[3] = 1
             initiated_legs[5] = 1
@@ -168,14 +170,14 @@ def joystick_control(state):
         # The norm of control vector maps to the norm of [gain_right, gain_left]
         # The axis 1 value, maps to the difference between gain_right and gain_left
         normalized_norm = np.linalg.norm(ctrl_vector)/np.sqrt(2)*1.2
-        gain_left = normalized_norm
-        gain_right = normalized_norm
+        gain_left = normalized_norm*(-1)*np.sign(ctrl_vector[1])
+        gain_right = normalized_norm*(-1)*np.sign(ctrl_vector[1])
 
-        offset_norm = np.abs(ctrl_vector[1]) * (1.2+0.6)
-        if ctrl_vector[1] > 0:
+        offset_norm = np.abs(ctrl_vector[0]) * 0.6
+        if ctrl_vector[0] > 0:
             #turn to the right: decrease right gain
             gain_right -= offset_norm
-        elif ctrl_vector[1] < 0:
+        elif ctrl_vector[0] < 0:
             #turn to the left: decrease left gain
             gain_left -= offset_norm
     else:
@@ -241,11 +243,11 @@ def keyboard_control(state, gain_left, gain_right):
 
     for key in keys:
         if key == 'a':
-            gain_left = 1.2
-            gain_right = 0.4
-        elif key == 'd':
-            gain_right = 1.2
             gain_left = 0.4
+            gain_right = 1.2
+        elif key == 'd':
+            gain_right = 0.4
+            gain_left = 1.2
         elif key == 'w':
             gain_right = 1.0
             gain_left = 1.0
@@ -303,7 +305,7 @@ fly = GameFly(init_pose="stretch", actuated_joints=actuated_joints,
 
 print("Done with fly")
 window_size = (1280, 720)
-cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_top_zoomout", window_size=window_size, camera_follows_fly_orientation=False, fps=30, play_speed_text=False)
+cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_back_track", window_size=window_size, camera_follows_fly_orientation=False, fps=30, play_speed_text=False)
 print("Done with cam")
 
 sim = TurningController(
@@ -337,21 +339,21 @@ else:
 
 print("Starting simulation loop")
 
-
 start_time = 0
+has_crossed_line = False
+crossing_time = 0
 while not get_quit():
 
     if start_time == 0 or get_reset():
         # Reset the simulation
         obs, info = sim.reset()
         img = sim.render(camera_name='cam', width=1000, height=1000)[0]
-        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         base_img = prepare_image(img, speed_list, get_state(), 0)
         countdown = 3
         while countdown > 0:
             img = put_centered_text(base_img, str(countdown), 10)
             cv2.imshow('BeeBrain', img)
-            cv2.waitKey(1)
+            cv2.waitKey(10)
             time.sleep(1)
             countdown -= 1
         
@@ -365,6 +367,7 @@ while not get_quit():
         initiated_legs = np.zeros(6)
         gain_left = 0
         gain_right = 0
+        has_crossed_line = False
 
         set_reset(False)
         start_time = time.time()
@@ -377,19 +380,22 @@ while not get_quit():
     # Project speed on orientation vector
     speed_list[n % speed_window] = global_vx * norm_fly_or[0] + global_vy * norm_fly_or[1]
 
-    obs = step_game(get_state(), gain_right, gain_left, initiated_legs, sim)
+    obs = step_game(get_state(), gain_left, gain_right, initiated_legs, sim)
 
     images = sim.render(camera_name='cam', width=1000, height=1000)
     if not images[0] is None:
-        img = cv2.rotate(images[0], cv2.ROTATE_90_COUNTERCLOCKWISE)
-        img = prepare_image(img, speed_list, get_state(), time.time()-start_time)
+        img = prepare_image(images[0], speed_list, get_state(), time.time()-start_time)
+        if has_crossed_line:
+            img = put_centered_text(img,
+                                     f"Crossed finish line in {crossing_time:.2f}s",
+                                     2)
+
         # Mise à jour de l'image affichée
         cv2.imshow('BeeBrain', img)
         cv2.waitKey(1)
 
         if joystick_connected:
             gain_right, gain_left, initiated_legs = joystick_control(get_state())
-            
         else:
             # the control frequncy should be the same as the rendering frequency
             gain_right, gain_left, initiated_legs = keyboard_control(get_state(), gain_left, gain_right)
@@ -398,32 +404,9 @@ while not get_quit():
         fly_pos = obs['fly'][0][:2]
         fly_pos_line = [prev_fly_pos, fly_pos]
         elapsed_time = time.time() - start_time
-        if crossed_line(fly_pos_line, sim.arena.finish_line_points) or elapsed_time > max_slalom_time:
-            set_reset(True)
-
-            level = 1 if get_state() == "CPG" else 2 if get_state() == "tripod" else 3
-            if not elapsed_time > max_slalom_time:
-                message = f"Congratulations ! \n You cleared level {level}"
-                img = put_centered_text(img, message, 2)
-                cv2.imshow('BeeBrain', img)
-                cv2.waitKey(1)
-                time.sleep(2)
-            else:
-                if level < 3:
-                    message = f"Time's up ! \n Going to level {level+1}"
-                else:
-                    message = "Time's up ! \n Game over !"
-                img = put_centered_text(img, message, 2)
-                cv2.imshow('BeeBrain', img)
-                cv2.waitKey(1)
-                time.sleep(2)
-
-            if get_state() == "CPG":
-                set_state("tripod")
-            elif get_state() == "tripod":
-                set_state("single")
-            elif get_state() == "single":
-                set_quit(True)
+        if not has_crossed_line and crossed_line(fly_pos_line, sim.arena.finish_line_points):
+            has_crossed_line = True
+            crossing_time = time.time() - start_time
 
     n+=1
 

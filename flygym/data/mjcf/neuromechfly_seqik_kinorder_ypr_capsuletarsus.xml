@@ -364,6 +364,7 @@
 				</body>
 			</body>
 		</body>
+		<camera name="camera_back_track" class="nmf" mode="track" ipd="0.068" pos="-7 0 4" euler="1.2 0.0 -1.57"/>
 		<camera name="camera_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 1.0" euler="1.57 0 0"/>
 		<camera name="camera_top" class="nmf" mode="track" ipd="0.068" pos="0 0 8" euler="0 0 0"/>
 		<camera name="camera_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 0 20" euler="0 0 0"/>
