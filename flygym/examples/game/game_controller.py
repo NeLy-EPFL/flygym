@@ -67,6 +67,10 @@ class TurningController(SingleFlySimulation):
         Seed for the random number generator.
     amplitude_range: tuple, optional
         Range of descending signals that can be applied to the CPGs.
+    init_control_mode : str, optional
+        Initial control mode. Can be "CPG", "Single", or "Tripod".
+    leg_step_time : float, optional
+        Time taken to step a leg in seconds.
     **kwargs
         Additional keyword arguments to be passed to
         ``SingleFlySimulation.__init__``.
@@ -85,6 +89,8 @@ class TurningController(SingleFlySimulation):
         init_magnitudes=None,
         amplitude_range=(-0.5, 1.5),
         seed=0,
+        init_control_mode="CPG",
+        leg_step_time=0.025,
         **kwargs,
     ):
         # Check if we have the correct list of actuated joints
@@ -123,6 +129,13 @@ class TurningController(SingleFlySimulation):
             seed=seed,
         )
 
+        self.prev_control_mode = init_control_mode
+
+        self.leg_phases = np.zeros(6)
+        self.phase_increment = self.timestep / leg_step_time * 2 * np.pi
+
+        self.tripod_map = {"LF": 0 , "LM": 1, "LH":0, "RF": 1, "RM": 0, "RH": 1}
+        self.tripod_phases = np.zeros(2)
 
     def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
         """
@@ -156,26 +169,17 @@ class TurningController(SingleFlySimulation):
         self.cpg_network.reset(init_phases, init_magnitudes)
         return obs, info
     
-    def step(self, action, activated_legs):
-        """Step the simulation forward one timestep.
-
-        Parameters
-        ----------
-        action : np.ndarray
-            Array of shape (2,) containing descending signal encoding
-            turning.
-        activated_legs : np.ndarray
-            Array of shape (6,) containing the legs we want to activate
-        """
-        # update CPG parameters
-        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel() * activated_legs
+    def swap_control_mode(self):
+        self.tripod_phases = np.zeros(2)
+        self.leg_phases = np.zeros(6)
+        self.cpg_network.intrinsic_amps = self.intrinsic_amps
+        self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
+    
+    def get_cpg_joint_angles(self, action):
+        amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
         freqs = self.intrinsic_freqs.copy()
-        freqs[0] *= 1 if action[0]*activated_legs[0] > 0 else -1
-        freqs[1] *= 1 if action[0]*activated_legs[1] > 0 else -1
-        freqs[2] *= 1 if action[0]*activated_legs[2] > 0 else -1
-        freqs[3] *= 1 if action[1]*activated_legs[3] > 0 else -1
-        freqs[4] *= 1 if action[1]*activated_legs[4] > 0 else -1
-        freqs[5] *= 1 if action[1]*activated_legs[5] > 0 else -1
+        freqs[:3] *= 1 if action[0] > 0 else -1
+        freqs[3:] *= 1 if action[1] > 0 else -1
         self.cpg_network.intrinsic_amps = amps
         self.cpg_network.intrinsic_freqs = freqs
 
@@ -200,12 +204,104 @@ class TurningController(SingleFlySimulation):
             # No adhesion in stumbling or retracted
             adhesion_onoff.append(my_adhesion_onoff)
 
-        action = {
-            "joints": np.array(np.concatenate(joints_angles)),
-            "adhesion": np.array(adhesion_onoff).astype(int),
-        }
-        obs, reward, terminated, truncated, info = super().step(action)
-        info.update(action)  # add lower-level action to info
+        return {"joints": np.array(np.concatenate(joints_angles)),
+                "adhesion": np.array(adhesion_onoff).astype(int)}
+
+
+    def get_single_leg_joint_angles(self, action):
+        # check if new legs need to be stepped
+        
+        joints_angles = []
+        adhesion_onoff = []
+        for i, leg in enumerate(self.preprogrammed_steps.legs):
+            if self.leg_phases[i] >= 2 * np.pi:
+                self.leg_phases[i] = 0
+            elif self.leg_phases[i] <= 0:
+                if action[i] > 0:
+                    self.leg_phases[i] += self.phase_increment
+            else:
+                self.leg_phases[i] += self.phase_increment
+
+            # get target angles from CPGs and apply correction
+            my_joints_angles = self.preprogrammed_steps.get_joint_angles(
+                leg,
+                self.leg_phases[i],
+                1,
+            )
+            joints_angles.append(my_joints_angles)
+
+            # get adhesion on/off signal
+            my_adhesion_onoff = self.preprogrammed_steps.get_adhesion_onoff(
+                leg, self.leg_phases[i]
+            )
+            adhesion_onoff.append(my_adhesion_onoff)
+
+
+        return {"joints": np.array(np.concatenate(joints_angles)), 
+                "adhesion": np.array(adhesion_onoff).astype(int)}                
+        
+
+    def get_tripod_joint_angles(self, action):
+
+        joints_angles = []
+        adhesion_onoff = []
+
+        for i in range(2):
+            if self.tripod_phases[i] >= 2 * np.pi:
+                self.tripod_phases[i] = 0
+            elif self.tripod_phases[i] <= 0:
+                if action[i] > 0:
+                    self.tripod_phases[i] += self.phase_increment
+            else:
+                self.tripod_phases[i] += self.phase_increment
+        
+        for leg in self.preprogrammed_steps.legs:
+            tripod_idx = self.tripod_map[leg]
+            my_joints_angles = self.preprogrammed_steps.get_joint_angles(
+                leg,
+                self.tripod_phases[tripod_idx],
+                1,
+            )
+            joints_angles.append(my_joints_angles)
+
+            # get adhesion on/off signal
+            my_adhesion_onoff = self.preprogrammed_steps.get_adhesion_onoff(
+                leg, self.tripod_phases[tripod_idx]
+            )
+            adhesion_onoff.append(my_adhesion_onoff)
+        
+        return {"joints": np.array(np.concatenate(joints_angles)), 
+                "adhesion": np.array(adhesion_onoff).astype(int)}
+
+
+    def step(self, action, control_mode):
+        """Step the simulation forward one timestep.
+
+        Parameters
+        ----------
+        action : np.ndarray
+            Array of shape (2,) containing descending signal encoding
+            turning.
+        activated_legs : np.ndarray
+            Array of shape (6,) containing the legs we want to activate
+        """
+
+        if control_mode != self.prev_control_mode:
+            self.swap_control_mode()
+        self.prev_control_mode = control_mode
+
+
+        if control_mode == "CPG":
+            joints_action = self.get_cpg_joint_angles(action)
+        elif control_mode == "single":
+            joints_action = self.get_single_leg_joint_angles(action)
+        elif control_mode == "tripod":
+            joints_action = self.get_tripod_joint_angles(action)
+        else:
+            raise ValueError("Invalid control mode")
+
+        obs, reward, terminated, truncated, info = super().step(joints_action)
+        info.update(joints_action)  # add lower-level action to info
         return obs, reward, terminated, truncated, info
 
 
