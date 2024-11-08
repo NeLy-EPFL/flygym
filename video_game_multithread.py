@@ -15,6 +15,7 @@ import numpy as np
 
 from pynput import keyboard
 import time
+import threading
 
 CPG_keys = ['w', 's', 'a', 'd', 'q']
 state_keys = ['p', 'o', 'i']
@@ -27,10 +28,87 @@ pressed_state_keys = []
 pressed_leg_keys = []
 pressed_tripod_keys = []
 
+joystick_keys = set()
+
 lock = threading.Lock()
 quit = False
 reset = False
 
+switch_joystick_key = 1
+quit_joystick_key =  0
+
+# Define the listener function that will run on a separate thread
+def joystick_listener():
+    global previous_button_states, joystick_keys, n_buttons, joystick_buttons_order
+    global quit, reset, state
+
+    while True:
+        # Get current button states
+        for i in range(n_buttons):
+            but = joystick.get_button(i)
+            if but == switch_joystick_key:
+                reset = True
+                if state == "CPG":
+                    state = "tripod"
+                elif state == "tripod":
+                    state = "single"
+                elif state == "single":
+                    state = "CPG"
+            elif but == quit_joystick_key:
+                quit = True
+            elif but in joystick_buttons_order:
+                with lock:
+                    joystick_keys.add(but.index(joystick_buttons_order))
+
+        # Add a short delay to avoid excessive CPU usage
+        time.sleep(0.01)  # Adjust as needed for responsiveness
+    
+def retrieve_joystick_keys():
+    with lock:
+        pjoystick_keys = joystick_keys.copy()
+        joystick_keys.clear()
+    return pjoystick_keys
+
+def joystick_control(state, joystick):
+    initiated_legs = np.zeros(6)
+    gain_left = 0
+    gain_right = 0
+
+    joystick_keys = retrieve_joystick_keys()
+    if state == "single":
+        initiated_legs[list(joystick_keys)] = 1
+    elif state == "tripod":
+        if 2 in joystick_keys: # center button (LH)
+            initiated_legs[0] = 1
+            initiated_legs[2] = 1
+            initiated_legs[4] = 1
+        if 3 in joystick_keys:
+            initiated_legs[1] = 1
+            initiated_legs[3] = 1
+            initiated_legs[5] = 1
+    elif state == "CPG":
+        ctrl_vector = np.zeros(n_axes)
+        for i in range(n_axes):
+            ctrl_vector[i] = joystick.get_axis(i)
+            # get axis returns a value between -1 and 1
+            # The norm of control vector maps to the norm of [gain_right, gain_left]
+            # The axis 1 value, maps to the difference between gain_right and gain_left
+            normalized_norm = np.linalg.norm(ctrl_vector)/np.sqrt(2)*1.2
+            gain_left = normalized_norm
+            gain_right = normalized_norm
+
+            offset_norm = np.abs(ctrl_vector[1]) * (1.2+0.6)
+            if ctrl_vector[1] > 0:
+                #turn to the right: decrease right gain
+                gain_right -= offset_norm
+            elif ctrl_vector[1] < 0:
+                #turn to the left: decrease left gain
+                gain_left -= offset_norm
+    else:
+        raise ValueError("Invalid state")
+    
+    return state, gain_right, gain_left, initiated_legs
+    
 def on_press(key):
     global quit, reset, state
     try:
@@ -69,43 +147,6 @@ def retrieve_keys():
         pressed_tripod_keys.clear()
 
     return pCPG_keys, pleg_keys, ptripod_keys
-
-def step_game(state, prev_state, gain_right, gain_left, initiated_legs):
-    assert state in ["CPG", "tripod", "single"], "Invalid state"
-
-    if state != prev_state:
-        if prev_state == "CPG":
-            action = np.array([0, 0])
-        elif prev_state == "tripod":
-            action = np.zeros(2)
-        elif prev_state == "single":
-            action = np.zeros(6)
-        for i in range(100):
-            _ = sim.step(action, prev_state)
-
-    if state == "CPG":
-        action = np.array([gain_right, gain_left])
-    elif state == "tripod":
-        action = initiated_legs[:2]
-    elif state == "single":
-        action = initiated_legs
-
-    obs, _, _, _, _ = sim.step(action, state)
-
-
-    return obs
-
-def prepare_image(image, speed_list, state, time):
-    if image.dtype != np.uint8:
-        image = image.astype(np.uint8)
-    
-    image = np.squeeze(image)
-    im_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    im_txt = cv2.putText(im_rgb, state, (50, 50), font, fontScale, color, thickness, cv2.LINE_AA)
-    im_speed = cv2.putText(im_txt, f'speed : {np.mean(speed_list)+0.01:.0f} mm/s', (50, 80), font, fontScale, color, thickness, cv2.LINE_AA)
-    im_time = cv2.putText(im_speed, f'time : {time:.2f} s', (50, 110), font, fontScale, color, thickness, cv2.LINE_AA)
-
-    return im_time
 
 def sort_keyboard_input(pCPG_keys, pleg_keys, ptripod_keys):
     """Sorts the keys pressed and returns the last one."""
@@ -165,6 +206,42 @@ def keyboard_control(state, gain_left, gain_right):
             initiated_legs[5] = 1
 
     return state, gain_right, gain_left, initiated_legs
+
+def step_game(state, prev_state, gain_right, gain_left, initiated_legs):
+    assert state in ["CPG", "tripod", "single"], "Invalid state"
+
+    if state != prev_state:
+        if prev_state == "CPG":
+            action = np.array([0, 0])
+        elif prev_state == "tripod":
+            action = np.zeros(2)
+        elif prev_state == "single":
+            action = np.zeros(6)
+        for i in range(100):
+            _ = sim.step(action, prev_state)
+
+    if state == "CPG":
+        action = np.array([gain_right, gain_left])
+    elif state == "tripod":
+        action = initiated_legs[:2]
+    elif state == "single":
+        action = initiated_legs
+
+    obs, _, _, _, _ = sim.step(action, state)
+
+    return obs
+
+def prepare_image(image, speed_list, state, time):
+    if image.dtype != np.uint8:
+        image = image.astype(np.uint8)
+    
+    image = np.squeeze(image)
+    im_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    im_txt = cv2.putText(im_rgb, state, (50, 50), font, fontScale, color, thickness, cv2.LINE_AA)
+    im_speed = cv2.putText(im_txt, f'speed : {np.mean(speed_list)+0.01:.0f} mm/s', (50, 80), font, fontScale, color, thickness, cv2.LINE_AA)
+    im_time = cv2.putText(im_speed, f'time : {time:.2f} s', (50, 110), font, fontScale, color, thickness, cv2.LINE_AA)
+
+    return im_time
 
 def ccw(A,B,C):
     return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
@@ -226,7 +303,6 @@ fly = GameFly(init_pose="stretch", actuated_joints=actuated_joints,
           contact_sensor_placements=contact_sensor_placements,
           control="position", self_collisions="none",
           xml_variant="seqik_simple",
-          #joint_damping=0.3, joint_stiffness=0.01
           )
 
 window_size = (1280, 720)
@@ -246,19 +322,44 @@ n = 0
 
 max_slalom_time = 30
 
+print("Discovering joystick")
 joystick_connected = False
+# Initialize pygame and joystick
+pygame.init()
+pygame.joystick.init()
 
-print("Starting listener thread")
+# Check for connected joysticks at the beginning
+if pygame.joystick.get_count() > 0:
+    # If there is a joystick connected, get the first joystick
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
+    print(f"Joystick {joystick.get_instance_id()} connected and ready for use.")
+    n_axes = joystick.get_numaxes() - 1
+    n_buttons = joystick.get_numbuttons()
+    joystick_buttons_order = [10, 11, 12, 4, 5, 6]
+    print("Starting joystick listener thread")
+    # Start the listener thread
+    listener_thread = threading.Thread(target=joystick_listener, daemon=True)
+    listener_thread.start()
 
-# Start the keyboard listener thread
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
+else:
+    print("No joystick connected. Using keyboard control.")
+    print("Starting listener thread")
+    # Start the keyboard listener thread
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
 
 print("Starting simulation loop")
 
 start_time = 0
 reset = True
 while not quit:
+
+    for event in pygame.event.get():            
+        # Check if the joystick is disconnected
+        if event.type == pygame.JOYDEVICEREMOVED and event.instance_id == joystick.get_instance_id():
+            print(f"Error: Joystick {joystick.get_instance_id()} disconnected.")
+            break
 
     if reset:
         # Reset the simulation
@@ -268,7 +369,6 @@ while not quit:
         base_img = prepare_image(img, speed_list, state, 0)
         countdown = 3
         while countdown > 0:
-
             img = put_centered_text(base_img, str(countdown), 10)
             cv2.imshow('BeeBrain', img)
             cv2.waitKey(1)
@@ -309,15 +409,16 @@ while not quit:
         cv2.imshow('BeeBrain', img)
         cv2.waitKey(1)
 
-        # the control frequncy should be the same as the rendering frequency
-        state, gain_right, gain_left, initiated_legs = keyboard_control(state, gain_left, gain_right)
+        if joystick_connected:
+            raise NotImplementedError("Joystick control not implemented")
+        else:
+            # the control frequncy should be the same as the rendering frequency
+            state, gain_right, gain_left, initiated_legs = keyboard_control(state, gain_left, gain_right)
 
-        # Check if the fly crossed the finish line
+        # check finish condition
         fly_pos = obs['fly'][0][:2]
         fly_pos_line = [prev_fly_pos, fly_pos]
-
         elapsed_time = time.time() - start_time
-
         if crossed_line(fly_pos_line, sim.arena.finish_line_points) or elapsed_time > max_slalom_time:
             reset = True
 
@@ -329,7 +430,10 @@ while not quit:
                 cv2.waitKey(1)
                 time.sleep(2)
             else:
-                message = f"Time's up ! \n Going to level {level+1}"
+                if level < 3:
+                    message = f"Time's up ! \n Going to level {level+1}"
+                else:
+                    message = "Time's up ! \n Game over !"
                 img = put_centered_text(img, message, 2)
                 cv2.imshow('BeeBrain', img)
                 cv2.waitKey(1)
@@ -345,8 +449,12 @@ while not quit:
     n+=1
 
 print("Simulation ended")
-# Stop the listener once the loop exits
-listener.stop()
-listener.join()
+if joystick_connected:
+    pygame.joystick.quit()
+    pygame.quit()
+else:
+    # Stop the listener once the loop exits
+    listener.stop()
+    listener.join()
 # Ferme toutes les fenêtres OpenCV une fois la simulation terminée
 cv2.destroyAllWindows()
