@@ -288,7 +288,7 @@ initiated_legs = np.zeros(6)
 
 timestep = 1e-4
 actuated_joints = all_leg_dofs
-arena = SlalomArena(n_gates=1)
+arena = SlalomArena()
 
 contact_sensor_placements = [
     f"{leg}{segment}"
@@ -307,7 +307,7 @@ fly = GameFly(init_pose="stretch", actuated_joints=actuated_joints,
 
 print("Done with fly")
 window_size = (1280, 720)
-cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_back_track", window_size=window_size, camera_follows_fly_orientation=True, fps=30, play_speed_text=False)
+cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_back_track", window_size=window_size, camera_follows_fly_orientation=False, fps=30, play_speed_text=False)
 print("Done with cam")
 
 sim = TurningController(
