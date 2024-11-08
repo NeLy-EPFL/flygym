@@ -288,13 +288,15 @@ initiated_legs = np.zeros(6)
 
 timestep = 1e-4
 actuated_joints = all_leg_dofs
-arena = SlalomArena()
+arena = SlalomArena(n_gates=1)
 
 contact_sensor_placements = [
     f"{leg}{segment}"
     for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
     for segment in ["Tarsus3", "Tarsus4", "Tarsus5"]
 ]
+
+text_map = {"CPG": "CPG (High level) control", "tripod": "Tripod (Mid level) control", "single": "Single leg (Low level) control"}
 
 # Configuration initiale
 fly = GameFly(init_pose="stretch", actuated_joints=actuated_joints,
@@ -305,7 +307,7 @@ fly = GameFly(init_pose="stretch", actuated_joints=actuated_joints,
 
 print("Done with fly")
 window_size = (1280, 720)
-cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_back_track", window_size=window_size, camera_follows_fly_orientation=False, fps=30, play_speed_text=False)
+cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False, camera_id="Animat/camera_back_track", window_size=window_size, camera_follows_fly_orientation=True, fps=30, play_speed_text=False)
 print("Done with cam")
 
 sim = TurningController(
@@ -342,23 +344,27 @@ print("Starting simulation loop")
 start_time = 0
 has_crossed_line = False
 crossing_time = 0
+
+cv2.namedWindow("BeBrain", cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty("BeBrain",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
 while not get_quit():
 
     if start_time == 0 or get_reset():
         # Reset the simulation
         obs, info = sim.reset()
         img = sim.render(camera_name='cam', width=1000, height=1000)[0]
-        base_img = prepare_image(img, speed_list, get_state(), 0)
+        base_img = prepare_image(img, speed_list, text_map[get_state()], 0)
         countdown = 3
         while countdown > 0:
             img = put_centered_text(base_img, str(countdown), 10)
-            cv2.imshow('BeeBrain', img)
+            cv2.imshow('BeBrain', img)
             cv2.waitKey(10)
             time.sleep(1)
             countdown -= 1
         
         img = put_centered_text(base_img, "GO !", 10)
-        cv2.imshow('BeeBrain', img)
+        cv2.imshow('BeBrain', img)
         cv2.waitKey(1)
         time.sleep(1)
         
@@ -372,26 +378,27 @@ while not get_quit():
         set_reset(False)
         start_time = time.time()
 
+    obs = step_game(get_state(), gain_left, gain_right, initiated_legs, sim)
+    
+    fly_pos = obs['fly'][0][:2].copy()
     # Update speed list project speed on orientation vector
-    fly_or = obs['fly_orientation'][:2]
+    fly_or = obs['fly_orientation'][:2].copy()
     norm_fly_or = fly_or / np.linalg.norm(fly_or)
-    global_vx = obs["fly"][1][0]
-    global_vy = obs["fly"][1][1]
+    global_vx = obs["fly"][1][0].copy()
+    global_vy = obs["fly"][1][1].copy()
     # Project speed on orientation vector
     speed_list[n % speed_window] = global_vx * norm_fly_or[0] + global_vy * norm_fly_or[1]
 
-    obs = step_game(get_state(), gain_left, gain_right, initiated_legs, sim)
-
     images = sim.render(camera_name='cam', width=1000, height=1000)
     if not images[0] is None:
-        img = prepare_image(images[0], speed_list, get_state(), time.time()-start_time)
+        img = prepare_image(images[0], speed_list, text_map[get_state()], time.time()-start_time)
         if has_crossed_line:
             img = put_centered_text(img,
                                      f"Crossed finish line in {crossing_time:.2f}s",
                                      2)
 
         # Mise à jour de l'image affichée
-        cv2.imshow('BeeBrain', img)
+        cv2.imshow('BeBrain', img)
         cv2.waitKey(1)
 
         if joystick_connected:
@@ -399,11 +406,10 @@ while not get_quit():
         else:
             # the control frequncy should be the same as the rendering frequency
             gain_right, gain_left, initiated_legs = keyboard_control(get_state(), gain_left, gain_right)
-
+        
         # check finish condition
-        fly_pos = obs['fly'][0][:2]
         fly_pos_line = [prev_fly_pos, fly_pos]
-        elapsed_time = time.time() - start_time
+        prev_fly_pos = fly_pos
         if not has_crossed_line and crossed_line(fly_pos_line, sim.arena.finish_line_points):
             has_crossed_line = True
             crossing_time = time.time() - start_time

@@ -94,13 +94,14 @@ class SlalomArena(BaseArena):
             )
 
         for i in range(n_gates):
+            offset_factor = 1 if i % 2 == 0 else -1
+            
             if i == n_gates-1:
                 color = [1.0, 1.0, 1.0, 1.0]
-                self.finish_line_points = np.array([[(i+1) * gate_spacing, offset_factor*gate_offset, offset_factor*gate_offset],
-                                                    [(i+1) * gate_spacing, -offset_factor*gate_offset, offset_factor*(gate_offset+gate_width)]])
+                self.finish_line_points = np.array([[(i+1) * gate_spacing, offset_factor*gate_offset],
+                                                    [(i+1) * gate_spacing, offset_factor*(gate_offset+gate_width)]])
             else:
                 color = [1.0, 0.0, 0.0, 1.0] if i % 2 == 0 else [0.0, 0.0, 1.0, 1.0]
-            offset_factor = 1 if i % 2 == 0 else -1
             self.root_element.worldbody.add(
                 "geom",
                 type="cylinder",
