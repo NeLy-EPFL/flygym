@@ -4,6 +4,7 @@ from dm_control import mjcf
 
 from .base import BaseArena
 
+
 class SlalomArena(BaseArena):
     """Flat terrain with no obstacles.
 
@@ -37,9 +38,8 @@ class SlalomArena(BaseArena):
         gate_width: float = 10.0,
         gate_height: float = 5.0,
         gate_spacing: float = 10.0,
-        pole_radius: float = 0.05,   
+        pole_radius: float = 0.05,
         n_gates: int = 5,
-
     ):
         super().__init__()
 
@@ -76,38 +76,45 @@ class SlalomArena(BaseArena):
             "geom",
             type="cylinder",
             name="start_pole_left",
-            size=[pole_radius, gate_height/2],
-            pos=[0, -gate_width/2, 0],
+            size=[pole_radius, gate_height / 2],
+            pos=[0, -gate_width / 2, 0],
             rgba=[0.0, 0.0, 0.0, 1.0],
             contype=0,
             conaffinity=0,
-            )
+        )
         self.root_element.worldbody.add(
             "geom",
             type="cylinder",
             name="start_pole_right",
-            size=[pole_radius, gate_height/2],
-            pos=[0, gate_width/2, 0],
+            size=[pole_radius, gate_height / 2],
+            pos=[0, gate_width / 2, 0],
             rgba=[0.0, 0.0, 0.0, 1.0],
             contype=0,
             conaffinity=0,
-            )
+        )
 
         for i in range(n_gates):
             offset_factor = 1 if i % 2 == 0 else -1
-            
-            if i == n_gates-1:
+
+            if i == n_gates - 1:
                 color = [1.0, 1.0, 1.0, 1.0]
-                self.finish_line_points = np.array([[(i+1) * gate_spacing, offset_factor*gate_offset],
-                                                    [(i+1) * gate_spacing, offset_factor*(gate_offset+gate_width)]])
+                self.finish_line_points = np.array(
+                    [
+                        [(i + 1) * gate_spacing, offset_factor * gate_offset],
+                        [
+                            (i + 1) * gate_spacing,
+                            offset_factor * (gate_offset + gate_width),
+                        ],
+                    ]
+                )
             else:
                 color = [1.0, 0.0, 0.0, 1.0] if i % 2 == 0 else [0.0, 0.0, 1.0, 1.0]
             self.root_element.worldbody.add(
                 "geom",
                 type="cylinder",
                 name=f"gate{i}_inside",
-                size=[pole_radius, gate_height/2+0.05],
-                pos=[(i+1) * gate_spacing, offset_factor*gate_offset, -0.05],
+                size=[pole_radius, gate_height / 2 + 0.05],
+                pos=[(i + 1) * gate_spacing, offset_factor * gate_offset, -0.05],
                 rgba=color,
                 contype=0,
                 conaffinity=0,
@@ -116,8 +123,12 @@ class SlalomArena(BaseArena):
                 "geom",
                 type="cylinder",
                 name=f"gate{i}_outside",
-                size=[pole_radius, gate_height/2+0.05],
-                pos=[(i+1) * gate_spacing, offset_factor*(gate_offset+gate_width), -0.05],
+                size=[pole_radius, gate_height / 2 + 0.05],
+                pos=[
+                    (i + 1) * gate_spacing,
+                    offset_factor * (gate_offset + gate_width),
+                    -0.05,
+                ],
                 rgba=color,
                 contype=0,
                 conaffinity=0,
