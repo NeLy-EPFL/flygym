@@ -2,7 +2,7 @@
 
 ![](https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_large.jpg?raw=true)
 
-[**Documentation**](https://neuromechfly.org/) | [**Preprint**](https://www.biorxiv.org/content/10.1101/2023.09.18.556649) | [**Discussion Board**](https://github.com/NeLy-EPFL/flygym/discussions)
+[**Documentation**](https://neuromechfly.org/) | [**Paper**](https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D) | [**Discussion Board**](https://github.com/NeLy-EPFL/flygym/discussions)
 
 ![Python: 3.9–3.12](https://img.shields.io/badge/python-3.9%E2%80%933.12-blue)
 [![License: MPL 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE)
