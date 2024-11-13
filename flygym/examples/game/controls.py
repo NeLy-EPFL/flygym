@@ -67,6 +67,16 @@ class JoystickControl:
         self.listener_thread = threading.Thread(target=self.listener)
         self.listener_thread.start()
 
+        # Keyboard listener to quit the game
+        self.keyboard_listener = keyboard.Listener(on_press=self.on_press)
+        self.keyboard_listener.start()
+
+    def on_press(self, key):
+        # get escape key to quit
+        if key == keyboard.Key.esc:
+            self.game_state.set_quit(True)
+            print("Quitting")
+
     def listener(self):
         buttons = np.zeros(self.n_buttons)
 
@@ -99,9 +109,6 @@ class JoystickControl:
                     self.game_state.set_state("CPG")
                 elif self.game_state.get_state() == "single":
                     self.game_state.set_state("tripod")
-            if buttons[1] == 1:
-                print("QUIT")
-                self.game_state.set_quit(True)
             for j, pressed in enumerate(buttons[self.joystick_buttons_order]):
                 if pressed:
                     with self.lock:
@@ -177,6 +184,8 @@ class JoystickControl:
         self.flush_keys()
         pygame.joystick.quit()
         pygame.quit()
+        self.keyboard_listener.stop()
+        self.keyboard_listener.join()
 
 
 class KeyboardControl:
@@ -204,27 +213,24 @@ class KeyboardControl:
         self.listener.start()
 
     def on_press(self, key):
-        try:
-            key_char = key.char  # Gets the character of the key
-        except AttributeError:
-            return  # Skips non-character keys like 'shift' or 'ctrl'
-
-        if key_char in self.CPG_keys:
-            self.pressed_CPG_keys.append(key_char)
-        elif key_char in self.leg_keys:
-            self.pressed_leg_keys.append(key_char)
-        elif key_char in self.tripod_keys:
-            self.pressed_tripod_keys.append(key_char)
-        elif key_char == "i":
+        key_str = str(key)  # Gets the character of the key
+       
+        if key_str in self.CPG_keys:
+            self.pressed_CPG_keys.append(key_str)
+        elif key_str in self.leg_keys:
+            self.pressed_leg_keys.append(key_str)
+        elif key_str in self.tripod_keys:
+            self.pressed_tripod_keys.append(key_str)
+        elif key_str == "i":
             self.game_state.set_reset(True)
             self.game_state.set_state("CPG")
-        elif key_char == "o":
+        elif key_str == "o":
             self.game_state.set_reset(True)
             self.game_state.set_state("tripod")
-        elif key_char == "p":
+        elif key_str == "p":
             self.game_state.set_reset(True)
             self.game_state.set_state("single")
-        elif key_char == "e":  # Stop listener when 'e' is pressed (for example)
+        elif key_str == "Key.esc":  # Stop listener when 'e' is pressed (for example)
             self.game_state.set_quit(True)
 
     def retrieve_keys(self):
