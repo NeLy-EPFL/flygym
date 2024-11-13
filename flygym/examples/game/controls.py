@@ -118,8 +118,8 @@ class JoystickControl:
                 axis = self.joystick.get_axis(i)
                 with self.lock:
                     self.joystick_axis[i] = axis
-                    
-            time.sleep(0.1) #prevent busy waiting 
+
+            time.sleep(0.1)  # prevent busy waiting
 
         pygame.joystick.quit()
         pygame.quit()
@@ -214,7 +214,7 @@ class KeyboardControl:
 
     def on_press(self, key):
         key_str = str(key)  # Gets the character of the key
-       
+
         if key_str in self.CPG_keys:
             self.pressed_CPG_keys.append(key_str)
         elif key_str in self.leg_keys:
