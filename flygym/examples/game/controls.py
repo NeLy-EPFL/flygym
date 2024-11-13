@@ -111,17 +111,19 @@ class JoystickControl:
                 axis = self.joystick.get_axis(i)
                 with self.lock:
                     self.joystick_axis[i] = axis
+                    
+            time.sleep(0.1) #prevent busy waiting 
 
         pygame.joystick.quit()
         pygame.quit()
 
     def retrieve_joystick_axis(self):
-        with threading.lock:
+        with self.lock:
             pjoystick_axis = self.joystick_axis.copy()
         return pjoystick_axis
 
     def retrieve_joystick_buttons(self):
-        with threading.lock:
+        with self.lock:
             pjoystick_keys = self.joystick_keys.copy()
             self.joystick_keys.clear()
         return pjoystick_keys
