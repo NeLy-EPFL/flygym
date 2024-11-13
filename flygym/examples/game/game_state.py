@@ -75,6 +75,7 @@ class Game:
             action = initiated_legs
 
         obs, _, _, _, _ = self.sim.step(action, self.state.get_state())
+        self.sim.cameras[0]._update_cam_pose_follow_fly(self.sim.physics)
         self.renderer.update_speed(obs["forward_vel"], i)
 
         self.curr_time = time.time()
