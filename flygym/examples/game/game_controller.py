@@ -24,6 +24,16 @@ _tripod_phase_biases = np.pi * np.array(
 )
 _tripod_coupling_weights = (_tripod_phase_biases > 0) * 10
 
+
+def ccw(A, B, C):
+    return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+
+# Return true if line segments AB and CD intersect
+def intersect(A, B, C, D):
+    return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
+
+
 class TurningController(SingleFlySimulation):
     """
     This class implements a controller that uses a CPG network to generate
@@ -80,7 +90,7 @@ class TurningController(SingleFlySimulation):
         self,
         fly: Fly,
         preprogrammed_steps=None,
-        intrinsic_freqs=np.ones(6) * 36, #np.ones(6) * 12,
+        intrinsic_freqs=np.ones(6) * 36,  # np.ones(6) * 12,
         intrinsic_amps=np.ones(6) * 6,
         phase_biases=_tripod_phase_biases,
         coupling_weights=_tripod_coupling_weights,
@@ -133,7 +143,7 @@ class TurningController(SingleFlySimulation):
         self.leg_phases = np.zeros(6)
         self.phase_increment = self.timestep / leg_step_time * 2 * np.pi
 
-        self.tripod_map = {"LF": 0 , "LM": 1, "LH":0, "RF": 1, "RM": 0, "RH": 1}
+        self.tripod_map = {"LF": 0, "LM": 1, "LH": 0, "RF": 1, "RM": 0, "RH": 1}
         self.tripod_phases = np.zeros(2)
 
     def reset(self, seed=None, init_phases=None, init_magnitudes=None, **kwargs):
@@ -167,13 +177,13 @@ class TurningController(SingleFlySimulation):
         self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
         self.cpg_network.reset(init_phases, init_magnitudes)
         return obs, info
-    
+
     def swap_control_mode(self):
         self.tripod_phases = np.zeros(2)
         self.leg_phases = np.zeros(6)
         self.cpg_network.intrinsic_amps = self.intrinsic_amps
         self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
-    
+
     def get_cpg_joint_angles(self, action):
         amps = np.repeat(np.abs(action[:, np.newaxis]), 3, axis=1).ravel()
         freqs = self.intrinsic_freqs.copy()
@@ -203,13 +213,14 @@ class TurningController(SingleFlySimulation):
             # No adhesion in stumbling or retracted
             adhesion_onoff.append(my_adhesion_onoff)
 
-        return {"joints": np.array(np.concatenate(joints_angles)),
-                "adhesion": np.array(adhesion_onoff).astype(int)}
-
+        return {
+            "joints": np.array(np.concatenate(joints_angles)),
+            "adhesion": np.array(adhesion_onoff).astype(int),
+        }
 
     def get_single_leg_joint_angles(self, action):
-        # check if new legs need to be stepped
-        
+        # check if new legs need to be stepped
+
         joints_angles = []
         adhesion_onoff = []
         for i, leg in enumerate(self.preprogrammed_steps.legs):
@@ -235,13 +246,12 @@ class TurningController(SingleFlySimulation):
             )
             adhesion_onoff.append(my_adhesion_onoff)
 
-
-        return {"joints": np.array(np.concatenate(joints_angles)), 
-                "adhesion": np.array(adhesion_onoff).astype(int)}                
-        
+        return {
+            "joints": np.array(np.concatenate(joints_angles)),
+            "adhesion": np.array(adhesion_onoff).astype(int),
+        }
 
     def get_tripod_joint_angles(self, action):
-
         joints_angles = []
         adhesion_onoff = []
 
@@ -253,7 +263,7 @@ class TurningController(SingleFlySimulation):
                     self.tripod_phases[i] += self.phase_increment
             else:
                 self.tripod_phases[i] += self.phase_increment
-        
+
         for leg in self.preprogrammed_steps.legs:
             tripod_idx = self.tripod_map[leg]
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
@@ -268,10 +278,11 @@ class TurningController(SingleFlySimulation):
                 leg, self.tripod_phases[tripod_idx]
             )
             adhesion_onoff.append(my_adhesion_onoff)
-        
-        return {"joints": np.array(np.concatenate(joints_angles)), 
-                "adhesion": np.array(adhesion_onoff).astype(int)}
 
+        return {
+            "joints": np.array(np.concatenate(joints_angles)),
+            "adhesion": np.array(adhesion_onoff).astype(int),
+        }
 
     def step(self, action, control_mode):
         """Step the simulation forward one timestep.
@@ -289,7 +300,6 @@ class TurningController(SingleFlySimulation):
             self.swap_control_mode()
         self.prev_control_mode = control_mode
 
-
         if control_mode == "CPG":
             joints_action = self.get_cpg_joint_angles(action)
         elif control_mode == "single":
@@ -305,7 +315,12 @@ class TurningController(SingleFlySimulation):
 
 
 class GameFly(Fly):
- def get_observation(self, sim: "Simulation") -> ObsType:
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.prev_fly_pos = (0, 0)
+        self.crossed_finish_line_counter = 0
+
+    def get_observation(self, sim: "Simulation") -> ObsType:
         """Get observation without stepping the physics simulation.
 
         Returns
@@ -349,9 +364,52 @@ class GameFly(Fly):
             self._update_vision(sim)
             obs["vision"] = self._curr_visual_input.astype(np.float32)
 
+        # check id the fly crossed the line.
+
+        obs["line_crossed"] = self.did_cross_line(
+            obs["fly"][0][:2], sim.arena.finish_line_points
+        )
+        self.prev_fly_pos = obs["fly"][0][:2]
+        if obs["line_crossed"]:
+            self.crossed_finish_line_counter = 1
+        if self.crossed_finish_line_counter > 0:
+            self.crossed_finish_line_counter += 1
+
+        # Update speed list project speed on orientation vector
+        norm_fly_or = obs["fly_orientation"][:2] / np.linalg.norm(
+            obs["fly_orientation"][:2]
+        )
+        forward_vel = (
+            obs["fly"][1][0] * norm_fly_or[0] + obs["fly"][1][1] * norm_fly_or[1]
+        )
+        obs["forward_vel"] = forward_vel.copy()
+
         return obs
- 
- def _define_observation_space(self, arena: BaseArena):
+
+    def did_cross_line(self, fly_pos, finish_line_points):
+        return intersect(
+            fly_pos, self.prev_fly_pos, finish_line_points[0], finish_line_points[1]
+        )
+
+    def reset(self, sim, **kwargs):
+        self._flip_counter = 0
+
+        obs = self.get_observation(sim)
+        info = self.get_info()
+
+        if self.enable_vision:
+            self._last_vision_update_time = -np.inf
+            self._curr_raw_visual_input = None
+            self._curr_visual_input = None
+            self._vision_update_mask = []
+            info["vision_updated"] = True
+
+        self.prev_fly_pos = obs["fly"][0][:2]
+        self.crossed_finish_line_counter = 0
+
+        return obs, info
+
+    def _define_observation_space(self, arena: BaseArena):
         _observation_space = {
             "fly": spaces.Box(low=-np.inf, high=np.inf, shape=(4, 3)),
             "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
