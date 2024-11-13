@@ -464,19 +464,33 @@ class Camera:
         self._frames.append(img)
         self._timestamp_per_frame.append(curr_time)
         return img
-    
+
     def _update_cam_pose_follow_fly(self, physics: mjcf.Physics):
-        smoothing = 0.995 # roughly calibrated to feel OK
+        smoothing = 0.995  # roughly calibrated to feel OK
         if self.old_fly_yaw is None:
-            self.old_fly_yaw = self.fly.last_obs['rot'][0]
-        new_fly_yaw = self.fly.last_obs['rot'][0]
+            self.old_fly_yaw = self.fly.last_obs["rot"][0]
+        new_fly_yaw = self.fly.last_obs["rot"][0]
         # apply the smoothing to the x and y position separately then convert back to an angle, otherwise we get wrapping errors at +/- pi
         yaw = np.atan2(
-            smoothing * np.sin(self.old_fly_yaw) + (1 - smoothing) * np.sin(new_fly_yaw),
-            smoothing * np.cos(self.old_fly_yaw) + (1 - smoothing) * np.cos(new_fly_yaw),
+            smoothing * np.sin(self.old_fly_yaw)
+            + (1 - smoothing) * np.sin(new_fly_yaw),
+            smoothing * np.cos(self.old_fly_yaw)
+            + (1 - smoothing) * np.cos(new_fly_yaw),
         )
-        physics.bind(self._cam).xmat = R.from_euler("xyz", [-np.pi/2 - np.pi/8,np.pi,yaw]).as_matrix().reshape(9,)
-        physics.bind(self._cam).xpos = np.hstack((self.fly.last_obs['pos'][:2], [0.8])) - (R.from_euler("xyz", [0,0,yaw - np.pi/2]).as_matrix() @ np.array([[6.5],[0],[0]])).flatten()
+        # x rotation tilts the camera down by pi/8, the other rotations are to get the camera to face the right way in the world
+        physics.bind(self._cam).xmat = (
+            R.from_euler("xyz", [-np.pi / 2 - np.pi / 8, np.pi, yaw])
+            .as_matrix()
+            .flatten()
+        )
+        # position the camera some distance behind the fly, at a fixed height
+        physics.bind(self._cam).xpos = (
+            np.hstack((self.fly.last_obs["pos"][:2], [0.8]))
+            + (
+                R.from_euler("xyz", [0, 0, yaw]).as_matrix()
+                @ np.array([[0], [6.5], [0]])
+            ).flatten()
+        )
         self.old_fly_yaw = yaw
 
     def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float):
