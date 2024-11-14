@@ -223,10 +223,8 @@ class KeyboardControl:
             self.pressed_CPG_keys.append(key_str)
         elif key_str in self.leg_keys:
             self.pressed_leg_keys.append(key_str)
-            print(key_str)
         elif key_str in self.tripod_keys:
             self.pressed_tripod_keys.append(key_str)
-            print(key_str)
         elif key_str == "i":
             self.game_state.set_reset(True)
             self.game_state.set_state("CPG")
@@ -333,8 +331,7 @@ class KeyboardControl:
                     initiated_legs[5] = -1
             elif key == "m" and state == "single":
                 initiated_legs[5] = -1
-        if initiated_legs.any():
-            print(initiated_legs)
+                
         return gain_left, gain_right, initiated_legs
 
     def flush_keys(self):
