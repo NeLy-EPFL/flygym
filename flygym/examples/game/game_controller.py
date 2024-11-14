@@ -280,10 +280,6 @@ class TurningController(SingleFlySimulation):
                     self.step_direction[i] = -1
             else:
                 self.tripod_phases[i] += self.phase_increment*self.step_direction[i]
-            
-            if np.any(action != 0):
-                print("Action: ", action)
-                print("Phase: ", self.tripod_phases)
 
         for leg in self.preprogrammed_steps.legs:
             tripod_idx = self.tripod_map[leg]
