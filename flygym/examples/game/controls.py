@@ -73,14 +73,14 @@ class JoystickControl:
         self.keyboard_listener.start()
 
     def on_press(self, key):
+        key = key.char if hasattr(key, 'char') else str(key)
         # get escape key to quit
-        if key == keyboard.Key.esc:
+        if key == "Key.esc":
             self.game_state.set_quit(True)
             print("Quitting")
-        if key == keyboard.Key.space:
+        if key == "Key.space":
             self.game_state.set_reset(True)
             print("Resetting")
-        key = key.char
         if key == "i":
             self.game_state.set_reset(True)
             self.game_state.set_state("CPG")
@@ -136,7 +136,7 @@ class JoystickControl:
     def retrieve_joystick_buttons(self):
         with self.lock:
             pjoystick_legs = self.joystick_leg_presses.copy()
-            self.joystick_keys.clear()
+            self.joystick_leg_presses = np.zeros(6)
         return pjoystick_legs
 
     def get_actions(self, state):
@@ -179,7 +179,7 @@ class JoystickControl:
 
     def flush_keys(self):
         with self.lock:
-            self.joystick_keys.clear()
+            self.joystick_leg_presses = np.zeros(6)
 
     def quit(self):
         if not self.game_state.get_quit():
@@ -234,8 +234,10 @@ class KeyboardControl:
         elif key_str == "p":
             self.game_state.set_reset(True)
             self.game_state.set_state("single")
-        elif key_str == "Key.esc":  # Stop listener when 'e' is pressed (for example)
+        elif key_str == "Key.esc":  # Quit when esc is pressed
             self.game_state.set_quit(True)
+        elif key_str == "Key.space":
+            self.game_state.set_reset(True)
 
     def retrieve_keys(self):
         """Retrieve and clear all recorded key presses."""

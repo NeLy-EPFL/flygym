@@ -280,7 +280,6 @@ class TurningController(SingleFlySimulation):
                     self.step_direction[i] = -1
             else:
                 self.tripod_phases[i] += self.phase_increment*self.step_direction[i]
-
         for leg in self.preprogrammed_steps.legs:
             tripod_idx = self.tripod_map[leg]
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
