@@ -141,6 +141,7 @@ class TurningController(SingleFlySimulation):
         self.prev_control_mode = init_control_mode
 
         self.leg_phases = np.zeros(6)
+        self.step_direction = np.zeros(6)
         self.phase_increment = self.timestep / leg_step_time * 2 * np.pi
 
         self.tripod_map = {"LF": 0, "LM": 1, "LH": 0, "RF": 1, "RM": 0, "RH": 1}
@@ -176,6 +177,11 @@ class TurningController(SingleFlySimulation):
         self.cpg_network.intrinsic_amps = self.intrinsic_amps
         self.cpg_network.intrinsic_freqs = self.intrinsic_freqs
         self.cpg_network.reset(init_phases, init_magnitudes)
+
+        self.leg_phases = np.zeros(6)
+        self.step_direction = np.zeros(6)
+        self.tripod_phases = np.zeros(2)
+
         return obs, info
 
     def swap_control_mode(self):
@@ -223,20 +229,26 @@ class TurningController(SingleFlySimulation):
 
         joints_angles = []
         adhesion_onoff = []
+
         for i, leg in enumerate(self.preprogrammed_steps.legs):
-            if self.leg_phases[i] >= 2 * np.pi:
-                self.leg_phases[i] = 0
+            if self.leg_phases[i] >= 2 * np.pi or  (self.leg_phases[i] <= 0 and self.step_direction[i] < 0):
+                self.leg_phases[i] = 0            
+                self.step_direction[i] = 0
             elif self.leg_phases[i] <= 0:
                 if action[i] > 0:
                     self.leg_phases[i] += self.phase_increment
+                    self.step_direction[i] = 1
+                if action[i] < 0:
+                    self.leg_phases[i] = 2*np.pi - self.phase_increment
+                    self.step_direction[i] = -1
             else:
-                self.leg_phases[i] += self.phase_increment
+                self.leg_phases[i] += self.phase_increment * self.step_direction[i]
 
             # get target angles from CPGs and apply correction
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
                 leg,
                 self.leg_phases[i],
-                1,
+                1,# amplitude is one
             )
             joints_angles.append(my_joints_angles)
 
@@ -256,20 +268,29 @@ class TurningController(SingleFlySimulation):
         adhesion_onoff = []
 
         for i in range(2):
-            if self.tripod_phases[i] >= 2 * np.pi:
+            if self.tripod_phases[i] >= 2 * np.pi or (self.tripod_phases[i] <= 0 and self.step_direction[i] < 0):
                 self.tripod_phases[i] = 0
+                self.step_direction[i] = 0
             elif self.tripod_phases[i] <= 0:
                 if action[i] > 0:
                     self.tripod_phases[i] += self.phase_increment
+                    self.step_direction[i] = 1  
+                if action[i] < 0:
+                    self.tripod_phases[i] = 2*np.pi - self.phase_increment
+                    self.step_direction[i] = -1
             else:
-                self.tripod_phases[i] += self.phase_increment
+                self.tripod_phases[i] += self.phase_increment*self.step_direction[i]
+            
+            if np.any(action != 0):
+                print("Action: ", action)
+                print("Phase: ", self.tripod_phases)
 
         for leg in self.preprogrammed_steps.legs:
             tripod_idx = self.tripod_map[leg]
             my_joints_angles = self.preprogrammed_steps.get_joint_angles(
                 leg,
                 self.tripod_phases[tripod_idx],
-                1,
+                1,# amplitude
             )
             joints_angles.append(my_joints_angles)
 

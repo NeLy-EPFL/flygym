@@ -55,11 +55,12 @@ class JoystickControl:
 
         self.n_axes = self.joystick.get_numaxes() - 1
         self.n_buttons = self.joystick.get_numbuttons()
-        self.joystick_buttons_order = [10, 11, 12, 4, 5, 6]
+        self.joystick_buttons_order = [10, 11, 12, 4, 5, 6] # LF, LM, LH, RF, RM, RH
+        self.backward_joystick_buttons_order = [15, 14, 13, 9, 8, 7]
         self.is_joystick = True
         time.sleep(0.1)  # leave tie for joystick to be ready ??
 
-        self.joystick_keys = set()
+        self.joystick_leg_presses = np.zeros(6)
         self.joystick_axis = np.zeros(2)
 
         self.lock = threading.Lock()
@@ -76,6 +77,19 @@ class JoystickControl:
         if key == keyboard.Key.esc:
             self.game_state.set_quit(True)
             print("Quitting")
+        if key == keyboard.Key.space:
+            self.game_state.set_reset(True)
+            print("Resetting")
+        key = key.char
+        if key == "i":
+            self.game_state.set_reset(True)
+            self.game_state.set_state("CPG")
+        elif key == "o":
+            self.game_state.set_reset(True)
+            self.game_state.set_state("tripod")
+        elif key == "p":
+            self.game_state.set_reset(True)
+            self.game_state.set_state("single")
 
     def listener(self):
         buttons = np.zeros(self.n_buttons)
@@ -95,24 +109,14 @@ class JoystickControl:
             for i in range(self.n_buttons):
                 buttons[i] = self.joystick.get_button(i)
 
-            if buttons[3] == 1 and not self.game_state.get_reset():
-                self.game_state.set_reset(True)
-                print("harder")
-                if self.game_state.get_state() == "CPG":
-                    self.game_state.set_state("tripod")
-                elif self.game_state.get_state() == "tripod":
-                    self.game_state.set_state("single")
-            if buttons[2] == 1:
-                self.game_state.set_reset(True)
-                print("Easier")
-                if self.game_state.get_state() == "tripod":
-                    self.game_state.set_state("CPG")
-                elif self.game_state.get_state() == "single":
-                    self.game_state.set_state("tripod")
             for j, pressed in enumerate(buttons[self.joystick_buttons_order]):
                 if pressed:
                     with self.lock:
-                        self.joystick_keys.add(j)
+                        self.joystick_leg_presses[j] = 1
+            for j, pressed in enumerate(buttons[self.backward_joystick_buttons_order]):
+                if pressed:
+                    with self.lock:
+                        self.joystick_leg_presses[j] = -1
 
             for i in range(self.n_axes - 1):
                 axis = self.joystick.get_axis(i)
@@ -131,27 +135,27 @@ class JoystickControl:
 
     def retrieve_joystick_buttons(self):
         with self.lock:
-            pjoystick_keys = self.joystick_keys.copy()
+            pjoystick_legs = self.joystick_leg_presses.copy()
             self.joystick_keys.clear()
-        return pjoystick_keys
+        return pjoystick_legs
 
     def get_actions(self, state):
         initiated_legs = np.zeros(6)
         gain_left = 0
         gain_right = 0
 
-        joystick_keys = self.retrieve_joystick_buttons()
+        joystick_leg_presses = self.retrieve_joystick_buttons()
         if state == "single":
-            initiated_legs[list(joystick_keys)] = 1
+            initiated_legs = joystick_leg_presses
         elif state == "tripod":
-            if 2 in joystick_keys:  # center button (LH)
-                initiated_legs[0] = 1
-                initiated_legs[2] = 1
-                initiated_legs[4] = 1
-            if 5 in joystick_keys:
-                initiated_legs[1] = 1
-                initiated_legs[3] = 1
-                initiated_legs[5] = 1
+            left_tripod_press = joystick_leg_presses[2]
+            initiated_legs[0] = left_tripod_press
+            initiated_legs[2] = left_tripod_press
+            initiated_legs[4] = left_tripod_press
+            right_tripod_press = joystick_leg_presses[5]
+            initiated_legs[1] = right_tripod_press
+            initiated_legs[3] = right_tripod_press
+            initiated_legs[5] = right_tripod_press
         elif state == "CPG":
             ctrl_vector = self.retrieve_joystick_axis()
             # get axis returns a value between -1 and 1
@@ -196,8 +200,8 @@ class KeyboardControl:
         # Keyboard keys
         self.CPG_keys = ["w", "s", "a", "d", "q"]
         self.state_keys = ["p", "o", "i"]
-        self.leg_keys = ["t", "g", "b", "z", "h", "n"]
-        self.tripod_keys = ["g", "h"]
+        self.leg_keys = ["t", "g", "b", "z", "h", "n", "r", "f", "v", "u", "j", "m"]
+        self.tripod_keys = ["g", "h", "f", "j"]
 
         # Shared lists to store key presses
         self.pressed_CPG_keys = []
@@ -213,14 +217,16 @@ class KeyboardControl:
         self.listener.start()
 
     def on_press(self, key):
-        key_str = str(key)  # Gets the character of the key
+        key_str = key.char if hasattr(key, 'char') else str(key)  # Gets the character of the key
 
         if key_str in self.CPG_keys:
             self.pressed_CPG_keys.append(key_str)
         elif key_str in self.leg_keys:
             self.pressed_leg_keys.append(key_str)
+            print(key_str)
         elif key_str in self.tripod_keys:
             self.pressed_tripod_keys.append(key_str)
+            print(key_str)
         elif key_str == "i":
             self.game_state.set_reset(True)
             self.game_state.set_state("CPG")
@@ -305,7 +311,30 @@ class KeyboardControl:
                     initiated_legs[5] = 1
             elif key == "n" and state == "single":
                 initiated_legs[5] = 1
-
+            elif key == "r" and state == "single":
+                initiated_legs[0] = -1
+            elif key == "f":
+                if state == "single":
+                    initiated_legs[1] = -1
+                elif state == "tripod":
+                    initiated_legs[0] = -1
+                    initiated_legs[2] = -1
+                    initiated_legs[4] = -1
+            elif key == "v" and state == "single":
+                initiated_legs[2] = -1
+            elif key == "u" and state == "single":
+                initiated_legs[3] = -1
+            elif key == "j":
+                if state == "single":
+                    initiated_legs[4] = -1
+                elif state == "tripod":
+                    initiated_legs[1] = -1
+                    initiated_legs[3] = -1
+                    initiated_legs[5] = -1
+            elif key == "m" and state == "single":
+                initiated_legs[5] = -1
+        if initiated_legs.any():
+            print(initiated_legs)
         return gain_left, gain_right, initiated_legs
 
     def flush_keys(self):
