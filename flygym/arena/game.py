@@ -89,8 +89,8 @@ class SlalomArena(BaseArena):
             size=[pole_radius, gate_height / 2],
             pos=[0, gate_width / 2, 0],
             rgba=[0.0, 0.0, 0.0, 1.0],
-            contype=0,
-            conaffinity=0,
+            contype=1,
+            conaffinity=1,
         )
 
         for i in range(n_gates):
@@ -116,8 +116,8 @@ class SlalomArena(BaseArena):
                 size=[pole_radius, gate_height / 2 + 0.05],
                 pos=[(i + 1) * gate_spacing, offset_factor * gate_offset, -0.05],
                 rgba=color,
-                contype=0,
-                conaffinity=0,
+                contype=1,
+                conaffinity=1,
             )
             self.root_element.worldbody.add(
                 "geom",
@@ -130,8 +130,8 @@ class SlalomArena(BaseArena):
                     -0.05,
                 ],
                 rgba=color,
-                contype=0,
-                conaffinity=0,
+                contype=1,
+                conaffinity=1,
             )
 
     def get_spawn_position(

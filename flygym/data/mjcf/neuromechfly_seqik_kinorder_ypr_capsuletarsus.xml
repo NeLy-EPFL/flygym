@@ -90,17 +90,17 @@
 	</asset>
 	<worldbody>
 		<body name="Thorax" pos="0.4956452548503876 0.0 1.2966440916061401" quat="1 0 0 0">
-			<geom name="Thorax" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Thorax" mass="0.0003071677023684708"/>
+			<geom name="Thorax" class="nmf" type="mesh" contype="1" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Thorax" mass="0.0003071677023684708"/>
 			<body name="A1A2" pos="-0.861628 0.0 0.0 " quat="0.991 0.0 -0.131  0.0">
-				<geom name="A1A2" class="nmf" type="mesh" contype="0" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A1A2" mass="8.5714247167182e-05"/>
+				<geom name="A1A2" class="nmf" type="mesh" contype="1" conaffinity="0" group="1" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A1A2" mass="8.5714247167182e-05"/>
 				<body name="A3" pos="-0.3264735949039459 0.0 0.04" quat="0.999 0.0 -0.043 0.0">
-					<geom name="A3" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A3" fluidcoef="0 0 0 0 0" mass="0.00010703994712944607"/>
+					<geom name="A3" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A3" fluidcoef="0 0 0 0 0" mass="0.00010703994712944607"/>
 					<body name="A4" pos="-0.20758499012713935 0.0 0.025" quat="0.999 0.0 0.043 0.0">
-						<geom name="A4" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A4" fluidcoef="0 0 0 0 0" mass="9.75245118031497e-05"/>
+						<geom name="A4" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A4" fluidcoef="0 0 0 0 0" mass="9.75245118031497e-05"/>
 						<body name="A5" pos="-0.17429611215191623 0.0 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
-							<geom name="A5" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A5" fluidcoef="0 0 0 0 0" mass="9.704502211966751e-05"/>
+							<geom name="A5" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A5" fluidcoef="0 0 0 0 0" mass="9.704502211966751e-05"/>
 							<body name="A6" pos="-0.2280491096907428 0.0 0.009000000000000001" quat="1.0 0.0 0.009 0.0">
-								<geom name="A6" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A6" fluidcoef="0 0 0 0 0" mass="6.267627178055471e-05"/>
+								<geom name="A6" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="1 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_A6" fluidcoef="0 0 0 0 0" mass="6.267627178055471e-05"/>
 							</body>
 						</body>
 					</body>
@@ -331,12 +331,12 @@
 				</body>
 			</body>
 			<body name="Head" pos="0.02869930863380432 0.0 0.0006983280181884766" quat="1 0 0 0">
-				<geom name="Head" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Head" mass="9.455094693981879e-05"/>
+				<geom name="Head" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Head" mass="9.455094693981879e-05"/>
 				<body name="LEye" pos="0.2314915955066681 -9.313225746154785e-10 0.017043113708496094" quat="1 0 0 0">
-					<geom name="LEye" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LEye" mass="1.251350088756361e-05"/>
+					<geom name="LEye" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_LEye" mass="1.251350088756361e-05"/>
 				</body>
 				<body name="REye" pos="0.2314915955066681 9.313225746154785e-10 0.017043113708496094" quat="1 0 0 0">
-					<geom name="REye" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_REye" mass="1.0853648330100224e-05"/>
+					<geom name="REye" class="nmf" type="mesh" contype="1" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_REye" mass="1.0853648330100224e-05"/>
 				</body>
 				<body name="Rostrum" pos="0.4300196170806885 0.0 -0.27448439598083496" quat="1 0 0 0">
 					<geom name="Rostrum" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="0 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_Rostrum" mass="1.821516305100949e-05"/>
