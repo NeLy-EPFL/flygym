@@ -20,6 +20,8 @@ class Renderer:
             "single": "Single leg (Low level) control",
         }
 
+        self.leaderboard_boundaries = [(1280-400, 720 - 230), (1280, 720)]
+
     def initialize_window(self):
         cv2.namedWindow(self.window_name, cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty(
@@ -39,7 +41,7 @@ class Renderer:
         im_txt = cv2.putText(
             im_rgb,
             self.text_map[state],
-            (50, 720 - 3 * 30),
+            (50, 720 - 3 * 35),
             self.font,
             self.fontScale,
             self.color,
@@ -49,7 +51,7 @@ class Renderer:
         im_speed = cv2.putText(
             im_txt,
             f"speed : {np.mean(self.speed_list)+0.01:.0f} mm/s",
-            (50, 720 - 2 * 30),
+            (50, 720 - 2 * 35),
             self.font,
             self.fontScale,
             self.color,
@@ -59,7 +61,7 @@ class Renderer:
         im_time = cv2.putText(
             im_speed,
             f"time : {time:.2f} s",
-            (50, 720 - 30),
+            (50, 720 - 35),
             self.font,
             self.fontScale,
             self.color,
@@ -68,8 +70,9 @@ class Renderer:
         )
         return im_time
 
-    def render_simple_image(self, image, state, time):
+    def render_simple_image(self, image, state, time, leaderboard):
         img = self.prepare_simple_image(image, state, time)
+        img = self.add_leaderboard(img, leaderboard)
         cv2.imshow(self.window_name, img)
         cv2.waitKey(1)
 
@@ -90,26 +93,57 @@ class Renderer:
             cv2.LINE_AA,
         )
 
-    def render_countdown(self, base_img, state, countdown):
+    def render_countdown(self, base_img, state, countdown, leaderboard):
         base_img = self.prepare_simple_image(base_img, state, 0)
 
         for i in range(countdown, 0, -1):
             img = self.put_centered_text(base_img, str(i), 10)
+            img = self.add_leaderboard(img, leaderboard)
             cv2.imshow(self.window_name, img)
             cv2.waitKey(1)  # 1ms just to update the window
             time.sleep(1)  # wait for 1 second
         img = self.put_centered_text(base_img, "GO!", 10)
+        img = self.add_leaderboard(img, leaderboard)
         cv2.imshow(self.window_name, img)
         cv2.waitKey(1)  # 1ms just to update the window
         time.sleep(1)  # wait for 1 second
 
-    def render_finish_line_image(self, image, state, crossing_time, time):
+    def render_finish_line_image(self, image, state, crossing_time, time, leaderboard):
         img = self.prepare_simple_image(image, state, time)
         img = self.put_centered_text(
-            img, f"You are quite the fly: {crossing_time:.3f} s", 2
+            img, f"You are quite the fly: {crossing_time:.3f}s", 2
         )
+        img = self.add_leaderboard(img, leaderboard)
         cv2.imshow(self.window_name, img)
         cv2.waitKey(1)
+
+    def add_leaderboard(self, base_img, leaderboard):
+        # add a grey rectangle with alpha = 0.5 to the bottom right corner
+        img = base_img.copy()
+        overlay = img.copy()
+        alpha = 0.5
+        overlay = cv2.rectangle(
+            overlay,
+            self.leaderboard_boundaries[0],
+            self.leaderboard_boundaries[1],
+            (192, 192, 192),
+            -1,
+        )
+        cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+        for i, line in enumerate(leaderboard):
+            img = cv2.putText(
+                img,
+                f"{i+1}. {line:.3f} s",
+                (self.leaderboard_boundaries[0][0] + 100, self.leaderboard_boundaries[0][1] + 40 + i * 40),
+                self.font,
+                self.fontScale,
+                self.color,
+                self.base_thickness,
+                cv2.LINE_AA,
+            )
+        
+        return img
+
 
     def reset(self):
         self.speed_list = np.zeros(self.speed_window_size)
