@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.1.0",
+    version="1.2.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description=(
