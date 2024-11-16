@@ -133,7 +133,7 @@ class Renderer:
         for i, line in enumerate(leaderboard):
             img = cv2.putText(
                 img,
-                f"{i+1}. {line:.3f} s",
+                f"{i+1}. {line:.3f}s",
                 (self.leaderboard_boundaries[0][0] + 100, self.leaderboard_boundaries[0][1] + 40 + i * 40),
                 self.font,
                 self.fontScale,
