@@ -36,6 +36,11 @@ def main():
         control="position",
         self_collisions="none",
         xml_variant="seqik_simple",
+        enable_adhesion = True,
+        #draw_adhesion=True,
+        actuator_gain=60.0,
+        adhesion_force = 20.0,
+
     )
     cam = Camera(
         fly=fly,
@@ -44,7 +49,7 @@ def main():
         camera_id="Animat/camera_back_track",
         window_size=renderer.window_size,
         camera_follows_fly_orientation=False,
-        fps=30,
+        fps=35,
         play_speed_text=False,
     )
 
@@ -53,7 +58,8 @@ def main():
         cameras=[cam],
         arena=SlalomArena(n_gates=1),
         timestep=1e-4,
-        convergence_coefs=np.ones(6) * 20,
+        convergence_coefs=np.ones(6) * 100,
+        intrinsic_freqs= np.ones(6) * 50,
         init_control_mode=game_state.get_state(),
     )
 
