@@ -78,18 +78,19 @@ class JoystickControl:
         if key == "Key.esc":
             self.game_state.set_quit(True)
             print("Quitting")
-        if key == "Key.space":
-            self.game_state.set_reset(True)
-            print("Resetting")
-        if key == "i":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("CPG")
-        elif key == "o":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("tripod")
-        elif key == "p":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("single")
+        if not self.game_state.get_reset():
+            if key == "Key.space":
+                self.game_state.set_reset(True)
+                print("Resetting")
+            if key == "i":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("CPG")
+            elif key == "o":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("tripod")
+            elif key == "p":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("single")
 
     def listener(self):
         buttons = np.zeros(self.n_buttons)
@@ -225,19 +226,20 @@ class KeyboardControl:
             self.pressed_leg_keys.append(key_str)
         elif key_str in self.tripod_keys:
             self.pressed_tripod_keys.append(key_str)
-        elif key_str == "i":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("CPG")
-        elif key_str == "o":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("tripod")
-        elif key_str == "p":
-            self.game_state.set_reset(True)
-            self.game_state.set_state("single")
-        elif key_str == "Key.esc":  # Quit when esc is pressed
+        if not self.game_state.get_reset():
+            if key_str == "i":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("CPG")
+            elif key_str == "o":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("tripod")
+            elif key_str == "p":
+                self.game_state.set_reset(True)
+                self.game_state.set_state("single")
+            elif key_str == "Key.space":
+                self.game_state.set_reset(True)
+        if key_str == "Key.esc":  # Quit when esc is pressed
             self.game_state.set_quit(True)
-        elif key_str == "Key.space":
-            self.game_state.set_reset(True)
 
     def retrieve_keys(self):
         """Retrieve and clear all recorded key presses."""
