@@ -46,7 +46,7 @@ class Game:
         self.controls = controls
 
         self.possible_states = ["CPG", "tripod", "single"]
-        self.state_floor_colors = {"CPG": (0, 0, 1, 1), "tripod": (0, 1, 0, 1), "single": (1, 0, 0, 1)}
+        self.state_floor_colors = {"CPG": (138/255, 206/255, 0, 1), "tripod": (0.3, 0.4, 1, 1), "single": (1, 0.2, 0.2, 1)}
         self.start_time = 0
         self.curr_time = 0
         self.crossing_time = 0
