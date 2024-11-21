@@ -110,7 +110,8 @@ class Game:
                     self.state.get_state(),
                     self.crossing_time,
                     self.curr_time - self.start_time,
-                    self.curr_leaderboard
+                    self.curr_leaderboard,
+                    self.sim.fly.tot_energy_consumed
                 )
             else:
                 self.renderer.render_simple_image(
@@ -118,6 +119,7 @@ class Game:
                     self.state.get_state(),
                     self.curr_time - self.start_time,
                     self.curr_leaderboard,
+                    self.sim.fly.tot_energy_consumed
                 )
 
     def reset(self):

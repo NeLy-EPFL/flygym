@@ -335,6 +335,9 @@ class GameFly(Fly):
         super().__init__(**kwargs)
         self.prev_fly_pos = (0, 0)
         self.crossed_finish_line_counter = 0
+        
+        self.tot_energy_consumed = 0
+
 
     def get_observation(self, sim: "Simulation") -> ObsType:
         """Get observation without stepping the physics simulation.
@@ -345,6 +348,20 @@ class GameFly(Fly):
             The observation as defined by the environment.
         """
         physics = sim.physics
+
+        # joint sensors
+        joint_obs = np.zeros((3, len(self.actuated_joints)))
+        joint_sensordata = physics.bind(self._joint_sensors).sensordata
+        for i, joint in enumerate(self.actuated_joints):
+            base_idx = i * 3
+            # pos and vel and torque from the joint sensors
+            joint_obs[:3, i] = joint_sensordata[base_idx : base_idx + 3]
+        joint_obs[2, :] *= 1e-9  # convert to N
+
+        # compute energy consumption during step
+        # dt*velocity*torque
+        self.tot_energy_consumed += np.sum(joint_obs[2, :] * joint_obs[1, :] * sim.timestep)
+    
 
         # fly position and orientation
         cart_pos = physics.bind(self._body_sensors[0]).sensordata
@@ -422,6 +439,7 @@ class GameFly(Fly):
 
         self.prev_fly_pos = obs["fly"][0][:2]
         self.crossed_finish_line_counter = 0
+        self.tot_energy_consumed = 0
 
         return obs, info
 
