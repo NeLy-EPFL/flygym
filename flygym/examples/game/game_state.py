@@ -46,6 +46,7 @@ class Game:
         self.controls = controls
 
         self.possible_states = ["CPG", "tripod", "single"]
+        self.state_floor_colors = {"CPG": (0, 0, 1, 1), "tripod": (0, 1, 0, 1), "single": (1, 0, 0, 1)}
         self.start_time = 0
         self.curr_time = 0
         self.crossing_time = 0
@@ -140,6 +141,7 @@ class Game:
         else:
             self.curr_leaderboard = self.all_leaderboards[self.curr_mode]
 
+        self.sim.physics.named.model.geom_rgba["ground"] = self.state_floor_colors[self.state.get_state()]
         obs, info = self.sim.reset()
         img = self.sim.render()[0]
         assert not img is None, "Image is None at reset"
