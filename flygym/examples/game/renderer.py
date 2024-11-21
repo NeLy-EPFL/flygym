@@ -25,7 +25,7 @@ class Renderer:
         self.consumed_energy_ys = [50, 80]
         self.energy_bar_width = np.rint(0.4*self.window_size[0]).astype(int) # 40% of the window width
         self.energy_mutlipler = 1e6
-        self.energy_unit = "micro Joules"
+        self.energy_unit = "microJoules"
         self.energy_bar_min = 0
         self.energy_bar_max = 10
         self.energy_bar_graduations = 10
