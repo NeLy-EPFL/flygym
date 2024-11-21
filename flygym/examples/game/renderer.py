@@ -158,6 +158,21 @@ class Renderer:
         )
 
     def render_countdown(self, base_img, state, countdown, leaderboard):
+
+        instructions_image = cv2.cvtColor(np.squeeze(base_img.copy().astype(np.uint8)), cv2.COLOR_BGR2RGB)
+        if state == "CPG":
+            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_1.png", cv2.IMREAD_UNCHANGED)
+        elif state == "tripod":
+            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_2.png", cv2.IMREAD_UNCHANGED)
+        elif state == "single":
+            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_3.png", cv2.IMREAD_UNCHANGED)
+        
+        instructions_image[instructions_overlay[:,:,3] > 0] = instructions_overlay[instructions_overlay[:,:,3] > 0,:3]
+        cv2.imshow(self.window_name, instructions_image)
+        cv2.waitKey(1) # render the image
+        time.sleep(1) # wait for a little bit to ignore existing key presses
+        cv2.waitKey(-1)
+
         base_img = self.prepare_simple_image(base_img, state, 0, 0)
 
         for i in range(countdown, 0, -1):
