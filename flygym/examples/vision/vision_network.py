@@ -22,11 +22,11 @@ class RealTimeVisionNetwork(Network):
     visual input as a block, which enables more efficient computation on
     the GPU. In contrast, ``RealTimeVisionNetwork`` receives visual input
     one frame at a time, allowing for deployment in closed-loop
-    simulations. See `flyvision`_ and `Lappalainen et al., 2024`_ for
+    simulations. See `flyvision`_ and `Lappalainen et al., 2023`_ for
     more details.
 
     .. _flyvision: https://github.com/TuragaLab/flyvis
-    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
+    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
     """
 
     def setup_step_by_step_simulation(
@@ -190,10 +190,10 @@ class RealTimeVisionNetworkView(NetworkView):
     This class extends ``flyvision.network.NetworkView`` to work with our
     extended ``RealTimeVisionNetwork``. In brief, it is used as a handle to
     set up the ``RealTimeVisionNetwork`` from saved checkpoint. See
-    `flyvision`_ and `Lappalainen et al., 2024`_ for more details.
+    `flyvision`_ and `Lappalainen et al., 2023`_ for more details.
 
     .. _flyvision: https://github.com/TuragaLab/flyvis
-    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
+    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
     """
 
     def init_network(
