@@ -145,7 +145,14 @@ class Game:
         obs, info = self.sim.reset()
         img = self.sim.render()[0]
         assert not img is None, "Image is None at reset"
+        
+        self.controls.flush_keys()
+        while not self.controls.any_key_pressed():
+            self.renderer.render_instructions(img.copy(), self.state.get_state())
+            time.sleep(0.1)
+
         self.renderer.render_countdown(img.copy(), self.state.get_state(), 3, self.curr_leaderboard)
+        self.controls.flush_keys()
         self.state.set_reset(False)
         self.start_time = time.time()
         self.start_sim_time = self.sim.curr_time

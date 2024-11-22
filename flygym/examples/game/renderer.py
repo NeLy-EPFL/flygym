@@ -1,6 +1,7 @@
 import cv2
 import time
 import numpy as np
+import os
 
 
 class Renderer:
@@ -30,6 +31,11 @@ class Renderer:
         self.energy_bar_max = 10
         self.energy_bar_graduations = 10
         self.energy_bar_graduation_increment = self.energy_bar_max // self.energy_bar_graduations
+
+        instruction_base_path = os.path.dirname(os.path.abspath(__file__)) + "/docs"
+        self.instruction_overlays = {"CPG": cv2.imread(os.path.join(instruction_base_path, "instructions_level_1.png"), cv2.IMREAD_UNCHANGED),
+                                    "tripod": cv2.imread(os.path.join(instruction_base_path, "instructions_level_2.png"), cv2.IMREAD_UNCHANGED),
+                                    "single": cv2.imread(os.path.join(instruction_base_path, "instructions_level_3.png"), cv2.IMREAD_UNCHANGED)}
 
     def initialize_window(self):
         cv2.namedWindow(self.window_name, cv2.WND_PROP_FULLSCREEN)
@@ -156,22 +162,16 @@ class Renderer:
             self.base_thickness * font_multiplier,
             cv2.LINE_AA,
         )
+    
+    def render_instructions(self, base_img, state):
 
-    def render_countdown(self, base_img, state, countdown, leaderboard):
-
-        instructions_image = cv2.cvtColor(np.squeeze(base_img.copy().astype(np.uint8)), cv2.COLOR_BGR2RGB)
-        if state == "CPG":
-            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_1.png", cv2.IMREAD_UNCHANGED)
-        elif state == "tripod":
-            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_2.png", cv2.IMREAD_UNCHANGED)
-        elif state == "single":
-            instructions_overlay = cv2.imread("flygym/examples/game/docs/instructions_level_3.png", cv2.IMREAD_UNCHANGED)
-        
+        instructions_image = self.prepare_simple_image(base_img, state, 0, 0)
+        instructions_overlay = self.instruction_overlays[state]
         instructions_image[instructions_overlay[:,:,3] > 0] = instructions_overlay[instructions_overlay[:,:,3] > 0,:3]
         cv2.imshow(self.window_name, instructions_image)
-        cv2.waitKey(1) # render the image
-        time.sleep(1) # wait for a little bit to ignore existing key presses
-        cv2.waitKey(-1)
+        cv2.waitKey(1)  # 1ms just to update the window
+
+    def render_countdown(self, base_img, state, countdown, leaderboard):
 
         base_img = self.prepare_simple_image(base_img, state, 0, 0)
 
