@@ -38,8 +38,8 @@ def main():
         xml_variant="seqik_simple",
         enable_adhesion = True,
         #draw_adhesion=True,
-        actuator_gain=60.0,
-        adhesion_force = 20.0,
+        actuator_gain=40.0,
+        adhesion_force = 5.0,
 
     )
     cam = Camera(
@@ -53,13 +53,15 @@ def main():
         play_speed_text=False,
     )
 
+    freq = 50
     sim = TurningController(
         fly=fly,
         cameras=[cam],
         arena=SlalomArena(n_gates=1),
         timestep=1e-4,
         convergence_coefs=np.ones(6) * 100,
-        intrinsic_freqs= np.ones(6) * 50,
+        intrinsic_freqs= np.ones(6) * freq,
+        leg_step_time=1.0 / freq,
         init_control_mode=game_state.get_state(),
     )
 

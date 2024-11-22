@@ -63,6 +63,8 @@ class JoystickControl:
         self.joystick_leg_presses = np.zeros(6)
         self.joystick_axis = np.zeros(2)
 
+        self._any_key_pressed = False
+
         self.lock = threading.Lock()
 
         self.listener_thread = threading.Thread(target=self.listener)
@@ -71,6 +73,10 @@ class JoystickControl:
         # Keyboard listener to quit the game
         self.keyboard_listener = keyboard.Listener(on_press=self.on_press)
         self.keyboard_listener.start()
+
+    def any_key_pressed(self):
+        with self.lock:
+            return self._any_key_pressed
 
     def on_press(self, key):
         key = key.char if hasattr(key, 'char') else str(key)
@@ -91,6 +97,8 @@ class JoystickControl:
             elif key == "p":
                 self.game_state.set_reset(True)
                 self.game_state.set_state("single")
+        with self.lock:
+            self._any_key_pressed = True
 
     def listener(self):
         buttons = np.zeros(self.n_buttons)
@@ -109,6 +117,10 @@ class JoystickControl:
             # Poll button states
             for i in range(self.n_buttons):
                 buttons[i] = self.joystick.get_button(i)
+
+            if np.any(buttons):
+                with self.lock:
+                    self._any_key_pressed = True
 
             for j, pressed in enumerate(buttons[self.joystick_buttons_order]):
                 if pressed:
@@ -181,6 +193,8 @@ class JoystickControl:
     def flush_keys(self):
         with self.lock:
             self.joystick_leg_presses = np.zeros(6)
+        with self.lock:
+            return self._any_key_pressed
 
     def quit(self):
         if not self.game_state.get_quit():
@@ -209,6 +223,8 @@ class KeyboardControl:
         self.pressed_state_keys = []
         self.pressed_leg_keys = []
         self.pressed_tripod_keys = []
+
+        self._any_key_pressed = False
 
         self.lock = threading.Lock()
 
@@ -240,6 +256,12 @@ class KeyboardControl:
                 self.game_state.set_reset(True)
         if key_str == "Key.esc":  # Quit when esc is pressed
             self.game_state.set_quit(True)
+        with self.lock:
+            self._any_key_pressed = True
+    
+    def any_key_pressed(self):
+        with self.lock:
+            return self._any_key_pressed
 
     def retrieve_keys(self):
         """Retrieve and clear all recorded key presses."""
@@ -343,6 +365,8 @@ class KeyboardControl:
             self.pressed_CPG_keys.clear()
             self.pressed_leg_keys.clear()
             self.pressed_tripod_keys.clear()
+        with self.lock:
+            self._any_key_pressed = False
 
     def quit(self):
         self.listener.stop()
