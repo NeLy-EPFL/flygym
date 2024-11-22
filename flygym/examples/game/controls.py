@@ -118,7 +118,7 @@ class JoystickControl:
             for i in range(self.n_buttons):
                 buttons[i] = self.joystick.get_button(i)
 
-            if np.any(buttons):
+            if np.any(buttons[:-1]): # Exclude the slider at the bottom of the joystick
                 with self.lock:
                     self._any_key_pressed = True
 
@@ -178,7 +178,8 @@ class JoystickControl:
             gain_left = normalized_norm * (-1) * np.sign(ctrl_vector[1])
             gain_right = normalized_norm * (-1) * np.sign(ctrl_vector[1])
 
-            offset_norm = np.abs(ctrl_vector[0]) * 0.6
+            offset_norm = np.abs(ctrl_vector[0]) * 0.6 # invert for backwards motion (fron is neg values)
+            print(ctrl_vector[0], ctrl_vector[1])
             if ctrl_vector[0] > 0:
                 # turn to the right: decrease right gain
                 gain_right -= offset_norm
@@ -194,7 +195,7 @@ class JoystickControl:
         with self.lock:
             self.joystick_leg_presses = np.zeros(6)
         with self.lock:
-            return self._any_key_pressed
+            self._any_key_pressed = False
 
     def quit(self):
         if not self.game_state.get_quit():
