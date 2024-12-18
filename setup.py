@@ -61,12 +61,6 @@ setup(
             "h5py",
             "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
         ],
-        "game": [
-            "pygame",
-            "pynput",
-            "networkx",
-
-        ]
     },
     url="https://neuromechfly.org/",
     long_description=open("README.md", encoding="UTF-8").read(),
