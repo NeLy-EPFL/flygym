@@ -705,7 +705,7 @@ class Camera:
 
         # Elevate the camera slightly gives a better view of the arena
         if "zoomin" not in camera_name:
-            camera.pos = camera.pos + [0.0, 0.0, 5]
+            camera.pos = camera.pos + [0.0, 0.0, 0.5]
         if "front" in camera_name:
             camera.pos[2] = camera.pos[2] + 1.0
 
