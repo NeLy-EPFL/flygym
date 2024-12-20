@@ -56,7 +56,7 @@ setup(
             "pandas",
             "scikit-learn",
             "seaborn",
-            "torch",
+            "torch>2.3",
             "phiflow",
             "h5py",
             "flyvis==1.1.2",
