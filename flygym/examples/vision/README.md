@@ -13,7 +13,7 @@ This directory contains to examples related to vision:
 
 ### Connectome-constrained visual system model
 - `arena.py`: Also implemented in this module is a `MovingFlyArena`, where instead of a black sphere, a second fly moves in a preset path.
-- `vision_network.py`: This module extends the [FlyVision](https://github.com/TuragaLab/flyvis) library that accompanies [Lappalainen et al. (2024)](https://doi.org/10.1038/s41586-024-07939-3), which constructed and optimized a connectome-based model of the _Drosophila_ visual system. In our module, we added the functionalities that allow the model to receive individual frames of visual input and simulate the network in closed loop.
+- `vision_network.py`: This module extends the [Flyvis](https://github.com/TuragaLab/flyvis) library that accompanies [Lappalainen et al. (2024)](https://doi.org/10.1038/s41586-024-07939-3), which constructed and optimized a connectome-based model of the _Drosophila_ visual system. In our module, we added the functionalities that allow the model to receive individual frames of visual input and simulate the network in closed loop.
 - `record_baseline_response.py`: Using the model by Lappalainen et al., this script records the activities of visual neurons when then fly walks in a featureless arena in open loop.
 - `realistic_vision.py`: This module implements a `RealisticVisionFly` class, which extends the `HybridTurningFly`, that interfaces with the vision network simulation to provide visual neuron activities as a part of the observation in addition to the raw visual input.
 - `follow_fly_closed_loop.py`: This script uses the `NMFRealisticVision` controller to perform closed-loop fly following based on the baseline activity established in `record_baseline_response.py`.
