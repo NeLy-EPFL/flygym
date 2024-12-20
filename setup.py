@@ -20,7 +20,7 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy<2",
+        "numpy",
         "scipy",
         "pyyaml",
         "jupyter",
@@ -56,7 +56,7 @@ setup(
             "pandas",
             "scikit-learn",
             "seaborn",
-            "torch<=2.5.0",
+            "torch",
             "phiflow",
             "h5py",
             "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
