@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.1.0",
+    version="1.2.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
     description=(
@@ -20,7 +20,8 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy<2",
+        "numpy; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+        "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",  # torch won't work on intel macs with numpy >= 2 (#231)
         "scipy",
         "pyyaml",
         "jupyter",
@@ -56,10 +57,10 @@ setup(
             "pandas",
             "scikit-learn",
             "seaborn",
-            "torch<=2.5.0",
+            "torch",
             "phiflow",
             "h5py",
-            "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
+            "flyvis==1.1.2",
         ],
     },
     url="https://neuromechfly.org/",

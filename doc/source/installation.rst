@@ -32,12 +32,6 @@ Then, to install the FlyGym package:
 
       pip install "flygym[examples]"
    
-   The tutorial and example on interfacing FlyGym with the `connectome-constrained vision model <https://github.com/TuragaLab/flyvis>`_ from `Lappalainen et al. (2024) <https://doi.org/10.1038/s41586-024-07939-3>`_ further requires the FlyVision package, which is not published on the Python Package Index (PyPI). As a result, the command above does not install FlyVision. Instead, you must either install it manually following `its installation instructions <https://github.com/TuragaLab/flyvis?tab=readme-ov-file#install-locally->`_, or install it with ``pip`` from our fork on GitHub:
-
-   .. code-block:: bash
-
-      pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
-
 .. Note::
 
    **(Optional) Additional tools for developers:** Developers of FlyGym use a number of other tools for automated documentation generation, testing, and code linting. These tools are not required to use FlyGym as it is, but can be useful if you wish to modify the code or contribute to the project. To install these tools, you can run:

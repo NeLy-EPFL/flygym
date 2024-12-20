@@ -19,8 +19,7 @@ ENV PYOPENGL_PLATFORM=egl
 ADD . $HOME/flygym/
 
 # Set up virtual environment and install dependencies
-RUN pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip" && \
-    pip install -e ".[examples,dev]"
+RUN pip install -e ".[examples,dev]"
 
 # Set entrypoint
 ENTRYPOINT ["/bin/bash"]
