@@ -59,7 +59,7 @@ setup(
             "torch",
             "phiflow",
             "h5py",
-            "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
+            "flyvis==1.1.2",
         ],
     },
     url="https://neuromechfly.org/",
