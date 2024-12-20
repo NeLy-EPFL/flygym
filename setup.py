@@ -20,7 +20,8 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy",
+        "numpy; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+        "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",  # torch won't work on intel macs with numpy >= 2 (#231)
         "scipy",
         "pyyaml",
         "jupyter",
@@ -56,7 +57,7 @@ setup(
             "pandas",
             "scikit-learn",
             "seaborn",
-            "torch>2.3",
+            "torch",
             "phiflow",
             "h5py",
             "flyvis==1.1.2",
