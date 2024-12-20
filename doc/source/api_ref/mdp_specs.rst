@@ -96,4 +96,4 @@ NeuroMechFly with connectome-constrained vision network (``RealisticVisionFly``)
 
 **Info:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.vision.RealisticVisionFly`` class also provides the following in the "info" dictionary:
 
-* "nn_activities": Activities of the visual system neurons as a ``flyvision.LayerActivity`` object. This is similar to ``obs["nn_activities_arr"]`` but in the form of a ``flyvision.LayerActivity`` object rather than a plain array.
+* "nn_activities": Activities of the visual system neurons as a ``flyvis.LayerActivity`` object. This is similar to ``obs["nn_activities_arr"]`` but in the form of a ``flyvis.LayerActivity`` object rather than a plain array.

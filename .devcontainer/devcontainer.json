@@ -24,8 +24,8 @@
     ],
     "containerEnv": {
         "DISPLAY": "${localEnv:DISPLAY}"
-    },    
-    "postCreateCommand": "pip install \"flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip\" && pip install -e \".[examples,dev]\" --no-warn-script-location",
+    },
+    "postCreateCommand": "pip install -e \".[examples,dev]\" --no-warn-script-location",
     "runArgs": [
         "--device=/dev/dri"
     ]
