@@ -368,19 +368,16 @@ class Camera():
 
         forces = last_obs["contact_forces"]
         pos = last_obs["contact_pos"]
-        print(forces.shape, pos.shape)
 
         magnitudes = np.linalg.norm(forces, axis=1)
         contact_indices = np.nonzero(magnitudes > self.contact_threshold)[0]
 
         n_contacts = len(contact_indices)
-        print(n_contacts)
         # Build an array of start and end points for the force arrows
         if n_contacts == 0:
             return img
 
         contact_forces = forces[contact_indices] * self.force_arrow_scaling
-        print(contact_forces.shape)
 
         if self.decompose_contacts:
             contact_pos = pos[:, None, contact_indices]
@@ -389,13 +386,10 @@ class Camera():
             contact_pos = pos[:, contact_indices]
             Xw = np.stack((contact_pos, contact_pos + contact_forces.T), 1)
 
-        print(Xw.shape)
-
         # Convert to homogeneous coordinates
         Xw = np.concatenate((Xw, np.ones((1, *Xw.shape[1:]))))
 
         im_mat, foc_mat, rot_mat, trans_mat = self._compute_camera_matrices(physics)
-        print(Xw.shape, im_mat.shape, foc_mat.shape, rot_mat.shape, trans_mat.shape)
 
         # Project to camera space
         Xc = np.tensordot(rot_mat @ trans_mat, Xw, 1)
