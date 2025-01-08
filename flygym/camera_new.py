@@ -24,6 +24,7 @@ from abc import ABC, abstractmethod
 # New gravity camera
 
 
+_roll_eye = np.roll(np.eye(4, 3), -1)
 
 class Camera():
     def __init__(
@@ -39,11 +40,12 @@ class Camera():
         play_speed_text: bool = True,
         camera_parameters: Optional[Dict[str, Any]] = None,
         draw_contacts: bool = False,
-        decompose_contacts: bool = False,
+        decompose_contacts: bool = True,
         decompose_colors: Tuple[Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]] = ((0, 0, 255), (0, 255, 0), (255, 0, 0)),
         force_arrow_scaling: float = float("nan"),
         tip_length: float = 10.0,  # number of pixels
         contact_threshold: float = 0.1,
+        perspective_arrow_length: bool = False,
         draw_gravity: bool = False,
         gravity_arrow_scaling: float = 1e-4,
         output_path: Optional[Union[str, Path]] = None,
@@ -90,6 +92,9 @@ class Camera():
         contact_threshold : float
             The threshold for contact detection in mN (forces below this
             magnitude will be ignored).
+        perspective_arrow_length : bool
+            If true, the length of the arrows indicating the contact forces
+            will be determined by the perspective.
         draw_gravity : bool
             If True, an arrow will be drawn indicating the direction of
             gravity. This is useful during climbing simulations.
@@ -141,9 +146,14 @@ class Camera():
         self.draw_contacts = draw_contacts
         self.decompose_contacts = decompose_contacts
         self.decompose_colors = decompose_colors
-        self.force_arrow_scaling = force_arrow_scaling
+        if not np.isfinite(force_arrow_scaling):
+            self.force_arrow_scaling = 1.0 if perspective_arrow_length else 10.0
+        else:
+            self.force_arrow_scaling = force_arrow_scaling
         self.tip_length = tip_length
         self.contact_threshold = contact_threshold
+        self.perspective_arrow_length = perspective_arrow_length
+
 
         if self.draw_contacts and len(self.targeted_flies_id) <= 0:
             logging.warning(
@@ -287,13 +297,39 @@ class Camera():
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         pass
+    
+    def _compute_camera_matrices(self, physics: mjcf.Physics):
+
+        cam_bound = physics.bind(self._cam)
+
+        width, height = self.window_size
+
+        image = np.eye(3)
+        image[0, 2] = (width - 1) / 2.0
+        image[1, 2] = (height - 1) / 2.0
+
+        focal_scaling = (1./np.tan(np.deg2rad(cam_bound.fovy)/2)) * height / 2.0
+        focal = np.diag([-focal_scaling, focal_scaling, 1.0, 0])[0:3, :]
+
+        # Rotation matrix (4x4).
+        rotation = np.eye(4)
+        rotation[0:3, 0:3] = cam_bound.xmat.reshape(3, 3).T
+
+        # Translation matrix (4x4).
+        translation = np.eye(4)
+        translation[0:3, 3] = -cam_bound.xpos
+    
+        return image, focal, rotation, translation
+
 
     def _draw_gravity(self, img: np.ndarray, physics: mjcf.Physics, last_obs: dict) -> np.ndarray:
         """Draw gravity as an arrow. The arrow is drawn at the top right
         of the frame.
         """
 
-        camera_matrix = self.dm_camera.matrix
+        im_mat, foc_mat, rot_mat, trans_mat = self._compute_camera_matrices(physics)
+        camera_matrix = im_mat @ foc_mat @ rot_mat @ trans_mat
+
         last_fly_pos = self.fly.last_obs["pos"]
         arrow_start = last_fly_pos + self._arrow_offset
 
@@ -318,7 +354,7 @@ class Camera():
         return img
 
     def _draw_contacts(
-        self, img: np.ndarray, physics: mjcf.Physics, last_obs: dict, thickness: int = 2
+        self, img: np.ndarray, physics: mjcf.Physics, last_obs: dict, thickness=2
     ) -> np.ndarray:
         """Draw contacts as arrow which length is proportional to the force
         magnitude. The arrow is drawn at the center of the body. It uses
@@ -332,16 +368,19 @@ class Camera():
 
         forces = last_obs["contact_forces"]
         pos = last_obs["contact_pos"]
+        print(forces.shape, pos.shape)
 
         magnitudes = np.linalg.norm(forces, axis=1)
         contact_indices = np.nonzero(magnitudes > self.contact_threshold)[0]
 
         n_contacts = len(contact_indices)
+        print(n_contacts)
         # Build an array of start and end points for the force arrows
         if n_contacts == 0:
             return img
 
         contact_forces = forces[contact_indices] * self.force_arrow_scaling
+        print(contact_forces.shape)
 
         if self.decompose_contacts:
             contact_pos = pos[:, None, contact_indices]
@@ -350,13 +389,16 @@ class Camera():
             contact_pos = pos[:, contact_indices]
             Xw = np.stack((contact_pos, contact_pos + contact_forces.T), 1)
 
+        print(Xw.shape)
+
         # Convert to homogeneous coordinates
         Xw = np.concatenate((Xw, np.ones((1, *Xw.shape[1:]))))
 
-        mat = self.dm_camera.matrices()
+        im_mat, foc_mat, rot_mat, trans_mat = self._compute_camera_matrices(physics)
+        print(Xw.shape, im_mat.shape, foc_mat.shape, rot_mat.shape, trans_mat.shape)
 
         # Project to camera space
-        Xc = np.tensordot(mat.rotation @ mat.translation, Xw, 1)
+        Xc = np.tensordot(rot_mat @ trans_mat, Xw, 1)
         Xc = Xc[:3, :] / Xc[-1, :]
 
         z_near = -physics.model.vis.map.znear * physics.model.stat.extent
@@ -376,7 +418,7 @@ class Camera():
         lines[:, 0, is_in] = clip(lines[:, 1, is_in], lines[:, 0, is_in], z_near)
 
         # Project to pixel space
-        lines = np.tensordot((mat.image @ mat.focal)[:, :3], lines, axes=1)
+        lines = np.tensordot((im_mat @ foc_mat)[:, :3], lines, axes=1)
         lines2d = lines[:2] / lines[-1]
         lines2d = lines2d.T
 
@@ -385,9 +427,12 @@ class Camera():
             length = np.linalg.norm(unit_vectors, axis=-1, keepdims=True)
             length[length == 0] = 1
             unit_vectors /= length
-            lines2d[:, :, 1] = (
-                lines2d[:, :, 0] + np.abs(contact_forces[:, :, None]) * unit_vectors
-            )
+            if self.decompose_contacts:
+                lines2d[:, :, 1] = (
+                    lines2d[:, :, 0] + np.abs(contact_forces[:, :, None]) * unit_vectors
+                )
+            else:
+                lines2d[:, :, 1] = lines2d[:, :, 0] + np.linalg.norm(contact_forces, axis=1)[:, None, None] * unit_vectors
 
         lines2d = np.rint(lines2d.reshape((-1, 2, 2))).astype(int)
 
