@@ -241,7 +241,14 @@ class Simulation(gym.Env):
             fly.update_colors(self.physics)
 
         return [
-            camera.render(self.physics, self._floor_height, self.curr_time)
+            camera.render(
+                self.physics,
+                self._floor_height,
+                self.curr_time,
+                [self.flies[fly_id].last_obs
+                if len(camera.targeted_flies_id) > 0 else [{}]
+                for fly_id in camera.targeted_flies_id],
+                )
             for camera in self.cameras
         ]
 
