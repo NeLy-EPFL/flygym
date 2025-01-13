@@ -52,10 +52,15 @@ class Camera():
     ):
         """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
         A set of preset congigurations are available in the config file:
-        - " camera_top" : Camera looking from the top
-        - "camera_right" : Camera looking from the right
-        - "camera_left", "camera_front", "camera_back", "camera_bottom"
-        - "camera_LFTarsus1_zoomin"
+        - Simple cameras like: "camera_top" "camera_right", "camera_left",
+        "camera_front", "camera_back", "camera_bottom"
+        - Compound rotated cameras with different zoom levels: "camera_top_right", "camera_top_zoomout"
+        "camera_right_front", "camera_left_top_zoomout", "camera_neck_zoomin",
+        "camera_head_zoomin", "camera_front_zoomin", "camera_LFTarsus1_zoomin"
+        - "camera_LFTarsus1_zoomin": Camera looking at the left tarsus of the first leg
+        - "camera_back_track": 3rd person camera following the fly
+
+        This camera can also be set with custom parameters by providing a dictionary of parameters.
 
         Parameters
         ----------
@@ -139,9 +144,7 @@ class Camera():
         self._cam, self.camera_id = self._add_camera(attachment_point,
                                                     camera_parameters,
                                                     attachment_name)
-                                                    
-        self._initialize_custom_camera_handling()
-        
+                                                            
         self.window_size = window_size
         self.play_speed = play_speed
         self.fps = fps
@@ -190,7 +193,8 @@ class Camera():
         self._frames: list[np.ndarray] = []
 
     def _add_camera(self, attachement, camera_parameters, attachement_name):
-        # Add camera to the model
+        """Add a camera to the model.
+        """
         camera = attachement.add("camera", **camera_parameters)
         if attachement_name is None:
             camera_id = camera.name
@@ -286,14 +290,18 @@ class Camera():
         with imageio.get_writer(path, fps=self.fps) as writer:
             for frame in self._frames[num_stab_frames:]:
                 writer.append_data(frame)
-    
-    def _initialize_custom_camera_handling(self):
-        pass
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+        """Update the camera position and rotation based on the fly position and orientation.
+        Used only for the complex camera that require updating the camera position and rotation
+        on top of the default behavior"""
         pass
     
     def _compute_camera_matrices(self, physics: mjcf.Physics):
+        """Compute the camera matrices needed to project world coordinates into
+        pixel space. The matrices are computed based on the camera's position
+        and orientation in the world.
+        With this there is no need for using dm_control's camera"""
 
         cam_bound = physics.bind(self._cam)
 
@@ -344,7 +352,7 @@ class Camera():
             x[1] - x[0],
             y[1] - y[0],
         ]).astype(int)
-        
+
         # Draw the vector on the image
         cv2.arrowedLine(img, self._grav_arrow_start,
                         self._grav_arrow_start+grav_vector, 
@@ -457,6 +465,7 @@ class Camera():
         return img
 
 class ZStabCamera(Camera):
+    """Camera that stabilizes the z-axis of the camera to the floor height."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -477,6 +486,10 @@ class ZStabCamera(Camera):
 
 
 class YawOnlyCamera(ZStabCamera):
+    """Camera that stabilizes the z-axis of the camera to the floor height and
+    only changes the yaw of the camera to follow the fly hereby preventing unnecessary
+    camera rotations.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.smoothing = 0.9 #tested empirically
@@ -518,6 +531,8 @@ class YawOnlyCamera(ZStabCamera):
         )
 
 class GravityAlignedCamera(Camera):
+    """Camera that keeps the camera aligned with the original direction of the gravity
+    while following the fly."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # get the yaw_pitch roll of gravity vector
@@ -526,6 +541,9 @@ class GravityAlignedCamera(Camera):
         self.cam_matrix = np.zeros((3, 3))
     
     def update_gravrot(self, gravity):
+        """
+        Update the rotation matrix that aligns the gravity vector with the z-axis
+        """
         self.gravity = gravity
         gravity_norm = gravity/np.linalg.norm(gravity)
         self.grav_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
