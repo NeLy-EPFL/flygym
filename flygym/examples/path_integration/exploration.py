@@ -5,7 +5,7 @@ from tqdm import trange
 from pathlib import Path
 from typing import Optional
 
-from flygym import Fly, Camera, is_rendering_skipped
+from flygym import Fly, ZStabCamera, is_rendering_skipped
 from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration.arena import (
@@ -127,7 +127,18 @@ def run_simulation(
     else:
         raise ValueError(f"Unknown terrain type: {terrain_type}")
 
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
+    cam_params = {"mode":"track", "pos": (0, 0, 150),
+    "euler":(0, 0, 0), "fovy":60}
+    
+    cam = ZStabCamera(
+        attachment_point=fly.model.worldbody,
+        targeted_flies_id = [int(fly.name)],
+        attachment_name=fly.name,
+        camera_name="birdeye_cam",
+        timestamp_text = False,
+        camera_parameters=cam_params
+    )
+
     sim = PathIntegrationController(
         phase_biases=get_cpg_biases(gait),
         fly=fly,
@@ -202,7 +213,7 @@ if __name__ == "__main__":
     def wrapper(gait, seed):
         run_simulation(
             seed=seed,
-            running_time=20.0,
+            running_time=5.0,
             terrain_type="flat",
             gait=gait,
             live_display=False,
@@ -210,4 +221,5 @@ if __name__ == "__main__":
             output_dir=root_output_dir / f"seed={seed}_gait={gait}",
         )
 
-    Parallel(n_jobs=-2)(delayed(wrapper)(*config) for config in configs)
+    wrapper(*configs[0])
+    #Parallel(n_jobs=-2)(delayed(wrapper)(*config) for config in configs)
