@@ -20,6 +20,7 @@ class OdorPlumeArena(BaseArena):
     def __init__(
         self,
         plume_data_path: Path,
+        main_camera_name: str,
         dimension_scale_factor: float = 0.5,
         plume_simulation_fps: float = 200,
         intensity_scale_factor: float = 1.0,
@@ -31,6 +32,8 @@ class OdorPlumeArena(BaseArena):
         ----------
         plume_data_path : Path
             Path to the HDF5 file containing the plume simulation data.
+        main_camera_name : str
+            Name of the main camera used to render the plume simulation.
         dimension_scale_factor : float, optional
             Scaling factor for the plume simulation grid. Each cell in the
             plume grid is this many millimeters in the simulation. By
@@ -64,6 +67,9 @@ class OdorPlumeArena(BaseArena):
             np.array(self.plume_grid.shape[1:][::-1]) * dimension_scale_factor
         )
 
+        # Set up main camera
+        self.main_camera_name = main_camera_name
+
         # Set up floor
         floor_material = self.root_element.asset.add(
             "material",
@@ -82,22 +88,9 @@ class OdorPlumeArena(BaseArena):
             material=floor_material,
         )
 
-        # Add birdeye camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(
-                0.50 * self.arena_size[0],
-                0.15 * self.arena_size[1],
-                1.00 * self.arena_size[1],
-            ),
-            euler=(np.deg2rad(15), 0, 0),
-            fovy=60,
-        )
 
     def get_position_mapping(
-        self, sim: Simulation, camera_id: str = "birdeye_cam"
+        self, sim: Simulation
     ) -> np.ndarray:
         """Get the display location (row-col coordinates) of each pixel on
         the fluid dynamics simulation.
@@ -106,9 +99,7 @@ class OdorPlumeArena(BaseArena):
         ----------
         sim : Simulation
             Simulation simulation object.
-        camera_id : str, optional
-            Camera to build position mapping for, by default "birdeye_cam"
-
+    
         Returns
         -------
         pos_display: np.ndarray
@@ -124,7 +115,7 @@ class OdorPlumeArena(BaseArena):
         """
         birdeye_cam_dm_control_obj = Camera(
             sim.physics,
-            camera_id=camera_id,
+            camera_id=self.main_camera_name,
             width=sim.cameras[0].window_size[0],
             height=sim.cameras[0].window_size[1],
         )
@@ -182,3 +173,7 @@ class OdorPlumeArena(BaseArena):
 
     def __del__(self):
         self.plume_dataset.close()
+
+
+    def _get_max_floor_height(self) -> float:
+        return -0.5

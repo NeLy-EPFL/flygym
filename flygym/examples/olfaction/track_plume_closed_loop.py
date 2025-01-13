@@ -49,8 +49,6 @@ def run_simulation(
     is_control=False,
     run_time=60,
 ):
-    arena = OdorPlumeArena(plume_dataset_path)
-
     # Define the fly
     contact_sensor_placements = [
         f"{leg}{segment}"
@@ -66,7 +64,24 @@ def run_simulation(
         spawn_pos=(*initial_position, 0.25),
         spawn_orientation=(0, 0, -np.pi / 2),
     )
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
+
+    arena = OdorPlumeArena(plume_dataset_path, main_camera_name="birdeye_cam")
+
+    cam_params = {"mode":"fixed",
+    "pos": (
+                0.50 * arena.arena_size[0],
+                0.15 * arena.arena_size[1],
+                1.00 * arena.arena_size[1],
+            ),
+    "euler":(np.deg2rad(15), 0, 0), "fovy":60}
+    
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name="birdeye_cam",
+        timestamp_text = False,
+        camera_parameters=cam_params
+    )
+    
     sim = PlumeNavigationTask(
         fly=fly,
         arena=arena,
