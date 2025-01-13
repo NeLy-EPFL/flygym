@@ -129,17 +129,6 @@ class Camera():
         "if the camera name is not a predefined camera")
 
         camera_parameters["name"] = camera_name
-        if "euler" in camera_parameters:
-            self.camera_base_rot = R.from_euler("xyz", np.array(camera_parameters["euler"], dtype=float))
-        elif "quat" in camera_parameters:
-            quat = np.array(camera_parameters["quat"], dtype=float)
-            self.camera_base_rot = R.from_quat(quat)
-        else:
-            self.camera_base_rot = R.from_euler("xyz", np.zeros(3))
-        if "pos" in camera_parameters:
-            self.camera_base_offset = np.array(camera_parameters["pos"], dtype=float)
-        else:
-            self.camera_base_offset = np.zeros(3)
 
         self._cam, self.camera_id = self._add_camera(attachment_point,
                                                     camera_parameters,
@@ -202,6 +191,15 @@ class Camera():
             camera_id = attachement_name + "/" + camera.name
 
         return camera, camera_id
+
+    def init_camera_orientation(self, physics: mjcf.Physics):
+        """Initialize the camera handling by storing the base camera position
+        and rotation. This is useful for cameras that need to be updated
+        during the simulation beyond the default behavior of the camera.
+        """
+        bound_cam = physics.bind(self._cam)
+        self.camera_base_offset = bound_cam.xpos.copy()
+        self.camera_base_rot = R.from_matrix(bound_cam.xmat.reshape(3, 3))
          
     def render(
         self, physics: mjcf.Physics, floor_height: float, curr_time: float, last_obs: List[dict],
@@ -492,13 +490,13 @@ class YawOnlyCamera(ZStabCamera):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.smoothing = 0.9 #tested empirically
+        self.smoothing = 0.99995 #tested empirically
         self.prev_yaw = None
         self.init_yaw = None
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         smoothed_yaw = self._smooth_yaw(obs["rot"][0])
-        correction = R.from_euler("xyz", [0, 0, smoothed_yaw - self.init_yaw])
+        correction = R.from_euler("xyz", [0, 0, smoothed_yaw-self.init_yaw])
         self._update_cam_pos(physics, floor_height, correction, obs["pos"])
         self.update_cam_rot(physics, correction)
 
@@ -547,7 +545,6 @@ class GravityAlignedCamera(Camera):
         self.gravity = gravity
         gravity_norm = gravity/np.linalg.norm(gravity)
         self.grav_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
-        print(self.grav_rot.as_euler("xyz", degrees=True))
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.gravity is None or np.any(physics.model.opt.gravity != self.gravity):

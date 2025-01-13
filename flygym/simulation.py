@@ -88,10 +88,10 @@ class Simulation(gym.Env):
             fly.init_floor_contacts(self.arena)
 
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
-
+        
+        # Once the fly is spwaned, initialize the camera base offset and orientation
         for camera in self.cameras:
-            if not hasattr(camera, "iscustom"):
-                camera.initialize_dm_camera(self.physics)
+            camera.init_camera_orientation(self.physics)
 
         self.gravity = gravity
 
@@ -113,10 +113,6 @@ class Simulation(gym.Env):
     @gravity.setter
     def gravity(self, value):
         self.physics.model.opt.gravity[:] = value
-
-        for camera in self.cameras:
-            if not hasattr(camera, "iscustom"):
-                camera.set_gravity(value)
 
     @property
     def action_space(self):
@@ -237,18 +233,20 @@ class Simulation(gym.Env):
         )
 
     def render(self):
-        for fly in self.flies:
+        all_flies_obs = [] 
+        for i, fly in enumerate(self.flies):
             fly.update_colors(self.physics)
+            all_flies_obs.append(fly.last_obs)
+        all_flies_obs = np.array(all_flies_obs)
+
 
         return [
             camera.render(
                 self.physics,
                 self._floor_height,
                 self.curr_time,
-                [self.flies[fly_id].last_obs
-                if len(camera.targeted_flies_id) > 0 else [{}]
-                for fly_id in camera.targeted_flies_id],
-                )
+                all_flies_obs[camera.targeted_flies_id] if camera.targeted_flies_id else [{}],
+            )
             for camera in self.cameras
         ]
 
