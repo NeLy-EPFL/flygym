@@ -463,7 +463,7 @@ class HybridTurningController(SingleFlySimulation):
 
 
 if __name__ == "__main__":
-    from flygym import Fly, Camera
+    from flygym import Fly, YawOnlyCamera
 
     run_time = 1.0
     timestep = 1e-4
@@ -481,7 +481,13 @@ if __name__ == "__main__":
         contact_sensor_placements=contact_sensor_placements,
     )
 
-    cam = Camera(fly=fly, camera_id="Animat/camera_right", play_speed=0.1)
+    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+        camera_name="camera_right",
+        attachment_name=fly.name,
+        targeted_flies_id=[int(fly.name)],
+        play_speed=0.1,
+        )
+
     sim = HybridTurningController(
         fly=fly,
         cameras=[cam],
@@ -501,14 +507,10 @@ if __name__ == "__main__":
         curr_time = i * sim.timestep
 
         # To demonstrate left and right turns:
-        if curr_time < run_time / 2:
+        if curr_time < run_time/2:
             action = np.array([1.2, 0.4])
         else:
             action = np.array([0.4, 1.2])
-
-        # To demonstrate that the result is identical with the hybrid controller without
-        # turning:
-        action = np.array([1.0, 1.0])
 
         try:
             obs, reward, terminated, truncated, info = sim.step(action)
