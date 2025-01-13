@@ -470,7 +470,7 @@ class HybridTurningFly(Fly):
 
 
 if __name__ == "__main__":
-    from flygym import Fly, Camera
+    from flygym import Fly, YawOnlyCamera
 
     run_time = 1.0
     timestep = 1e-4
@@ -491,7 +491,13 @@ if __name__ == "__main__":
         timestep=timestep,
     )
 
-    cam = Camera(fly=fly, camera_id="Animat/camera_right", play_speed=0.1)
+    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+        camera_name="camera_right",
+        attachment_name=fly.name,
+        targeted_flies_id=[int(fly.name)],
+        play_speed=0.1,
+        )
+
     sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],
