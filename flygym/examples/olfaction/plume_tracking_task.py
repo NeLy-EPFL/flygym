@@ -57,9 +57,7 @@ class PlumeNavigationTask(HybridTurningController):
         # Find out where on the displayed images the plume simulation grid
         # should be overlaid. In other words, interpolate the mapping from
         # displayed pixel position to simulated physical position.
-        pos_display_sample, pos_physical_sample = self.arena.get_position_mapping(
-            self, camera_id="birdeye_cam"
-        )
+        pos_display_sample, pos_physical_sample = self.arena.get_position_mapping(self)
         pos_display_sample = pos_display_sample.reshape(-1, 2)
         pos_physical_sample = pos_physical_sample.reshape(-1, 2)
         interp = LinearNDInterpolator(
