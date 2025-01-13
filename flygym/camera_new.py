@@ -50,7 +50,12 @@ class Camera():
         gravity_arrow_scaling: float = 1e-4,
         output_path: Optional[Union[str, Path]] = None,
     ):
-        """Initialize a Camera.
+        """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
+        A set of preset congigurations are available in the config file:
+        - " camera_top" : Camera looking from the top
+        - "camera_right" : Camera looking from the right
+        - "camera_left", "camera_front", "camera_back", "camera_bottom"
+        - "camera_LFTarsus1_zoomin"
 
         Parameters
         ----------
@@ -172,18 +177,8 @@ class Camera():
         self.gravity_arrow_scaling = gravity_arrow_scaling
 
         if self.draw_gravity:
-            fly._last_fly_pos = self.fly.spawn_pos
             self._gravity_rgba = [1 - 213 / 255, 1 - 90 / 255, 1 - 255 / 255, 1.0]
-            self._arrow_offset = np.zeros(3)
-            if "bottom" in camera_id or "top" in camera_id:
-                self._arrow_offset[0] = -3
-                self._arrow_offset[1] = 2
-            elif "left" in camera_id or "right" in camera_id:
-                self._arrow_offset[2] = 2
-                self._arrow_offset[0] = -3
-            elif "front" in camera_id or "back" in camera_id:
-                self._arrow_offset[2] = 2
-                self._arrow_offset[1] = 3
+            self._grav_arrow_start = (self.window_size[0] - 100, 100)
 
         if output_path is not None:
             self.output_path = Path(output_path)
@@ -228,7 +223,7 @@ class Camera():
             for i in range(len(self.targeted_flies_id)):
                 img = self._draw_contacts(img, physics, last_obs[i])
         if self.draw_gravity:
-            img = self._draw_gravity(img, physics, last_obs[0])
+            img = self._draw_gravity(img, physics, last_obs[0]["pos"])
 
         render_playspeed_text = self.play_speed_text
         render_time_text = self.timestamp_text
@@ -322,34 +317,38 @@ class Camera():
         return image, focal, rotation, translation
 
 
-    def _draw_gravity(self, img: np.ndarray, physics: mjcf.Physics, last_obs: dict) -> np.ndarray:
+    def _draw_gravity(self, img: np.ndarray, physics: mjcf.Physics, fly_pos: list[float], thickness: float=5) -> np.ndarray:
         """Draw gravity as an arrow. The arrow is drawn at the top right
         of the frame.
         """
 
-        im_mat, foc_mat, rot_mat, trans_mat = self._compute_camera_matrices(physics)
-        camera_matrix = im_mat @ foc_mat @ rot_mat @ trans_mat
-
-        last_fly_pos = self.fly.last_obs["pos"]
-        arrow_start = last_fly_pos + self._arrow_offset
-
-        arrow_end = arrow_start + physics.model.opt.gravity * self.gravity_arrow_scaling
-        xyz_global = np.array([arrow_start, arrow_end]).T
+        image, focal, rotation, translation = self._compute_camera_matrices(physics)
+        camera_matrix = image @ focal @ rotation @ translation
 
         # Camera matrices multiply homogenous [x, y, z, 1] vectors.
-        corners_homogeneous = np.ones((4, xyz_global.shape[1]), dtype=float)
-        corners_homogeneous[:3, :] = xyz_global
+        grav_homogeneous = np.ones((4, 2), dtype=float)
+        grav_homogeneous[:3, :] = np.hstack(
+            [
+                np.expand_dims(fly_pos, -1), 
+                np.expand_dims(fly_pos + physics.model.opt.gravity*self.gravity_arrow_scaling, -1),
+            ]
+        )
 
         # Project world coordinates into pixel space. See:
         # https://en.wikipedia.org/wiki/3D_projection#Mathematical_formula
-        xs, ys, s = camera_matrix @ corners_homogeneous
-
+        xs, ys, s = camera_matrix @ grav_homogeneous
         # x and y are in the pixel coordinate system.
-        x = np.rint(xs / s).astype(int)
-        y = np.rint(ys / s).astype(int)
-
-        img = img.astype(np.uint8)
-        img = cv2.arrowedLine(img, (x[0], y[0]), (x[1], y[1]), self._gravity_rgba, 10)
+        x = xs / s
+        y = ys / s
+        grav_vector = np.array([
+            x[1] - x[0],
+            y[1] - y[0],
+        ]).astype(int)
+        
+        # Draw the vector on the image
+        cv2.arrowedLine(img, self._grav_arrow_start,
+                        self._grav_arrow_start+grav_vector, 
+                        self._gravity_rgba, thickness, cv2.LINE_AA)
 
         return img
 
@@ -419,7 +418,8 @@ class Camera():
         if not self.perspective_arrow_length:
             unit_vectors = lines2d[:, :, 1] - lines2d[:, :, 0]
             length = np.linalg.norm(unit_vectors, axis=-1, keepdims=True)
-            length[length == 0] = 1
+            # avoid division by small number            
+            length = np.clip(length, 1e-8, 1e8)
             unit_vectors /= length
             if self.decompose_contacts:
                 lines2d[:, :, 1] = (
@@ -440,7 +440,7 @@ class Camera():
                 continue
 
             color = self.decompose_colors[color_indices[j]]
-            p1, p2 = lines2d[j]
+            p1, p2 = lines2d[j].astype(int)
             arrow_length = np.linalg.norm(p2 - p1)
 
             if arrow_length > 1e-2:
@@ -451,6 +451,8 @@ class Camera():
             if is_out.ravel()[j] and self.perspective_arrow_length:
                 cv2.line(img, p1, p2, color, thickness, cv2.LINE_AA)
             else:
+                p1 = np.clip(p1, -1e5, 1e5).astype(int)
+                p2 = np.clip(p2, -1e5, 1e5).astype(int)
                 cv2.arrowedLine(img, p1, p2, color, thickness, cv2.LINE_AA, tipLength=r)
         return img
 
@@ -477,13 +479,13 @@ class ZStabCamera(Camera):
 class YawOnlyCamera(ZStabCamera):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.smoothing = 0.9995 #tested empirically
+        self.smoothing = 0.9 #tested empirically
         self.prev_yaw = None
         self.init_yaw = None
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         smoothed_yaw = self._smooth_yaw(obs["rot"][0])
-        correction = R.from_euler("xyz", [0, 0, smoothed_yaw - obs["rot"][0]])
+        correction = R.from_euler("xyz", [0, 0, smoothed_yaw - self.init_yaw])
         self._update_cam_pos(physics, floor_height, correction, obs["pos"])
         self.update_cam_rot(physics, correction)
 
@@ -500,13 +502,13 @@ class YawOnlyCamera(ZStabCamera):
     
     def update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
         physics.bind(self._cam).xmat = (
-            (self.camera_base_rot*yaw_correction).as_matrix().flatten()
+            (yaw_correction*self.camera_base_rot).as_matrix().flatten()
         )
         return
 
     def _update_cam_pos(self, physics: mjcf.Physics, floor_height: float,
     yaw_correction: R, fly_pos: List[float]):
-        # position the camera some distance behind the fly, at a fixed heightå
+        # position the camera some distance behind the fly, at a fixed height
         physics.bind(self._cam).xpos = (
             #only add floor offset to z as camera base offset is added in the next line
             np.hstack([fly_pos[:2], floor_height])
@@ -520,37 +522,31 @@ class GravityAlignedCamera(Camera):
         super().__init__(*args, **kwargs)
         # get the yaw_pitch roll of gravity vector
         self.gravity = None
+        self.grav_rot = None
+        self.cam_matrix = np.zeros((3, 3))
     
-    def set_gravity(self, gravity):
+    def update_gravrot(self, gravity):
         self.gravity = gravity
         gravity_norm = gravity/np.linalg.norm(gravity)
-        self.gravity_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
-        # only keep the rotation along the z axis (camera roll)
-        # as we do not want to change the orientation of the camera)
-        self.gravity_rot = R.from_euler("xyz", [0, 0, self.gravity_rot.as_euler("xyz")[2]])
+        self.grav_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
+        print(self.grav_rot.as_euler("xyz", degrees=True))
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.gravity is None or np.any(physics.model.opt.gravity != self.gravity):
-            print("Updating gravity")
-            self.set_gravity(physics.model.opt.gravity)
-        #self._update_cam_pos(physics, obs["pos"])
+            print("updating gravity")
+            self.update_gravrot(physics.model.opt.gravity.copy())
         self.update_cam_rot(physics)
+        self._update_cam_pos(physics, obs["pos"])
+        
     
     def update_cam_rot(self, physics: mjcf.Physics):
-        physics.bind(self._cam).xmat = (
-            (self.camera_base_rot*self.gravity_rot).as_matrix().flatten()
-        )
+        self.cam_matrix = self.grav_rot*self.camera_base_rot
+        physics.bind(self._cam).xmat = self.cam_matrix.as_matrix().flatten()
         return
 
     def _update_cam_pos(self, physics: mjcf.Physics, fly_pos: List[float]):
         # position the camera some distance behind the fly, at a fixed height
-        physics.bind(self._cam).xpos = (
-            #only add floor offset to z as camera base offset is added in the next line
-            fly_pos
-            + (
-                R.from_euler(
-                    "xyz", self.gravity_rot
-                ).as_matrix()
-                @ self.camera_base_offset
-            ).flatten()
-        )
+        fly_pos[2] = 0
+        self.cam_pos = fly_pos + (self.grav_rot.as_matrix()@
+        self.camera_base_offset).flatten()
+        physics.bind(self._cam).xpos = self.cam_pos
