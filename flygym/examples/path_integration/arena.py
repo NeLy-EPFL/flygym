@@ -27,7 +27,6 @@ class PathIntegrationArenaBase:
             rgba=(1, 0, 0, 1),
         )
 
-
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:

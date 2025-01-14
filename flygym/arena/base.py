@@ -202,6 +202,7 @@ class BaseArena(ABC):
         """
         pass
 
+
 class FlatTerrain(BaseArena):
     """Flat terrain with no obstacles.
 
@@ -241,7 +242,6 @@ class FlatTerrain(BaseArena):
             type="2d",
             builtin="checker",
             width=300,
-
             height=300,
             rgb1=(0.3, 0.3, 0.3),
             rgb2=(0.4, 0.4, 0.4),

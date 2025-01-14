@@ -127,16 +127,15 @@ def run_simulation(
     else:
         raise ValueError(f"Unknown terrain type: {terrain_type}")
 
-    cam_params = {"mode":"track", "pos": (0, 0, 150),
-    "euler":(0, 0, 0), "fovy":60}
-    
+    cam_params = {"mode": "track", "pos": (0, 0, 150), "euler": (0, 0, 0), "fovy": 60}
+
     cam = ZStabCamera(
         attachment_point=fly.model.worldbody,
-        targeted_flies_id = [int(fly.name)],
+        targeted_flies_id=[0],
         attachment_name=fly.name,
         camera_name="birdeye_cam",
-        timestamp_text = False,
-        camera_parameters=cam_params
+        timestamp_text=False,
+        camera_parameters=cam_params,
     )
 
     sim = PathIntegrationController(
@@ -213,7 +212,7 @@ if __name__ == "__main__":
     def wrapper(gait, seed):
         run_simulation(
             seed=seed,
-            running_time=5.0,
+            running_time=0.5,
             terrain_type="flat",
             gait=gait,
             live_display=False,
@@ -221,5 +220,4 @@ if __name__ == "__main__":
             output_dir=root_output_dir / f"seed={seed}_gait={gait}",
         )
 
-    wrapper(*configs[0])
-    #Parallel(n_jobs=-2)(delayed(wrapper)(*config) for config in configs)
+    Parallel(n_jobs=-2)(delayed(wrapper)(*config) for config in configs)

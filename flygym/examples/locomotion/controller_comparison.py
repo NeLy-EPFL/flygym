@@ -395,12 +395,13 @@ def run_all(arena: str, seed: int, pos: np.ndarray, verbose: bool = False):
         actuator_forcerange=(-65.0, 65.0),
     )
     terrain = get_arena(arena)
-    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
         camera_name="camera_right",
         attachment_name=fly.name,
         targeted_flies_id=[int(fly.name)],
         play_speed=0.1,
-        )
+    )
     sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],

@@ -65,12 +65,13 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
     )
 
-    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
         camera_name="camera_top",
         attachment_name=fly.name,
         targeted_flies_id=[int(fly.name)],
         play_speed=0.1,
-        )
+    )
 
     sim = SingleFlySimulation(
         fly=fly,

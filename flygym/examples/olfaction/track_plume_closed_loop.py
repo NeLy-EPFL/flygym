@@ -65,23 +65,27 @@ def run_simulation(
         spawn_orientation=(0, 0, -np.pi / 2),
     )
 
-    arena = OdorPlumeArena(plume_dataset_path, main_camera_name="birdeye_cam")
+    main_camera_name = "birdeye_cam"
+    arena = OdorPlumeArena(plume_dataset_path, main_camera_name=main_camera_name)
 
-    cam_params = {"mode":"fixed",
-    "pos": (
-                0.50 * arena.arena_size[0],
-                0.15 * arena.arena_size[1],
-                1.00 * arena.arena_size[1],
-            ),
-    "euler":(np.deg2rad(15), 0, 0), "fovy":60}
-    
+    cam_params = {
+        "mode": "fixed",
+        "pos": (
+            0.50 * arena.arena_size[0],
+            0.15 * arena.arena_size[1],
+            1.00 * arena.arena_size[1],
+        ),
+        "euler": (np.deg2rad(15), 0, 0),
+        "fovy": 60,
+    }
+
     cam = Camera(
         attachment_point=arena.root_element.worldbody,
-        camera_name="birdeye_cam",
-        timestamp_text = False,
-        camera_parameters=cam_params
+        camera_name=main_camera_name,
+        timestamp_text=False,
+        camera_parameters=cam_params,
     )
-    
+
     sim = PlumeNavigationTask(
         fly=fly,
         arena=arena,

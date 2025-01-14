@@ -82,12 +82,13 @@ def run_simulation(
         spawn_pos=(*spawn_xy, 0.25),
     )
     if enable_rendering:
-        cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
-                            camera_name="camera_left",
-                            attachment_name=fly.name,
-                            targeted_flies_id=[int(fly.name)],
-                            play_speed=0.1,
-                            )
+        cam = YawOnlyCamera(
+            attachment_point=fly.model.worldbody,
+            camera_name="camera_left",
+            attachment_name=fly.name,
+            targeted_flies_id=[int(fly.name)],
+            play_speed=0.1,
+        )
     else:
         cam = None
     sim = HybridTurningController(
@@ -199,4 +200,4 @@ if __name__ == "__main__":
                     )
 
     run_simulation(*job_specs[0])
-    #Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
+    # Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)

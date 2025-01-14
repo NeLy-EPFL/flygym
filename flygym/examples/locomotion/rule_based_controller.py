@@ -291,7 +291,8 @@ if __name__ == "__main__":
         draw_adhesion=True,
     )
 
-    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
         camera_name="camera_right",
         attachment_name=fly.name,
         targeted_flies_id=[int(fly.name)],

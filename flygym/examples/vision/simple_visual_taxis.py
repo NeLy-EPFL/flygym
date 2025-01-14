@@ -140,9 +140,8 @@ if __name__ == "__main__":
         neck_kp=1000,
     )
 
-    cam_params = {"mode":"fixed", "pos": (15, 0, 35),
-    "euler":(0, 0, 0), "fovy":45}
-    
+    cam_params = {"mode": "fixed", "pos": (15, 0, 35), "euler": (0, 0, 0), "fovy": 45}
+
     cam = Camera(
         attachment_point=arena.root_element.worldbody,
         camera_name="birdeye_cam",
@@ -150,7 +149,7 @@ if __name__ == "__main__":
         play_speed=0.5,
         window_size=(800, 608),
     )
-   
+
     sim = VisualTaxis(
         fly=fly,
         camera=cam,

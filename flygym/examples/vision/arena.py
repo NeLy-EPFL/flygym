@@ -45,7 +45,7 @@ class MovingObjArena(BaseArena):
         move_speed=10,
         move_direction="right",
         lateral_magnitude=2,
-        seed = 0
+        seed=0,
     ):
         super().__init__()
 

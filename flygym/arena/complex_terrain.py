@@ -113,10 +113,9 @@ class GappedTerrain(BaseArena):
     ) -> Tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, self.gap_depth / 2])
         return adj_pos, rel_angle
-    
+
     def _get_max_floor_height(self):
         return self.gap_depth / 2
-
 
 
 class BlocksTerrain(BaseArena):
@@ -238,7 +237,7 @@ class BlocksTerrain(BaseArena):
     ) -> Tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, 0.1])
         return adj_pos, rel_angle
-    
+
     def _get_max_floor_height(self):
         return self.max_height
 
@@ -329,7 +328,10 @@ class MixedTerrain(BaseArena):
                         y_pos,
                         height / 2 - block_size / 2 - self._height_expected_value - 0.1,
                     )
-                    self._max_block_height = max(self._max_block_height, height - self._height_expected_value - 0.1)
+                    self._max_block_height = max(
+                        self._max_block_height,
+                        height - self._height_expected_value - 0.1,
+                    )
                     self.root_element.worldbody.add(
                         "geom",
                         type="box",
@@ -339,7 +341,6 @@ class MixedTerrain(BaseArena):
                         rgba=(0.3, 0.3, 0.3, ground_alpha),
                         friction=friction,
                     )
-
 
             # gap part
             curr_x_pos = x_range[0] + block_size * 3
@@ -406,7 +407,7 @@ class MixedTerrain(BaseArena):
     ) -> Tuple[np.ndarray, np.ndarray]:
         adj_pos = rel_pos + np.array([0, 0, -1 * self._height_expected_value])
         return adj_pos, rel_angle
-    
+
     def _get_max_floor_height(self):
         # The floor and gap tops are at z=0
         return max(0, self._max_block_height)

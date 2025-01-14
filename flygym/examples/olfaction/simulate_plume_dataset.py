@@ -190,8 +190,8 @@ if __name__ == "__main__":
     with h5py.File(output_dir / "plume_short.hdf5", "w") as f:
         f.create_dataset(
             "plume",
-            data = np.stack(smoke_hist[0:100]).astype(np.float16),
-            #data=np.stack(smoke_hist[5000:5600:10]).astype(np.float16),
+            data=np.stack(smoke_hist[0:100]).astype(np.float16),
+            # data=np.stack(smoke_hist[5000:5600:10]).astype(np.float16),
             compression="gzip",
         )
         f["inflow_pos"] = inflow_pos
