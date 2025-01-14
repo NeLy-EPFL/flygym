@@ -50,7 +50,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 # Alternatively, you can use the pre-trained models that come with the
 # package. To do so, comment out the three lines above and uncomment the
 # following line.
-# stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
+stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
 if not stabilization_model_path.exists() or not scaler_param_path.exists():
     import warnings
@@ -81,14 +81,18 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
         spawn_pos=(*spawn_xy, 0.3),
     )
+    cam_params = {"mode":"fixed", "pos": (5, 0, 35),
+    "euler":(0, 0, 0), "fovy":45}
+    
     cam = Camera(
-        fly=fly,
-        camera_id="birdeye_cam",
+        attachment_point=arena.root_element.worldbody,
+        camera_name="birdeye_cam",
+        camera_parameters=cam_params,
         play_speed=0.2,
         window_size=(800, 608),
         fps=24,
-        play_speed_text=False,
     )
+
     sim = SingleFlySimulation(fly=fly, cameras=[cam], arena=arena)
 
     # Calculate center-of-mass of each ommatidium
@@ -291,8 +295,8 @@ if __name__ == "__main__":
         for cells_selection in ["txall", "lc910_inputs"]
         for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
-    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
-    # process_trial("flat", True, "lc910_inputs", (-5, 10))
+    #Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    process_trial("flat", True, "lc910_inputs", (-5, 10))
 
     # Visualize trajectories
     trajectories = {

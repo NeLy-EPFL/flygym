@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Camera, SingleFlySimulation
+from flygym import YawOnlyCamera, SingleFlySimulation
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
 from dm_control.rl.control import PhysicsError
@@ -40,7 +40,7 @@ scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 # Alternatively, you can use the pre-trained models that come with the
 # package. To do so, comment out the three lines above and uncomment the
 # following line.
-# stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
+stabilization_model_path, scaler_param_path = get_head_stabilization_model_paths()
 
 if not stabilization_model_path.exists() or not scaler_param_path.exists():
     import warnings
@@ -65,14 +65,12 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
     )
 
-    cam = Camera(
-        fly=fly,
-        camera_id="Animat/camera_top",
-        play_speed=0.2,
-        window_size=(800, 608),
-        fps=24,
-        play_speed_text=False,
-    )
+    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+        camera_name="camera_top",
+        attachment_name=fly.name,
+        targeted_flies_id=[int(fly.name)],
+        play_speed=0.1,
+        )
 
     sim = SingleFlySimulation(
         fly=fly,
