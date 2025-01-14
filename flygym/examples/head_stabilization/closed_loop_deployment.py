@@ -27,9 +27,7 @@ output_dir = Path("./outputs/head_stabilization/")
 # paths to load the models that you trained. Modify the paths if saved the
 # model checkpoints elsewhere.
 stabilization_model_dir = Path("./outputs/head_stabilization/models/")
-stabilization_model_dir = Path("/Users/stimpfli/Desktop/flygym/flygym/data/trained_models/head_stabilization")
 stabilization_model_path = stabilization_model_dir / "All.ckpt"
-stabilization_model_path = stabilization_model_dir / "all_dofs_model.ckpt"
 scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 # Alternatively, you can use the pre-trained models that come with the
@@ -178,9 +176,6 @@ def run_simulation(
     vision_std_raster = fly.retina.hex_pxls_to_human_readable(vision_std.T)
     vision_std_raster[fly.retina.ommatidia_id_map == 0, :] = np.nan
 
-    birdeye_camera.save_video("./outputs/head_stabilization/closed_loop.mp4")
-    neck_camera.save_video("./outputs/head_stabilization/neck_actuation.mp4")
-
     return {
         "sim": sim,
         "birdeye": birdeye_snapshots,
@@ -273,8 +268,6 @@ if __name__ == "__main__":
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
     ]
-    process_trial("flat", True, "T4a")
-    assert False
     res_all = Parallel(n_jobs=4)(delayed(process_trial)(*config) for config in configs)
     res_all = {k[:2]: v for k, v in zip(configs, res_all)}
     # res_all = {config[:2]: process_trial(*config) for config in configs}
