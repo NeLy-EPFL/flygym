@@ -1288,7 +1288,9 @@ class Fly:
         # estimate necessary neck actuation signals for head stabilization
         if self.head_stabilization_model is not None:
             if callable(self.head_stabilization_model):
-                if self._last_observation is not None: # _last_observation and last_obs are duplicates
+                if (
+                    self._last_observation is not None
+                ):  # _last_observation and last_obs are duplicates
                     leg_joint_angles = self._last_observation["joints"][0, :]
                     leg_contact_forces = self._last_observation["contact_forces"]
                     neck_actuation = self.head_stabilization_model(

@@ -66,7 +66,13 @@ class Simulation(gym.Env):
             self.flies = [flies]
 
         if cameras is None:
-            self.cameras = [Camera(self.flies[0], camera_id="Animat/camera_left")]
+            self.cameras = [
+                Camera(
+                    attachment_point=fly.model.worldbody,
+                    camera_name="camera_left",
+                    attachment_name=fly.name,
+                )
+            ]
         elif isinstance(cameras, Iterable):
             self.cameras = list(cameras)
         else:
@@ -76,11 +82,11 @@ class Simulation(gym.Env):
         self.timestep = timestep
         self.curr_time = 0.0
 
-        self._floor_height = self._get_max_floor_height(self.arena)
+        self._floor_height = self.arena._get_max_floor_height()
 
         for fly in self.flies:
             self.arena.spawn_entity(fly.model, fly.spawn_pos, fly.spawn_orientation)
-        
+
         arena_root = self.arena.root_element
         arena_root.option.timestep = timestep
 
@@ -88,8 +94,8 @@ class Simulation(gym.Env):
             fly.init_floor_contacts(self.arena)
 
         self.physics = mjcf.Physics.from_mjcf_model(self.arena.root_element)
-        
-        # Once the fly is spwaned, initialize the camera base offset and orientation
+
+        # Once the fly is spwaned, initialize the camera base offset and orientation
         for camera in self.cameras:
             camera.init_camera_orientation(self.physics)
 
@@ -233,49 +239,23 @@ class Simulation(gym.Env):
         )
 
     def render(self):
-        all_flies_obs = [] 
+        all_flies_obs = []
         for i, fly in enumerate(self.flies):
             fly.update_colors(self.physics)
             all_flies_obs.append(fly.last_obs)
         all_flies_obs = np.array(all_flies_obs)
-
 
         return [
             camera.render(
                 self.physics,
                 self._floor_height,
                 self.curr_time,
-                all_flies_obs[camera.targeted_flies_id] if camera.targeted_flies_id else [{}],
+                all_flies_obs[camera.targeted_flies_id]
+                if camera.targeted_flies_id
+                else [{}],
             )
             for camera in self.cameras
         ]
-
-    def _get_max_floor_height(self, arena):
-        max_floor_height = -1 * np.inf
-
-        for geom in arena.root_element.find_all("geom"):
-            name = geom.name
-
-            if name is None or (
-                "floor" in name or "ground" in name or "treadmill" in name
-            ):
-                if geom.type == "box":
-                    block_height = geom.pos[2] + geom.size[2]
-                    max_floor_height = max(max_floor_height, block_height)
-                elif geom.type == "plane":
-                    try:
-                        plane_height = geom.pos[2]
-                    except TypeError:
-                        plane_height = 0.0
-                    max_floor_height = max(max_floor_height, plane_height)
-                elif geom.type == "sphere":
-                    sphere_height = geom.parent.pos[2] + geom.size[0]
-                    max_floor_height = max(max_floor_height, sphere_height)
-
-        if np.isinf(max_floor_height):
-            max_floor_height = min(fly.spawn_pos[2] for fly in self.flies)
-
-        return max_floor_height
 
     def set_slope(self, slope: float, rot_axis="y"):
         """Set the slope of the simulation environment and modify the
