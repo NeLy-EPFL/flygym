@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Camera, NeckCamera, SingleFlySimulation
+from flygym import Camera, ZStabCamera, SingleFlySimulation
 from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
@@ -27,7 +27,9 @@ output_dir = Path("./outputs/head_stabilization/")
 # paths to load the models that you trained. Modify the paths if saved the
 # model checkpoints elsewhere.
 stabilization_model_dir = Path("./outputs/head_stabilization/models/")
+stabilization_model_dir = Path("/Users/stimpfli/Desktop/flygym/flygym/data/trained_models/head_stabilization")
 stabilization_model_path = stabilization_model_dir / "All.ckpt"
+stabilization_model_path = stabilization_model_dir / "all_dofs_model.ckpt"
 scaler_param_path = stabilization_model_dir / "joint_angle_scaler_params.pkl"
 
 # Alternatively, you can use the pre-trained models that come with the
@@ -54,22 +56,29 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
     )
 
-    birdeye_camera = Camera(
-        fly=fly,
-        camera_id="Animat/camera_top_zoomout",
+    birdeye_cam_params = {"pos": (0, 0, 20),
+    "euler":(0, 0, 0), "fovy":45}
+    
+    birdeye_camera = ZStabCamera(
+        attachment_point=fly.model.worldbody,
+        attachment_name=fly.name,
+        camera_name="birdeye_cam",
+        targeted_flies_id=[int(fly.name)],
+        camera_parameters=birdeye_cam_params,
         play_speed=0.2,
         window_size=(600, 600),
         fps=24,
         play_speed_text=False,
     )
-    birdeye_camera._cam.pos -= np.array([0, 0, 20.0])
 
-    neck_camera = NeckCamera(
-        fly=fly,
+    neck_camera = Camera(
+        attachment_point=fly.model.worldbody,
+        attachment_name=fly.name,
+        camera_name="camera_neck_zoomin",
+        targeted_flies_id=[int(fly.name)],
         play_speed=0.2,
         fps=24,
         window_size=(600, 600),
-        camera_follows_fly_orientation=True,
         play_speed_text=False,
     )
 
@@ -169,6 +178,9 @@ def run_simulation(
     vision_std_raster = fly.retina.hex_pxls_to_human_readable(vision_std.T)
     vision_std_raster[fly.retina.ommatidia_id_map == 0, :] = np.nan
 
+    birdeye_camera.save_video("./outputs/head_stabilization/closed_loop.mp4")
+    neck_camera.save_video("./outputs/head_stabilization/neck_actuation.mp4")
+
     return {
         "sim": sim,
         "birdeye": birdeye_snapshots,
@@ -261,6 +273,8 @@ if __name__ == "__main__":
         for terrain_type in ["flat", "blocks"]
         for stabilization_on in [True, False]
     ]
+    process_trial("flat", True, "T4a")
+    assert False
     res_all = Parallel(n_jobs=4)(delayed(process_trial)(*config) for config in configs)
     res_all = {k[:2]: v for k, v in zip(configs, res_all)}
     # res_all = {config[:2]: process_trial(*config) for config in configs}
