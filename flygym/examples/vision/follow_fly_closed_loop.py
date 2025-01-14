@@ -81,9 +81,8 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
         spawn_pos=(*spawn_xy, 0.3),
     )
-    cam_params = {"mode":"fixed", "pos": (5, 0, 35),
-    "euler":(0, 0, 0), "fovy":45}
-    
+    cam_params = {"mode": "fixed", "pos": (5, 0, 35), "euler": (0, 0, 0), "fovy": 45}
+
     cam = Camera(
         attachment_point=arena.root_element.worldbody,
         camera_name="birdeye_cam",
@@ -295,7 +294,7 @@ if __name__ == "__main__":
         for cells_selection in ["txall", "lc910_inputs"]
         for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
-    #Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
+    # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
     process_trial("flat", True, "lc910_inputs", (-5, 10))
 
     # Visualize trajectories

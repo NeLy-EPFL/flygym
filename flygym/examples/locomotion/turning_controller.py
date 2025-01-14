@@ -481,12 +481,13 @@ if __name__ == "__main__":
         contact_sensor_placements=contact_sensor_placements,
     )
 
-    cam = YawOnlyCamera(attachment_point=fly.model.worldbody,
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
         camera_name="camera_right",
         attachment_name=fly.name,
         targeted_flies_id=[int(fly.name)],
         play_speed=0.1,
-        )
+    )
 
     sim = HybridTurningController(
         fly=fly,
@@ -507,7 +508,7 @@ if __name__ == "__main__":
         curr_time = i * sim.timestep
 
         # To demonstrate left and right turns:
-        if curr_time < run_time/2:
+        if curr_time < run_time / 2:
             action = np.array([1.2, 0.4])
         else:
             action = np.array([0.4, 1.2])

@@ -54,14 +54,13 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
     )
 
-    birdeye_cam_params = {"pos": (0, 0, 20),
-    "euler":(0, 0, 0), "fovy":45}
-    
+    birdeye_cam_params = {"pos": (0, 0, 20), "euler": (0, 0, 0), "fovy": 45}
+
     birdeye_camera = ZStabCamera(
         attachment_point=fly.model.worldbody,
         attachment_name=fly.name,
         camera_name="birdeye_cam",
-        targeted_flies_id=[int(fly.name)],
+        targeted_flies_id=[0],
         camera_parameters=birdeye_cam_params,
         play_speed=0.2,
         window_size=(600, 600),
@@ -73,7 +72,7 @@ def run_simulation(
         attachment_point=fly.model.worldbody,
         attachment_name=fly.name,
         camera_name="camera_neck_zoomin",
-        targeted_flies_id=[int(fly.name)],
+        targeted_flies_id=[0],
         play_speed=0.2,
         fps=24,
         window_size=(600, 600),

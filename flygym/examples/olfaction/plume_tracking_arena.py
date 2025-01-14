@@ -88,10 +88,7 @@ class OdorPlumeArena(BaseArena):
             material=floor_material,
         )
 
-
-    def get_position_mapping(
-        self, sim: Simulation
-    ) -> np.ndarray:
+    def get_position_mapping(self, sim: Simulation) -> np.ndarray:
         """Get the display location (row-col coordinates) of each pixel on
         the fluid dynamics simulation.
 
@@ -99,7 +96,7 @@ class OdorPlumeArena(BaseArena):
         ----------
         sim : Simulation
             Simulation simulation object.
-    
+
         Returns
         -------
         pos_display: np.ndarray
@@ -173,7 +170,6 @@ class OdorPlumeArena(BaseArena):
 
     def __del__(self):
         self.plume_dataset.close()
-
 
     def _get_max_floor_height(self) -> float:
         return -0.5

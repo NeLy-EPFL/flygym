@@ -95,16 +95,19 @@ def run_simulation(
         enable_adhesion=True,
         draw_adhesion=False,
     )
-    
-    cam_params = {"mode":"fixed",
-    "pos": (odor_source[:, 0].max() / 2, 0, 35),
-    "euler":(0, 0, 0), "fovy":45}
-    
+
+    cam_params = {
+        "mode": "fixed",
+        "pos": (odor_source[:, 0].max() / 2, 0, 35),
+        "euler": (0, 0, 0),
+        "fovy": 45,
+    }
+
     cam = Camera(
         attachment_point=arena.root_element.worldbody,
         camera_name="birdeye_cam",
-        timestamp_text = False,
-        camera_parameters=cam_params
+        timestamp_text=False,
+        camera_parameters=cam_params,
     )
 
     sim = HybridTurningController(
