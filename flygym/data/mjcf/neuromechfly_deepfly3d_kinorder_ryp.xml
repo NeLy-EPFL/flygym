@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <mujoco model="Animat">
-	<compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" convexhull="true" fusestatic="true"/>
+	<compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" fusestatic="true"/>
 	<option timestep="0.0001" gravity="0 0 -9810" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" ccd_iterations="100">
 		<flag multiccd="enable" energy="enable"/>
 		<!--multiccd seems to fix leg penetrating the floor-->
