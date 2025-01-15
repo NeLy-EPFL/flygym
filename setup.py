@@ -26,7 +26,7 @@ setup(
         "imageio[pyav]",
         "imageio[ffmpeg]",
         "tqdm",
-        "mujoco>=2.1.2",
+        "mujoco>=2.1.2,<3.2.7",
         "dm_control",
         "numba",
         "opencv-python",
@@ -54,7 +54,7 @@ setup(
             "scikit-learn",
             "seaborn",
             "torch",
-            "phiflow",
+            "phiflow==2.3.0",
             "h5py",
             "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
         ],
