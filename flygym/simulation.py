@@ -68,9 +68,9 @@ class Simulation(gym.Env):
         if cameras is None:
             self.cameras = [
                 Camera(
-                    attachment_point=fly.model.worldbody,
+                    attachment_point=self.flies[0].model.worldbody,
                     camera_name="camera_left",
-                    attachment_name=fly.name,
+                    attachment_name=self.flies[0].name,
                 )
             ]
         elif isinstance(cameras, Iterable):
