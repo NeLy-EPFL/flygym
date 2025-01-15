@@ -64,7 +64,11 @@ def test_check_simulation_env_basic():
         )
         for i in range(2)
     ]
-    cameras = [] if is_rendering_skipped else [Camera(fly.model.worldbody, "camera_left", fly.name) for fly in flies]
+    cameras = (
+        []
+        if is_rendering_skipped
+        else [Camera(fly.model.worldbody, "camera_left", fly.name) for fly in flies]
+    )
     sim = Simulation(flies=flies, cameras=cameras)
 
     sim.action_space = spaces.Dict(
@@ -87,7 +91,11 @@ def test_check_simulation_env_basic():
 
 def test_check_single_fly_simulation_env_basic():
     fly = Fly(name="0", enable_vision=False, enable_olfaction=False)
-    camera = [] if is_rendering_skipped else Camera(fly.model.worldbody, "camera_left", fly.name)
+    camera = (
+        []
+        if is_rendering_skipped
+        else Camera(fly.model.worldbody, "camera_left", fly.name)
+    )
     sim = SingleFlySimulation(fly=fly, cameras=camera)  # check cam instead of [cam]
     fly.action_space = spaces.Dict(
         {
