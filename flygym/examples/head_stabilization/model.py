@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import lightning as pl
 from torchmetrics.regression import R2Score
 from pathlib import Path
-from typing import Tuple
 
 
 class ThreeLayerMLP(pl.LightningModule):
@@ -78,25 +77,24 @@ class HeadStabilizationInferenceWrapper:
     training, this class provides a "flat" interface for making predictions
     one observation (i.e., time step) at a time. This is useful for
     deploying the model in closed loop.
+
+    Parameters
+    ----------
+    model_path : Path
+        The path to the trained model.
+    scaler_param_path : Path
+        The path to the pickle file containing scaler parameters.
+    contact_force_thr : tuple[float, float, float], optional
+        The threshold values for contact forces that are used to
+        determine the floor contact flags, by default (0.5, 1, 3).
     """
 
     def __init__(
         self,
         model_path: Path,
         scaler_param_path: Path,
-        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+        contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
     ):
-        """
-        Parameters
-        ----------
-        model_path : Path
-            The path to the trained model.
-        scaler_param_path : Path
-            The path to the pickle file containing scaler parameters.
-        contact_force_thr : Tuple[float, float, float], optional
-            The threshold values for contact forces that are used to
-            determine the floor contact flags, by default (0.5, 1, 3).
-        """
         # Load scaler params
         with open(scaler_param_path, "rb") as f:
             scaler_params = pickle.load(f)

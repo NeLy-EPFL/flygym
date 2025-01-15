@@ -1,6 +1,7 @@
 import logging
+import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 import numpy as np
 from dm_control import mjcf
@@ -27,16 +28,18 @@ class Fly:
     ----------
     name : str
         The name of the fly model.
-    actuated_joints : List[str]
+    actuated_joints : list[str]
         List of names of actuated joints.
-    contact_sensor_placements : List[str]
+    contact_sensor_placements : list[str]
         List of body segments where contact sensors are placed.
-    spawn_pos : Tuple[float, float, float]
+    spawn_pos : tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
-    spawn_orientation : Tuple[float, float, float, float]
+    spawn_orientation : tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
+        If the spawn orientation is (0, 0, 0), the fly is spawned facing
+        the +x direction; the +y direction is on the fly's left.
     control : str
         The joint controller type. Can be "position", "velocity", or
         "torque".
@@ -50,13 +53,8 @@ class Fly:
         "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
         body names.
     detect_flip : bool
-        If True, the simulation will indicate whether the fly has flipped
-        in the ``info`` returned by ``.step(...)``. Flip detection is
-        achieved by checking whether the leg tips are free of any contact
-        for a duration defined in the configuration file. Flip detection is
-        disabled for a period of time at the beginning of the simulation as
-        defined in the configuration file. This avoids spurious detection
-        when the fly is not standing reliably on the ground yet.
+        [Deprecated] Fly flips are now detected regardless of this
+        parameter. This will be removed in future releases.
     joint_stiffness : float
         Stiffness of actuated joints.
         joint_stiffness : float
@@ -83,14 +81,14 @@ class Fly:
         Damping coefficient of the passive, compliant tarsus joints.
     friction : float
         Sliding, torsional, and rolling friction coefficients.
-    contact_solref: Tuple[float, float]
+    contact_solref: tuple[float, float]
         MuJoCo contact reference parameters (see `MuJoCo documentation
         <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
         for details). Under the default configuration, contacts are very
         stiff. This is to avoid penetration of the leg tips into the ground
         when leg adhesion is enabled. The user might want to decrease the
         stiffness if the stability becomes an issue.
-    contact_solimp: Tuple[float, float, float, float, float]
+    contact_solimp: tuple[float, float, float, float, float]
         MuJoCo contact reference parameters (see `MuJoCo docs
         <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
         for details). Under the default configuration, contacts are very
@@ -140,6 +138,155 @@ class Fly:
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name of the fly model. Will be automatically generated if
+        not provided.
+    actuated_joints : list[str], optional
+        List of names of actuated joints. By default all active leg
+        DoFs.
+    monitored_joints : list[str], optional
+        List of names of joints to monitor with sensors. By default
+        all active leg DoFs.
+    contact_sensor_placements : list[str], optional
+        List of body segments where contact sensors are placed. By
+        default all tarsus segments.
+    xml_variant: str or Path, optional
+        The variant of the fly model to use. Multiple variants exist
+        because when replaying experimentally recorded behavior, the
+        ordering of DoF angles in multi-DoF joints depends on how they
+        are configured in the upstream inverse kinematics program. Two
+        variants are provided: "seqik" (default) and "deepfly3d" (for
+        legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+        The ordering of DoFs can be seen from the XML files under
+        ``flygym/data/mjcf/``.
+    spawn_pos : tuple[float, float, float], optional
+        The (x, y, z) position in the arena defining where the fly
+        will be spawn, in mm. By default (0, 0, 0.5).
+    spawn_orientation : tuple[float, float, float], optional
+        The spawn orientation of the fly in the Euler angle format:
+        (x, y, z), where x, y, z define the rotation around x, y and
+        z in radian. By default (0.0, 0.0, 0.0). In the default
+        configuration, the fly is spawned facing the +x direction; the +y
+        direction is on the fly's left.
+    control : str, optional
+        The joint controller type. Can be "position", "velocity", or
+        "motor", by default "position".
+    init_pose : BaseState, optional
+        Which initial pose to start the simulation from. By default
+        "stretch" kinematic pose with all legs fully stretched.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names. By default
+        "legs".
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+        body names. By default "legs".
+    detect_flip : bool
+        [Deprecated] Fly flips are now detected regardless of this
+        parameter. This will be removed in future releases.
+    joint_stiffness : float
+        Stiffness of actuated joints, by default 0.05.
+        joint_stiffness : float
+        Stiffness of actuated joints, by default 0.05.
+    joint_damping : float
+        Damping coefficient of actuated joints, by default 0.06.
+    non_actuated_joint_stiffness : float
+        Stiffness of non-actuated joints, by default 1.0. If set to 0,
+        the DoF would passively drift over time. Therefore it is set
+        explicitly here for better stability.
+    non_actuated_joint_damping : float
+        Damping coefficient of non-actuated joints, by default 1.0.
+        Similar to ``non_actuated_joint_stiffness``, it is set
+        explicitly here for better stability.
+    neck_stiffness : Union[float, None]
+        Stiffness of the neck joints (``joint_Head``,
+        ``joint_Head_roll``, and ``joint_Head_yaw``), by default 10.0.
+        The head joints have their stiffness set separately, typically
+        to a higher value than the other non-actuated joints, to ensure
+        that the visual input is not perturbed by unintended passive
+        head movements. If set, this value overrides
+        ``non_actuated_joint_stiffness``.
+    actuator_gain : Union[float, list[float]]
+        Gain of the actuator:
+        If ``control`` is "position", it is the position gain of the
+        actuators.
+        If ``control`` is "velocity", it is the velocity gain of the
+        actuators.
+        If ``control`` is "motor", it is not used
+        if the actuator gain is a list, it needs to be of same length as
+        the number of actuated joints and will be applied to every joint
+    actuator_forcerange : Union[float, tuple[float, float], list]
+        The force limit of the actuators. If a single value is
+        provided, it will be symmetrically applied to all actuators
+        (-a, a). If a tuple is provided, the first value is the lower
+        limit and the second value is the upper limit. If a list is
+        provided, it should have the same length as the number of
+        actuators. By default 65.0.
+    tarsus_stiffness : float
+        Stiffness of the passive, compliant tarsus joints, by default
+        7.5.
+    tarsus_damping : float
+        Damping coefficient of the passive, compliant tarsus joints, by
+        default 1e-2.
+    friction : float
+        Sliding, torsional, and rolling friction coefficients, by
+        default (1, 0.005, 0.0001)
+    contact_solref: tuple[float, float]
+        MuJoCo contact reference parameters (see `MuJoCo documentation
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+        5.0e-01, 2.0e+00). Under the default configuration, contacts
+        are very stiff. This is to avoid penetration of the leg tips
+        into the ground when leg adhesion is enabled. The user might
+        want to decrease the stiffness if the stability becomes an
+        issue.
+    contact_solimp: tuple[float, float, float, float, float]
+        MuJoCo contact reference parameters (see `MuJoCo docs
+        <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
+        for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
+        5.0e-01, 2.0e+00). Under the default configuration, contacts
+        are very stiff. This is to avoid penetration of the leg tips
+        into the ground when leg adhesion is enabled. The user might
+        want to decrease the stiffness if the stability becomes an
+        issue.
+    enable_olfaction : bool
+        Whether to enable olfaction, by default False.
+    enable_vision : bool
+        Whether to enable vision, by default False.
+    render_raw_vision : bool
+        If ``enable_vision`` is True, whether to render the raw vision
+        (raw pixel values before binning by ommatidia), by default
+        False.
+    vision_refresh_rate : int
+        The rate at which the vision sensor is updated, in Hz, by
+        default
+        500.
+    enable_adhesion : bool
+        Whether to enable adhesion. By default False.
+    adhesion_force : float
+        The magnitude of the adhesion force. By default 20.
+    draw_adhesion : bool
+        Whether to signal that adhesion is on by changing the color of
+        the concerned leg. By default False.
+    draw_sensor_markers : bool
+        If True, colored spheres will be added to the model to indicate
+        the positions of the cameras (for vision) and odor sensors. By
+        default False.
+    neck_kp : float, optional
+        Position gain of the neck position actuators. If supplied, this
+        will overwrite ``actuator_kp`` for the neck actuators.
+        Otherwise, ``actuator_kp`` will be used.
+    head_stabilization_model : Callable or str optional
+        If callable, it should be a function that, given the observation,
+        predicts signals that need to be applied to the neck DoFs to
+        stabilizes the head of the fly. If "thorax", the rotation (roll
+        and pitch) of the thorax is inverted and applied to the head by
+        the neck actuators. If None (default), no head stabilization is
+        applied.
     """
 
     config = util.load_config()
@@ -147,8 +294,8 @@ class Fly:
         f"{side}{pos}Tarsus5" for side in "LR" for pos in "FMH"
     )
     n_legs = 6
-    _floor_contacts: Dict[str, mjcf.Element]
-    _self_contacts: Dict[str, mjcf.Element]
+    _floor_contacts: dict[str, mjcf.Element]
+    _self_contacts: dict[str, mjcf.Element]
     _adhesion_actuator_geom_id: np.ndarray
     _default_fly_name = 0
     _existing_fly_names = set()
@@ -157,28 +304,29 @@ class Fly:
     def __init__(
         self,
         name: Optional[str] = None,
-        actuated_joints: List = preprogrammed.all_leg_dofs,
-        contact_sensor_placements: List = preprogrammed.all_tarsi_links,
+        actuated_joints: list = preprogrammed.all_leg_dofs,
+        monitored_joints: list = preprogrammed.all_leg_dofs,
+        contact_sensor_placements: list = preprogrammed.all_tarsi_links,
         xml_variant: Union[str, Path] = "seqik",
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_pos: tuple[float, float, float] = (0.0, 0.0, 0.5),
+        spawn_orientation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         control: str = "position",
         init_pose: Union[str, state.KinematicPose] = "stretch",
-        floor_collisions: Union[str, List[str]] = "legs",
-        self_collisions: Union[str, List[str]] = "legs",
+        floor_collisions: Union[str, list[str]] = "legs",
+        self_collisions: Union[str, list[str]] = "legs",
         detect_flip: bool = False,
         joint_stiffness: float = 0.05,
         joint_damping: float = 0.06,
         non_actuated_joint_stiffness: float = 1.0,
         non_actuated_joint_damping: float = 1.0,
         neck_stiffness: Union[float, None] = 10.0,
-        actuator_gain: Union[float, List] = 45.0,
-        actuator_forcerange: Union[float, Tuple[float, float], List] = 65.0,
+        actuator_gain: Union[float, list] = 45.0,
+        actuator_forcerange: Union[float, tuple[float, float], list] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
         friction: float = (1.0, 0.005, 0.0001),
-        contact_solref: Tuple[float, float] = (2e-4, 1e3),
-        contact_solimp: Tuple[float, float, float, float, float] = (
+        contact_solref: tuple[float, float] = (2e-4, 1e3),
+        contact_solimp: tuple[float, float, float, float, float] = (
             9.99e-01,
             9.999e-01,
             1.0e-03,
@@ -196,159 +344,6 @@ class Fly:
         neck_kp: Optional[float] = None,
         head_stabilization_model: Optional[Union[Callable, str]] = None,
     ) -> None:
-        """Initialize a NeuroMechFly environment.
-
-        Parameters
-        ----------
-        name : str, optional
-            The name of the fly model. Will be automatically generated if
-            not provided.
-        actuated_joints : List[str], optional
-            List of names of actuated joints. By default all active leg
-            DoFs.
-        contact_sensor_placements : List[str], optional
-            List of body segments where contact sensors are placed. By
-            default all tarsus segments.
-        xml_variant: str or Path, optional
-            The variant of the fly model to use. Multiple variants exist
-            because when replaying experimentally recorded behavior, the
-            ordering of DoF angles in multi-DoF joints depends on how they
-            are configured in the upstream inverse kinematics program. Two
-            variants are provided: "seqik" (default) and "deepfly3d" (for
-            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
-            The ordering of DoFs can be seen from the XML files under
-            ``flygym/data/mjcf/``.
-        spawn_pos : Tuple[float, float, float], optional
-            The (x, y, z) position in the arena defining where the fly
-            will be spawn, in mm. By default (0, 0, 0.5).
-        spawn_orientation : Tuple[float, float, float], optional
-            The spawn orientation of the fly in the Euler angle format:
-            (x, y, z), where x, y, z define the rotation around x, y and
-            z in radian. By default (0.0, 0.0, pi/2), which leads to a
-            position facing the positive direction of the x-axis.
-        control : str, optional
-            The joint controller type. Can be "position", "velocity", or
-            "motor", by default "position".
-        init_pose : BaseState, optional
-            Which initial pose to start the simulation from. By default
-            "stretch" kinematic pose with all legs fully stretched.
-        floor_collisions :str
-            Which set of collisions should collide with the floor. Can be
-            "all", "legs", "tarsi" or a list of body names. By default
-            "legs".
-        self_collisions : str
-            Which set of collisions should collide with each other. Can be
-            "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
-            body names. By default "legs".
-        detect_flip : bool
-            If True, the simulation will indicate whether the fly has
-            flipped in the ``info`` returned by ``.step(...)``. Flip
-            detection is achieved by checking whether the leg tips are free
-            of any contact for a duration defined in the configuration
-            file. Flip detection is disabled for a period of time at the
-            beginning of the simulation as defined in the configuration
-            file. This avoids spurious detection when the fly is not
-            standing reliably on the ground yet. By default False.
-        joint_stiffness : float
-            Stiffness of actuated joints, by default 0.05.
-            joint_stiffness : float
-            Stiffness of actuated joints, by default 0.05.
-        joint_damping : float
-            Damping coefficient of actuated joints, by default 0.06.
-        non_actuated_joint_stiffness : float
-            Stiffness of non-actuated joints, by default 1.0. If set to 0,
-            the DoF would passively drift over time. Therefore it is set
-            explicitly here for better stability.
-        non_actuated_joint_damping : float
-            Damping coefficient of non-actuated joints, by default 1.0.
-            Similar to ``non_actuated_joint_stiffness``, it is set
-            explicitly here for better stability.
-        neck_stiffness : Union[float, None]
-            Stiffness of the neck joints (``joint_Head``,
-            ``joint_Head_roll``, and ``joint_Head_yaw``), by default 10.0.
-            The head joints have their stiffness set separately, typically
-            to a higher value than the other non-actuated joints, to ensure
-            that the visual input is not perturbed by unintended passive
-            head movements. If set, this value overrides
-            ``non_actuated_joint_stiffness``.
-        actuator_gain : Union[float, List[float]]
-            Gain of the actuator:
-            If ``control`` is "position", it is the position gain of the
-            actuators.
-            If ``control`` is "velocity", it is the velocity gain of the
-            actuators.
-            If ``control`` is "motor", it is not used
-            if the actuator gain is a list, it needs to be of same length as
-            the number of actuated joints and will be applied to every joint
-        actuator_forcerange : Union[float, Tuple[float, float], List]
-            The force limit of the actuators. If a single value is
-            provided, it will be symmetrically applied to all actuators
-            (-a, a). If a tuple is provided, the first value is the lower
-            limit and the second value is the upper limit. If a list is
-            provided, it should have the same length as the number of
-            actuators. By default 65.0.
-        tarsus_stiffness : float
-            Stiffness of the passive, compliant tarsus joints, by default
-            7.5.
-        tarsus_damping : float
-            Damping coefficient of the passive, compliant tarsus joints, by
-            default 1e-2.
-        friction : float
-            Sliding, torsional, and rolling friction coefficients, by
-            default (1, 0.005, 0.0001)
-        contact_solref: Tuple[float, float]
-            MuJoCo contact reference parameters (see `MuJoCo documentation
-            <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
-            5.0e-01, 2.0e+00). Under the default configuration, contacts
-            are very stiff. This is to avoid penetration of the leg tips
-            into the ground when leg adhesion is enabled. The user might
-            want to decrease the stiffness if the stability becomes an
-            issue.
-        contact_solimp: Tuple[float, float, float, float, float]
-            MuJoCo contact reference parameters (see `MuJoCo docs
-            <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
-            for details). By default (9.99e-01, 9.999e-01, 1.0e-03,
-            5.0e-01, 2.0e+00). Under the default configuration, contacts
-            are very stiff. This is to avoid penetration of the leg tips
-            into the ground when leg adhesion is enabled. The user might
-            want to decrease the stiffness if the stability becomes an
-            issue.
-        enable_olfaction : bool
-            Whether to enable olfaction, by default False.
-        enable_vision : bool
-            Whether to enable vision, by default False.
-        render_raw_vision : bool
-            If ``enable_vision`` is True, whether to render the raw vision
-            (raw pixel values before binning by ommatidia), by default
-            False.
-        vision_refresh_rate : int
-            The rate at which the vision sensor is updated, in Hz, by
-            default
-            500.
-        enable_adhesion : bool
-            Whether to enable adhesion. By default False.
-        adhesion_force : float
-            The magnitude of the adhesion force. By default 20.
-        draw_adhesion : bool
-            Whether to signal that adhesion is on by changing the color of
-            the concerned leg. By default False.
-        draw_sensor_markers : bool
-            If True, colored spheres will be added to the model to indicate
-            the positions of the cameras (for vision) and odor sensors. By
-            default False.
-        neck_kp : float, optional
-            Position gain of the neck position actuators. If supplied, this
-            will overwrite ``actuator_kp`` for the neck actuators.
-            Otherwise, ``actuator_kp`` will be used.
-        head_stabilization_model : Callable or str optional
-            If callable, it should be a function that, given the observation,
-            predicts signals that need to be applied to the neck DoFs to
-            stabilizes the head of the fly. If "thorax", the rotation (roll
-            and pitch) of the thorax is inverted and applied to the head by
-            the neck actuators. If None (default), no head stabilization is
-            applied.
-        """
         actuated_joints = list(actuated_joints)
 
         # Check neck actuation if head stabilization is enabled
@@ -364,8 +359,8 @@ class Fly:
             self._last_neck_actuation = None  # tracked only for head stabilization
 
         self.actuated_joints = actuated_joints
+        self.monitored_joints = monitored_joints
         self.contact_sensor_placements = contact_sensor_placements
-        self.detect_flip = detect_flip
         self.joint_stiffness = joint_stiffness
         self.joint_damping = joint_damping
         self.non_actuated_joint_stiffness = non_actuated_joint_stiffness
@@ -388,6 +383,15 @@ class Fly:
         self.self_collisions = self_collisions
         self.head_stabilization_model = head_stabilization_model
 
+        if detect_flip:
+            warnings.warn(
+                (
+                    "DeprecationWarning: The `detect_flip` parameter is deprecated and "
+                    "will be removed in future releases. Flips are now always detected."
+                ),
+                DeprecationWarning,
+            )
+
         # Load NMF model
         if isinstance(xml_variant, str):
             xml_variant = (
@@ -408,10 +412,7 @@ class Fly:
         self.model.model = str(name)
 
         self.spawn_pos = np.array(spawn_pos)
-        # convert to mujoco orientation format [0, 0, 0] would orient along the x-axis
-        # but the output fly_orientation from framequat would be [0, 0, pi/2] for
-        # spawn_orient = [0, 0, 0]
-        self.spawn_orientation = spawn_orientation - np.array((0, 0, np.pi / 2))
+        self.spawn_orientation = spawn_orientation
         self.control = control
         if isinstance(init_pose, str):
             self.init_pose = preprogrammed.get_preprogrammed_pose(init_pose)
@@ -459,7 +460,7 @@ class Fly:
         self._curr_raw_visual_input = None
         self._last_vision_update_time = -np.inf
         self._eff_visual_render_interval = 1 / self.vision_refresh_rate
-        self._vision_update_mask: List[bool] = []
+        self._vision_update_mask: list[bool] = []
         if self.enable_vision:
             self._configure_eyes()
             self.retina = vision.Retina()
@@ -489,7 +490,11 @@ class Fly:
         self._init_self_contacts()
 
         # Add sensors
-        self._joint_sensors = self._add_joint_sensors()
+        (
+            self._actuated_joint_sensors,
+            self._non_actuated_joint_sensors,
+            self._monitored_joint_order,
+        ) = self._add_joint_sensors()
         self._body_sensors = self._add_body_sensors()
         self._end_effector_sensors = self._add_end_effector_sensors()
         self._antennae_sensors = (
@@ -511,9 +516,6 @@ class Fly:
                 ):
                     adhesion_sensor_indices.append(index)
         self._adhesion_bodies_with_contact_sensors = np.array(adhesion_sensor_indices)
-
-        # flip detection
-        self._flip_counter = 0
 
         # Define action and observation spaces
         action_bound = np.pi if self.control == "position" else np.inf
@@ -537,10 +539,8 @@ class Fly:
 
         Parameters
         ----------
-        arena : BaseArena
-            The arena in which the fly is placed.
-        physics : mjcf.Physics
-            The physics object of the simulation.
+        sim : Simulation
+            Simulation object.
         """
         self._adhesion_actuator_geom_id = np.array(
             [
@@ -579,7 +579,7 @@ class Fly:
         # Make list of geometries that are hidden during visual input rendering
         self._geoms_to_hide = self.config["vision"]["hidden_segments"]
 
-    def _parse_collision_specs(self, collision_spec: Union[str, List[str]]):
+    def _parse_collision_specs(self, collision_spec: Union[str, list[str]]):
         if collision_spec == "all":
             return [geom.name for geom in self.model.find_all("geom")]
         elif isinstance(collision_spec, str):
@@ -650,6 +650,7 @@ class Fly:
             # x, y, z positions of the end effectors (tarsus-5 segments)
             "end_effectors": spaces.Box(low=-np.inf, high=np.inf, shape=(6, 3)),
             "fly_orientation": spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
+            "cardinal_vectors": spaces.Box(low=-1, high=1, shape=(3, 3)),
         }
         if self.enable_vision:
             _observation_space["vision"] = spaces.Box(
@@ -712,7 +713,7 @@ class Fly:
 
     def _init_self_contacts(self):
         self_collision_geoms = self._parse_collision_specs(self.self_collisions)
-        self_contacts: Dict[str, mjcf.Element] = {}
+        self_contacts: dict[str, mjcf.Element] = {}
 
         for geom1 in self_collision_geoms:
             for geom2 in self_collision_geoms:
@@ -762,7 +763,7 @@ class Fly:
         """
         floor_collision_geoms = self._parse_collision_specs(self.floor_collisions)
 
-        floor_contacts: Dict[str, mjcf.Element] = {}
+        floor_contacts: dict[str, mjcf.Element] = {}
         ground_id = 0
 
         arena_root = arena.root_element
@@ -808,24 +809,47 @@ class Fly:
         self._floor_contacts = floor_contacts
 
     def _add_joint_sensors(self):
-        joint_sensors = []
-        for joint in self.actuated_joints:
-            joint_sensors.extend(
-                [
-                    self.model.sensor.add(
-                        "jointpos", name=f"jointpos_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "jointvel", name=f"jointvel_{joint}", joint=joint
-                    ),
-                    self.model.sensor.add(
-                        "actuatorfrc",
-                        name=f"actuatorfrc_{self.control}_{joint}",
-                        actuator=f"actuator_{self.control}_{joint}",
-                    ),
-                ]
+        actuated_joint_sensors = []
+        non_actuated_joint_sensors = []
+
+        monitored_joints_order = []
+
+        for joint in self.monitored_joints:
+            joint_pos_sensor = self.model.sensor.add(
+                "jointpos", name=f"jointpos_{joint}", joint=joint
             )
-        return joint_sensors
+            joint_vel_sensor = self.model.sensor.add(
+                "jointvel", name=f"jointvel_{joint}", joint=joint
+            )
+            if joint in self.actuated_joints:
+                joint_torque_sensor = self.model.sensor.add(
+                    "actuatorfrc",
+                    name=f"actuatorfrc_{self.control}_{joint}",
+                    actuator=f"actuator_{self.control}_{joint}",
+                )
+                actuated_joint_sensors.extend(
+                    [joint_pos_sensor, joint_vel_sensor, joint_torque_sensor]
+                )
+                monitored_joints_order.append(len(actuated_joint_sensors) // 3 - 1)
+            else:
+                site = self.model.find("joint", joint).parent.add(
+                    "site", name=f"site_{joint}", pos=[0, 0, 0]
+                )
+                joint_torque_sensor = self.model.sensor.add(
+                    "torque", name=f"torque_{joint}", site=site.name
+                )
+                non_actuated_joint_sensors.extend(
+                    [joint_pos_sensor, joint_vel_sensor, joint_torque_sensor]
+                )
+                monitored_joints_order.append(
+                    len(non_actuated_joint_sensors) // 3 + len(self.actuated_joints) - 1
+                )
+
+        return (
+            actuated_joint_sensors,
+            non_actuated_joint_sensors,
+            monitored_joints_order,
+        )
 
     def _add_body_sensors(self):
         lin_pos_sensor = self.model.sensor.add(
@@ -840,15 +864,23 @@ class Fly:
         ang_vel_sensor = self.model.sensor.add(
             "frameangvel", name="thorax_angvel", objtype="body", objname="Thorax"
         )
-        orient_sensor = self.model.sensor.add(
-            "framezaxis", name="thorax_orient", objtype="body", objname="Thorax"
+        cardinal_sensor_x = self.model.sensor.add(
+            "framexaxis", name="thorax_orientx", objtype="body", objname="FlyBody"
+        )
+        cardinal_sensor_y = self.model.sensor.add(
+            "frameyaxis", name="thorax_orienty", objtype="body", objname="FlyBody"
+        )
+        cardinal_sensor_z = self.model.sensor.add(
+            "framezaxis", name="thorax_orientz", objtype="body", objname="FlyBody"
         )
         return [
             lin_pos_sensor,
             lin_vel_sensor,
             ang_pos_sensor,
             ang_vel_sensor,
-            orient_sensor,
+            cardinal_sensor_x,
+            cardinal_sensor_y,
+            cardinal_sensor_z,
         ]
 
     def _add_end_effector_sensors(self):
@@ -1088,7 +1120,7 @@ class Fly:
             The physics object of the simulation.
         segment : str
             The name of the segment to change the color of.
-        color : Tuple[float, float, float, float]
+        color : tuple[float, float, float, float]
             Target color as RGBA values normalized to [0, 1].
         """
         physics.named.model.geom_rgba[f"{self.name}/{segment}"] = color
@@ -1116,13 +1148,31 @@ class Fly:
         physics = sim.physics
 
         # joint sensors
-        joint_obs = np.zeros((3, len(self.actuated_joints)))
-        joint_sensordata = physics.bind(self._joint_sensors).sensordata
+        joint_obs = np.zeros((3, len(self.monitored_joints)))
+
+        actuated_joint_sensordata = physics.bind(
+            self._actuated_joint_sensors
+        ).sensordata
+        non_actuated_joint_sensordata = physics.bind(
+            self._non_actuated_joint_sensors
+        ).sensordata
+
         for i, joint in enumerate(self.actuated_joints):
             base_idx = i * 3
             # pos and vel and torque from the joint sensors
-            joint_obs[:3, i] = joint_sensordata[base_idx : base_idx + 3]
+            joint_obs[:3, i] = actuated_joint_sensordata[base_idx : base_idx + 3]
+
+        for i in range(len(self.monitored_joints) - len(self.actuated_joints)):
+            base_idx = i * 5
+            joint_torques = np.linalg.norm(
+                non_actuated_joint_sensordata[base_idx + 1 : base_idx + 5]
+            )
+            joint_obs[:3, len(self.actuated_joints) + i] = [
+                *non_actuated_joint_sensordata[base_idx : base_idx + 2],
+                joint_torques,
+            ]
         joint_obs[2, :] *= 1e-9  # convert to N
+        joint_obs = joint_obs[:, self._monitored_joint_order]
 
         # fly position and orientation
         cart_pos = physics.bind(self._body_sensors[0]).sensordata
@@ -1192,6 +1242,11 @@ class Fly:
         ee_pos = ee_pos.reshape((self.n_legs, 3))
 
         orientation_vec = physics.bind(self._body_sensors[4]).sensordata.copy()
+        cardinal_vectors = [
+            physics.bind(self._body_sensors[4]).sensordata.copy(),
+            physics.bind(self._body_sensors[5]).sensordata.copy(),
+            physics.bind(self._body_sensors[6]).sensordata.copy(),
+        ]
 
         obs = {
             "joints": joint_obs.astype(np.float32),
@@ -1199,6 +1254,7 @@ class Fly:
             "contact_forces": contact_forces.astype(np.float32),
             "end_effectors": ee_pos.astype(np.float32),
             "fly_orientation": orientation_vec.astype(np.float32),
+            "cardinal_vectors": np.array(cardinal_vectors).astype(np.float32),
         }
 
         # olfaction
@@ -1257,7 +1313,7 @@ class Fly:
 
         Returns
         -------
-        Dict[str, Any]
+        dict[str, Any]
             The dictionary containing additional information.
         """
         info = {}
@@ -1271,7 +1327,6 @@ class Fly:
         self._curr_raw_visual_input = None
         self._curr_visual_input = None
         self._vision_update_mask = []
-        self._flip_counter = 0
 
         obs = self.get_observation(sim)
         info = self.get_info()
@@ -1331,21 +1386,8 @@ class Fly:
             self._vision_update_mask.append(vision_updated_this_step)
             info["vision_updated"] = vision_updated_this_step
 
-        if self.detect_flip:
-            if obs["contact_forces"].sum() < 1:
-                self._flip_counter += 1
-            else:
-                self._flip_counter = 0
-
-            flip_config = self.config["flip_detection"]
-            has_passed_init = sim.curr_time > flip_config["ignore_period"]
-            contact_lost_time = self._flip_counter * sim.timestep
-            lost_contact_long_enough = (
-                contact_lost_time > flip_config["min_flip_duration"]
-            )
-            info["flip"] = has_passed_init and lost_contact_long_enough
-            info["flip_counter"] = self._flip_counter
-            info["contact_forces"] = obs["contact_forces"].copy()
+        # Fly has flipped if the z component of the "up" cardinal vector is negative
+        info["flip"] = obs["cardinal_vectors"][2, 2] < 0
 
         if self.head_stabilization_model is not None:
             # this is tracked to decide neck actuation for the next step

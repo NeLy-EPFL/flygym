@@ -11,16 +11,16 @@ class PreprogrammedSteps:
 
     Attributes
     ----------
-    legs : List[str]
+    legs : list[str]
         List of leg names (e.g. LF for left front leg).
-    dofs_per_leg : List[str]
+    dofs_per_leg : list[str]
         List of names for degrees of freedom for each leg.
     duration : float
         Duration of the preprogrammed step (at 1x speed) in seconds.
-    neutral_pos : Dict[str, np.ndarray]
+    neutral_pos : dict[str, np.ndarray]
         Neutral position of DoFs for each leg. Keys are leg names; values
         are joint angles in the order of ``self.dofs_per_leg``.
-    swing_period : Dict[str, np.ndarray]
+    swing_period : dict[str, np.ndarray]
         The start and end of the lifted swing phase for each leg. Keys are
         leg names; values are arrays of shape (2,) with the start and end
         of the swing normalized to [0, 2π].
@@ -30,7 +30,7 @@ class PreprogrammedSteps:
     path : str or Path, optional
         Path to the preprogrammed steps data. If None, the default
         preprogrammed steps data will be loaded.
-    neutral_pose_phases : List[float]
+    neutral_pose_phases : list[float]
         Phase during the preprogrammed step that should be considered the
         "neutral" resting pose. This is specified for each of the 6 limbs
         and normalized to [0, 2π).

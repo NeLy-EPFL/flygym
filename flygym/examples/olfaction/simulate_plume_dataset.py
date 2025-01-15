@@ -5,7 +5,6 @@
 import numpy as np
 import h5py
 from phi.torch import flow
-from typing import Tuple
 
 
 @flow.math.jit_compile
@@ -13,10 +12,10 @@ def step(
     velocity_prev: flow.Grid,
     smoke_prev: flow.Grid,
     noise: np.ndarray,
-    noise_magnitude: Tuple[float, float] = (0.1, 2),
+    noise_magnitude: tuple[float, float] = (0.1, 2),
     dt: float = 1.0,
     inflow: flow.Grid = None,
-) -> Tuple[flow.Grid, flow.Grid]:
+) -> tuple[flow.Grid, flow.Grid]:
     """Simulate fluid dynamics by one time step.
 
     Parameters
@@ -27,7 +26,7 @@ def step(
         Smoke density at previous time step.
     noise : np.ndarray
         Brownian noise to be applied as external force.
-    noise_magnitude : Tuple[float, float], optional
+    noise_magnitude : tuple[float, float], optional
         Magnitude of noise to be applied as external force in x and y
         directions, by default (0.1, 2)
     dt : float, optional
@@ -35,7 +34,7 @@ def step(
 
     Returns
     -------
-    Tuple[flow.Grid, flow.Grid]
+    tuple[flow.Grid, flow.Grid]
         Velocity field and smoke density at next time step.
     """
     smoke_next = flow.advect.mac_cormack(smoke_prev, velocity_prev, dt=dt) + inflow

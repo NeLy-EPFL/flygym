@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Union, Tuple, List, Optional, Callable
+from typing import Union, Optional, Callable
 
 from flygym import Fly
 from flygym.arena import BaseArena, Tethered
@@ -10,19 +10,19 @@ class MovingObjArena(BaseArena):
 
     Attributes
     ----------
-    ball_pos : Tuple[float,float,float]
+    ball_pos : tuple[float,float,float]
         The position of the floating object in the arena.
 
     Parameters
     ----------
-    size : Tuple[int, int]
+    size : tuple[int, int]
         The size of the terrain in (x, y) dimensions.
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
     obj_radius : float
         Radius of the spherical floating object in mm.
-    init_ball_pos : Tuple[float,float]
+    init_ball_pos : tuple[float,float]
         Initial position of the object, by default (5, 0).
     move_speed : float
         Speed of the moving object. By default 10.
@@ -139,23 +139,23 @@ class MovingFlyArena(BaseArena):
 
     Attributes
     ----------
-    fly_pos : Tuple[float,float,float]
+    fly_pos : tuple[float,float,float]
         The position of the floating fly in the arena.
 
     Parameters
     ----------
     terrain_type : str
         Type of terrain. Can be "flat" or "blocks". By default "flat".
-    x_range : Tuple[float, float], optional
+    x_range : tuple[float, float], optional
         Range of the arena in the x direction (anterior-posterior axis of
         the fly) over which the block-gap pattern should span, by default
         (-10, 35).
-    y_range : Tuple[float, float], optional
+    y_range : tuple[float, float], optional
         Same as above in y, by default (-20, 20).
     block_size : float, optional
         The side length of the rectangular blocks forming the terrain in
         mm, by default 1.3.
-    height_range : Tuple[float, float], optional
+    height_range : tuple[float, float], optional
         Range from which the height of the extruding blocks should be
         sampled. Only half of the blocks arranged in a diagonal pattern are
         extruded, by default (0.2, 0.2).
@@ -163,10 +163,10 @@ class MovingFlyArena(BaseArena):
         Seed for generating random block heights, by default 0.
     ground_alpha : float, optional
         Opacity of the ground, by default 1 (fully opaque).
-    friction : Tuple[float, float, float]
+    friction : tuple[float, float, float]
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    init_fly_pos : Tuple[float,float]
+    init_fly_pos : tuple[float,float]
         Initial position of the fly, by default (5, 0).
     move_speed : float
         Speed of the moving fly. By default 10.
@@ -183,10 +183,10 @@ class MovingFlyArena(BaseArena):
     def __init__(
         self,
         terrain_type: str = "flat",
-        x_range: Optional[Tuple[float, float]] = (-10, 20),
-        y_range: Optional[Tuple[float, float]] = (-20, 20),
+        x_range: Optional[tuple[float, float]] = (-10, 20),
+        y_range: Optional[tuple[float, float]] = (-20, 20),
         block_size: Optional[float] = 1.3,
-        height_range: Optional[Tuple[float, float]] = (0.2, 0.2),
+        height_range: Optional[tuple[float, float]] = (0.2, 0.2),
         rand_seed: int = 0,
         ground_alpha: float = 1,
         friction=(1, 0.005, 0.0001),
@@ -334,6 +334,25 @@ class MovingFlyArena(BaseArena):
 
 
 class MovingBarArena(Tethered):
+    """Flat or blocks terrain with a moving cylinder to simulate a
+    moving bar on a circular screen.
+
+    Parameters
+    ----------
+    azimuth_func : Callable[[float], float]
+        Function that takes time as input and returns the azimuth angle
+        of the cylinder.
+    visual_angle : tuple[float, float]
+        Width and height of the cylinder in degrees.
+    distance : float
+        Distance from the center of the arena to the center of the
+        cylinders.
+    rgba : tuple[float, float, float, float]
+        Color of the cylinder.
+    kwargs : dict
+        Additional arguments to passed to the superclass.
+    """
+
     def __init__(
         self,
         azimuth_func: Callable[[float], float],
@@ -342,24 +361,6 @@ class MovingBarArena(Tethered):
         rgba=(0, 0, 0, 1),
         **kwargs,
     ):
-        """Flat or blocks terrain with a moving cylinder to simulate a
-        moving bar on a circular screen.
-
-        Parameters
-        ----------
-        azimuth_func : Callable[[float], float]
-            Function that takes time as input and returns the azimuth angle
-            of the cylinder.
-        visual_angle : Tuple[float, float]
-            Width and height of the cylinder in degrees.
-        distance : float
-            Distance from the center of the arena to the center of the
-            cylinders.
-        rgba : Tuple[float, float, float, float]
-            Color of the cylinder.
-        kwargs : dict
-            Additional arguments to passed to the superclass.
-        """
         super().__init__(**kwargs)
 
         self.azimuth_func = azimuth_func
@@ -413,13 +414,13 @@ class ObstacleOdorArena(BaseArena):
         self,
         terrain: BaseArena,
         obstacle_positions: np.ndarray = np.array([(7.5, 0), (12.5, 5), (17.5, -5)]),
-        obstacle_colors: Union[np.ndarray, Tuple] = (0, 0, 0, 1),
+        obstacle_colors: Union[np.ndarray, tuple] = (0, 0, 0, 1),
         obstacle_radius: float = 1,
         obstacle_height: float = 4,
         odor_source: np.ndarray = np.array([[25, 0, 2]]),
         peak_odor_intensity: np.ndarray = np.array([[1]]),
         diffuse_func: Callable = lambda x: x**-2,
-        marker_colors: Optional[List[Tuple[float, float, float, float]]] = None,
+        marker_colors: Optional[list[tuple[float, float, float, float]]] = None,
         marker_size: float = 0.1,
     ):
         self.terrain_arena = terrain
@@ -450,7 +451,6 @@ class ObstacleOdorArena(BaseArena):
         if marker_colors is None:
             rgb = np.array([255, 127, 14]) / 255
             marker_colors = [(*rgb, 1)] * self.num_odor_sources
-            num_odor_sources = self.odor_source.shape[0]
         self.marker_colors = marker_colors
         self._odor_marker_geoms = []
         for i, (pos, rgba) in enumerate(zip(self.odor_source, marker_colors)):
@@ -500,7 +500,7 @@ class ObstacleOdorArena(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return self.terrain_arena.get_spawn_position(rel_pos, rel_angle)
 
     def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:

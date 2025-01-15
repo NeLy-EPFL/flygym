@@ -1,7 +1,6 @@
 import subprocess
 from itertools import chain, product
 from pathlib import Path
-from typing import Dict, List
 
 import imageio
 import matplotlib.pyplot as plt
@@ -82,7 +81,7 @@ persistence_init_thr = 20
 
 
 ########### FUNCTIONS ############
-def save_obs_list(save_path, obs_list: List[Dict]):
+def save_obs_list(save_path, obs_list: list[dict]):
     """Save a list of observations to a compressed npz file."""
     array_dict = {}
     for k in obs_list[0]:
@@ -505,7 +504,7 @@ im_size, fps = get_video_props()
 empty_img = np.zeros((*im_size[::-1], 3), dtype=np.uint8)
 
 
-def init_fig(trial_id: int) -> List[AxesImage]:
+def init_fig(trial_id: int) -> list[AxesImage]:
     """Initialize the figure for the video comparison.
 
     Parameters
@@ -517,7 +516,7 @@ def init_fig(trial_id: int) -> List[AxesImage]:
     -------
     fig : matplotlib.figure.Figure
         The figure object.
-    images : List[matplotlib.image.AxesImage]
+    images : list[matplotlib.image.AxesImage]
         The image objects.
     """
     fig, axs = plt.subplots(len(controllers), len(terrains), figsize=(20, 11.5))

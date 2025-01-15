@@ -29,7 +29,7 @@ def test_plume_tracking_task():
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(40, 80, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam_params = {
         "mode": "fixed",
@@ -73,8 +73,9 @@ def test_plume_tracking_task():
         "end_effectors",
         "fly_orientation",
         "odor_intensity",
+        "cardinal_vectors",
     }
-    expected_info_keys = {"net_corrections", "joints", "adhesion"}
+    expected_info_keys = {"net_corrections", "joints", "adhesion", "flip"}
     for obs in obs_hist:
         assert set(obs.keys()) == expected_obs_keys
     for info in info_hist:

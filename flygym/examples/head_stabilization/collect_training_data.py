@@ -3,7 +3,7 @@ import pickle
 import cv2
 from tqdm import trange
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 from dm_control.utils import transformations
 from dm_control.rl.control import PhysicsError
 
@@ -16,8 +16,8 @@ from flygym.examples.locomotion import HybridTurningController
 def run_simulation(
     gait: str = "tripod",
     terrain: str = "flat",
-    spawn_xy: Tuple[float, float] = (0, 0),
-    dn_drive: Tuple[float, float] = (1, 1),
+    spawn_xy: tuple[float, float] = (0, 0),
+    dn_drive: tuple[float, float] = (1, 1),
     sim_duration: float = 0.5,
     enable_rendering: bool = False,
     live_display: bool = False,
@@ -35,10 +35,10 @@ def run_simulation(
     terrain : str, optional
         The type of terrain for the fly. Choose from ['flat', 'blocks'].
         Defaults to "flat".
-    spawn_xy : Tuple[float, float], optional
+    spawn_xy : tuple[float, float], optional
         The x and y coordinates of the fly's spawn position. Defaults to
         (0, 0).
-    dn_drive : Tuple[float, float], optional
+    dn_drive : tuple[float, float], optional
         The DN drive values for the left and right wings. Defaults to
         (1, 1).
     sim_duration : float, optional

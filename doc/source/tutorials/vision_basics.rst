@@ -116,7 +116,7 @@ on the floor in a stable manner:
     
     fly = Fly(
         spawn_pos=(13, -5, 0.2),
-        spawn_orientation=(0, 0, np.pi / 2 + np.deg2rad(70)),
+        spawn_orientation=(0, 0, np.deg2rad(70)),
         contact_sensor_placements=contact_sensor_placements,
         enable_vision=True,
         render_raw_vision=True,
@@ -273,19 +273,19 @@ We start by defining some attributes in its ``__init__`` method:
        ----------
        arena : mjcf.RootElement
            The arena object that the terrain is built on.
-       ball_pos : Tuple[float,float,float]
+       ball_pos : tuple[float,float,float]
            The position of the floating object in the arena.
 
        Parameters
        ----------
-       size : Tuple[int, int]
+       size : tuple[int, int]
            The size of the terrain in (x, y) dimensions.
-       friction : Tuple[float, float, float]
+       friction : tuple[float, float, float]
            Sliding, torsional, and rolling friction coefficients, by default
            (1, 0.005, 0.0001)
        obj_radius : float
            Radius of the spherical floating object in mm.
-       obj_spawn_pos : Tuple[float,float,float]
+       obj_spawn_pos : tuple[float,float,float]
            Initial position of the object, by default (0, 2, 1).
        move_direction : str
            Which way the ball moves toward first. Can be "left", "right", or
@@ -296,10 +296,10 @@ We start by defining some attributes in its ``__init__`` method:
 
        def __init__(
            self,
-           size: Tuple[float, float] = (300, 300),
-           friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+           size: tuple[float, float] = (300, 300),
+           friction: tuple[float, float, float] = (1, 0.005, 0.0001),
            obj_radius: float = 1,
-           init_ball_pos: Tuple[float, float] = (5, 0),
+           init_ball_pos: tuple[float, float] = (5, 0),
            move_speed: float = 8,
            move_direction: str = "right",
        ):
@@ -473,7 +473,7 @@ per side).
 
 .. code:: python
 
-   class VisualTaxis(HybridTurningNMF):
+   class VisualTaxis(HybridTurningController):
        def __init__(self, obj_threshold=0.15, decision_interval=0.05, **kwargs):
            super().__init__(**kwargs)
 

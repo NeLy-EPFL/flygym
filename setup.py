@@ -3,10 +3,13 @@ from setuptools import setup, find_packages
 
 setup(
     name="flygym",
-    version="1.0.0",
+    version="1.2.0",
     author="Neuroengineering Laboratory, EPFL",
     author_email="sibo.wang@epfl.ch",
-    description="Gym environments for NeuroMechFly in various physics simulators",
+    description=(
+        "Implementation of NeuroMechFly v2, framework for simulating embodied "
+        "sensorimotor control in adult Drosophila"
+    ),
     packages=find_packages(),
     package_data={"flygym": ["data/*", "config.yaml"]},
     include_package_data=True,
@@ -17,7 +20,8 @@ setup(
     ],
     install_requires=[
         "gymnasium",
-        "numpy<2",
+        "numpy; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+        "numpy<2; sys_platform == 'darwin' and platform_machine == 'x86_64'",  # torch won't work on intel macs with numpy >= 2 (#231)
         "scipy",
         "pyyaml",
         "jupyter",
@@ -26,8 +30,8 @@ setup(
         "imageio[pyav]",
         "imageio[ffmpeg]",
         "tqdm",
-        "mujoco>=2.1.2,<3.2.7",
-        "dm_control",
+        "mujoco==3.2.3",
+        "dm_control==1.0.23",
         "numba",
         "opencv-python",
     ],
@@ -56,7 +60,7 @@ setup(
             "torch",
             "phiflow==2.3.0",
             "h5py",
-            "toolz",  # remove when it's added to flyvis's requirements.txt (flyvis #2)
+            "flyvis==1.1.2",
         ],
     },
     url="https://neuromechfly.org/",

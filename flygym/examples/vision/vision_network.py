@@ -1,32 +1,33 @@
 import numpy as np
 import torch
-import flyvision
+import flyvis
 import warnings
 from torch import Tensor
 from typing import Union, Optional
-from flyvision.utils.tensor_utils import AutoDeref
-from flyvision.network import Network, NetworkView, IntegrationWarning
-from flyvision.rendering import BoxEye
+from flyvis.utils.tensor_utils import AutoDeref
+from flyvis.network import NetworkView
+from flyvis.network.network import Network, IntegrationWarning
+from flyvis.datasets.rendering import BoxEye
 from flygym.vision import Retina
 
 
 device = torch.device("cpu")
 torch.set_default_device(device)
-flyvision.device = torch.device(device)
+flyvis.device = torch.device(device)
 
 
 class RealTimeVisionNetwork(Network):
     """
-    This class extends ``flyvision.network.Network``. The main difference
-    is that ``flyvision.network.Network`` receives the entire history of
+    This class extends ``flyvis.network.Network``. The main difference
+    is that ``flyvis.network.Network`` receives the entire history of
     visual input as a block, which enables more efficient computation on
     the GPU. In contrast, ``RealTimeVisionNetwork`` receives visual input
     one frame at a time, allowing for deployment in closed-loop
-    simulations. See `flyvision`_ and `Lappalainen et al., 2023`_ for
+    simulations. See `flyvis`_ and `Lappalainen et al., 2024`_ for
     more details.
 
-    .. _flyvision: https://github.com/TuragaLab/flyvis
-    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    .. _flyvis: https://github.com/TuragaLab/flyvis
+    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
     """
 
     def setup_step_by_step_simulation(
@@ -147,9 +148,9 @@ class RealTimeVisionNetwork(Network):
             If ``as_states`` is set to True in ``__init__``, this returns
             the network state after stepping the network simulation by one
             step. The return value is of type
-            ``flyvision.utils.tensor_utils.AutoDeref``. Otherwise, the
+            ``flyvis.utils.tensor_utils.AutoDeref``. Otherwise, the
             actual activities of the nodes are returned as a torch tensor
-            (i.e., agnostic to the flyvision state representation).
+            (i.e., agnostic to the flyvis state representation).
         """
         self._check_step_by_step_simulation_setup()
 
@@ -187,13 +188,13 @@ class RealTimeVisionNetwork(Network):
 
 class RealTimeVisionNetworkView(NetworkView):
     """
-    This class extends ``flyvision.network.NetworkView`` to work with our
+    This class extends ``flyvis.network.NetworkView`` to work with our
     extended ``RealTimeVisionNetwork``. In brief, it is used as a handle to
     set up the ``RealTimeVisionNetwork`` from saved checkpoint. See
-    `flyvision`_ and `Lappalainen et al., 2023`_ for more details.
+    `flyvis`_ and `Lappalainen et al., 2024`_ for more details.
 
-    .. _flyvision: https://github.com/TuragaLab/flyvis
-    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    .. _flyvis: https://github.com/TuragaLab/flyvis
+    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
     """
 
     def init_network(
@@ -218,7 +219,7 @@ class RealTimeVisionNetworkView(NetworkView):
         if self._initialized["network"] and network is None:
             return self.network
         self.network = network or RealTimeVisionNetwork(**self.dir.config.network)
-        state_dict = torch.load(self.dir / chkpt, map_location=flyvision.device)
+        state_dict = torch.load(self.dir / chkpt, map_location=flyvis.device)
         self.network.load_state_dict(state_dict["network"])
         self._initialized["network"] = True
         return self.network
@@ -226,12 +227,12 @@ class RealTimeVisionNetworkView(NetworkView):
 
 class RetinaMapper:
     """
-    Both flyvision and flygym use a hexagonal grid of ommatidia to model
+    Both flyvis and flygym use a hexagonal grid of ommatidia to model
     the compound eyes of the fly. To approximate the the correct number of
     ommatidia per eye (about 700-800), the two libraries even share the
     same size of the grid. However, the two libraries use different
     indexing conventions for the ommatidia. This class provides methods to
-    convert stimuli between the coordinate systems of flyvision's
+    convert stimuli between the coordinate systems of flyvis's
     ``BoxEye`` representation and flygym's ``Retina`` representation.
     """
 
@@ -292,7 +293,7 @@ class RetinaMapper:
     def flygym_to_flyvis(self, flygym_stimulus: np.ndarray) -> np.ndarray:
         """
         Convert a stimulus from flygym's ``Retina`` representation to
-        flyvision's ``BoxEye`` representation.
+        flyvis's ``BoxEye`` representation.
 
         Parameters
         ----------
@@ -306,20 +307,20 @@ class RetinaMapper:
         Returns
         -------
         np.ndarray
-            The same values, but now in flyvision's ``BoxEye`` ordering.
+            The same values, but now in flyvis's ``BoxEye`` ordering.
         """
         return flygym_stimulus[..., self._idx_flyvis_to_flygym]
 
     def flyvis_to_flygym(self, flyvis_stimulus: np.ndarray) -> np.ndarray:
         """
-        Convert a stimulus from flyvision's ``BoxEye`` representation to
+        Convert a stimulus from flyvis's ``BoxEye`` representation to
         flygym's ``Retina`` representation.
 
         Parameters
         ----------
         flyvis_stimulus : np.ndarray
             Any value (e.g., intensities, neural activities) associated
-            with the ommatidia in flyvision's ``BoxEye`` ordering. The
+            with the ommatidia in flyvis's ``BoxEye`` ordering. The
             shape is (..., num_ommatidia): in other words, this method
             works as long as the size along the last dimension is the same
             as the number of ommatidia (721).

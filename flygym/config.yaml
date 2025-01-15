@@ -189,10 +189,6 @@ olfaction:
       rel_pos: [0.02, 0.00, -0.10]
       marker_rgba: [0.08, 0.4, 0.9, 1]
 
-flip_detection:
-  ignore_period: 0.1  # in the first N seconds (initialization period), ignore flips
-  min_flip_duration: 0.05  # ignore possible flips shorter than this
-
 paths:
   mjcf:
     deepfly3d: mjcf/neuromechfly_deepfly3d_kinorder_ryp.xml

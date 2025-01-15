@@ -22,6 +22,20 @@ class PlumeNavigationTask(HybridTurningController):
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.
+
+    Parameters
+    ----------
+    fly: Fly
+        The fly object to be used. See
+        ``flygym.example.locomotion.HybridTurningController``.
+    arena: OdorPlumeArena
+        The odor plume arena object to be used. Initialize it before
+        creating the ``PlumeNavigationTask`` object.
+    render_plume_alpha : float
+        The transparency of the plume overlay on the rendered images.
+    intensity_display_vmax : float
+        The maximum intensity value to be displayed on the rendered
+        images.
     """
 
     def __init__(
@@ -32,21 +46,6 @@ class PlumeNavigationTask(HybridTurningController):
         intensity_display_vmax: float = 1.0,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        fly: Fly
-            The fly object to be used. See
-            ``flygym.example.locomotion.HybridTurningController``.
-        arena: OdorPlumeArena
-            The odor plume arena object to be used. Initialize it before
-            creating the ``PlumeNavigationTask`` object.
-        render_plume_alpha : float
-            The transparency of the plume overlay on the rendered images.
-        intensity_display_vmax : float
-            The maximum intensity value to be displayed on the rendered
-            images.
-        """
         super().__init__(fly=fly, arena=arena, **kwargs)
         self.arena = arena
         self._plume_last_update_time = -np.inf

@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -42,10 +42,10 @@ class Parameters:
     friction : float
         Sliding, torsional, and rolling friction coefficients, by default
         (1, 0.005, 0.0001)
-    gravity : Tuple[float, float, float]
+    gravity : tuple[float, float, float]
         Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note that
         the gravity is -9.81 * 1000 due to the scaling of the model.
-    contact_solref: Tuple[float, float]
+    contact_solref: tuple[float, float]
         MuJoCo contact reference parameters (see `MuJoCo documentation
         <https://mujoco.readthedocs.io/en/stable/modeling.html#impedance>`_
         for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
@@ -53,7 +53,7 @@ class Parameters:
         This is to avoid penetration of the leg tips into the ground when
         leg adhesion is enabled. The user might want to decrease the
         stiffness if the stability becomes an issue.
-    contact_solimp: Tuple[float, float, float, float, float]
+    contact_solimp: tuple[float, float, float, float, float]
         MuJoCo contact reference parameters (see `MuJoCo docs
         <https://mujoco.readthedocs.io/en/stable/modeling.html#reference>`_
         for details). By default (9.99e-01, 9.999e-01, 1.0e-03, 5.0e-01,
@@ -71,7 +71,7 @@ class Parameters:
     render_mode : str
         The rendering mode. Can be "saved" or "headless", by default
         "saved".
-    render_window_size : Tuple[int, int]
+    render_window_size : tuple[int, int]
         Size of the rendered images in pixels, by default (640, 480).
     render_playspeed : float
         Play speed of the rendered video, by default 0.2.
@@ -147,9 +147,9 @@ class Parameters:
     tarsus_stiffness: float = 10.0
     tarsus_damping: float = 10.0
     friction: float = (1.0, 0.005, 0.0001)
-    gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3)
-    contact_solref: Tuple[float, float] = (2e-4, 1e3)
-    contact_solimp: Tuple[float, float, float, float, float] = (
+    gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3)
+    contact_solref: tuple[float, float] = (2e-4, 1e3)
+    contact_solimp: tuple[float, float, float, float, float] = (
         9.99e-01,
         9.999e-01,
         1.0e-03,
@@ -160,7 +160,7 @@ class Parameters:
     enable_vision: bool = False
     render_raw_vision: bool = False
     render_mode: str = "saved"
-    render_window_size: Tuple[int, int] = (640, 480)
+    render_window_size: tuple[int, int] = (640, 480)
     render_playspeed: float = 0.2
     render_fps: int = 30
     render_camera: str = "Animat/camera_left"
@@ -203,10 +203,10 @@ class NeuroMechFly(SingleFlySimulation):
         Directory to save simulation data.
     arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
-    spawn_pos : Tuple[float, float, float]
+    spawn_pos : tuple[float, float, float]
         The (x, y, z) position in the arena defining where the fly will be
         spawn, in mm.
-    spawn_orientation : Tuple[float, float, float, float]
+    spawn_orientation : tuple[float, float, float, float]
         The spawn orientation of the fly in the Euler angle format: (x, y,
         z), where x, y, z define the rotation around x, y and z in radian.
     control : str
@@ -216,9 +216,9 @@ class NeuroMechFly(SingleFlySimulation):
         Which initial pose to start the simulation from.
     render_mode : str
         The rendering mode. Can be "saved" or "headless".
-    actuated_joints : List[str]
+    actuated_joints : list[str]
             List of names of actuated joints.
-    contact_sensor_placements : List[str]
+    contact_sensor_placements : list[str]
         List of body segments where contact sensors are placed. By
         default all tarsus segments.
     detect_flip : bool
@@ -253,84 +253,85 @@ class NeuroMechFly(SingleFlySimulation):
         in which time steps the visual inputs have been refreshed. In other
         words, the visual input frames where this mask is False are
         repetitions of the previous updated visual input frames.
+
+    Parameters
+    ----------
+    sim_params : flygym.Parameters
+        Parameters of the MuJoCo simulation.
+    actuated_joints : list[str], optional
+        List of names of actuated joints. By default all active leg
+        DoFs.
+    contact_sensor_placements : list[str], optional
+        List of body segments where contact sensors are placed. By
+        default all tarsus segments.
+    output_dir : Path, optional
+        Directory to save simulation data. If ``None``, no data will
+        be saved. By default None.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    xml_variant: str or Path, optional
+        The variant of the fly model to use. Multiple variants exist
+        because when replaying experimentally recorded behavior, the
+        ordering of DoF angles in multi-DoF joints depends on how they
+        are configured in the upstream inverse kinematics program. Two
+        variants are provided: "seqik" (default) and "deepfly3d" (for
+        legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
+        The ordering of DoFs can be seen from the XML files under
+        ``flygym/data/mjcf/``.
+    spawn_pos : tuple[float, float, float], optional
+        The (x, y, z) position in the arena defining where the fly
+        will be spawn, in mm. By default (0, 0, 0.5).
+    spawn_orientation : tuple[float, float, float], optional
+        The spawn orientation of the fly in the Euler angle format:
+        (x, y, z), where x, y, z define the rotation around x, y and
+        z in radian. By default (0.0, 0.0, pi/2), which leads to a
+        position facing the positive direction of the x-axis. Important:
+        the definition of the spawn orientation has changed since the
+        v1.1.0. Please use the new API (``flygym.Simulation`` and
+        ``flygym.Fly``). See documentation and tutorials at
+        https://neuromechfly.org/.
+    control : str, optional
+        The joint controller type. Can be "position", "velocity", or
+        "torque", by default "position".
+    init_pose : BaseState, optional
+        Which initial pose to start the simulation from. By default
+        "stretch" kinematic pose with all legs fully stretched.
+    floor_collisions :str
+        Which set of collisions should collide with the floor. Can be
+        "all", "legs", "tarsi" or a list of body names. By default
+        "legs".
+    self_collisions : str
+        Which set of collisions should collide with each other. Can be
+        "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
+        body names. By default "legs".
+    detect_flip : bool
+        If True, the simulation will indicate whether the fly has
+        flipped in the ``info`` returned by ``.step(...)``. Flip
+        detection is achieved by checking whether the leg tips are free
+        of any contact for a duration defined in the configuration
+        file. Flip detection is disabled for a period of time at the
+        beginning of the simulation as defined in the configuration
+        file. This avoids spurious detection when the fly is not
+        standing reliably on the ground yet. By default False.
     """
 
     def __init__(
         self,
         sim_params: Parameters = None,
-        actuated_joints: List = preprogrammed.all_leg_dofs,
-        contact_sensor_placements: List = preprogrammed.all_tarsi_links,
+        actuated_joints: list = preprogrammed.all_leg_dofs,
+        contact_sensor_placements: list = preprogrammed.all_tarsi_links,
         output_dir: Optional[Path] = None,
         arena: BaseArena = None,
         xml_variant: Union[str, Path] = "seqik",
-        spawn_pos: Tuple[float, float, float] = (0.0, 0.0, 0.5),
-        spawn_orientation: Tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
+        spawn_pos: tuple[float, float, float] = (0.0, 0.0, 0.5),
+        spawn_orientation: tuple[float, float, float] = (0.0, 0.0, np.pi / 2),
         control: str = "position",
         init_pose: Union[str, state.KinematicPose] = "stretch",
-        floor_collisions: Union[str, List[str]] = "legs",
-        self_collisions: Union[str, List[str]] = "legs",
+        floor_collisions: Union[str, list[str]] = "legs",
+        self_collisions: Union[str, list[str]] = "legs",
         detect_flip: bool = False,
     ) -> None:
-        """Initialize a NeuroMechFly environment.
-
-        Parameters
-        ----------
-        sim_params : flygym.Parameters
-            Parameters of the MuJoCo simulation.
-        actuated_joints : List[str], optional
-            List of names of actuated joints. By default all active leg
-            DoFs.
-        contact_sensor_placements : List[str], optional
-            List of body segments where contact sensors are placed. By
-            default all tarsus segments.
-        output_dir : Path, optional
-            Directory to save simulation data. If ``None``, no data will
-            be saved. By default None.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        xml_variant: str or Path, optional
-            The variant of the fly model to use. Multiple variants exist
-            because when replaying experimentally recorded behavior, the
-            ordering of DoF angles in multi-DoF joints depends on how they
-            are configured in the upstream inverse kinematics program. Two
-            variants are provided: "seqik" (default) and "deepfly3d" (for
-            legacy data produced by DeepFly3D, Gunel et al., eLife, 2019).
-            The ordering of DoFs can be seen from the XML files under
-            ``flygym/data/mjcf/``.
-        spawn_pos : Tuple[float, float, float], optional
-            The (x, y, z) position in the arena defining where the fly
-            will be spawn, in mm. By default (0, 0, 0.5).
-        spawn_orientation : Tuple[float, float, float], optional
-            The spawn orientation of the fly in the Euler angle format:
-            (x, y, z), where x, y, z define the rotation around x, y and
-            z in radian. By default (0.0, 0.0, pi/2), which leads to a
-            position facing the positive direction of the x-axis.
-        control : str, optional
-            The joint controller type. Can be "position", "velocity", or
-            "torque", by default "position".
-        init_pose : BaseState, optional
-            Which initial pose to start the simulation from. By default
-            "stretch" kinematic pose with all legs fully stretched.
-        floor_collisions :str
-            Which set of collisions should collide with the floor. Can be
-            "all", "legs", "tarsi" or a list of body names. By default
-            "legs".
-        self_collisions : str
-            Which set of collisions should collide with each other. Can be
-            "all", "legs", "legs-no-coxa", "tarsi", "none", or a list of
-            body names. By default "legs".
-        detect_flip : bool
-            If True, the simulation will indicate whether the fly has
-            flipped in the ``info`` returned by ``.step(...)``. Flip
-            detection is achieved by checking whether the leg tips are free
-            of any contact for a duration defined in the configuration
-            file. Flip detection is disabled for a period of time at the
-            beginning of the simulation as defined in the configuration
-            file. This avoids spurious detection when the fly is not
-            standing reliably on the ground yet. By default False.
-        """
-
         warnings.warn(
             "Deprecation warning: The `NeuroMechFly` class has been "
             "restructured into `Simulation`, `Fly`, and `Camera`."

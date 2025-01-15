@@ -8,6 +8,9 @@ Code of conduct & licensing
 ---------------------------
 Please respect the `Contributor Covenant Code of Conduct <https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.txt>`_. FlyGym is made open source under `Apache License 2.0 <https://github.com/NeLy-EPFL/flygym/blob/main/LICENSE>`_. By contributing to this package (including any issue, pull request, and discussion), you agree that your content will be shared under the same license.
 
+Versioning
+----------
+FlyGym uses `EffVer <https://jacobtomlinson.dev/effver/>`_ versioning system, which is based on the amount of effort that users are expected to spend to adopt the new version. The version number is in the format of ``X.Y.Z``, where ``X`` is the macro version, ``Y`` is the meso version, and ``Z`` is the micro version. When a macro version is updated, it means that a large effort is required to adopt the new version. When a meso version is updated, it means that a some effort is required to adopt the new version. When a micro version is updated, it means that no effort is required at all (e.g. bug fixes or optimizations that are not exposed to the API).
 
 Branches
 --------
@@ -25,7 +28,7 @@ Documentation
 -------------
 We use the  `NumPy Docstring Style <https://numpydoc.readthedocs.io/en/latest/format.html>`_. We use a line length limit of 75 characters for docstrings. Please stick with the NumPy style so the API reference can be generated automatically.
 
-The source files (in RST) of the documentation website are located in the ``doc/source`` folder. The API reference is generated automatically using `Sphinx <https://www.sphinx-doc.org/en/master/>`_. The documentation is written in `reStructuredText <https://sphinx-tutorial.readthedocs.io/step-1/>`_ (RST). When you merge a pull request into the main branch, the documentation is automatically built and deployed on `neuromechfly.org <https://neuromechfly.org/>`_. If you want to check the documentation on a branch (that is not `main`) locally, you can run `make html` under the `doc` folder. The generated HTML files will be placed under `doc/build/html`. You can open `doc/build/html/index.html` in your browser to view the documentation.
+The source files (in RST) of the documentation website are located in the ``doc/source`` folder. The API reference is generated automatically using `Sphinx <https://www.sphinx-doc.org/en/master/>`_. The documentation is written in `reStructuredText <https://sphinx-tutorial.readthedocs.io/step-1/>`_ (RST). When you merge a pull request into the main branch, the documentation is automatically built and deployed on `neuromechfly.org <https://neuromechfly.org/>`_. If you want to check the documentation on a branch (that is not ``main``) locally, you can run ``make html`` under the ``doc`` folder. The generated HTML files will be placed under ``doc/build/html``. You can open ``doc/build/html/index.html`` in your browser to view the documentation.
 
 API changes / migration guide
 -----------------------------
