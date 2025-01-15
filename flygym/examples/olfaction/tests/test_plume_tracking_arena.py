@@ -10,6 +10,7 @@ def test_plume_arena():
     )
     arena = OdorPlumeArena(
         plume_data_path=plume_data_path,
+        main_camera_name="",# empty string as no camera is added to the arena for this test
         plume_simulation_fps=20,
         intensity_scale_factor=1.0,
     )
