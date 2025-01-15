@@ -17,9 +17,10 @@ Default ``Simulation``
 * "fly": The fly state as a NumPy array of shape (4, 3). 0th row: x, y, z position of the fly in arena. 1st row: x, y, z velocity of the fly in arena. 2nd row: orientation of fly around x, y, z axes. 3rd row: rate of change of fly orientation.
 * "contact_forces": Readings of the touch contact sensors, one placed for each of the body segments specified in ``Fly.contact_sensor_placements``. This is a NumPy array of shape (num_contact_sensor_placements, 3).
 * "end_effectors": The positions of the end effectors (most distal tarsus link) of the legs as a NumPy array of shape (6, 3). The order of the legs is: LF, LM, LH, RF, RM, RH (L/R = left/right, F/M/H = front/middle/hind).
-* "fly_orientation": NumPy array of shape (3,). This is the vector (x, y, z) pointing toward the direction that the fly is facing.
+* "fly_orientation": [Deprecated] this entry in the observation space is deprecated and will be removed in future releases. Use the "forward" vector from "cardinal_vectors" instead. Previously, this variable is a NumPy array of shape (3,). This is the vector (x, y, z) pointing toward the direction that the fly is facing.
 * "vision" (if ``Fly.enable_vision`` is True): The light intensities sensed by the ommatidia on the compound eyes. This is a NumPy array of shape (2, num_ommatidia_per_eye, 2), where the zeroth dimension is the side (left, right in that order); the second dimension specifies the ommatidium, and the last column is for the spectral channel (yellow-type, pale-type in that order). Each ommatidium only has one channel with nonzero reading. The intensities are given on a [0, 1] scale.
 * "odor_intensity" (if ``Fly.enable_olfaction`` is True): The odor intensities sensed by the odor sensors (by default 2 antennae and 2 maxillary palps). This is a NumPy array of shape (odor_space_dimension, num_sensors).
+* "cardinal_vectors": The cardinal vectors (forward, left, up) of the fly's spatial orientation in the global frame. This is a NumPy array of shape (3, 3) where the 0th dimension specifies forward/left/up in that order, and the 1st dimension specifies the x/y/z components of the vector. Note that the forward vector is a bit tiled up; therefore if the fly is walking perfectly forward on the floor, one should expect a non-negligible positive z component in the forward vector (and a non-negligible negative value in the x component of the up vector).
 
 **Info:** The info dictionary contains the following:
 
@@ -80,15 +81,19 @@ Plume tracking task (``PlumeNavigationTask``)
 
 
 
-NeuroMechFly with connectome-constrained vision network (``RealisticVisionController``)
+NeuroMechFly with connectome-constrained vision network (``RealisticVisionFly``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Action, reward, termination, and truncation:** The ``flygym.examples.realistic_vision.RealisticVisionController`` class expects the same action and returns the same reward, "terminated" flag, and "truncated" flags as ``HybridTurningController``.
+.. important::
 
-**Observation:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.realistic_vision.RealisticVisionController`` class also provides the following in the observation dictionary:
+   Note that ``RealisticVisionFly`` is an extension of ``Fly``, not ``Simulation``. The action and observation spaces of the simulation are modified accordingly nonetheless at the level of each flies.
+
+**Action, reward, termination, and truncation:** The ``flygym.examples.vision.RealisticVisionFly`` class expects the same action and returns the same reward, "terminated" flag, and "truncated" flags as ``HybridTurningController``.
+
+**Observation:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.vision.RealisticVisionFly`` class also provides the following in the observation dictionary:
 
 * "nn_activities_arr": The activities of the visual system neurons, represented as a NumPy array of shape (2, num_cells_per_eye). The 0th dimension corresponds to the eyes in the order (left, right).
 
-**Info:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.realistic_vision.RealisticVisionController`` class also provides the following in the "info" dictionary:
+**Info:** In addition to what is returned by the ``HybridTurningController``, the ``flygym.examples.vision.RealisticVisionFly`` class also provides the following in the "info" dictionary:
 
-* "nn_activities": Activities of the visual system neurons as a ``flyvision.LayerActivity`` object. This is similar to ``obs["nn_activities_arr"]`` but in the form of a ``flyvision.LayerActivity`` object rather than a plain array.
+* "nn_activities": Activities of the visual system neurons as a ``flyvis.LayerActivity`` object. This is similar to ``obs["nn_activities_arr"]`` but in the form of a ``flyvis.LayerActivity`` object rather than a plain array.

@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from torch.utils.data import Dataset
 from pathlib import Path
-from typing import Tuple, Optional, Callable
+from typing import Optional, Callable
 
 
 class JointAngleScaler:
@@ -87,19 +87,6 @@ class WalkingDataset(Dataset):
     """
     PyTorch Dataset class for walking data.
 
-    Parameters
-    ----------
-    sim_data_file : Path
-        The path to the simulation data file.
-    contact_force_thr : Tuple[float, float, float], optional
-        The threshold values for contact forces, by default (0.5, 1, 3).
-    joint_angle_scaler : Optional[Callable], optional
-        A callable object used to scale joint angles, by default None.
-    ignore_first_n : int, optional
-        The number of initial data points to ignore, by default 200.
-    joint_mask : Optional, optional
-        A mask to apply on joint angles, by default None.
-
     Attributes
     ----------
     gait : str
@@ -133,12 +120,25 @@ class WalkingDataset(Dataset):
     contact_mask : np.ndarray
         The contact force mask (i.e., 1 if leg touching the floor, 0
         otherwise). The shape is (n_samples, 6).
+
+    Parameters
+    ----------
+    sim_data_file : Path
+        The path to the simulation data file.
+    contact_force_thr : tuple[float, float, float], optional
+        The threshold values for contact forces, by default (0.5, 1, 3).
+    joint_angle_scaler : Optional[Callable], optional
+        A callable object used to scale joint angles, by default None.
+    ignore_first_n : int, optional
+        The number of initial data points to ignore, by default 200.
+    joint_mask : Optional, optional
+        A mask to apply on joint angles, by default None.
     """
 
     def __init__(
         self,
         sim_data_file: Path,
-        contact_force_thr: Tuple[float, float, float] = (0.5, 1, 3),
+        contact_force_thr: tuple[float, float, float] = (0.5, 1, 3),
         joint_angle_scaler: Optional[Callable] = None,
         ignore_first_n: int = 200,
         joint_mask=None,

@@ -45,6 +45,55 @@ class HybridTurningFly(Fly):
     stumbling and retraction. The controller also receives a 2D descending
     input to modulate the amplitudes and frequencies of the CPGs to
     accomplish turning.
+
+    Parameters
+    ----------
+    preprogrammed_steps : PreprogrammedSteps, optional
+        Preprogrammed steps to be used for leg movement.
+    intrinsic_freqs : np.ndarray, optional
+        Intrinsic frequencies of the CPGs. See ``CPGNetwork`` for
+        details.
+    intrinsic_amps : np.ndarray, optional
+        Intrinsic amplitudes of the CPGs. See ``CPGNetwork`` for
+        details.
+    phase_biases : np.ndarray, optional
+        Phase biases of the CPGs. See ``CPGNetwork`` for details.
+    coupling_weights : np.ndarray, optional
+        Coupling weights of the CPGs. See ``CPGNetwork`` for details.
+    convergence_coefs : np.ndarray, optional
+        Convergence coefficients of the CPGs. See ``CPGNetwork`` for
+        details.
+    init_phases : np.ndarray, optional
+        Initial phases of the CPGs. See ``CPGNetwork`` for details.
+    init_magnitudes : np.ndarray, optional
+        Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
+    stumble_segments : tuple, optional
+        Leg segments to be used for stumbling detection.
+    stumbling_force_threshold : float, optional
+        Threshold for stumbling detection.
+    correction_vectors : dict, optional
+        Correction vectors for each leg.
+    correction_rates : dict, optional
+        Correction rates for retraction and stumbling.
+    amplitude_range : tuple, optional
+        Range for leg lifting correction.
+    draw_corrections : bool, optional
+        Whether to color-code legs to indicate if correction rules
+        are active in the rendered video.
+    max_increment : float, optional
+        Maximum duration of the correction before it is capped.
+    retraction_persistence_duration : float, optional
+        Time spend in a persistent state (leg is further retracted)
+        even if the rule is no longer active
+    retraction_persistence_initiation_threshold : float, optional
+        Amount of time the leg had to be retracted for for the persistence
+        to be initiated (prevents activation of persistence for noise driven
+        rule activations)
+    seed : int, optional
+        Seed for the random number generator.
+    **kwargs
+        Additional keyword arguments to be passed to
+        ``SingleFlySimulation.__init__``.
     """
 
     def __init__(
@@ -70,56 +119,6 @@ class HybridTurningFly(Fly):
         seed=0,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        preprogrammed_steps : PreprogrammedSteps, optional
-            Preprogrammed steps to be used for leg movement.
-        intrinsic_freqs : np.ndarray, optional
-            Intrinsic frequencies of the CPGs. See ``CPGNetwork`` for
-            details.
-        intrinsic_amps : np.ndarray, optional
-            Intrinsic amplitudes of the CPGs. See ``CPGNetwork`` for
-            details.
-        phase_biases : np.ndarray, optional
-            Phase biases of the CPGs. See ``CPGNetwork`` for details.
-        coupling_weights : np.ndarray, optional
-            Coupling weights of the CPGs. See ``CPGNetwork`` for details.
-        convergence_coefs : np.ndarray, optional
-            Convergence coefficients of the CPGs. See ``CPGNetwork`` for
-            details.
-        init_phases : np.ndarray, optional
-            Initial phases of the CPGs. See ``CPGNetwork`` for details.
-        init_magnitudes : np.ndarray, optional
-            Initial magnitudes of the CPGs. See ``CPGNetwork`` for details.
-        stumble_segments : tuple, optional
-            Leg segments to be used for stumbling detection.
-        stumbling_force_threshold : float, optional
-            Threshold for stumbling detection.
-        correction_vectors : dict, optional
-            Correction vectors for each leg.
-        correction_rates : dict, optional
-            Correction rates for retraction and stumbling.
-        amplitude_range : tuple, optional
-            Range for leg lifting correction.
-        draw_corrections : bool, optional
-            Whether to color-code legs to indicate if correction rules
-            are active in the rendered video.
-        max_increment : float, optional
-            Maximum duration of the correction before it is capped.
-        retraction_persistence_duration : float, optional
-            Time spend in a persistent state (leg is further retracted)
-            even if the rule is no longer active
-        retraction_persistence_initiation_threshold : float, optional
-            Amount of time the leg had to be retracted for for the persistence
-            to be initiated (prevents activation of persistence for noise driven
-            rule activations)
-        seed : int, optional
-            Seed for the random number generator.
-        **kwargs
-            Additional keyword arguments to be passed to
-            ``SingleFlySimulation.__init__``.
-        """
         self.timestep = timestep
         # Initialize fly
         super().__init__(**kwargs)
@@ -127,7 +126,7 @@ class HybridTurningFly(Fly):
         # Check if we have the correct list of actuated joints
         if self.actuated_joints != all_leg_dofs:
             raise ValueError(
-                "``HybridTurningNMF`` requires a specific set of DoFs, namely "
+                "``HybridTurningFly`` requires a specific set of DoFs, namely "
                 "``flygym.preprogrammed.all_leg_dofs``, to be actuated. A different "
                 "set of DoFs was provided."
             )
@@ -300,7 +299,7 @@ class HybridTurningFly(Fly):
             Whether the correction condition is met.
         curr_amount : float
             Current correction amount.
-        correction_rates : Tuple[float, float]
+        correction_rates : tuple[float, float]
             Correction rates for increment and decrement.
         viz_segment : str
             Name of the segment to color code. If None, no color coding is
@@ -336,6 +335,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         seed : int, optional
             Seed for the random number generator. If None, the simulation
             is re-seeded without a specific seed. For reproducibility,
@@ -369,6 +370,8 @@ class HybridTurningFly(Fly):
 
         Parameters
         ----------
+        sim : Simulation
+            Simulation object.
         action : np.ndarray
             Array of shape (2,) containing descending signal encoding
             turning.

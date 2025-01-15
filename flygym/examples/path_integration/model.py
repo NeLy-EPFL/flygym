@@ -1,14 +1,13 @@
 import numpy as np
-from typing import Dict, Tuple, Callable
 from flygym.examples.path_integration import util
 
 
 def path_integrate(
-    trial_data: Dict[str, np.ndarray],
+    trial_data: dict[str, np.ndarray],
     heading_model: "LinearModel",
     displacement_model: "LinearModel",
     time_scale: float,
-    contact_force_thr: Tuple[float, float, float],
+    contact_force_thr: tuple[float, float, float],
     legs: str,
     dt: float,
 ):
@@ -17,7 +16,7 @@ def path_integrate(
 
     Parameters
     ----------
-    trial_data : Dict[str, np.ndarray]
+    trial_data : dict[str, np.ndarray]
         Dictionary containing trial data.
     heading_model : LinearModel
         Model for predicting change in heading.
@@ -25,7 +24,7 @@ def path_integrate(
         Model for predicting change in displacement.
     time_scale : float
         Time scale for path integration.
-    contact_force_thr : Tuple[float, float, float]
+    contact_force_thr : tuple[float, float, float]
         Thresholds for contact forces. These are used to determine whether
         a leg is in contact with the ground.
     legs : str
@@ -36,7 +35,7 @@ def path_integrate(
 
     Returns
     -------
-    Dict[str, np.ndarray]
+    dict[str, np.ndarray]
         Dictionary containing the following keys:
         * "heading_pred": Predicted heading.
         * "heading_actual": Actual heading.

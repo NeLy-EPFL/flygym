@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Union
 
 import gymnasium as gym
 import numpy as np
@@ -16,15 +16,15 @@ class Simulation(gym.Env):
 
     Attributes
     ----------
-    flies : List[flygym.fly.Fly]
+    flies : list[flygym.fly.Fly]
         List of flies in the simulation.
-    cameras : List[flygym.camera.Camera]
+    cameras : list[flygym.camera.Camera]
         List of cameras in the simulation.
     arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     timestep: float
         Simulation timestep in seconds.
-    gravity : Tuple[float, float, float]
+    gravity : tuple[float, float, float]
         Gravity in (x, y, z) axes. Note that the gravity is -9.81 * 1000
         due to the scaling of the model.
     curr_time : float
@@ -32,6 +32,23 @@ class Simulation(gym.Env):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
+
+    Parameters
+    ----------
+    flies : Iterable[flygym.fly.Fly] or Fly
+        List of flies in the simulation.
+    cameras : Iterable[flygym.camera.Camera] or Camera, optional
+        List of cameras in the simulation. Defaults to the left camera
+        of the first fly.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    timestep : float
+        Simulation timestep in seconds, by default 0.0001.
+    gravity : tuple[float, float, float]
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+        that the gravity is -9.81 * 1000 due to the scaling of the
+        model.
     """
 
     def __init__(
@@ -40,26 +57,8 @@ class Simulation(gym.Env):
         cameras: Union[Iterable[Camera], Camera, None],
         arena: BaseArena = None,
         timestep: float = 0.0001,
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
+        gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
-        """
-        Parameters
-        ----------
-        flies : Iterable[flygym.fly.Fly] or Fly
-            List of flies in the simulation.
-        cameras : Iterable[flygym.camera.Camera] or Camera, optional
-            List of cameras in the simulation. Defaults to the left camera
-            of the first fly.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        timestep : float
-            Simulation timestep in seconds, by default 0.0001.
-        gravity : Tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
-            that the gravity is -9.81 * 1000 due to the scaling of the
-            model.
-        """
         if isinstance(flies, Iterable):
             self.flies = list(flies)
         else:
@@ -139,8 +138,8 @@ class Simulation(gym.Env):
             fly.observation_space = value[fly.name]
 
     def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
-    ) -> Tuple[ObsType, Dict[str, Any]]:
+        self, *, seed: Optional[int] = None, options: Optional[dict] = None
+    ) -> tuple[ObsType, dict[str, Any]]:
         """Reset the Simulation.
 
         Parameters
@@ -149,7 +148,7 @@ class Simulation(gym.Env):
             Random seed for the simulation. The provided base simulation
             is deterministic, so this does not have an effect unless
             extended by the user.
-        options : Dict
+        options : dict
             Additional parameter for the simulation. There is none in the
             provided base simulation, so this does not have an effect
             unless extended by the user.
@@ -158,7 +157,7 @@ class Simulation(gym.Env):
         -------
         ObsType
             The observation as defined by the simulation environment.
-        Dict[str, Any]
+        dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default but the user can
             override this method to return additional information.
@@ -181,7 +180,7 @@ class Simulation(gym.Env):
 
     def step(
         self, action: ObsType
-    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+    ) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
         """Step the simulation.
 
         Parameters
@@ -203,7 +202,7 @@ class Simulation(gym.Env):
         bool
             Whether the episode has terminated due to factors beyond the
             Markov Decision Process (e.g. time limit, etc.).
-        Dict[str, Any]
+        dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default (except when vision is
             enabled; in this case a "vision_updated" boolean variable
@@ -324,13 +323,13 @@ class SingleFlySimulation(Simulation):
     ----------
     fly : flygym.fly.Fly
         The fly in the simulation.
-    cameras : List[flygym.camera.Camera]
+    cameras : list[flygym.camera.Camera]
         List of cameras in the simulation.
     arena : flygym.arena.BaseArena
         The arena in which the fly is placed.
     timestep: float
         Simulation timestep in seconds.
-    gravity : Tuple[float, float, float]
+    gravity : tuple[float, float, float]
         Gravity in (x, y, z) axes. Note that the gravity is -9.81 * 1000
         due to the scaling of the model.
     curr_time : float
@@ -338,6 +337,23 @@ class SingleFlySimulation(Simulation):
     physics: dm_control.mjcf.Physics
         The MuJoCo Physics object built from the arena's MJCF model with
         the fly in it.
+
+    Parameters
+    ----------
+    fly : Fly
+        The fly in the simulation.
+    cameras : Iterable[Fly] or Camera, optional
+        List of cameras in the simulation. Defaults to the left camera
+        of the first fly.
+    arena : flygym.arena.BaseArena, optional
+        The arena in which the fly is placed. ``FlatTerrain`` will be
+        used if not specified.
+    timestep : float
+        Simulation timestep in seconds, by default 0.0001.
+    gravity : tuple[float, float, float]
+        Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
+        that the gravity is -9.81 * 1000 due to the scaling of the
+        model.
     """
 
     def __init__(
@@ -346,26 +362,8 @@ class SingleFlySimulation(Simulation):
         cameras: Union[Camera, Iterable[Camera], None] = None,
         arena: BaseArena = None,
         timestep: float = 0.0001,
-        gravity: Tuple[float, float, float] = (0.0, 0.0, -9.81e3),
+        gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
-        """
-        Parameters
-        ----------
-        fly : Fly
-            The fly in the simulation.
-        cameras : Iterable[Fly] or Camera, optional
-            List of cameras in the simulation. Defaults to the left camera
-            of the first fly.
-        arena : flygym.arena.BaseArena, optional
-            The arena in which the fly is placed. ``FlatTerrain`` will be
-            used if not specified.
-        timestep : float
-            Simulation timestep in seconds, by default 0.0001.
-        gravity : Tuple[float, float, float]
-            Gravity in (x, y, z) axes, by default (0., 0., -9.81e3). Note
-            that the gravity is -9.81 * 1000 due to the scaling of the
-            model.
-        """
         self.fly = fly
         super().__init__(
             flies=[fly],
@@ -392,8 +390,8 @@ class SingleFlySimulation(Simulation):
         self.flies[0].observation_space = value
 
     def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
-    ) -> Tuple[ObsType, Dict[str, Any]]:
+        self, *, seed: Optional[int] = None, options: Optional[dict] = None
+    ) -> tuple[ObsType, dict[str, Any]]:
         """Reset the simulation environment.
 
         Parameters
@@ -402,7 +400,7 @@ class SingleFlySimulation(Simulation):
             Random seed for the environment. The provided base simulation
             is deterministic, so this does not have an effect unless
             extended by the user.
-        options : Dict
+        options : dict
             Additional parameter for the simulation. There is none in the
             provided base simulation, so this does not have an effect
             unless extended by the user.
@@ -411,7 +409,7 @@ class SingleFlySimulation(Simulation):
         -------
         ObsType
             The observation as defined by the environment.
-        Dict[str, Any]
+        dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default but the user can
             override this method to return additional information.
@@ -422,7 +420,7 @@ class SingleFlySimulation(Simulation):
 
     def step(
         self, action: ObsType
-    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+    ) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
         """Step the simulation environment.
 
         Parameters
@@ -443,7 +441,7 @@ class SingleFlySimulation(Simulation):
         bool
             Whether the episode has terminated due to factors beyond the
             Markov Decision Process (e.g. time limit, etc.).
-        Dict[str, Any]
+        dict[str, Any]
             Any additional information that is not part of the observation.
             This is an empty dictionary by default (except when vision is
             enabled; in this case a "vision_updated" boolean variable

@@ -150,10 +150,7 @@ but with the correction amounts set to 0 for simplicity.
     
     from flygym import Fly, Camera
     from flygym.preprogrammed import get_cpg_biases
-    from flygym.examples.path_integration.arena import (
-        PathIntegrationArenaFlat,
-        PathIntegrationArenaBlocks,
-    )
+    from flygym.examples.path_integration import PathIntegrationArenaFlat
 
 
 Let’s define the discrete walking states as an ``Enum`` class (see
@@ -197,7 +194,7 @@ uniformly randomly sampled from 0 to 1 is greater than
 
 .. code-block:: ipython3
 
-    from typing import Tuple, Union
+    from typing import Union
     
     class RandomExplorationController:
         """This controller drives a random exploration: the fly transitions
@@ -209,9 +206,9 @@ uniformly randomly sampled from 0 to 1 is greater than
         def __init__(
             self,
             dt: float,
-            forward_dn_drive: Tuple[float, float] = (1.0, 1.0),
-            left_turn_dn_drive: Tuple[float, float] = (-0.4, 1.2),
-            right_turn_dn_drive: Tuple[float, float] = (1.2, -0.4),
+            forward_dn_drive: tuple[float, float] = (1.0, 1.0),
+            left_turn_dn_drive: tuple[float, float] = (-0.4, 1.2),
+            right_turn_dn_drive: tuple[float, float] = (1.2, -0.4),
             turn_duration_mean: float = 0.4,
             turn_duration_std: float = 0.1,
             lambda_turn: float = 1.0,
@@ -223,11 +220,11 @@ uniformly randomly sampled from 0 to 1 is greater than
             ----------
             dt : float
                 Time step of the simulation.
-            forward_dn_drive : Tuple[float, float], optional
+            forward_dn_drive : tuple[float, float], optional
                 DN drives for forward walking, by default (1.0, 1.0).
-            left_turn_dn_drive : Tuple[float, float], optional
+            left_turn_dn_drive : tuple[float, float], optional
                 DN drives for turning left, by default (-0.4, 1.2).
-            right_turn_dn_drive : Tuple[float, float], optional
+            right_turn_dn_drive : tuple[float, float], optional
                 DN drives for turning right, by default (1.2, -0.4).
             turn_duration_mean : float, optional
                 Mean of the turn duration distribution in seconds, by default
@@ -270,7 +267,7 @@ uniformly randomly sampled from 0 to 1 is greater than
             -------
             WalkingState
                 The next state of the fly.
-            Tuple[float, float]
+            tuple[float, float]
                 The next DN drives.
             """
             # Upon spawning, just walk straight for a bit (init_time) for things to settle
@@ -390,7 +387,6 @@ simulation:
     def run_simulation(
         seed: int = 0,
         running_time: float = 20.0,
-        terrain_type: str = "flat",
         gait: str = "tripod",
         output_dir: Optional[Path] = None,
     ):
@@ -407,15 +403,8 @@ simulation:
             spawn_pos=(0, 0, 0.25),
         )
     
-        if terrain_type == "flat":
-            arena = PathIntegrationArenaFlat()
-        elif terrain_type == "blocks":
-            arena = PathIntegrationArenaBlocks(
-                height_range=(0.2, 0.2), x_range=(-50, 50), y_range=(-50, 50)
-            )
-        else:
-            raise ValueError(f"Unknown terrain type: {terrain_type}")
-    
+        arena = PathIntegrationArenaFlat()
+        
         cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
         sim = PathIntegrationController(
             phase_biases=get_cpg_biases(gait),
@@ -472,7 +461,7 @@ Let’s run a 1-second simulation and plot the fly’s trajectory:
     output_dir.mkdir(parents=True, exist_ok=True)
     
     run_simulation(
-        seed=0, running_time=1.0, terrain_type="flat", gait="tripod", output_dir=output_dir
+        seed=0, running_time=1.0, gait="tripod", output_dir=output_dir
     )
 
 
@@ -584,10 +573,9 @@ and fly position — from the simulation data files.
 .. code-block:: ipython3
 
     import gc
-    from typing import Dict
     
     
-    def load_trial_data(trial_dir: Path) -> Dict[str, np.ndarray]:
+    def load_trial_data(trial_dir: Path) -> dict[str, np.ndarray]:
         """Load simulation data from trial.
         The difference between ``load_trial_data`` and ``extract_variables`` is
         that the former loads the raw data from the trial (i.e., physics
@@ -604,7 +592,7 @@ and fly position — from the simulation data files.
     
         Returns
         -------
-        Dict[str, np.ndarray]
+        dict[str, np.ndarray]
             Dictionary containing the following keys, each mapping to a time
             series saved as a numpy array:
             * "end_effector_pos_diff": End effector positions.
@@ -923,11 +911,11 @@ Let’s implement a function that extracts these variables:
 .. code-block:: ipython3
 
     def extract_variables(
-        trial_data: Dict[str, np.ndarray],
+        trial_data: dict[str, np.ndarray],
         time_scale: float,
-        contact_force_thr: Tuple[float, float, float],
+        contact_force_thr: tuple[float, float, float],
         dt: float = 1e-4,
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """
         Extract variables used for path integration from trial data.
         The difference between ``load_trial_data`` and ``extract_variables`` is
@@ -939,11 +927,11 @@ Let’s implement a function that extracts these variables:
     
         Parameters
         ----------
-        trial_data : Dict[str, np.ndarray]
+        trial_data : dict[str, np.ndarray]
             Dictionary containing trial data.
         time_scale : float
             Time scale for path integration.
-        contact_force_thr : Tuple[float, float, float]
+        contact_force_thr : tuple[float, float, float]
             Thresholds for contact forces. These are used to determine whether
             a leg is in contact with the ground.
         dt : float, optional
@@ -1147,7 +1135,7 @@ class from scikit-learn.
     from sklearn.linear_model import LinearRegression
     
     
-    def fit_1d_linear_model(x: np.ndarray, y: np.ndarray) -> Tuple[LinearRegression, float]:
+    def fit_1d_linear_model(x: np.ndarray, y: np.ndarray) -> tuple[LinearRegression, float]:
         model = LinearRegression()
         model.fit(x, y)
         r2 = model.score(x, y)
@@ -1229,11 +1217,11 @@ We will now implement this integration logic:
     
     
     def path_integrate(
-        trial_data: Dict[str, np.ndarray],
+        trial_data: dict[str, np.ndarray],
         heading_model: Callable,
         displacement_model: Callable,
         time_scale: float,
-        contact_force_thr: Tuple[float, float, float],
+        contact_force_thr: tuple[float, float, float],
         dt: float = 1e-4,
     ):
         """
@@ -1241,7 +1229,7 @@ We will now implement this integration logic:
     
         Parameters
         ----------
-        trial_data : Dict[str, np.ndarray]
+        trial_data : dict[str, np.ndarray]
             Dictionary containing trial data.
         heading_model : Callable
             Model for predicting change in heading.
@@ -1249,7 +1237,7 @@ We will now implement this integration logic:
             Model for predicting change in displacement.
         time_scale : float
             Time scale for path integration.
-        contact_force_thr : Tuple[float, float, float]
+        contact_force_thr : tuple[float, float, float]
             Thresholds for contact forces. These are used to determine whether
             a leg is in contact with the ground.
         dt : float
@@ -1257,7 +1245,7 @@ We will now implement this integration logic:
     
         Returns
         -------
-        Dict[str, np.ndarray]
+        dict[str, np.ndarray]
             Dictionary containing the following keys:
             * "heading_pred": Predicted heading.
             * "heading_actual": Actual heading.

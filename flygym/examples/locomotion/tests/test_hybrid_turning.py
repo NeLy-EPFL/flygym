@@ -1,28 +1,21 @@
-import pytest
 import numpy as np
-import matplotlib.pyplot as plt
 from gymnasium.utils.env_checker import check_env
-from flygym import Fly, SingleFlySimulation
+from flygym import Fly
 from flygym.arena import MixedTerrain
-from flygym.preprogrammed import all_leg_dofs
-from flygym.examples.locomotion import PreprogrammedSteps, HybridTurningController
+from flygym.examples.locomotion import HybridTurningController, HybridTurningNMF
+from flygym.preprogrammed import default_leg_sensor_placements
 
 
-def test_rule_based_controller_nophysics():
+def test_turning():
     run_time = 0.1
     timestep = 1e-4
-    contact_sensor_placements = [
-        f"{leg}{segment}"
-        for leg in ["LF", "LM", "LH", "RF", "RM", "RH"]
-        for segment in ["Tibia", "Tarsus1", "Tarsus2", "Tarsus3", "Tarsus4", "Tarsus5"]
-    ]
 
     np.random.seed(0)
 
     fly = Fly(
         enable_adhesion=True,
         draw_adhesion=True,
-        contact_sensor_placements=contact_sensor_placements,
+        contact_sensor_placements=default_leg_sensor_placements,
     )
     sim = HybridTurningController(
         fly=fly,
@@ -52,3 +45,36 @@ def test_rule_based_controller_nophysics():
 
     assert obs["fly"][0, 0] > 0  # fly has moved forward a little bit
     assert obs["fly"][0, 2] > 0  # fly is still above ground
+
+
+def test_deprecation():
+    timestep = 1e-4
+
+    fly = Fly(
+        enable_adhesion=True,
+        draw_adhesion=True,
+        contact_sensor_placements=default_leg_sensor_placements,
+    )
+    sim = HybridTurningController(
+        fly=fly,
+        cameras=[],
+        timestep=timestep,
+        seed=0,
+        draw_corrections=True,
+        arena=MixedTerrain(),
+    )
+
+    # This should also work but with a warning
+    fly = Fly(
+        enable_adhesion=True,
+        draw_adhesion=True,
+        contact_sensor_placements=default_leg_sensor_placements,
+    )
+    sim = HybridTurningNMF(
+        fly=fly,
+        cameras=[],
+        timestep=timestep,
+        seed=0,
+        draw_corrections=True,
+        arena=MixedTerrain(),
+    )

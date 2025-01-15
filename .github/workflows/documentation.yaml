@@ -15,7 +15,6 @@ jobs:
           pip install --upgrade pip
           pip cache purge
           pip install sphinxcontrib-googleanalytics
-          pip install "flyvision @ https://github.com/Nely-EPFL/flyvis/archive/refs/heads/main.zip"
           pip cache purge
           pip install -e ."[dev,examples]"
           pip install toolz

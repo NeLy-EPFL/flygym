@@ -22,27 +22,26 @@ class VisualTaxis(HybridTurningController):
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.
+
+    Parameters
+    ----------
+    camera : Camera
+        The camera to be used for rendering.
+    obj_threshold : float
+        The threshold for object detection. Minimum and maximum
+        brightness values are 0 and 1. If an ommatidium's intensity
+        reading is below this value, then it is considered that this
+        ommatidium is seeing the object.
+    decision_interval : float
+        The interval between updates of descending drives, in seconds.
+    kwargs
+        Additional keyword arguments to be passed to
+        ``HybridTurningController.__init__``.
     """
 
     def __init__(
         self, camera: Camera, obj_threshold=0.15, decision_interval=0.05, **kwargs
     ):
-        """
-        Parameters
-        ----------
-        camera : Camera
-            The camera to be used for rendering.
-        obj_threshold : float
-            The threshold for object detection. Minimum and maximum
-            brightness values are 0 and 1. If an ommatidium's intensity
-            reading is below this value, then it is considered that this
-            ommatidium is seeing the object.
-        decision_interval : float
-            The interval between updates of descending drives, in seconds.
-        kwargs
-            Additional keyword arguments to be passed to
-            ``HybridTurningController.__init__``.
-        """
         super().__init__(cameras=[camera], **kwargs)
 
         self.obj_threshold = obj_threshold

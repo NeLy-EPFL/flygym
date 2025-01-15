@@ -1,7 +1,7 @@
-import flyvision
+import flyvis
 from torch import Tensor
 from flygym.examples.locomotion import HybridTurningFly
-from flyvision.utils.activity_utils import LayerActivity
+from flyvis.utils.activity_utils import LayerActivity
 from flygym.examples.vision import RealTimeVisionNetworkView, RetinaMapper
 from flygym.simulation import Simulation
 
@@ -9,33 +9,32 @@ from flygym.simulation import Simulation
 class RealisticVisionFly(HybridTurningFly):
     """
     This class extends the ``HybridTurningFly`` to couple it with
-    the visual system network from `Lappalainen et al., 2023`_. This allows
+    the visual system network from `Lappalainen et al., 2024`_. This allows
     the user to receive, as a part of the observation, the activities
     of visual system neurons.
 
-    .. _Lappalainen et al., 2023: https://www.biorxiv.org/content/10.1101/2023.03.11.532232
+    .. _Lappalainen et al., 2024: https://doi.org/10.1038/s41586-024-07939-3
 
     Notes
     -----
-    Please refer to the `"MPD Task Specifications" page
-    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisioncontroller>`__
+    Please refer to the `"MDP Task Specifications" page
+    <https://neuromechfly.org/api_ref/mdp_specs.html#neuromechfly-with-connectome-constrained-vision-network-realisticvisionfly>`__
     of the API references for the detailed specifications of the action
     space, the observation space, the reward, the "terminated" and
     "truncated" flags, and the "info" dictionary.
+
+    Parameters
+    ----------
+    vision_network_dir : str, optional
+        Path to the directory containing the vision network checkpoint.
+        If not provided, model 000 from Lappalainen et al., 2024 will
+        be used.
     """
 
     def __init__(self, vision_network_dir=None, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        vision_network_dir : str, optional
-            Path to the directory containing the vision network checkpoint.
-            If not provided, model 000 from Lappalainen et al., 2023 will
-            be used.
-        """
         super().__init__(*args, **kwargs, enable_vision=True)
         if vision_network_dir is None:
-            vision_network_dir = flyvision.results_dir / "opticflow/000/0000"
+            vision_network_dir = flyvis.results_dir / "opticflow/000/0000"
         vision_network_view = RealTimeVisionNetworkView(vision_network_dir)
         self.vision_network = vision_network_view.init_network(chkpt="best_chkpt")
         self.retina_mapper = RetinaMapper()
@@ -47,7 +46,7 @@ class RealisticVisionFly(HybridTurningFly):
         Same as ``HybridTurningController``, except the additional
         ``nn_activities`` key in the info dictionary, which contains the
         activities of the visual system neurons as a
-        ``flyvision.LayerActivity`` object, and the ``nn_activities_arr``
+        ``flyvis.LayerActivity`` object, and the ``nn_activities_arr``
         key in the observation dictionary, which contains the activities
         of the visual system neurons, represented as a numpy array of shape
         (2, num_cells_per_eye). The 0th dimension corresponds to the eyes
@@ -95,7 +94,7 @@ class RealisticVisionFly(HybridTurningFly):
     def _initialize_vision_network(self, vision_obs):
         vision_obs_grayscale = vision_obs.max(axis=-1)
         visual_input = self.retina_mapper.flygym_to_flyvis(vision_obs_grayscale)
-        visual_input = Tensor(visual_input).to(flyvision.device)
+        visual_input = Tensor(visual_input).to(flyvis.device)
         initial_state = self.vision_network.fade_in_state(
             t_fade_in=1.0,
             dt=1 / self.vision_refresh_rate,
@@ -113,7 +112,7 @@ class RealisticVisionFly(HybridTurningFly):
     def _get_visual_nn_activities(self, vision_obs):
         vision_obs_grayscale = vision_obs.max(axis=-1)
         visual_input = self.retina_mapper.flygym_to_flyvis(vision_obs_grayscale)
-        visual_input = Tensor(visual_input).to(flyvision.device)
+        visual_input = Tensor(visual_input).to(flyvis.device)
         nn_activities_arr = self.vision_network.forward_one_step(visual_input)
         nn_activities_arr = nn_activities_arr.cpu().numpy()
         nn_activities = LayerActivity(

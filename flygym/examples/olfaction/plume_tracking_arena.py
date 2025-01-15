@@ -1,7 +1,6 @@
 import numpy as np
 import h5py
 from dm_control.mujoco import Camera
-from typing import Tuple
 from dm_control import mjcf
 from pathlib import Path
 
@@ -15,8 +14,6 @@ class OdorPlumeArena(BaseArena):
     odor plume. The plume simulation is stored in an HDF5 file. In this
     class, we implement logics that calculate the intensity of the odor
     at the fly's location at the correct time.
-    """
-
     def __init__(
         self,
         plume_data_path: Path,
@@ -24,7 +21,7 @@ class OdorPlumeArena(BaseArena):
         dimension_scale_factor: float = 0.5,
         plume_simulation_fps: float = 200,
         intensity_scale_factor: float = 1.0,
-        friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+        friction: tuple[float, float, float] = (1, 0.005, 0.0001),
         num_sensors: int = 4,
     ):
         """
@@ -135,7 +132,7 @@ class OdorPlumeArena(BaseArena):
 
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
 
     def get_olfaction(self, antennae_pos: np.ndarray) -> np.ndarray:

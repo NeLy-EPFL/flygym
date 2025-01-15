@@ -474,7 +474,7 @@ phases and stepping likelihood scores over time:
             Timestep of the time series in seconds.
         spacing : float, optional
             Spacing between the time series of different legs. Default: 10.
-        legs : List[str], optional
+        legs : list[str], optional
             List of leg names. Default: ["LF", "LM", "LH", "RF", "RM", "RH"].
         ax : matplotlib.axes.Axes, optional
             Axes to plot on. If None, a new figure and axes will be created.

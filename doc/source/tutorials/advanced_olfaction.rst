@@ -78,7 +78,6 @@ Let’s decide on a few hyperparameters defining our plume:
     import numpy as np
     import h5py
     from phi.torch import flow
-    from typing import Tuple
     from tqdm import trange
     from pathlib import Path
     
@@ -216,10 +215,10 @@ step function:
        velocity_prev: flow.Grid,
        smoke_prev: flow.Grid,
        noise: np.ndarray,
-       noise_magnitude: Tuple[float, float] = (0.1, 2),
+       noise_magnitude: tuple[float, float] = (0.1, 2),
        dt: float = 1.0,
        inflow: flow.Grid = None,
-       ) -> Tuple[flow.Grid, flow.Grid]:
+       ) -> tuple[flow.Grid, flow.Grid]:
        """Simulate fluid dynamics by one time step.
 
        Parameters
@@ -230,7 +229,7 @@ step function:
            Smoke density at previous time step.
        noise : np.ndarray
            Brownian noise to be applied as external force.
-       noise_magnitude : Tuple[float, float], optional
+       noise_magnitude : tuple[float, float], optional
            Magnitude of noise to be applied as external force in x and y
            directions, by default (0.1, 2)
        dt : float, optional
@@ -238,7 +237,7 @@ step function:
 
        Returns
        -------
-       Tuple[flow.Grid, flow.Grid]
+       tuple[flow.Grid, flow.Grid]
            Velocity field and smoke density at next time step.
        """
        smoke_next = flow.advect.mac_cormack(smoke_prev, velocity_prev, dt=dt) + inflow
@@ -397,7 +396,7 @@ follows:
                dimension_scale_factor: float = 0.5,
                plume_simulation_fps: float = 200,
                intensity_scale_factor: float = 1.0,
-               friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+               friction: tuple[float, float, float] = (1, 0.005, 0.0001),
                num_sensors: int = 4,
            ):
                """
@@ -415,7 +414,7 @@ follows:
                    simulation. By default 200.
                intensity_scale_factor : float, optional
                    Scaling factor for the intensity of the odor. By default 1.0.
-               friction : Tuple[float, float, float], optional
+               friction : tuple[float, float, float], optional
                    Friction parameters for the floor geom. By default (1, 0.005,
                    0.0001).
                num_sensors : int, optional
@@ -568,7 +567,7 @@ high plume FPS to make the simulation easier to run.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.plume_tracking_arena import OdorPlumeArena
+    from flygym.examples.olfaction import OdorPlumeArena
     
     arena = OdorPlumeArena(
         output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25
@@ -589,7 +588,7 @@ the fly stand still for the sake of this demonstration:
     fly = Fly(
         enable_olfaction=True,
         spawn_pos=(60.0, 30.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
     sim = SingleFlySimulation(fly=fly, arena=arena, cameras=[cam])
@@ -855,7 +854,7 @@ Let’s run a sample simulation where the fly walks blindly forward:
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.plume_tracking_task import PlumeNavigationTask
+    from flygym.examples.olfaction import PlumeNavigationTask
     
     arena = OdorPlumeArena(
         output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25
@@ -874,7 +873,7 @@ Let’s run a sample simulation where the fly walks blindly forward:
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(60.0, 30.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
     
@@ -1359,7 +1358,7 @@ Now, let’s run this controller:
         contact_sensor_placements=contact_sensor_placements,
         # Here the opposite spawn position can be tried (65.0, 15.0, 0.25)
         spawn_pos=(65.0, 45.0, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
     
     wind_dir = [1.0, 0.0]

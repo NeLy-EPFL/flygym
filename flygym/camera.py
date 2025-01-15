@@ -263,7 +263,7 @@ class Camera:
             )
 
         self._frames.append(img)
-        self._last_render_time = curr_time
+        self._timestamp_per_frame.append(curr_time)
         return img
 
     def reset(self):

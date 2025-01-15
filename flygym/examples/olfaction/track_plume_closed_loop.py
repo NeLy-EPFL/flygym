@@ -62,7 +62,7 @@ def run_simulation(
         enable_vision=False,
         contact_sensor_placements=contact_sensor_placements,
         spawn_pos=(*initial_position, 0.25),
-        spawn_orientation=(0, 0, -np.pi / 2),
+        spawn_orientation=(0, 0, -np.pi),
     )
 
     main_camera_name = "birdeye_cam"

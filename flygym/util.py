@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gymnasium.core import ObsType
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 
 def get_data_path(package: str, file: str) -> Path:
@@ -22,14 +22,14 @@ def get_data_path(package: str, file: str) -> Path:
         return Path(pkg_resources.resource_filename(package, file)).absolute()
 
 
-def load_config() -> Dict[str, Any]:
+def load_config() -> dict[str, Any]:
     """Load the YAML configuration file as a dictionary."""
     with open(get_data_path("flygym", "config.yaml"), "r") as f:
         return yaml.safe_load(f)
 
 
 def plot_mujoco_rollout(
-    obs_list: List[ObsType], timestep: float, out_dir: Path
+    obs_list: list[ObsType], timestep: float, out_dir: Path
 ) -> None:
     """Plot the fly position and joint angle time series of a simulation
     and save the image to file. This function is used for debugging."""
