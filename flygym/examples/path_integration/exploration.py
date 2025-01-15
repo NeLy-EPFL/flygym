@@ -212,7 +212,7 @@ if __name__ == "__main__":
     def wrapper(gait, seed):
         run_simulation(
             seed=seed,
-            running_time=0.5,
+            running_time=20,
             terrain_type="flat",
             gait=gait,
             live_display=False,
