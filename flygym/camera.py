@@ -7,7 +7,6 @@ import flygym.util as util
 
 
 import cv2
-import dm_control.mujoco
 import imageio
 import numpy as np
 from dm_control import mjcf
@@ -16,8 +15,6 @@ from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
 
 from typing import Tuple, List, Dict, Any, Optional
-
-from abc import ABC, abstractmethod
 
 # Would like it to always draw gravity in the upper right corner
 # Check if contact need to be drawn (outside of the image)
@@ -33,7 +30,7 @@ class Camera:
         attachment_point: mjcf.element._AttachableElement,
         camera_name: str,
         attachment_name: str = None,
-        targeted_flies_id: int = [],
+        targeted_fly_names: List[str] = [],
         window_size: Tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
         fps: int = 30,
@@ -71,7 +68,7 @@ class Camera:
             Attachment point pf the camera
         attachment_name : str
             Name of the attachment point
-        targeted_flies_id: List(int)
+        targeted_fly_names: List[str]
             Index of the flies the camera is looking at. The first index is the focused fly that is tracked if using a
             complex camera. The rest of the indices are used to draw the contact forces.
         camera_name : str
@@ -120,7 +117,7 @@ class Camera:
             video will not be saved. By default None.
         """
         self.attachment_point = attachment_point
-        self.targeted_flies_id = targeted_flies_id
+        self.targeted_fly_names = targeted_fly_names
 
         config = util.load_config()
 
@@ -160,7 +157,7 @@ class Camera:
         self.contact_threshold = contact_threshold
         self.perspective_arrow_length = perspective_arrow_length
 
-        if self.draw_contacts and len(self.targeted_flies_id) <= 0:
+        if self.draw_contacts and len(self.targeted_fly_names) <= 0:
             logging.warning(
                 "Overriding `draw_contacts` to False because no flies are targeted."
             )
@@ -233,7 +230,7 @@ class Camera:
         img = physics.render(width=width, height=height, camera_id=self.camera_id)
         img = img.copy()
         if self.draw_contacts:
-            for i in range(len(self.targeted_flies_id)):
+            for i in range(len(self.targeted_fly_names)):
                 img = self._draw_contacts(img, physics, last_obs[i])
         if self.draw_gravity:
             img = self._draw_gravity(img, physics, last_obs[0]["pos"])
@@ -490,13 +487,13 @@ class Camera:
         return img
 
 
-class ZStabCamera(Camera):
+class ZStabilizedCamera(Camera):
     """Camera that stabilizes the z-axis of the camera to the floor height."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Raise error if targeted flies are empty
-        if len(self.targeted_flies_id) == 0:
+        if len(self.targeted_fly_names) == 0:
             raise ValueError(
                 "No flies are targeted by the camera. "
                 "Stabilized cameras require at least one fly to target."
@@ -523,7 +520,7 @@ class ZStabCamera(Camera):
         return
 
 
-class YawOnlyCamera(ZStabCamera):
+class YawOnlyCamera(ZStabilizedCamera):
     """Camera that stabilizes the z-axis of the camera to the floor height and
     only changes the yaw of the camera to follow the fly hereby preventing unnecessary
     camera rotations.

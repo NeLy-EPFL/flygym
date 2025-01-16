@@ -5,7 +5,7 @@ from tqdm import trange
 from pathlib import Path
 from typing import Optional
 
-from flygym import Fly, ZStabCamera, is_rendering_skipped
+from flygym import Fly, ZStabilizedCamera, is_rendering_skipped
 from flygym.util import get_data_path
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.path_integration.arena import (
@@ -129,9 +129,9 @@ def run_simulation(
 
     cam_params = {"mode": "track", "pos": (0, 0, 150), "euler": (0, 0, 0), "fovy": 60}
 
-    cam = ZStabCamera(
+    cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
-        targeted_flies_id=[0],
+        targeted_fly_names=[fly.name],
         attachment_name=fly.name,
         camera_name="birdeye_cam",
         timestamp_text=False,
