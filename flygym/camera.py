@@ -19,7 +19,7 @@ from typing import Tuple, List, Dict, Any, Optional
 
 from abc import ABC, abstractmethod
 
-# Would like it to always draw gravitiy in the upper right corner
+# Would like it to always draw gravity in the upper right corner
 # Check if contact need to be drawn (outside of the image)
 # New gravity camera
 
@@ -54,7 +54,7 @@ class Camera:
         output_path: Optional[Union[str, Path]] = None,
     ):
         """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
-        A set of preset congigurations are available in the config file:
+        A set of preset configurations are available in the config file:
         - Simple cameras like: "camera_top" "camera_right", "camera_left",
         "camera_front", "camera_back", "camera_bottom"
         - Compound rotated cameras with different zoom levels: "camera_top_right", "camera_top_zoomout"
@@ -68,9 +68,9 @@ class Camera:
         Parameters
         ----------
         attachment_point: dm_control.mjcf.element._AttachableElement
-            Attachement point pf the camera
+            Attachment point pf the camera
         attachment_name : str
-            Name of the attachement point
+            Name of the attachment point
         targeted_flies_id: List(int)
             Index of the flies the camera is looking at. The first index is the focused fly that is tracked if using a
             complex camera. The rest of the indices are used to draw the contact forces.
@@ -136,7 +136,7 @@ class Camera:
 
         camera_parameters["name"] = camera_name
 
-        # get a first value before spawning: usefull for the zstab cam
+        # get a first value before spawning: useful for the zstab cam
         self.camera_base_offset = np.array(camera_parameters.get("pos", np.zeros(3)))
 
         self._cam, self.camera_id = self._add_camera(
@@ -189,13 +189,13 @@ class Camera:
         self._frames: list[np.ndarray] = []
         self._timestamp_per_frame: list[float] = []
 
-    def _add_camera(self, attachement, camera_parameters, attachement_name):
+    def _add_camera(self, attachment, camera_parameters, attachment_name):
         """Add a camera to the model."""
-        camera = attachement.add("camera", **camera_parameters)
-        if attachement_name is None:
+        camera = attachment.add("camera", **camera_parameters)
+        if attachment_name is None:
             camera_id = camera.name
         else:
-            camera_id = attachement_name + "/" + camera.name
+            camera_id = attachment_name + "/" + camera.name
 
         return camera, camera_id
 
@@ -495,7 +495,7 @@ class ZStabCamera(Camera):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Raise error if targetted flies are empty
+        # Raise error if targeted flies are empty
         if len(self.targeted_flies_id) == 0:
             raise ValueError(
                 "No flies are targeted by the camera. "
