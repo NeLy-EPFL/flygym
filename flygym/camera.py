@@ -185,9 +185,9 @@ class Camera:
         else:
             self.output_path = None
 
-        self._last_render_time = -np.inf
         self._eff_render_interval = self.play_speed / self.fps
         self._frames: list[np.ndarray] = []
+        self._timestamp_per_frame: list[float] = []
 
     def _add_camera(self, attachement, camera_parameters, attachement_name):
         """Add a camera to the model."""
@@ -268,7 +268,7 @@ class Camera:
 
     def reset(self):
         self._frames.clear()
-        self._last_render_time = -np.inf
+        self._timestamp_per_frame = []
 
     def save_video(self, path: Union[str, Path], stabilization_time=0.02):
         """Save rendered video since the beginning or the last ``reset()``,
@@ -291,13 +291,12 @@ class Camera:
                 "loop."
             )
 
-        num_stab_frames = int(np.ceil(stabilization_time / self._eff_render_interval))
-
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         logging.info(f"Saving video to {path}")
         with imageio.get_writer(path, fps=self.fps) as writer:
-            for frame in self._frames[num_stab_frames:]:
-                writer.append_data(frame)
+            for frame, timestamp in zip(self._frames, self._timestamp_per_frame):
+                if timestamp >= stabilization_time:
+                    writer.append_data(frame)
 
     def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         """Update the camera position and rotation based on the fly position and orientation.
