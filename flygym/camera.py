@@ -10,8 +10,6 @@ import cv2
 import imageio
 import numpy as np
 from dm_control import mjcf
-from dm_control.utils import transformations
-from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
 
 from typing import Tuple, List, Dict, Any, Optional
@@ -224,7 +222,7 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        self.update_camera(physics, floor_height, last_obs[0])
+        self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
         img = physics.render(width=width, height=height, camera_id=self.camera_id)
@@ -295,7 +293,7 @@ class Camera:
                 if timestamp >= stabilization_time:
                     writer.append_data(frame)
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         """Update the camera position and rotation based on the fly position and orientation.
         Used only for the complex camera that require updating the camera position and rotation
         on top of the default behavior"""
@@ -515,7 +513,7 @@ class ZStabilizedCamera(Camera):
         cam_pos[2] = floor_height + self.camera_base_offset[2]
         cam.xpos = cam_pos
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         self._update_cam_pos(physics, floor_height)
         return
 
@@ -532,11 +530,11 @@ class YawOnlyCamera(ZStabilizedCamera):
         self.prev_yaw = None
         self.init_yaw = None
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         smoothed_yaw = self._smooth_yaw(obs["rot"][0])
         correction = R.from_euler("xyz", [0, 0, smoothed_yaw - self.init_yaw])
         self._update_cam_pos(physics, floor_height, correction, obs["pos"])
-        self.update_cam_rot(physics, correction)
+        self._update_cam_rot(physics, correction)
 
         self.prev_yaw = obs["rot"][0]
 
@@ -549,7 +547,7 @@ class YawOnlyCamera(ZStabilizedCamera):
             self.smoothing * np.cos(self.prev_yaw) + (1 - self.smoothing) * np.cos(yaw),
         )
 
-    def update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
+    def _update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
         physics.bind(self._cam).xmat = (
             (yaw_correction * self.camera_base_rot).as_matrix().flatten()
         )
@@ -581,7 +579,7 @@ class GravityAlignedCamera(Camera):
         self.grav_rot = None
         self.cam_matrix = np.zeros((3, 3))
 
-    def update_gravrot(self, gravity):
+    def _update_gravrot(self, gravity):
         """
         Update the rotation matrix that aligns the gravity vector with the z-axis
         """
@@ -589,14 +587,14 @@ class GravityAlignedCamera(Camera):
         gravity_norm = gravity / np.linalg.norm(gravity)
         self.grav_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.gravity is None or np.any(physics.model.opt.gravity != self.gravity):
             print("updating gravity")
-            self.update_gravrot(physics.model.opt.gravity.copy())
-        self.update_cam_rot(physics)
+            self._update_gravrot(physics.model.opt.gravity.copy())
+        self._update_cam_rot(physics)
         self._update_cam_pos(physics, obs["pos"])
 
-    def update_cam_rot(self, physics: mjcf.Physics):
+    def _update_cam_rot(self, physics: mjcf.Physics):
         self.cam_matrix = self.grav_rot * self.camera_base_rot
         physics.bind(self._cam).xmat = self.cam_matrix.as_matrix().flatten()
         return
