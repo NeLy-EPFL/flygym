@@ -69,7 +69,7 @@ def run_simulation(
         attachment_point=fly.model.worldbody,
         camera_name="camera_top",
         attachment_name=fly.name,
-        targeted_flies_id=[int(fly.name)],
+        targeted_fly_names=[fly.name],
         play_speed=0.1,
     )
 

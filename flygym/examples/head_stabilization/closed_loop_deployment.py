@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Camera, ZStabCamera, SingleFlySimulation
+from flygym import Camera, ZStabilizedCamera, SingleFlySimulation
 from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
@@ -56,11 +56,11 @@ def run_simulation(
 
     birdeye_cam_params = {"pos": (0, 0, 20), "euler": (0, 0, 0), "fovy": 45}
 
-    birdeye_camera = ZStabCamera(
+    birdeye_camera = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
         attachment_name=fly.name,
         camera_name="birdeye_cam",
-        targeted_flies_id=[0],
+        targeted_fly_names=[fly.name],
         camera_parameters=birdeye_cam_params,
         play_speed=0.2,
         window_size=(600, 600),
@@ -72,7 +72,7 @@ def run_simulation(
         attachment_point=fly.model.worldbody,
         attachment_name=fly.name,
         camera_name="camera_neck_zoomin",
-        targeted_flies_id=[0],
+        targeted_fly_names=[fly.name],
         play_speed=0.2,
         fps=24,
         window_size=(600, 600),

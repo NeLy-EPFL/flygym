@@ -238,19 +238,18 @@ class Simulation(gym.Env):
         )
 
     def render(self):
-        all_flies_obs = []
-        for i, fly in enumerate(self.flies):
+        all_flies_obs = {}
+        for fly in self.flies:
             fly.update_colors(self.physics)
-            all_flies_obs.append(fly.last_obs)
-        all_flies_obs = np.array(all_flies_obs)
+            all_flies_obs[fly.name] = fly.last_obs
 
         return [
             camera.render(
                 self.physics,
                 self._floor_height,
                 self.curr_time,
-                all_flies_obs[camera.targeted_flies_id]
-                if camera.targeted_flies_id
+                [all_flies_obs[name] for name in camera.targeted_fly_names]
+                if camera.targeted_fly_names
                 else [{}],
             )
             for camera in self.cameras

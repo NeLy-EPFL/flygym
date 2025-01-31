@@ -1,25 +1,18 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, Union, List
+from typing import Any, Optional, Union
 
 import flygym.util as util
 
 
 import cv2
-import dm_control.mujoco
 import imageio
 import numpy as np
 from dm_control import mjcf
-from dm_control.utils import transformations
-from flygym.fly import Fly
 from scipy.spatial.transform import Rotation as R
 
-from typing import Tuple, List, Dict, Any, Optional
-
-from abc import ABC, abstractmethod
-
-# Would like it to always draw gravitiy in the upper right corner
+# Would like it to always draw gravity in the upper right corner
 # Check if contact need to be drawn (outside of the image)
 # New gravity camera
 
@@ -33,17 +26,17 @@ class Camera:
         attachment_point: mjcf.element._AttachableElement,
         camera_name: str,
         attachment_name: str = None,
-        targeted_flies_id: int = [],
-        window_size: Tuple[int, int] = (640, 480),
+        targeted_fly_names: list[str] = [],
+        window_size: tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
         fps: int = 30,
         timestamp_text: bool = False,
         play_speed_text: bool = True,
-        camera_parameters: Optional[Dict[str, Any]] = None,
+        camera_parameters: Optional[dict[str, Any]] = None,
         draw_contacts: bool = False,
         decompose_contacts: bool = True,
-        decompose_colors: Tuple[
-            Tuple[int, int, int], Tuple[int, int, int], Tuple[int, int, int]
+        decompose_colors: tuple[
+            tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]
         ] = ((0, 0, 255), (0, 255, 0), (255, 0, 0)),
         force_arrow_scaling: float = float("nan"),
         tip_length: float = 10.0,  # number of pixels
@@ -54,7 +47,7 @@ class Camera:
         output_path: Optional[Union[str, Path]] = None,
     ):
         """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
-        A set of preset congigurations are available in the config file:
+        A set of preset configurations are available in the config file:
         - Simple cameras like: "camera_top" "camera_right", "camera_left",
         "camera_front", "camera_back", "camera_bottom"
         - Compound rotated cameras with different zoom levels: "camera_top_right", "camera_top_zoomout"
@@ -68,14 +61,14 @@ class Camera:
         Parameters
         ----------
         attachment_point: dm_control.mjcf.element._AttachableElement
-            Attachement point pf the camera
+            Attachment point pf the camera
         attachment_name : str
-            Name of the attachement point
-        targeted_flies_id: List(int)
+            Name of the attachment point
+        targeted_fly_names: list[str]
             Index of the flies the camera is looking at. The first index is the focused fly that is tracked if using a
             complex camera. The rest of the indices are used to draw the contact forces.
         camera_name : str
-        window_size : Tuple[int, int]
+        window_size : tuple[int, int]
             Size of the rendered images in pixels, by default (640, 480).
         play_speed : float
             Play speed of the rendered video, by default 0.2.
@@ -88,7 +81,7 @@ class Camera:
         play_speed_text : bool
             If True, text indicating the play speed will be added to the
             rendered video.
-        camera_parameters : Optional[Dict[str, Any]]
+        camera_parameters : Optional[dict[str, Any]]
             Parameters of the camera to be added to the model. If None, the
         draw_contacts : bool
             If True, arrows will be drawn to indicate contact forces between
@@ -120,14 +113,14 @@ class Camera:
             video will not be saved. By default None.
         """
         self.attachment_point = attachment_point
-        self.targeted_flies_id = targeted_flies_id
+        self.targeted_fly_names = targeted_fly_names
 
         config = util.load_config()
 
-        self.iscustom = True
+        self.is_custom = True
         if camera_parameters is None and camera_name in config["cameras"]:
             camera_parameters = config["cameras"][camera_name]
-            self.iscustom = False
+            self.is_custom = False
 
         assert camera_parameters is not None, (
             "Camera parameters must be provided "
@@ -136,7 +129,7 @@ class Camera:
 
         camera_parameters["name"] = camera_name
 
-        # get a first value before spawning: usefull for the zstab cam
+        # get a first value before spawning: useful for the zstab cam
         self.camera_base_offset = np.array(camera_parameters.get("pos", np.zeros(3)))
 
         self._cam, self.camera_id = self._add_camera(
@@ -160,7 +153,7 @@ class Camera:
         self.contact_threshold = contact_threshold
         self.perspective_arrow_length = perspective_arrow_length
 
-        if self.draw_contacts and len(self.targeted_flies_id) <= 0:
+        if self.draw_contacts and len(self.targeted_fly_names) <= 0:
             logging.warning(
                 "Overriding `draw_contacts` to False because no flies are targeted."
             )
@@ -189,13 +182,13 @@ class Camera:
         self._frames: list[np.ndarray] = []
         self._timestamp_per_frame: list[float] = []
 
-    def _add_camera(self, attachement, camera_parameters, attachement_name):
+    def _add_camera(self, attachment, camera_parameters, attachment_name):
         """Add a camera to the model."""
-        camera = attachement.add("camera", **camera_parameters)
-        if attachement_name is None:
+        camera = attachment.add("camera", **camera_parameters)
+        if attachment_name is None:
             camera_id = camera.name
         else:
-            camera_id = attachement_name + "/" + camera.name
+            camera_id = attachment_name + "/" + camera.name
 
         return camera, camera_id
 
@@ -213,7 +206,7 @@ class Camera:
         physics: mjcf.Physics,
         floor_height: float,
         curr_time: float,
-        last_obs: List[dict],
+        last_obs: list[dict],
     ) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
@@ -227,13 +220,13 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        self.update_camera(physics, floor_height, last_obs[0])
+        self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
         img = physics.render(width=width, height=height, camera_id=self.camera_id)
         img = img.copy()
         if self.draw_contacts:
-            for i in range(len(self.targeted_flies_id)):
+            for i in range(len(self.targeted_fly_names)):
                 img = self._draw_contacts(img, physics, last_obs[i])
         if self.draw_gravity:
             img = self._draw_gravity(img, physics, last_obs[0]["pos"])
@@ -298,7 +291,7 @@ class Camera:
                 if timestamp >= stabilization_time:
                     writer.append_data(frame)
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         """Update the camera position and rotation based on the fly position and orientation.
         Used only for the complex camera that require updating the camera position and rotation
         on top of the default behavior"""
@@ -490,13 +483,13 @@ class Camera:
         return img
 
 
-class ZStabCamera(Camera):
+class ZStabilizedCamera(Camera):
     """Camera that stabilizes the z-axis of the camera to the floor height."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Raise error if targetted flies are empty
-        if len(self.targeted_flies_id) == 0:
+        # Raise error if targeted flies are empty
+        if len(self.targeted_fly_names) == 0:
             raise ValueError(
                 "No flies are targeted by the camera. "
                 "Stabilized cameras require at least one fly to target."
@@ -518,12 +511,12 @@ class ZStabCamera(Camera):
         cam_pos[2] = floor_height + self.camera_base_offset[2]
         cam.xpos = cam_pos
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         self._update_cam_pos(physics, floor_height)
         return
 
 
-class YawOnlyCamera(ZStabCamera):
+class YawOnlyCamera(ZStabilizedCamera):
     """Camera that stabilizes the z-axis of the camera to the floor height and
     only changes the yaw of the camera to follow the fly hereby preventing unnecessary
     camera rotations.
@@ -535,11 +528,11 @@ class YawOnlyCamera(ZStabCamera):
         self.prev_yaw = None
         self.init_yaw = None
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         smoothed_yaw = self._smooth_yaw(obs["rot"][0])
         correction = R.from_euler("xyz", [0, 0, smoothed_yaw - self.init_yaw])
         self._update_cam_pos(physics, floor_height, correction, obs["pos"])
-        self.update_cam_rot(physics, correction)
+        self._update_cam_rot(physics, correction)
 
         self.prev_yaw = obs["rot"][0]
 
@@ -552,7 +545,7 @@ class YawOnlyCamera(ZStabCamera):
             self.smoothing * np.cos(self.prev_yaw) + (1 - self.smoothing) * np.cos(yaw),
         )
 
-    def update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
+    def _update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
         physics.bind(self._cam).xmat = (
             (yaw_correction * self.camera_base_rot).as_matrix().flatten()
         )
@@ -563,7 +556,7 @@ class YawOnlyCamera(ZStabCamera):
         physics: mjcf.Physics,
         floor_height: float,
         yaw_correction: R,
-        fly_pos: List[float],
+        fly_pos: list[float],
     ):
         # position the camera some distance behind the fly, at a fixed height
         physics.bind(self._cam).xpos = (
@@ -584,7 +577,7 @@ class GravityAlignedCamera(Camera):
         self.grav_rot = None
         self.cam_matrix = np.zeros((3, 3))
 
-    def update_gravrot(self, gravity):
+    def _update_gravrot(self, gravity):
         """
         Update the rotation matrix that aligns the gravity vector with the z-axis
         """
@@ -592,19 +585,19 @@ class GravityAlignedCamera(Camera):
         gravity_norm = gravity / np.linalg.norm(gravity)
         self.grav_rot = R.align_vectors(gravity_norm, [0, 0, -1])[0]
 
-    def update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
+    def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.gravity is None or np.any(physics.model.opt.gravity != self.gravity):
             print("updating gravity")
-            self.update_gravrot(physics.model.opt.gravity.copy())
-        self.update_cam_rot(physics)
+            self._update_gravrot(physics.model.opt.gravity.copy())
+        self._update_cam_rot(physics)
         self._update_cam_pos(physics, obs["pos"])
 
-    def update_cam_rot(self, physics: mjcf.Physics):
+    def _update_cam_rot(self, physics: mjcf.Physics):
         self.cam_matrix = self.grav_rot * self.camera_base_rot
         physics.bind(self._cam).xmat = self.cam_matrix.as_matrix().flatten()
         return
 
-    def _update_cam_pos(self, physics: mjcf.Physics, fly_pos: List[float]):
+    def _update_cam_pos(self, physics: mjcf.Physics, fly_pos: list[float]):
         # position the camera some distance behind the fly, at a fixed height
         fly_pos[2] = 0
         self.cam_pos = (
