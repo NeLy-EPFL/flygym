@@ -75,7 +75,7 @@ fly looks while walking over these different terrain types:
     import numpy as np
     import matplotlib.pyplot as plt
     from tqdm import tqdm, trange
-    from flygym import Fly, ZStabCamera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.examples.locomotion import PreprogrammedSteps
     from pathlib import Path
 
@@ -96,7 +96,7 @@ fly looks while walking over these different terrain types:
             init_pose="stretch",
             control="position",
         )
-        cam = ZStabCamera(
+        cam = ZStabilizedCamera(
             attachment_point=fly.model.worldbody,
             camera_name="camera_left", attachment_name=fly.name,
             targeted_fly_names=[fly.name], play_speed=0.1
@@ -163,7 +163,7 @@ on each of the different terrain types:
                 init_pose="stretch",
                 control="position",
             )
-            cam = ZStabCamera(
+            cam = ZStabilizedCamera(
                 attachment_point=fly.model.worldbody,
                 camera_name="camera_left", attachment_name=fly.name,
                 targeted_fly_names=[fly.name], play_speed=0.1
@@ -494,7 +494,7 @@ stumbling detection:
         control="position",
         contact_sensor_placements=contact_sensor_placements,
     )
-    cam = ZStabCamera(
+    cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_left", attachment_name=fly.name,
         targeted_fly_names=[fly.name], play_speed=0.1

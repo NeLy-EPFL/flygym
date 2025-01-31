@@ -543,12 +543,12 @@ We start by initializing the simulation:
 
 .. code:: ipython3
 
-    from flygym import Fly, ZStabCamera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.preprogrammed import all_leg_dofs
 
     run_time = 1
     fly = Fly(init_pose="stretch", actuated_joints=all_leg_dofs, control="position")
-    cam = ZStabCamera(
+    cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody, camera_name="camera_left", attachment_name=fly.name,
         targeted_fly_names=[fly.name], play_speed=0.1
     )
@@ -723,7 +723,7 @@ parts of the code that have been changed are indicated with comments.
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    cam = ZStabCamera(attachment_point=fly.model.worldbody,
+    cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
         camera_name="camera_left", attachment_name=fly.name,
         targeted_fly_names=[0], play_speed=0.1)
     sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
