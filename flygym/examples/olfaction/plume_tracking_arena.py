@@ -65,7 +65,7 @@ class OdorPlumeArena(BaseArena):
             simulation. By default 200.
         intensity_scale_factor : float, optional
             Scaling factor for the intensity of the odor. By default 1.0.
-        friction : Tuple[float, float, float], optional
+        friction : tuple[float, float, float], optional
             Friction parameters for the floor geom. By default (1, 0.005,
             0.0001).
         num_sensors : int, optional

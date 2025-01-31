@@ -571,7 +571,7 @@ signals (joint positions) into the NeuroMechFly physics simulation:
     cam = ZStabCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_left", attachment_name=fly.name,
-        targeted_flies_id=[fly.name], play_speed=0.1
+        targeted_fly_names=[fly.name], play_speed=0.1
     )
         
     sim = SingleFlySimulation(
