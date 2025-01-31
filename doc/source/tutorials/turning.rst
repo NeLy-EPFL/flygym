@@ -145,7 +145,7 @@ as before:
     from gymnasium import spaces
     from gymnasium.utils.env_checker import check_env
     
-    from flygym import Fly, ZStabCamera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
     
     
@@ -601,7 +601,7 @@ Let’s import this class and instantiate it:
         spawn_pos=(0, 0, 0.2),
     )
     
-    cam = ZStabCamera(
+    cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_top", attachment_name=fly.name,
         targeted_fly_names=[fly.name], play_speed=0.1

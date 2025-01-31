@@ -66,7 +66,7 @@ implement the following function:
     from dm_control.utils import transformations
     from dm_control.rl.control import PhysicsError
     
-    from flygym import Fly, ZStabCamera
+    from flygym import Fly, ZStabilizedCamera
     from flygym.arena import FlatTerrain, BlocksTerrain
     from flygym.preprogrammed import get_cpg_biases
     from flygym.examples.locomotion import HybridTurningController
@@ -140,7 +140,7 @@ implement the following function:
             contact_sensor_placements=contact_sensor_placements,
             spawn_pos=(*spawn_xy, 0.25),
         )
-        cam = ZStabCamera(attachment_point=fly.model.worldbody,
+        cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
             camera_name="camera_left", attachment_name=fly.name,
             targeted_fly_names=[fly.name], play_speed=0.1
         )                  
