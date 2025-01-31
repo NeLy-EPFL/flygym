@@ -125,7 +125,7 @@ We start with the necessary imports:
     from pathlib import Path
     from tqdm import trange
     
-    from flygym import Fly, Camera, SingleFlySimulation, get_data_path
+    from flygym import Fly, ZStabCamera, SingleFlySimulation, get_data_path
     from flygym.preprogrammed import all_leg_dofs
 
 Let’s define some simulation parameters:
@@ -199,7 +199,10 @@ recorded kinematics in the MDP loop:
 .. code:: ipython3
 
     fly = Fly(init_pose="stretch", actuated_joints=actuated_joints, control="position")
-    cam = Camera(fly=fly, play_speed=0.2, draw_contacts=True)
+    cam = ZStabCamera(
+        attachment_point=fly.model.worldbody, camera_name="camera_left", attachment_name=fly.name,
+        targeted_flies_id=[fly.name], play_speed=0.1
+    )
     sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],
