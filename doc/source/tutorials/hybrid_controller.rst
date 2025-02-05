@@ -258,7 +258,7 @@ controller) per case, we can already begin to observe that the CPG- and
 rule-based controllers may not perform robustly over complex terrain. In
 fact, if we run 20 initial conditions for 1 second each, we get a result
 like the one reported in the NeuroMechFly v2 paper (Wang-Chen et al.,
-2023):
+2024):
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_comparison.png?raw=true
 

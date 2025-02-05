@@ -1,7 +1,7 @@
 The NeuroMechFly Model
 ======================
 
-NeuroMechFly is a morphologically realistic neuromechanical model of the adult fruit fly *Drosophila melanogaster* based on a micro-CT scan of the animal. It was originally described in our `NeuroMechFly paper <https://doi.org/10.1038/s41592-022-01466-7>`_ and updated in our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_. Please refer to these publications for more details.
+NeuroMechFly is a morphologically realistic neuromechanical model of the adult fruit fly *Drosophila melanogaster* based on a micro-CT scan of the animal. It was originally described in our `NeuroMechFly paper <https://doi.org/10.1038/s41592-022-01466-7>`_ and updated in our `NeuroMechFly v2 paper <https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D>`_. Please refer to these publications for more details.
 
 .. figure:: _static/neuromechfly.png
    :width: 700
@@ -94,7 +94,7 @@ The following is a complete list of joint DoFs (subject to update to enable more
    :width: 600
    :alt: NeuroMechFly's leg DoFs
 
-   Zero pose of NeuroMechFly v2, including a front view (top left), a side view (top right), and a zoomed-in view of the left antennae (bottom left). The leg DoFs are also shown (bottom middle, bottom right). The global coordinate system's x, y, and z axes are shown in red, green, and blue, respectively. Figure adapted from Lobato-Rios et al. (2022) and Wang-Chen et al. (2023).
+   Zero pose of NeuroMechFly v2, including a front view (top left), a side view (top right), and a zoomed-in view of the left antennae (bottom left). The leg DoFs are also shown (bottom middle, bottom right). The global coordinate system's x, y, and z axes are shown in red, green, and blue, respectively. Figure adapted from Lobato-Rios et al. (2022) and Wang-Chen et al. (2024).
 
 The leg DoFs are the most critical to model terrestrial locomotion. In *Drosophila*, there are 7 *actuated* DoFs per leg: thorax-coxa pitch (``joint_XXCoxa``), thorax-coxa roll (``joint_XXCoxa_roll``), thorax-coxa yaw (``joint_XXCoxa_yaw``), coxa-femur pitch (``joint_XXFemur``), coxa-femur roll (``joint_XXFemur_roll``), femur-tibia pitch (``joint_XXTibia``), and tibia-tarsus pitch (``joint_XXTarsus1``). The links between tarsal segments can move passively but are not actively actuated. To get started, one might consider using a subset of all leg DoFs: for example, the NeuroMechFly paper used 3 DoFs per leg for locomotor optimization: thorax-coxa pitch for the forelegs, thorax-coxa roll for the mid- and hind-legs, coxa-femur pitch for all legs, and femur-tibia pitch for all legs.
 
@@ -115,5 +115,5 @@ The leg DoFs are the most critical to model terrestrial locomotion. In *Drosophi
 
 References
 ----------
-- Lobato-Rios, V., Ramalingasetty, S. T., Özdil, P. G., Arreguit, J., Ijspeert, A. J., & Ramdya, P. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*, 19(5), 620-627. https://doi.org/10.1038/s41592-022-01466-7
-- Wang-Chen, S., Stimpfling, V. A., Özdil, P. G., Genoud, L., Hurtak, F., & Ramdya, P. (2023). NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult *Drosophila*. Preprint on *bioRxiv*. https://doi.org/10.1101/2023.09.18.556649
+- Lobato-Rios, V., Ramalingasetty, S. T., Özdil, P. G., Arreguit, J., Ijspeert, A. J., & Ramdya, P. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*, 19(5), 620–627. https://doi.org/10.1038/s41592-022-01466-7
+- Wang-Chen, S., Stimpfling, V. A., Lam, T. K. C., Özdil, P. G., Genoud, L., Hurtak, F., & Ramdya, P. (2024). NeuroMechFly 2.0: simulating embodied sensorimotor control in adult *Drosophila*. *Nature Methods*, 21(12), 2353–2362. https://doi.org/10.1038/s41592-024-02497-y

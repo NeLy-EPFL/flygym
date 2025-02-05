@@ -7,7 +7,9 @@ Change Log
 
 * **1.2.0:**
 
-  * TODO
+  * Enhance camera logic
+  * Add NeuroMechFly game for outreach (used at EPFL Scientastic! Days, etc.)
+  * Move from setup.py to pyproject.toml, specifically using Poetry.
    
 * **1.1.0:**
 

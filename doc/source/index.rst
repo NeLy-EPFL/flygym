@@ -20,7 +20,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    changelog
    contributing
 
-`Paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_ |
+`Paper <https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D>`_ |
 `GitHub <https://github.com/NeLy-EPFL/flygym>`_
 
 .. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/overview_video.gif?raw=true
@@ -33,7 +33,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    API changes may occur in future releases. See the `changelog <changelog.html>`_ for details.
 
 
-FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`_).
+FlyGym is the Python library for NeuroMechFly v2, a digital twin of the adult fruit fly *Drosophila melanogaster* that can see, smell, walk over challenging terrain, and interact with the environment (see our `NeuroMechFly v2 paper <https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D>`_).
 
 FlyGym consists of the following components:
 
@@ -76,13 +76,19 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
    % NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller,
    % hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision,
    % olfaction, RL-based navigation, Gym environment, updated biomechanical model
-   @article{WangChen2023,
-      author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem \"{O}zdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
-      title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
-      year = {2023},
-      doi = {10.1101/2023.09.18.556649},
-      URL = {https://www.biorxiv.org/content/10.1101/2023.09.18.556649},
-      journal = {bioRxiv}
+   @article{WangChen2024,
+      title = {NeuroMechFly v2: simulating embodied sensorimotor control in adult Drosophila},
+      volume = {21},
+      ISSN = {1548-7105},
+      url = {http://dx.doi.org/10.1038/s41592-024-02497-y},
+      DOI = {10.1038/s41592-024-02497-y},
+      number = {12},
+      journal = {Nature Methods},
+      publisher = {Springer Science and Business Media LLC},
+      author = {Wang-Chen,  Sibo and Stimpfling,  Victor Alfred and Lam,  Thomas Ka Chung and \"{O}zdil,  Pembe Gizem and Genoud,  Louise and Hurtak,  Femke and Ramdya,  Pavan},
+      year = {2024},
+      month = nov,
+      pages = {2353--2362}
    }
 
 .. note:: 
