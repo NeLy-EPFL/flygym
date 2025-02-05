@@ -55,13 +55,13 @@ jobs:
           pipx install poetry
 
       - name: Install dependencies with poetry and run tests (Linux/Windows/macOS Apple Silicon)
-        if: runner.os != 'macos-13'
+        if: runner.name != 'macos-13'
         run: |
           poetry install --extras=dev --extras=examples
           poetry run pytest
       
       - name: Install dependencies with poetry (macOS Intel)
-        if: runner.os == 'macos-13'
+        if: runner.name == 'macos-13'
         run: |
           poetry install --extras=dev
           echo "Tests skipped on macOS Intel; see issue #233"
