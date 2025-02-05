@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "FlyGym"
-copyright = "2023, Neuroengineering Laboratory, EPFL"
+copyright = "Neuroengineering Laboratory, EPFL"
 author = "Neuroengineering Laboratory, EPFL"
 
 

@@ -300,7 +300,7 @@ that the legs that should *not* swing together are coupled with a phase
 difference of 180 degrees, ensuring that they are out of phase once the
 network is synchronized. We will use other parameters from the
 `NeuroMechFly v2
-paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
+paper <https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D>`__.
 
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/tripod_cpg.png?raw=true
