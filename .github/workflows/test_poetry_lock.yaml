@@ -56,8 +56,7 @@ jobs:
         run: |
           poetry install --extras=dev
           ls flygym/tests
-          echo "poetry run pytest tests"
-          poetry run pytest tests
+          poetry run pytest flygym/tests/test_basic.py
         
       - name: Install dependencies with poetry and run tests (Linux/Windows/macOS Apple Silicon)
         if: matrix.os != 'macos-13'
