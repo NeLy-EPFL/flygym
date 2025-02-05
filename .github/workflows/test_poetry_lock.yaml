@@ -21,9 +21,13 @@ jobs:
       
       - name: Assert poetry.lock exists
         run: |
-          if [ ! -f poetry.lock ]; then
-            echo "poetry.lock not found! Please generate it by running `poetry lock`."
-            exit 1
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if (!(Test-Path -Path "poetry.lock")) { exit 1; }
+          else
+            if [ ! -f poetry.lock ]; then
+              echo "Error: poetry.lock not found!"
+              exit 1
+            fi
           fi
 
       - name: Install dependencies for Ubuntu
