@@ -1,0 +1,73 @@
+[project]
+name = "flygym"
+version = "1.2.0"
+description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
+requires-python = ">=3.10,<3.13"
+authors = [
+    { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
+    { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch>" },
+    { name = "Thomas Ka Chung Lam", email = "thomas.lam@epfl.ch" },
+    { name = "Pembe Gizem Özdil", email = "pembe.ozdil@epfl.ch" },
+    { name = "Louise Genoud", email = "louise.genoud@epfl.ch" },
+    { name = "Femke Hurtak", email = "femke.hurtak@epfl.ch" },
+    { name = "Pavan Ramdya", email = "pavan.ramdya@epfl.ch" },
+]
+maintainers = [
+    { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
+    { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch>" },
+    { name = "Dominic Dall'Osto", email = "dominic.dallosto@epfl.ch" },
+    { name = "Thomas Ka Chung Lam", email = "thomas.lam@epfl.ch" },
+]
+readme = "README.md"
+license = "Apache-2.0"
+dependencies = [
+    "gymnasium",
+    "numpy>=2.0,<3.0",
+    "scipy>=1.0,<2.0",
+    "pyyaml>=6.0,<7.0",
+    "jupyter>=1.0,<2.0",
+    "mediapy>=1.0,<2.0",
+    "imageio[pyav,ffmpeg]>=2.0,<3.0",
+    "tqdm>=4.0,<5.0",
+    "mujoco>=3.2.7,<4.0",
+    "dm_control>=1.0.27,<2.0",
+    "numba==0.61.0",
+    "opencv-python>=4.0,<5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "sphinx>=8.0,<9.0",
+    "sphinxcontrib-googleanalytics==0.4",
+    "furo",
+    "numpydoc>=1.0,<2.0",
+    "pytest>=8.0,<9.0",
+    "ruff==0.9.4",
+    "black[jupyter]==23.3.0",
+    "shapely>=2.0,<3.0",
+    "rasterio>=1.0,<2.0",
+    "requests>=2.0,<3.0",
+]
+examples = [
+    "joblib>=1.0,<2.0",
+    "networkx>=3.0,<4.0",
+    "lightning>=2.0,<3.0",
+    "tensorboardX>=2.0,<3.0",
+    "pandas>=2.0,<3.0",
+    "scikit-learn>=1.0,<2.0",
+    "seaborn==0.13",
+    "torch>=2.0,<3.0",
+    "phiflow>=3.0,<4.0",
+    "h5py>=3.0,<4.0",
+    "flyvis>=1.1.2,<2.0",
+]
+
+[project.urls]
+homepage = "https://neuromechfly.org/"
+repository = "https://github.com/NeLy-EPFL/flygym"
+documentation = "https://neuromechfly.org/"
+"Bug Tracker" = "https://github.com/NeLy-EPFL/flygym/issues"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
