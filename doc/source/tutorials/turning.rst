@@ -145,7 +145,7 @@ as before:
     from gymnasium import spaces
     from gymnasium.utils.env_checker import check_env
     
-    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
     
     
@@ -585,7 +585,6 @@ Let’s import this class and instantiate it:
 .. code:: ipython3
 
     from flygym.examples.locomotion import HybridTurningController
-    from flygym import Fly, Camera
     
     run_time = 1
     timestep = 1e-4
@@ -602,10 +601,10 @@ Let’s import this class and instantiate it:
         spawn_pos=(0, 0, 0.2),
     )
     
-    cam = Camera(
-        fly=fly,
-        camera_id="Animat/camera_top",
-        play_speed=0.1,
+    cam = ZStabilizedCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_top", attachment_name=fly.name,
+        targeted_fly_names=[fly.name], play_speed=0.1
     )
     
     nmf = HybridTurningController(

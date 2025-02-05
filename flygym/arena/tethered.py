@@ -47,6 +47,9 @@ class Tethered(BaseArena):
             "joint", name="prismatic_support_1", limited=True, range=(0, 1e-10)
         )
 
+    def _get_max_floor_height(self) -> float:
+        raise NotImplementedError
+
 
 class Ball(Tethered):
     """Fly tethered on a spherical treadmill.
@@ -126,3 +129,6 @@ class Ball(Tethered):
             "joint", name="treadmill_joint", type="ball", limited="false"
         )
         treadmill_body.add("inertial", pos=[0, 0, 0], mass=mass)
+
+    def _get_max_floor_height(self) -> float:
+        raise NotImplementedError

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <mujoco model="Animat">
-	<compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" convexhull="true" fusestatic="true"/>
+	<compiler autolimits="true" boundmass="1e-06" boundinertia="1e-12" angle="radian" eulerseq="XYZ" fusestatic="true"/>
 	<option timestep="0.0001" gravity="0 0 -9810" integrator="Euler" solver="Newton" iterations="1000" tolerance="1e-12" noslip_iterations="100" noslip_tolerance="1e-08" ccd_iterations="100">
 		<flag multiccd="enable" energy="enable"/>
 		<!--multiccd seems to fix leg penetrating the floor-->
@@ -307,8 +307,6 @@
 							<joint name="joint_RFTibia" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.01" frictionloss="0.0"/>
 							<geom name="RFTibia" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTibia" fluidcoef="0 0 0 0 0" mass="2.0688194360187594e-06"/>
 							<body name="RFTarsus1" pos="-0.0001439899206161499 0.0009515359997749329 -0.5183968131896108" quat="1 0 0 0">
-								<camera name="camera_RFTarsus1_zoomin" class="nmf" mode="track" ipd="0.068" pos="-0.5 -2 0" euler="1.67 0 -0.3" fovy="60"/>
-								<!--arctan(0.5/2) = 0.245 arctan(0.2/2) = 0.1 -->
 								<joint name="joint_RFTarsus1" class="nmf" type="hinge" pos="0 0 0" axis="0 1 0" stiffness="0.0" springref="0.0" damping="0.1" frictionloss="0.0"/>
 								<geom name="RFTarsus1" class="nmf" type="mesh" contype="0" conaffinity="0" condim="3" group="2" friction="2 0 0" solref="-1000000 -10000" margin="0.0" pos="0 0 0" quat="1 0 0 0" mesh="mesh_RFTarsus1" fluidcoef="0 0 0 0 0" mass="4.6485138504422505e-07"/>
 								<body name="RFTarsus2" pos="0.001819327473640442 0.0009769797325134277 -0.22546353936195374" quat="1 0 0 0">
@@ -387,23 +385,6 @@
 				</body>
 			</body>
 		</body>
-		<camera name="camera_back" class="nmf" mode="fixed" ipd="0.068" pos="-8 0 1.0" euler="1.57 0.0 -1.57"/>
-		<camera name="camera_back_track" class="nmf" mode="track" ipd="0.068" pos="-12 0 6" euler="1.2 0.0 -1.57"/>
-		<camera name="camera_front" class="nmf" mode="fixed" ipd="0.068" pos="8 0 1.0" euler="1.57 0.0 1.57"/>
-		<camera name="camera_left" class="nmf" mode="fixed" ipd="0.068" pos="0 8 1.0" euler="-1.57 3.14 0"/>
-		<camera name="camera_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 1.0" euler="1.57 0 0"/>
-		<camera name="camera_top_right" class="nmf" mode="fixed" ipd="0.068" pos="0 -8 5" euler="1.1 0 0"/>
-		<camera name="camera_top" class="nmf" mode="track" ipd="0.068" pos="0 0 8" euler="0 0 0"/>
-		<camera name="camera_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 0 40" euler="0 0 0"/>
-		<camera name="camera_bottom" class="nmf" mode="track" ipd="0.068" pos="0 0 -8" euler="0 3.14 0"/>
-		<camera name="camera_right_front" class="nmf" mode="track" ipd="0.068" pos="4 -6 1.0" euler="1.57 0 0.588"/>
-		<!-- arctan(2/3) = 0.588 -->
-		<camera name="camera_left_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 8 5" euler="-2.129 3.14 0"/>
-		<!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
-		<camera name="camera_right_top_zoomout" class="nmf" mode="track" ipd="0.068" pos="0 -8 5" euler="1.011 0 0"/>
-		<!-- arctan(5/8) = 0.559  -1.57 - 0.559 = -2.129 -->
-		<camera name="camera_head_zoomin" class="nmf" mode="track" ipd="0.068" pos="3 -3 1" euler="1.57 0 0.72" fovy="30"/>
-		<camera name="camera_front_zoomin" class="nmf" mode="track" ipd="0.068" pos="8 0 1" euler="1.57 0 1.57" fovy="15"/>
 	</worldbody>
 	<actuator>
 	</actuator>

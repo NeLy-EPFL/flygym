@@ -26,23 +26,10 @@ class PathIntegrationArenaBase:
             rgba=(1, 0, 0, 1),
         )
 
-        # Add birdeye camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(0, 0, 150),
-            euler=(0, 0, 0),
-            fovy=60,
-        )
-
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
-
-    def update_cam_pos(self, physics: mjcf.Physics, fly_pos: np.ndarray) -> None:
-        physics.bind(self.birdeye_cam).pos[:2] = fly_pos / 2
 
 
 class PathIntegrationArenaFlat(PathIntegrationArenaBase, FlatTerrain):

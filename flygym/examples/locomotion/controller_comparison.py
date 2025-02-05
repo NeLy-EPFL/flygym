@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import mannwhitneyu
 from tqdm import tqdm
 
-from flygym import Camera, SingleFlySimulation
+from flygym import YawOnlyCamera, SingleFlySimulation
 from flygym.arena import BlocksTerrain, FlatTerrain, GappedTerrain, MixedTerrain
 from flygym.examples.locomotion import CPGNetwork, PreprogrammedSteps, ColorableFly
 from flygym.examples.locomotion.rule_based_controller import (
@@ -40,7 +40,7 @@ metadata_path = outputs_dir / "metadata.npz"
 
 ########### SIM PARAMS ############
 env_seed = 0  # seed for randomizing spawn positions and block heights
-n_trials = 20  # number of trials per (terrain, controller) pair
+n_trials = 1  # number of trials per (terrain, controller) pair
 spawn_bbox = (-2, -2, 4, 4)  # (x-min, y-min, x-length, y-length)
 spawn_z = 0.5  # z-coordinate of the fly at spawn
 timestep = 1e-4  # simulation timestep
@@ -394,7 +394,13 @@ def run_all(arena: str, seed: int, pos: np.ndarray, verbose: bool = False):
         actuator_forcerange=(-65.0, 65.0),
     )
     terrain = get_arena(arena)
-    cam = Camera(fly=fly, play_speed=0.1, camera_id="Animat/camera_right")
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_right",
+        attachment_name=fly.name,
+        targeted_fly_names=[fly.name],
+        play_speed=0.1,
+    )
     sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],

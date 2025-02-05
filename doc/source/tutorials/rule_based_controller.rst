@@ -548,7 +548,7 @@ signals (joint positions) into the NeuroMechFly physics simulation:
 
 .. code:: ipython3
 
-    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.preprogrammed import all_leg_dofs
     from tqdm import trange
     
@@ -568,11 +568,12 @@ signals (joint positions) into the NeuroMechFly physics simulation:
         draw_adhesion=True,
     )
     
-    cam = Camera(
-        fly=fly,
-        play_speed=0.1,
+    cam = ZStabilizedCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_left", attachment_name=fly.name,
+        targeted_fly_names=[fly.name], play_speed=0.1
     )
-    
+        
     sim = SingleFlySimulation(
         fly=fly,
         cameras=[cam],

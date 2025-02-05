@@ -58,7 +58,7 @@ setup(
             "scikit-learn",
             "seaborn",
             "torch",
-            "phiflow",
+            "phiflow==2.3.0",
             "h5py",
             "flyvis==1.1.2",
         ],
