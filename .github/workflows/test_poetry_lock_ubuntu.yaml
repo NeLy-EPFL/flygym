@@ -1,0 +1,39 @@
+name: Check poetry install across platforms
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Assert poetry.lock exists
+        run: |
+          if [ ! -f poetry.lock ]; then
+            echo "Error: poetry.lock not found!"
+            exit 1
+          fi
+
+      - name: Install dependencies for Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1-mesa-dev
+          echo "MUJOCO_GL=egl" >> $GITHUB_ENV
+          echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
+          sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies with poetry
+        run: |
+          poetry install --extras=dev --extras=examples
+      
+      - name: Run tests
+        run: |
+          poetry run pytest
