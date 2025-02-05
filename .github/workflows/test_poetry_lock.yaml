@@ -55,5 +55,6 @@ jobs:
           pipx install poetry
 
       - name: Install dependencies with poetry
+        run: |
           poetry install --extras=dev --extras=examples
           poetry run pytest
