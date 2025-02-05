@@ -54,14 +54,12 @@ jobs:
           pip install pipx
           pipx install poetry
 
-      - name: Install dependencies with poetry and run tests (Linux/Windows/macOS Apple Silicon)
-        if: runner.name != 'macos-13'
+      - name: Install dependencies with poetry and run tests
         run: |
-          poetry install --extras=dev --extras=examples
-          poetry run pytest
-      
-      - name: Install dependencies with poetry (macOS Intel)
-        if: runner.name == 'macos-13'
-        run: |
-          poetry install --extras=dev
-          echo "Tests skipped on macOS Intel; see issue #233"
+          if [ $(uname -m) = "arm64" ]; then
+            poetry install --extras=dev
+            echo "Tests skipped on macOS Apple Silicon; see issue #233"
+          else
+            poetry install --extras=dev --extras=examples
+            poetry run pytest
+          fi
