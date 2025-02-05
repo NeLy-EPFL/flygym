@@ -1,4 +1,4 @@
-name: Check poetry install across platforms
+name: Check poetry install Windows
 
 on: [push]
 

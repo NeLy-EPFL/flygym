@@ -1,4 +1,4 @@
-name: Check poetry install across platforms
+name: Check poetry install Ubuntu
 
 on: [push]
 
@@ -29,6 +29,12 @@ jobs:
           echo "MUJOCO_GL=egl" >> $GITHUB_ENV
           echo "PYOPENGL_PLATFORM=egl" >> $GITHUB_ENV
           sudo apt-get install -y ffmpeg
+      
+      - name: Install pipx and poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipx
+          pipx install poetry
 
       - name: Install dependencies with poetry
         run: |
