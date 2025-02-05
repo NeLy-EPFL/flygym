@@ -53,7 +53,7 @@ jobs:
 
       - name: Install dependencies with poetry
         run: |
-          poetry install
+          poetry install --extras=dev --extras=examples
 
       - name: Run pytest
         run: |
