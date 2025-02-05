@@ -6,7 +6,7 @@ env:
   SKIP_RENDERING: "true"
 
 jobs:
-  check_poetry_lock:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
