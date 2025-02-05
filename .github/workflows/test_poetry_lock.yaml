@@ -51,10 +51,14 @@ jobs:
           pip install pipx
           pipx install poetry
 
-      - name: Install dependencies with poetry
+      - name: Install dependencies with poetry and run tests (macOS Intel)
+        if: matrix.os == 'macos-13'
+        run: |
+          poetry install --extras=dev
+          poetry run pytest flygym/tests
+        
+      - name: Install dependencies with poetry and run tests (Linux/Windows/macOS Apple Silicon)
+        if: matrix.os == 'macos-13'
         run: |
           poetry install --extras=dev --extras=examples
-
-      - name: Run pytest
-        run: |
-          poetry run pytest
+          poetry run pytest .
