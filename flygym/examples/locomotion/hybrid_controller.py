@@ -3,7 +3,7 @@ from tqdm import trange
 from scipy.interpolate import interp1d
 
 from flygym.examples.locomotion import CPGNetwork
-from flygym import Fly, Camera, SingleFlySimulation
+from flygym import Fly, YawOnlyCamera, SingleFlySimulation
 from flygym.examples.locomotion import PreprogrammedSteps
 from flygym.arena import MixedTerrain
 from dm_control.rl.control import PhysicsError
@@ -214,7 +214,14 @@ if __name__ == "__main__":
         control="position",
         contact_sensor_placements=contact_sensor_placements,
     )
-    cam = Camera(fly=fly, play_speed=0.1)
+
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_right",
+        attachment_name=fly.name,
+        targeted_fly_names=[fly.name],
+        play_speed=0.1,
+    )
 
     sim = SingleFlySimulation(
         fly=fly,

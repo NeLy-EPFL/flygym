@@ -7,7 +7,7 @@ from typing import Optional
 from dm_control.utils import transformations
 from dm_control.rl.control import PhysicsError
 
-from flygym import Fly, Camera
+from flygym import Fly, YawOnlyCamera
 from flygym.arena import FlatTerrain, BlocksTerrain
 from flygym.preprogrammed import get_cpg_biases
 from flygym.examples.locomotion import HybridTurningController
@@ -82,8 +82,12 @@ def run_simulation(
         spawn_pos=(*spawn_xy, 0.25),
     )
     if enable_rendering:
-        cam = Camera(
-            fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
+        cam = YawOnlyCamera(
+            attachment_point=fly.model.worldbody,
+            camera_name="camera_left",
+            attachment_name=fly.name,
+            targeted_fly_names=[fly.name],
+            play_speed=0.1,
         )
     else:
         cam = None
@@ -195,4 +199,5 @@ if __name__ == "__main__":
                         )
                     )
 
-    Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
+    run_simulation(*job_specs[0])
+    # Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)

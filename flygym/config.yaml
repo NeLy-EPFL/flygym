@@ -192,10 +192,7 @@ olfaction:
 paths:
   mjcf:
     deepfly3d: mjcf/neuromechfly_deepfly3d_kinorder_ryp.xml
-    deepfly3d_old: mjcf/neuromechfly_deepfly3d_kinorder_ryp_old.xml
     seqik: mjcf/neuromechfly_seqik_kinorder_ypr.xml
-    seqik_old: mjcf/neuromechfly_seqik_kinorder_ypr_old.xml
-    seqik_simple: mjcf/neuromechfly_seqik_kinorder_ypr_capsuletarsus.xml
   ommatidia_id_map: vision/ommatidia_id_map.npy
   canonical_pale_type_mask: "vision/pale_mask.npy"
 
@@ -210,3 +207,104 @@ color_cycle_rgb:
   - [127, 127, 127]
   - [188, 189, 34]
   - [23, 190, 207]
+
+cameras:
+  camera_LFTarsus1_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [-0.5, -2, 0]
+    euler: [1.67, 0, -0.3]
+    fovy: 60
+  camera_back:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [-8, 0, 1.0]
+    euler: [1.57, 0.0, -1.57]
+  camera_back_track:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [-12, 0, 6]
+    euler: [1.2, 0.0, -1.57]
+  camera_front:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [8, 0, 1.0]
+    euler: [1.57, 0.0, 1.57]
+  camera_left:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 8, 1.0]
+    euler: [-1.57, 3.14, 0]
+  camera_right:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, -8, 1.0]
+    euler: [1.57, 0, 0]
+  camera_top_right:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [0, -8, 5]
+    euler: [1.1, 0, 0]
+  camera_top:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, 8]
+    euler: [0, 0, 0]
+  camera_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, 40]
+    euler: [0, 0, 0]
+  camera_bottom:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, -8]
+    euler: [0, 3.14, 0]
+  camera_right_front:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [4, -6, 1.0]
+    euler: [1.57, 0, 0.588]
+  camera_left_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 8, 5]
+    euler: [-2.129, 3.14, 0]
+  camera_right_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, -8, 5]
+    euler: [1.011, 0, 0]
+  camera_head_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [3, -3, 1]
+    euler: [1.57, 0, 0.72]
+    fovy: 30
+  camera_front_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [8, 0, 1]
+    euler: [1.57, 0, 1.57]
+    fovy: 15
+  camera_neck_zoomin:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [0.5, 2, 1.2]
+    euler: [-1.57, 3.14, 0]
