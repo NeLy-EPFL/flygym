@@ -3,7 +3,7 @@ name: Check poetry install across platforms
 on: [push]
 
 jobs:
-  ci:
+  check_poetry_lock:
     runs-on: ${{ matrix.os }}
 
     strategy:
