@@ -19,16 +19,22 @@ jobs:
         with:
           python-version: '3.12'
       
-      - name: Assert poetry.lock exists
+      - name: Assert poetry.lock exists (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            if (!(Test-Path -Path "poetry.lock")) { exit 1; }
-          else
-            if [ ! -f poetry.lock ]; then
-              echo "Error: poetry.lock not found!"
-              exit 1
-            fi
+          if [ ! -f poetry.lock ]; then
+            echo "Error: poetry.lock not found!"
+            exit 1
           fi
+
+      - name: Assert poetry.lock exists (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (!(Test-Path -Path "poetry.lock")) { 
+            Write-Host "Error: poetry.lock not found!"
+            exit 1 
+          }
+        shell: pwsh
 
       - name: Install dependencies for Ubuntu
         if: runner.os == 'Linux'
