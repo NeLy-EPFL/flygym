@@ -2,6 +2,9 @@ name: Check poetry install across platforms
 
 on: [push]
 
+env:
+  SKIP_RENDERING: "true"
+
 jobs:
   check_poetry_lock:
     runs-on: ${{ matrix.os }}
