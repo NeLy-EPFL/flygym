@@ -520,29 +520,41 @@ class YawOnlyCamera(ZStabilizedCamera):
     """Camera that stabilizes the z-axis of the camera to the floor height and
     only changes the yaw of the camera to follow the fly hereby preventing unnecessary
     camera rotations.
+    The yaw is smoothed over a window of the last `smoothing_window_length` yaws.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, smoothing_window_length=20, *args, **kwargs):
+        """Initialize the camera with a smoothing window length for the yaw.
+        
+        Parameters
+        ----------
+        smoothing_window_length : int
+            Number of previous yaws to use for smoothing the yaw.
+        """
+
         super().__init__(*args, **kwargs)
-        self.smoothing = 0.99995  # tested empirically
-        self.prev_yaw = None
+        
+        # prev yaws is a used in as a queue
+        self.smothing_window_length = smoothing_window_length
+        self.prev_yaws = None
         self.init_yaw = None
 
     def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
-        smoothed_yaw = self._smooth_yaw(obs["rot"][0])
+        if self.prev_yaws is None:
+            self.prev_yaws = np.ones(self.smothing_window_length) * obs["rot"][0].copy()
+            self.init_yaw = obs["rot"][0].copy()
+        self.prev_yaws = np.roll(self.prev_yaws, 1)
+        self.prev_yaws[0] = obs["rot"][0].copy()
+
+        smoothed_yaw = self._smooth_yaws()
         correction = R.from_euler("xyz", [0, 0, smoothed_yaw - self.init_yaw])
         self._update_cam_pos(physics, floor_height, correction, obs["pos"])
         self._update_cam_rot(physics, correction)
 
-        self.prev_yaw = obs["rot"][0]
-
-    def _smooth_yaw(self, yaw: float):
-        if self.prev_yaw is None:
-            self.prev_yaw = yaw
-            self.init_yaw = yaw
+    def _smooth_yaws(self):
         return np.arctan2(
-            self.smoothing * np.sin(self.prev_yaw) + (1 - self.smoothing) * np.sin(yaw),
-            self.smoothing * np.cos(self.prev_yaw) + (1 - self.smoothing) * np.cos(yaw),
+            np.median(np.sin(self.prev_yaws)),
+            np.median(np.cos(self.prev_yaws))
         )
 
     def _update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
