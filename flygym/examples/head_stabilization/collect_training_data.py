@@ -199,5 +199,4 @@ if __name__ == "__main__":
                         )
                     )
 
-    run_simulation(*job_specs[0])
-    # Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
+    Parallel(n_jobs=-2)(delayed(run_simulation)(*job_spec) for job_spec in job_specs)
