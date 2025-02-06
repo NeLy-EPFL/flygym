@@ -294,8 +294,7 @@ if __name__ == "__main__":
         for cells_selection in ["txall", "lc910_inputs"]
         for y_pos in np.linspace(10 - 0.13, 10 + 0.13, 11)
     ]
-    # Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
-    process_trial("flat", True, "lc910_inputs", (-5, 10))
+    Parallel(n_jobs=8)(delayed(process_trial)(*config) for config in configs)
 
     # Visualize trajectories
     trajectories = {

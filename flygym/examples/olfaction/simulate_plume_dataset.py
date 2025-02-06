@@ -89,7 +89,7 @@ if __name__ == "__main__":
     np.random.seed(0)
     output_dir = Path("./outputs/plume_tracking/plume_dataset/")
     output_dir.mkdir(exist_ok=True, parents=True)
-    simulation_time = 100
+    simulation_time = 13000
     dt = 0.7
     arena_size = (120, 80)
     inflow_pos = (5, 40)
@@ -189,8 +189,7 @@ if __name__ == "__main__":
     with h5py.File(output_dir / "plume_short.hdf5", "w") as f:
         f.create_dataset(
             "plume",
-            data=np.stack(smoke_hist[0:100]).astype(np.float16),
-            # data=np.stack(smoke_hist[5000:5600:10]).astype(np.float16),
+            data=np.stack(smoke_hist[5000:5600:10]).astype(np.float16),
             compression="gzip",
         )
         f["inflow_pos"] = inflow_pos
