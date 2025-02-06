@@ -525,7 +525,7 @@ class YawOnlyCamera(ZStabilizedCamera):
 
     def __init__(self, smoothing_window_length=20, *args, **kwargs):
         """Initialize the camera with a smoothing window length for the yaw.
-        
+
         Parameters
         ----------
         smoothing_window_length : int
@@ -533,8 +533,8 @@ class YawOnlyCamera(ZStabilizedCamera):
         """
 
         super().__init__(*args, **kwargs)
-        
-        # prev yaws is a used in as a queue
+
+        # prev yaws is a used in as a queue
         self.smothing_window_length = smoothing_window_length
         self.prev_yaws = None
         self.init_yaw = None
@@ -553,8 +553,7 @@ class YawOnlyCamera(ZStabilizedCamera):
 
     def _smooth_yaws(self):
         return np.arctan2(
-            np.median(np.sin(self.prev_yaws)),
-            np.median(np.cos(self.prev_yaws))
+            np.median(np.sin(self.prev_yaws)), np.median(np.cos(self.prev_yaws))
         )
 
     def _update_cam_rot(self, physics: mjcf.Physics, yaw_correction: R):
