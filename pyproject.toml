@@ -64,7 +64,7 @@ examples = [
     "torch>=2.0,<3.0",
     "phiflow>=3.0,<4.0",
     "h5py>=3.0,<4.0",
-    "flyvis>=1.1.2,<2.0",
+    "flyvis==1.1.2",
 ]
 
 [project.urls]

@@ -7,9 +7,12 @@ Change Log
 
 * **1.2.0:**
 
-  * Enhance camera logic
-  * Add NeuroMechFly game for outreach (used at EPFL Scientastic! Days, etc.)
-  * Move from setup.py to pyproject.toml, specifically using Poetry.
+  * **(API BREAKING CHANGE)** Enhance camera logic. See the `Camera API reference <api_ref/camera.html>`_ for details.
+  * Add NeuroMechFly game for outreach (used at EPFL Scientastic! Days, etc.).
+  * Use the `FlyVis package <https://github.com/TuragaLab/flyvis>`_ as `published on PyPI <https://pypi.org/project/flyvis/>`_.
+  * Transition from ``setup.py`` to ``pyproject.toml``, specifically using `Poetry <https://python-poetry.org/>`_ as the build backend. Users can now install FlyGym with the exact versions of dependencies used by the developers by running ``poetry install`` from the root directory. This will create a virtual environment with the correct dependencies as specified in the included ``poetry.lock`` file, which is version-tracked as a part of the FlyGym Github repository.
+  * Add `VS Code devcontainer <https://code.visualstudio.com/docs/devcontainers/containers>`_ support.
+  * Remove support for Python 3.9.
    
 * **1.1.0:**
 
