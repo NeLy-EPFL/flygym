@@ -6384,4 +6384,4 @@ examples = ["flyvis", "h5py", "joblib", "lightning", "networkx", "pandas", "phif
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "a466d6232d35a7141fe056a0c32155a06906dbb002435de474c70dc14ad9a0c3"
+content-hash = "a773b6c0c7f10182d1858828db83cb21b801bf1eaa6fa61a30aba0a710e04607"
