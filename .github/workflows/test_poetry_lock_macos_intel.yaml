@@ -37,10 +37,4 @@ jobs:
       
       - name: Run tests
         run: |
-          echo "Only running basic tests (not examples) because the latest PyTorch versions "
-          echo "don't support Macs with Intel chips. NOTE: Don't do this by simply "
-          echo "specifying the test directory with `pytest flygym/tests` because pytest "
-          echo "imports everything BEFORE checking which ones to run. See "
-          echo "https://stackoverflow.com/a/61677904/13560623"
-          cd flygym/tests
-          poetry run pytest
+          echo "Tests skipped on macOS Apple Silicon; see issue #233"
