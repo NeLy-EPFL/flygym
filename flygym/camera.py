@@ -182,7 +182,11 @@ class Camera:
     def _add_camera(self, attachment, camera_parameters):
         """Add a camera to the model."""
         camera = attachment.add("camera", **camera_parameters)
-        camera_id = camera_parameters["name"] + attachment.full_identifier
+        root_model = attachment.root.model
+        if not root_model == "unnamed_model":
+            camera_id = "/".join([attachment.root.model, camera_parameters["name"]])
+        else:
+            camera_id = camera_parameters["name"]
 
         return camera, camera_id
 
