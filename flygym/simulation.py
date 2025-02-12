@@ -69,7 +69,6 @@ class Simulation(gym.Env):
                 Camera(
                     attachment_point=self.flies[0].model.worldbody,
                     camera_name="camera_left",
-                    attachment_name=self.flies[0].name,
                 )
             ]
         elif isinstance(cameras, Iterable):
