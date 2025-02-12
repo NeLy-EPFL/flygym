@@ -566,7 +566,6 @@ our arena and Gym environment:
     )
     cam = Camera(attachment_point=fly.model.worldbody,
         camera_name="camera_top_zoomout",
-        attachment_name=fly.name,
         targeted_fly_names=[0],
         play_speed=0.1,
     )

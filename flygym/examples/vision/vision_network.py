@@ -81,7 +81,7 @@ class RealTimeVisionNetwork(Network):
             params.requires_grad = False
 
         # Keep parameters within their valid domain
-        self._clamp()
+        self.clamp()
 
         # Construct the parameter API
         params = self._param_api()

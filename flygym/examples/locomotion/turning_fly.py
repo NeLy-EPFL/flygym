@@ -497,7 +497,6 @@ if __name__ == "__main__":
     cam = YawOnlyCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_right",
-        attachment_name=fly.name,
         targeted_fly_names=[fly.name],
         play_speed=0.1,
     )
