@@ -25,7 +25,6 @@ class Camera:
         self,
         attachment_point: mjcf.element._AttachableElement,
         camera_name: str,
-        attachment_name: str = None,
         targeted_fly_names: list[str] = [],
         window_size: tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
@@ -62,8 +61,6 @@ class Camera:
         ----------
         attachment_point: dm_control.mjcf.element._AttachableElement
             Attachment point pf the camera
-        attachment_name : str
-            Name of the attachment point
         targeted_fly_names: list[str]
             Index of the flies the camera is looking at. The first index is the focused fly that is tracked if using a
             complex camera. The rest of the indices are used to draw the contact forces.
@@ -133,7 +130,7 @@ class Camera:
         self.camera_base_offset = np.array(camera_parameters.get("pos", np.zeros(3)))
 
         self._cam, self.camera_id = self._add_camera(
-            attachment_point, camera_parameters, attachment_name
+            attachment_point, camera_parameters
         )
 
         self.window_size = window_size
@@ -182,13 +179,10 @@ class Camera:
         self._frames: list[np.ndarray] = []
         self._timestamp_per_frame: list[float] = []
 
-    def _add_camera(self, attachment, camera_parameters, attachment_name):
+    def _add_camera(self, attachment, camera_parameters):
         """Add a camera to the model."""
         camera = attachment.add("camera", **camera_parameters)
-        if attachment_name is None:
-            camera_id = camera.name
-        else:
-            camera_id = attachment_name + "/" + camera.name
+        camera_id = camera_parameters["name"] + attachment.full_identifier
 
         return camera, camera_id
 
