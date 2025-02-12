@@ -460,8 +460,6 @@ follows:
                    material=floor_material,
                )
 
-Note that we have added a bird’s eye camera for rendering.
-
 We will also implement a function that reads out the odor intensity for
 every sensor from the simulated smoke grid:
 
