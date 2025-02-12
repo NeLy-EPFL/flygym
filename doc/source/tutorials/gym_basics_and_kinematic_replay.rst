@@ -200,7 +200,7 @@ recorded kinematics in the MDP loop:
 
     fly = Fly(init_pose="stretch", actuated_joints=actuated_joints, control="position")
     cam = ZStabilizedCamera(
-        attachment_point=fly.model.worldbody, camera_name="camera_left", attachment_name=fly.name,
+        attachment_point=fly.model.worldbody, camera_name="camera_left",
         targeted_fly_names=[fly.name], play_speed=0.1
     )
     sim = SingleFlySimulation(

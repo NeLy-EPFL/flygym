@@ -34,7 +34,7 @@ class RealisticVisionFly(HybridTurningFly):
     def __init__(self, vision_network_dir=None, *args, **kwargs):
         super().__init__(*args, **kwargs, enable_vision=True)
         if vision_network_dir is None:
-            vision_network_dir = flyvis.results_dir / "opticflow/000/0000"
+            vision_network_dir = flyvis.results_dir / "flow/0000/000"
         vision_network_view = RealTimeVisionNetworkView(vision_network_dir)
         self.vision_network = vision_network_view.init_network(chkpt="best_chkpt")
         self.retina_mapper = RetinaMapper()

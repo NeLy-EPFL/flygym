@@ -58,7 +58,6 @@ def run_simulation(
 
     birdeye_camera = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
-        attachment_name=fly.name,
         camera_name="birdeye_cam",
         targeted_fly_names=[fly.name],
         camera_parameters=birdeye_cam_params,
@@ -70,7 +69,6 @@ def run_simulation(
 
     neck_camera = Camera(
         attachment_point=fly.model.worldbody,
-        attachment_name=fly.name,
         camera_name="camera_neck_zoomin",
         targeted_fly_names=[fly.name],
         play_speed=0.2,

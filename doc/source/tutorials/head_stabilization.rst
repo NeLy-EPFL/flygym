@@ -141,7 +141,7 @@ implement the following function:
             spawn_pos=(*spawn_xy, 0.25),
         )
         cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
-            camera_name="camera_left", attachment_name=fly.name,
+            camera_name="camera_left",
             targeted_fly_names=[fly.name], play_speed=0.1
         )                  
         sim = HybridTurningController(
