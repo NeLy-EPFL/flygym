@@ -48,7 +48,7 @@ class Tethered(BaseArena):
         )
 
     def _get_max_floor_height(self) -> float:
-        raise NotImplementedError
+        return 0.0
 
 
 class Ball(Tethered):
@@ -94,6 +94,9 @@ class Ball(Tethered):
     ):
         super().__init__()
 
+        self.ball_pos = ball_pos
+        self.radius = radius
+        
         chequered = self.root_element.asset.add(
             "texture",
             type="2d",
@@ -131,4 +134,4 @@ class Ball(Tethered):
         treadmill_body.add("inertial", pos=[0, 0, 0], mass=mass)
 
     def _get_max_floor_height(self) -> float:
-        raise NotImplementedError
+        retun self.ball_pos[2] + self.radius
