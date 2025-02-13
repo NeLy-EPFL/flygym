@@ -12,10 +12,6 @@ from dm_control import mjcf
 import dm_control.mjcf.element  # need to import this for typing
 from scipy.spatial.transform import Rotation as R
 
-# Would like it to always draw gravity in the upper right corner
-# Check if contact need to be drawn (outside of the image)
-# New gravity camera
-
 
 _roll_eye = np.roll(np.eye(4, 3), -1)
 
