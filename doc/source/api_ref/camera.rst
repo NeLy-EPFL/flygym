@@ -4,7 +4,7 @@ Camera
 The ``Camera`` class defines how images should be rendered from a camera in the world model.
 Cameras are added dynamically to the model by calling ``.body.add()`` on any body of the MuJoCo model programmatically in Python. In this way, the XML file does not need to contain all the preset cameras. 
 When instantiating a ``Camera`` object, the user has to specify:
- - The attachement point: this can be a body or a site in the model.
+ - The attachment point: this can be a body or a site in the model.
  - The name of the camera.
  - The targeted fly names. Those flies will be the one(s) whose contact forces will be drawn.
 In order to simplify ``Camera`` instantiation, we provide a set of predefined camera parameters in config.yaml. Those parameters are used if the camera name matches the name of one of those cameras.
