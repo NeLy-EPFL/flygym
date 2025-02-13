@@ -3989,14 +3989,14 @@ phiml = ">=1.10.0"
 
 [[package]]
 name = "phiml"
-version = "1.12.0"
+version = "1.10.0"
 description = "Unified API for machine learning"
 optional = true
 python-versions = "*"
 groups = ["main"]
 markers = "(python_version >= \"3.12\" or python_version <= \"3.11\") and extra == \"examples\""
 files = [
-    {file = "phiml-1.12.0.tar.gz", hash = "sha256:d8bcb2b17db8d8de3d4c4fe16d80d59e639e4f24a90cbc6b4a758d6aaaf819c2"},
+    {file = "phiml-1.10.0.tar.gz", hash = "sha256:d9f7e319c38565bb3888ac284b1e31908cbe2794f3426ef19ea9fcfbde40ae6e"},
 ]
 
 [package.dependencies]
@@ -6379,9 +6379,9 @@ type = ["pytest-mypy"]
 
 [extras]
 dev = ["black", "furo", "numpydoc", "pytest", "rasterio", "requests", "ruff", "shapely", "sphinx", "sphinxcontrib-googleanalytics"]
-examples = ["flyvis", "h5py", "joblib", "lightning", "networkx", "pandas", "phiflow", "scikit-learn", "seaborn", "tensorboardX", "torch"]
+examples = ["flyvis", "h5py", "joblib", "lightning", "networkx", "pandas", "phiflow", "phiml", "scikit-learn", "seaborn", "tensorboardX", "torch"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "a773b6c0c7f10182d1858828db83cb21b801bf1eaa6fa61a30aba0a710e04607"
+content-hash = "598b0397f6386549b50400f6135b98f28faf72cc251a70f2840e5414e7510a0f"
