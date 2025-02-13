@@ -22,7 +22,7 @@ readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
     "gymnasium",
-    "numpy>=1.0,<2.0",
+    "numpy>=1.0,<2.0", #Fix numpy <2 until #231 is fixed / #234 is merged
     "scipy>=1.0,<2.0",
     "pyyaml>=6.0,<7.0",
     "jupyter>=1.0,<2.0",
