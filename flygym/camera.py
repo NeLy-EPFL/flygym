@@ -5,11 +5,11 @@ from typing import Any, Optional, Union
 
 import flygym.util as util
 
-
 import cv2
 import imageio
 import numpy as np
 from dm_control import mjcf
+import dm_control.mjcf.element  # need to import this for typing
 from scipy.spatial.transform import Rotation as R
 
 # Would like it to always draw gravity in the upper right corner
@@ -23,7 +23,7 @@ _roll_eye = np.roll(np.eye(4, 3), -1)
 class Camera:
     def __init__(
         self,
-        attachment_point: mjcf.element._AttachableElement,
+        attachment_point: dm_control.mjcf.element._AttachableElement,
         camera_name: str,
         targeted_fly_names: list[str] = [],
         window_size: tuple[int, int] = (640, 480),
@@ -179,7 +179,11 @@ class Camera:
         self._frames: list[np.ndarray] = []
         self._timestamp_per_frame: list[float] = []
 
-    def _add_camera(self, attachment, camera_parameters):
+    def _add_camera(
+        self,
+        attachment: dm_control.mjcf.element._AttachableElement,
+        camera_parameters: dict[str, Any],
+    ):
         """Add a camera to the model."""
         camera = attachment.add("camera", **camera_parameters)
         root_model = attachment.root.model
@@ -221,7 +225,7 @@ class Camera:
         self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
-        img = physics.render(width=width, height=height, camera_id=self.camera_id)
+        img = physics.render(width=width, height=height, camera_id=self.camera_id)  # type: ignore - physics.render accepts either an int or string for camera_id
         img = img.copy()
         if self.draw_contacts:
             for i in range(len(self.targeted_fly_names)):
@@ -287,7 +291,7 @@ class Camera:
         with imageio.get_writer(path, fps=self.fps) as writer:
             for frame, timestamp in zip(self._frames, self._timestamp_per_frame):
                 if timestamp >= stabilization_time:
-                    writer.append_data(frame)
+                    writer.append_data(frame)  # type: ignore - append_data does exist for imageio writer
 
     def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         """Update the camera position and rotation based on the fly position and orientation.
