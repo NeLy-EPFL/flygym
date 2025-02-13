@@ -96,7 +96,7 @@ class Ball(Tethered):
 
         self.ball_pos = ball_pos
         self.radius = radius
-        
+
         chequered = self.root_element.asset.add(
             "texture",
             type="2d",
@@ -134,4 +134,4 @@ class Ball(Tethered):
         treadmill_body.add("inertial", pos=[0, 0, 0], mass=mass)
 
     def _get_max_floor_height(self) -> float:
-        retun self.ball_pos[2] + self.radius
+        return self.ball_pos[2] + self.radius
