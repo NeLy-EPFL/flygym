@@ -4,7 +4,9 @@
 
 import numpy as np
 import h5py
+import tqdm
 from phi.torch import flow
+from pathlib import Path
 
 
 @flow.math.jit_compile
@@ -14,7 +16,7 @@ def step(
     noise: np.ndarray,
     noise_magnitude: tuple[float, float] = (0.1, 2),
     dt: float = 1.0,
-    inflow: flow.Grid = None,
+    inflow: flow.Grid | None = None,
 ) -> tuple[flow.Grid, flow.Grid]:
     """Simulate fluid dynamics by one time step.
 
@@ -80,16 +82,8 @@ def converging_brownian_step(
     return value_next
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
-    from tqdm import trange
-    from pathlib import Path
-
-    np.random.seed(0)
-    output_dir = Path("./outputs/plume_tracking/plume_dataset/")
-    output_dir.mkdir(exist_ok=True, parents=True)
-    simulation_time = 13000
+def get_simulation_parameters(simulation_time: int):
+    # simulation parameters
     dt = 0.7
     arena_size = (120, 80)
     inflow_pos = (5, 40)
@@ -99,10 +93,31 @@ if __name__ == "__main__":
     smoke_grid_size = 0.25
     simulation_steps = int(simulation_time / dt)
 
+    return (
+        dt,
+        arena_size,
+        inflow_pos,
+        inflow_radius,
+        inflow_scaler,
+        velocity_grid_size,
+        smoke_grid_size,
+        simulation_steps,
+    )
+
+
+def generate_simulation_inputs(
+    simulation_steps: int,
+    arena_size: tuple[int, int],
+    inflow_pos: tuple[int, int],
+    inflow_radius: float,
+    inflow_scaler: float,
+    velocity_grid_size: float,
+    smoke_grid_size: float,
+):
     # Simulate Brownian noise
     curr_wind = np.zeros((2,))
     wind_hist = [curr_wind.copy()]
-    for i in range(simulation_steps):
+    for i in range(simulation_steps - 1):
         curr_wind = converging_brownian_step(curr_wind, (0, 0), (0.2, 0.2), 1.0)
         wind_hist.append(curr_wind.copy())
 
@@ -114,6 +129,7 @@ if __name__ == "__main__":
         y=int(arena_size[1] / velocity_grid_size),
         bounds=flow.Box(x=arena_size[0], y=arena_size[1]),
     )
+
     # choose extrapolation mode from
     # ('undefined', 'zeros', 'boundary', 'periodic', 'symmetric', 'reflect')
     smoke = flow.CenteredGrid(
@@ -123,30 +139,55 @@ if __name__ == "__main__":
         y=int(arena_size[1] / smoke_grid_size),
         bounds=flow.Box(x=arena_size[0], y=arena_size[1]),
     )
+
     inflow = inflow_scaler * flow.field.resample(
         flow.Sphere(x=inflow_pos[0], y=inflow_pos[1], radius=inflow_radius),
         to=smoke,
         soft=True,
     )
 
-    # Run fluid dynamics simulation
+    return wind_hist, velocity, smoke, inflow
+
+
+def run_simulation(
+    wind_hist,
+    velocity,
+    smoke,
+    inflow,
+    dt: float,
+    arena_size: tuple[float, float],
+    plot=False,
+):
+    if plot:
+        import matplotlib.pyplot as plt
+
     smoke_hist = []
-    for i in trange(simulation_steps):
-        velocity, smoke = step(velocity, smoke, wind_hist[i], dt=dt, inflow=inflow)
+    for wind in tqdm.tqdm(wind_hist):
+        velocity, smoke = step(velocity, smoke, wind, dt=dt, inflow=inflow)
         smoke_vals = smoke.values.numpy("y,x")
         smoke_hist.append(smoke_vals)
-        plt.imshow(
-            smoke_vals,
-            cmap="gray_r",
-            origin="lower",
-            vmin=0,
-            vmax=0.7,
-            extent=[0, arena_size[0], 0, arena_size[1]],
-        )
-        plt.gca().invert_yaxis()
-        plt.draw()
-        plt.pause(0.01)
-        plt.clf()
+
+        if plot:
+            plt.imshow(
+                smoke_vals,
+                cmap="gray_r",
+                origin="lower",
+                vmin=0,
+                vmax=0.7,
+                extent=(0, arena_size[0], 0, arena_size[1]),
+            )
+            plt.gca().invert_yaxis()
+            plt.draw()
+            plt.pause(0.01)
+            plt.clf()
+    return smoke_hist
+
+
+def save_simulation_outputs(
+    wind_hist, smoke_hist, arena_size: tuple[int, int], output_dir: Path
+):
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
 
     # Save wind history
     fig, ax = plt.subplots(1, 1, figsize=(4, 3), tight_layout=True)
@@ -165,7 +206,7 @@ if __name__ == "__main__":
         origin="lower",
         vmin=0,
         vmax=0.7,
-        extent=[0, arena_size[0], 0, arena_size[1]],
+        extent=(0, arena_size[0], 0, arena_size[1]),
     )
     ax.invert_yaxis()
 
@@ -195,3 +236,36 @@ if __name__ == "__main__":
         f["inflow_pos"] = inflow_pos
         f["inflow_radius"] = [inflow_radius]
         f["inflow_scaler"] = [inflow_scaler]
+
+
+if __name__ == "__main__":
+    np.random.seed(0)
+    output_dir = Path("./outputs/plume_tracking/plume_dataset/")
+    output_dir.mkdir(exist_ok=True, parents=True)
+    simulation_time = 13000
+
+    (
+        dt,
+        arena_size,
+        inflow_pos,
+        inflow_radius,
+        inflow_scaler,
+        velocity_grid_size,
+        smoke_grid_size,
+        simulation_steps,
+    ) = get_simulation_parameters(simulation_time)
+
+    wind_hist, velocity, smoke, inflow = generate_simulation_inputs(
+        simulation_steps,
+        arena_size,
+        inflow_pos,
+        inflow_radius,
+        inflow_scaler,
+        velocity_grid_size,
+        smoke_grid_size,
+    )
+    smoke_hist = run_simulation(
+        wind_hist, velocity, smoke, inflow, dt, arena_size, plot=True
+    )
+
+    save_simulation_outputs(wind_hist, smoke_hist, arena_size, output_dir)
