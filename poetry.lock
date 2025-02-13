@@ -3972,14 +3972,14 @@ ptyprocess = ">=0.5"
 
 [[package]]
 name = "phiflow"
-version = "3.2.0"
+version = "3.3.0"
 description = "Differentiable PDE solving framework for machine learning"
 optional = true
 python-versions = "*"
 groups = ["main"]
 markers = "(python_version >= \"3.12\" or python_version <= \"3.11\") and extra == \"examples\""
 files = [
-    {file = "phiflow-3.2.0.tar.gz", hash = "sha256:fd54d3b0f1b2de0a4f8805fa188a4597971ec90073c7b6f2bd2f8c3204c1e9d4"},
+    {file = "phiflow-3.3.0.tar.gz", hash = "sha256:cf41b18227cc9a22a3f3caa8c0a495e6c046f5cef8786bf274941eef87e57f26"},
 ]
 
 [package.dependencies]
@@ -6379,9 +6379,9 @@ type = ["pytest-mypy"]
 
 [extras]
 dev = ["black", "furo", "numpydoc", "pytest", "rasterio", "requests", "ruff", "shapely", "sphinx", "sphinxcontrib-googleanalytics"]
-examples = ["flyvis", "h5py", "joblib", "lightning", "networkx", "pandas", "phiflow", "phiml", "scikit-learn", "seaborn", "tensorboardX", "torch"]
+examples = ["flyvis", "h5py", "joblib", "lightning", "networkx", "pandas", "phiflow", "scikit-learn", "seaborn", "tensorboardX", "torch"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "598b0397f6386549b50400f6135b98f28faf72cc251a70f2840e5414e7510a0f"
+content-hash = "02eb8f298971c5f057b86c8c515292631fee1b02d52d7bdb0bb35e20e4b3ba45"

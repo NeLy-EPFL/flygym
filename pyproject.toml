@@ -62,8 +62,7 @@ examples = [
     "scikit-learn>=1.0,<2.0",
     "seaborn==0.13",
     "torch>=2.0,<3.0",
-    "phiflow>=3.0,<4.0",
-    "phiml<=1.10.0", # see #236 - need to fix this version until https://github.com/tum-pbs/PhiML/issues/9 is fixed
+    "phiflow>=3.3.0,<4.0",
     "h5py>=3.0,<4.0",
     "flyvis==1.1.2",
 ]
