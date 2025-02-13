@@ -57,10 +57,12 @@ class Camera:
         ----------
         attachment_point: dm_control.mjcf.element._AttachableElement
             Attachment point pf the camera
-        targeted_fly_names: list[str]
-            Index of the flies the camera is looking at. The first index is the focused fly that is tracked if using a
-            complex camera. The rest of the indices are used to draw the contact forces.
         camera_name : str
+            Name of camera
+        targeted_fly_names: str | list[str]
+            If given as a string, the camera will track the fly with the given name.
+            If given as a list, the camera will track the 0th fly in the list. However,
+            contact forces will be drawn for all flies included in the list.
         window_size : tuple[int, int]
             Size of the rendered images in pixels, by default (640, 480).
         play_speed : float
@@ -106,6 +108,8 @@ class Camera:
             video will not be saved. By default None.
         """
         self.attachment_point = attachment_point
+        if isinstance(targeted_fly_names, str):
+            self.targeted_fly_names = [targeted_fly_names]
         self.targeted_fly_names = targeted_fly_names
 
         config = util.load_config()
