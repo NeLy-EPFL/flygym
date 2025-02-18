@@ -60,7 +60,7 @@ class Camera:
         camera_name : str
             Name of camera
         targeted_fly_names: str | list[str]
-            If given as a string, the camera will track the fly with the given name and 
+            If given as a string, the camera will track the fly with the given name and
             draw contact forces for this fly.
             If given as a list, the camera will track the 0th fly in the list. However,
             contact forces will be drawn for all flies included in the list.
