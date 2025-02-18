@@ -218,7 +218,7 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        if not last_obs is None:
+        if last_obs is not None:
             self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
@@ -534,13 +534,15 @@ class YawOnlyCamera(ZStabilizedCamera):
         super().__init__(*args, **kwargs)
 
         # prev yaws is a used in as a queue
-        self.smothing_window_length = smoothing_window_length
+        self.smoothing_window_length = smoothing_window_length
         self.prev_yaws = None
         self.init_yaw = None
 
     def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.prev_yaws is None:
-            self.prev_yaws = np.ones(self.smothing_window_length) * obs["rot"][0].copy()
+            self.prev_yaws = (
+                np.ones(self.smoothing_window_length) * obs["rot"][0].copy()
+            )
             self.init_yaw = obs["rot"][0].copy()
         self.prev_yaws = np.roll(self.prev_yaws, 1)
         self.prev_yaws[0] = obs["rot"][0].copy()
