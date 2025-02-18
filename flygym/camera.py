@@ -209,7 +209,7 @@ class Camera:
         physics: mjcf.Physics,
         floor_height: float,
         curr_time: float,
-        last_obs: list[dict],
+        last_obs: Optional[list[dict]] = None,
     ) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
@@ -223,7 +223,8 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        self._update_camera(physics, floor_height, last_obs[0])
+        if last_obs is not None:
+            self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
         img = physics.render(width=width, height=height, camera_id=self.camera_id)  # type: ignore - physics.render accepts either an int or string for camera_id
@@ -538,13 +539,15 @@ class YawOnlyCamera(ZStabilizedCamera):
         super().__init__(*args, **kwargs)
 
         # prev yaws is a used in as a queue
-        self.smothing_window_length = smoothing_window_length
+        self.smoothing_window_length = smoothing_window_length
         self.prev_yaws = None
         self.init_yaw = None
 
     def _update_camera(self, physics: mjcf.Physics, floor_height: float, obs: dict):
         if self.prev_yaws is None:
-            self.prev_yaws = np.ones(self.smothing_window_length) * obs["rot"][0].copy()
+            self.prev_yaws = (
+                np.ones(self.smoothing_window_length) * obs["rot"][0].copy()
+            )
             self.init_yaw = obs["rot"][0].copy()
         self.prev_yaws = np.roll(self.prev_yaws, 1)
         self.prev_yaws[0] = obs["rot"][0].copy()

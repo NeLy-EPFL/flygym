@@ -249,7 +249,7 @@ class Simulation(gym.Env):
                 self.curr_time,
                 [all_flies_obs[name] for name in camera.targeted_fly_names]
                 if camera.targeted_fly_names
-                else [{}],
+                else None,
             )
             for camera in self.cameras
         ]
