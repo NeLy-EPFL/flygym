@@ -21,7 +21,7 @@ class Camera:
         self,
         attachment_point: dm_control.mjcf.element._AttachableElement,
         camera_name: str,
-        targeted_fly_names: list[str] = [],
+        targeted_fly_names: Union[list[str], str] = [],
         window_size: tuple[int, int] = (640, 480),
         play_speed: float = 0.2,
         fps: int = 30,
@@ -60,7 +60,8 @@ class Camera:
         camera_name : str
             Name of camera
         targeted_fly_names: str | list[str]
-            If given as a string, the camera will track the fly with the given name.
+            If given as a string, the camera will track the fly with the given name and 
+            draw contact forces for this fly.
             If given as a list, the camera will track the 0th fly in the list. However,
             contact forces will be drawn for all flies included in the list.
         window_size : tuple[int, int]
