@@ -229,11 +229,12 @@ class Camera:
         width, height = self.window_size
         img = physics.render(width=width, height=height, camera_id=self.camera_id)  # type: ignore - physics.render accepts either an int or string for camera_id
         img = img.copy()
-        if self.draw_contacts:
-            for i in range(len(self.targeted_fly_names)):
-                img = self._draw_contacts(img, physics, last_obs[i])
-        if self.draw_gravity:
-            img = self._draw_gravity(img, physics, last_obs[0]["pos"])
+        if last_obs is not None:
+            if self.draw_contacts:
+                for i in range(len(self.targeted_fly_names)):
+                    img = self._draw_contacts(img, physics, last_obs[i])
+            if self.draw_gravity:
+                img = self._draw_gravity(img, physics, last_obs[0]["pos"])
 
         render_playspeed_text = self.play_speed_text
         render_time_text = self.timestamp_text
