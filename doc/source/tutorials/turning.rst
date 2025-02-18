@@ -604,7 +604,7 @@ Let’s import this class and instantiate it:
     cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_top",
-        targeted_fly_names=[fly.name], play_speed=0.1
+        targeted_fly_names=fly.name, play_speed=0.1
     )
     
     nmf = HybridTurningController(

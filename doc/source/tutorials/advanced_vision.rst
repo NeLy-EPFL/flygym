@@ -97,7 +97,8 @@ direction of movement.
     )
     cam = Camera(attachment_point=observer_fly.model.worldbody,
         camera_name="camera_top_zoomout",
-        targeted_fly_names=[observer_fly.name],
+        attachment_name=observer_fly.name,
+        targeted_fly_names=observer_fly.name,
         play_speed=0.1,
     )
     sim = Simulation(

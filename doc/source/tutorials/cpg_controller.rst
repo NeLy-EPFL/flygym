@@ -550,7 +550,7 @@ We start by initializing the simulation:
     fly = Fly(init_pose="stretch", actuated_joints=all_leg_dofs, control="position")
     cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody, camera_name="camera_left",
-        targeted_fly_names=[fly.name], play_speed=0.1
+        targeted_fly_names=fly.name, play_speed=0.1
     )
     sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
 
@@ -725,7 +725,7 @@ parts of the code that have been changed are indicated with comments.
     )
     cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
         camera_name="camera_left",
-        targeted_fly_names=[0], play_speed=0.1)
+        targeted_fly_names=fly.name, play_speed=0.1)
     sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
     
     cpg_network.reset()
