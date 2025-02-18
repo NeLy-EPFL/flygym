@@ -27,6 +27,8 @@ class VisualTaxis(HybridTurningController):
     ----------
     camera : Camera
         The camera to be used for rendering.
+    arena : MovingObjArena
+        Arena with moving object for the fly to follow.
     obj_threshold : float
         The threshold for object detection. Minimum and maximum
         brightness values are 0 and 1. If an ommatidium's intensity
@@ -40,9 +42,15 @@ class VisualTaxis(HybridTurningController):
     """
 
     def __init__(
-        self, camera: Camera, obj_threshold=0.15, decision_interval=0.05, **kwargs
+        self,
+        camera: Camera,
+        arena: MovingObjArena,
+        obj_threshold=0.15,
+        decision_interval=0.05,
+        **kwargs,
     ):
         super().__init__(cameras=[camera], **kwargs)
+        self.arena = arena
 
         self.obj_threshold = obj_threshold
         self.decision_interval = decision_interval
