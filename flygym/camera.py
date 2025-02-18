@@ -218,7 +218,7 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        if last_obs is None:
+        if not last_obs is None:
             self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
