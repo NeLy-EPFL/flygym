@@ -444,8 +444,9 @@ class Camera:
         if not self.perspective_arrow_length:
             unit_vectors = lines2d[:, :, 1] - lines2d[:, :, 0]
             length = np.linalg.norm(unit_vectors, axis=-1, keepdims=True)
-            # avoid division by small number
-            length = np.clip(length, 1e-8, 1e8)
+            length = np.clip(
+                length, 1e-8, None
+            )  # avoid division by 0 or very small numbers
             unit_vectors /= length
             if self.decompose_contacts:
                 lines2d[:, :, 1] = (
