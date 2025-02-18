@@ -99,7 +99,7 @@ fly looks while walking over these different terrain types:
         cam = ZStabilizedCamera(
             attachment_point=fly.model.worldbody,
             camera_name="camera_left",
-            targeted_fly_names=[fly.name], play_speed=0.1
+            targeted_fly_names=fly.name, play_speed=0.1
         )
         sim = SingleFlySimulation(
             fly=fly,
@@ -166,7 +166,7 @@ on each of the different terrain types:
             cam = ZStabilizedCamera(
                 attachment_point=fly.model.worldbody,
                 camera_name="camera_left",
-                targeted_fly_names=[fly.name], play_speed=0.1
+                targeted_fly_names=fly.name, play_speed=0.1
             )
             sim = SingleFlySimulation(
                 fly=fly,
@@ -497,7 +497,7 @@ stumbling detection:
     cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
         camera_name="camera_left",
-        targeted_fly_names=[fly.name], play_speed=0.1
+        targeted_fly_names=fly.name, play_speed=0.1
     )
     arena = MixedTerrain()
     sim = SingleFlySimulation(

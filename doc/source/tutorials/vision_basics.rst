@@ -566,7 +566,7 @@ our arena and Gym environment:
     )
     cam = Camera(attachment_point=fly.model.worldbody,
         camera_name="camera_top_zoomout",
-        targeted_fly_names=[0],
+        targeted_fly_names=fly.name,
         play_speed=0.1,
     )
     sim = VisualTaxis(

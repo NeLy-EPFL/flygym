@@ -131,7 +131,7 @@ def run_simulation(
 
     cam = ZStabilizedCamera(
         attachment_point=fly.model.worldbody,
-        targeted_fly_names=[fly.name],
+        targeted_fly_names=fly.name,
         camera_name="birdeye_cam",
         timestamp_text=False,
         camera_parameters=cam_params,

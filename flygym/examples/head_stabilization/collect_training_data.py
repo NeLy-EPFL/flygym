@@ -85,7 +85,7 @@ def run_simulation(
         cam = YawOnlyCamera(
             attachment_point=fly.model.worldbody,
             camera_name="camera_left",
-            targeted_fly_names=[fly.name],
+            targeted_fly_names=fly.name,
             play_speed=0.1,
         )
     else:
