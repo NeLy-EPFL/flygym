@@ -204,7 +204,7 @@ class Camera:
         physics: mjcf.Physics,
         floor_height: float,
         curr_time: float,
-        last_obs: list[dict],
+        last_obs: Optional[list[dict]] = None,
     ) -> Union[np.ndarray, None]:
         """Call the ``render`` method to update the renderer. It should be
         called every iteration; the method will decide by itself whether
@@ -218,7 +218,8 @@ class Camera:
         if curr_time < len(self._frames) * self._eff_render_interval:
             return None
 
-        self._update_camera(physics, floor_height, last_obs[0])
+        if last_obs is None:
+            self._update_camera(physics, floor_height, last_obs[0])
 
         width, height = self.window_size
         img = physics.render(width=width, height=height, camera_id=self.camera_id)  # type: ignore - physics.render accepts either an int or string for camera_id
