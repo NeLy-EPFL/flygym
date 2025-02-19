@@ -52,6 +52,7 @@ dev = [
     "shapely>=2.0,<3.0",
     "rasterio>=1.0,<2.0",
     "requests>=2.0,<3.0",
+    "build>=1.2,<2.0",
 ]
 examples = [
     "joblib>=1.0,<2.0",
