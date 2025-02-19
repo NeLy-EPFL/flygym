@@ -5,6 +5,7 @@ from tqdm import trange
 from gymnasium.utils.env_checker import check_env
 
 from flygym.camera import Camera
+from flygym.arena import FlatTerrain
 from flygym.vision import save_video_with_vision_insets
 from flygym.examples.locomotion import HybridTurningController
 from flygym.examples.vision import MovingObjArena
@@ -26,6 +27,8 @@ class VisualTaxis(HybridTurningController):
     ----------
     camera : Camera
         The camera to be used for rendering.
+    arena : MovingObjArena
+        Arena with moving object for the fly to follow.
     obj_threshold : float
         The threshold for object detection. Minimum and maximum
         brightness values are 0 and 1. If an ommatidium's intensity
@@ -39,9 +42,15 @@ class VisualTaxis(HybridTurningController):
     """
 
     def __init__(
-        self, camera: Camera, obj_threshold=0.15, decision_interval=0.05, **kwargs
+        self,
+        camera: Camera,
+        arena: MovingObjArena,
+        obj_threshold=0.15,
+        decision_interval=0.05,
+        **kwargs,
     ):
         super().__init__(cameras=[camera], **kwargs)
+        self.arena = arena
 
         self.obj_threshold = obj_threshold
         self.decision_interval = decision_interval
@@ -109,6 +118,7 @@ class VisualTaxis(HybridTurningController):
         """See `HybridTurningController.reset`."""
         raw_obs, _ = super().reset(seed=seed)
         self.visual_inputs_hist = []
+        self.arena.reset(self.physics, seed=seed)
         return self._process_visual_observation(raw_obs["vision"]), {}
 
 
@@ -136,12 +146,17 @@ if __name__ == "__main__":
         enable_vision=True,
         neck_kp=1000,
     )
+
+    cam_params = {"mode": "fixed", "pos": (15, 0, 35), "euler": (0, 0, 0), "fovy": 45}
+
     cam = Camera(
-        fly=fly,
-        camera_id="birdeye_cam",
+        attachment_point=arena.root_element.worldbody,
+        camera_name="birdeye_cam",
+        camera_parameters=cam_params,
         play_speed=0.5,
         window_size=(800, 608),
     )
+
     sim = VisualTaxis(
         fly=fly,
         camera=cam,

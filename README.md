@@ -49,13 +49,19 @@ We are constantly working on expanding the package and improving its usability; 
 ## Citation
 If you use NeuroMechFly in your work, please cite the following papers:
 ```
-@article{WangChen2023,
-  author = {Sibo Wang-Chen and Victor Alfred Stimpfling and Pembe Gizem \"{O}zdil and Louise Genoud and Femke Hurtak and Pavan Ramdya},
-  title = {NeuroMechFly 2.0, a framework for simulating embodied sensorimotor control in adult Drosophila},
-  year = {2023},
-  doi = {10.1101/2023.09.18.556649},
-  URL = {https://www.biorxiv.org/content/early/2023/09/18/2023.09.18.556649},
-  journal = {bioRxiv}
+@article{WangChen2024,
+  title = {NeuroMechFly v2: simulating embodied sensorimotor control in adult Drosophila},
+  volume = {21},
+  ISSN = {1548-7105},
+  url = {http://dx.doi.org/10.1038/s41592-024-02497-y},
+  DOI = {10.1038/s41592-024-02497-y},
+  number = {12},
+  journal = {Nature Methods},
+  publisher = {Springer Science and Business Media LLC},
+  author = {Wang-Chen,  Sibo and Stimpfling,  Victor Alfred and Lam,  Thomas Ka Chung and \"{O}zdil,  Pembe Gizem and Genoud,  Louise and Hurtak,  Femke and Ramdya,  Pavan},
+  year = {2024},
+  month = nov,
+  pages = {2353–2362}
 }
 
 @article{LobatoRios2022,

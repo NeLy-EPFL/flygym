@@ -10,8 +10,10 @@ def test_plume_tracking_task():
     plume_data_path = get_data_path(
         "flygym", "data/test_data/plume_tracking/plume_short.hdf5"
     )
+    main_camera_name = "birdeye_cam"
     arena = OdorPlumeArena(
         plume_data_path=plume_data_path,
+        main_camera_name=main_camera_name,
         plume_simulation_fps=20,
         intensity_scale_factor=1.0,
     )
@@ -29,7 +31,23 @@ def test_plume_tracking_task():
         spawn_pos=(40, 80, 0.25),
         spawn_orientation=(0, 0, -np.pi),
     )
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
+    cam_params = {
+        "mode": "fixed",
+        "pos": (
+            0.50 * arena.arena_size[0],
+            0.15 * arena.arena_size[1],
+            1.00 * arena.arena_size[1],
+        ),
+        "euler": (np.deg2rad(15), 0, 0),
+        "fovy": 60,
+    }
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name=main_camera_name,
+        timestamp_text=False,
+        camera_parameters=cam_params,
+    )
+
     sim = PlumeNavigationTask(
         fly=fly,
         arena=arena,
@@ -68,9 +86,7 @@ def test_plume_tracking_task():
     assert np.unique(odor_hist[:, 0, 0]).size >= 2
 
     # Check position mapping for rendering
-    pos_display_sample, pos_physical_sample = arena.get_position_mapping(
-        sim, camera_id="birdeye_cam"
-    )
+    pos_display_sample, pos_physical_sample = arena.get_position_mapping(sim)
     assert pos_display_sample.shape == (160, 240, 2)
     assert pos_physical_sample.shape == (160, 240, 2)
     # plt.imshow(rendered_images[0])

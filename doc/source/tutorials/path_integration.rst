@@ -405,7 +405,20 @@ simulation:
     
         arena = PathIntegrationArenaFlat()
         
-        cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
+        cam_params = {
+            "mode":"fixed",
+            "pos": (0, 0, 150),
+            "euler":(0, 0, 0),
+            "fovy":60
+            }
+        
+        cam = Camera(
+            attachment_point=arena.root_element.worldbody,
+            camera_name="birdeye_cam",
+            timestamp_text = False,
+            camera_parameters=cam_params
+        )
+        
         sim = PathIntegrationController(
             phase_biases=get_cpg_biases(gait),
             fly=fly,
@@ -552,7 +565,8 @@ block:
     )
     if not exploration_data_dir.is_dir():
         raise FileNotFoundError(
-            "Pregenerated simulation data not found. Please download it from TODO."
+            "Pregenerated simulation data not found. Please download it from "
+            "https://zenodo.org/records/14890040"
         )
     else:
         print(f"[OK] Pregenerated simulation data found. Ready to proceed.")

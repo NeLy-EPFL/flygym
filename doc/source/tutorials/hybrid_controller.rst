@@ -75,7 +75,7 @@ fly looks while walking over these different terrain types:
     import numpy as np
     import matplotlib.pyplot as plt
     from tqdm import tqdm, trange
-    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.examples.locomotion import PreprogrammedSteps
     from pathlib import Path
 
@@ -96,8 +96,11 @@ fly looks while walking over these different terrain types:
             init_pose="stretch",
             control="position",
         )
-    
-        cam = Camera(fly=fly, play_speed=0.1)
+        cam = ZStabilizedCamera(
+            attachment_point=fly.model.worldbody,
+            camera_name="camera_left",
+            targeted_fly_names=fly.name, play_speed=0.1
+        )
         sim = SingleFlySimulation(
             fly=fly,
             cameras=[cam],
@@ -160,8 +163,11 @@ on each of the different terrain types:
                 init_pose="stretch",
                 control="position",
             )
-    
-            cam = Camera(fly=fly, play_speed=0.1)
+            cam = ZStabilizedCamera(
+                attachment_point=fly.model.worldbody,
+                camera_name="camera_left",
+                targeted_fly_names=fly.name, play_speed=0.1
+            )
             sim = SingleFlySimulation(
                 fly=fly,
                 cameras=[cam],
@@ -252,7 +258,7 @@ controller) per case, we can already begin to observe that the CPG- and
 rule-based controllers may not perform robustly over complex terrain. In
 fact, if we run 20 initial conditions for 1 second each, we get a result
 like the one reported in the NeuroMechFly v2 paper (Wang-Chen et al.,
-2023):
+2024):
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_comparison.png?raw=true
 
@@ -488,8 +494,11 @@ stumbling detection:
         control="position",
         contact_sensor_placements=contact_sensor_placements,
     )
-    
-    cam = Camera(fly=fly, play_speed=0.1)
+    cam = ZStabilizedCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_left",
+        targeted_fly_names=fly.name, play_speed=0.1
+    )
     arena = MixedTerrain()
     sim = SingleFlySimulation(
         fly=fly,

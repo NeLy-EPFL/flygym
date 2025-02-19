@@ -34,11 +34,6 @@ class OdorArena(BaseArena):
         The function that, given a distance from the odor source, returns
         the relative intensity of the odor. By default, this is an inverse
         square relationship.
-    birdeye_cam : dm_control.mujoco.Camera
-        MuJoCo camera that gives a birdeye view of the arena.
-    birdeye_cam_zoom : dm_control.mujoco.Camera
-         MuJoCo camera that gives a birdeye view of the arena, zoomed in
-         toward the fly.
 
     Parameters
     ----------
@@ -119,24 +114,6 @@ class OdorArena(BaseArena):
             )
         self.diffuse_func = diffuse_func
 
-        # Add birdeye camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(self.odor_source[:, 0].max() / 2, 0, 35),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-        self.birdeye_cam_zoom = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam_zoom",
-            mode="fixed",
-            pos=(11, 0, 29),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-
         # Add markers at the odor sources
         if marker_colors is None:
             color_cycle_rgb = load_config()["color_cycle_rgb"]
@@ -209,3 +186,12 @@ class OdorArena(BaseArena):
     @property
     def odor_dimensions(self) -> int:
         return self.peak_odor_intensity.shape[1]
+
+    def _get_max_floor_height(self) -> float:
+        geom = self.root_element.find("geom", "ground")
+        try:
+            plane_height = geom.pos[2]
+        except TypeError:
+            plane_height = 0.0
+
+        return plane_height

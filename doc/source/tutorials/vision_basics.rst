@@ -123,7 +123,18 @@ on the floor in a stable manner:
         enable_olfaction=True,
     )
     
-    cam = Camera(fly=fly, play_speed=0.2, camera_id="user_cam")
+    cam_params = {"mode":"fixed", "pos": (13, -18, 9),
+        "euler":(np.deg2rad(65), 0, 0), "fovy":45
+    }
+    
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name="birdeye_cam",
+        camera_parameters=cam_params,
+        play_speed=0.2,
+        window_size=(800, 608),
+        fps=24,
+    )
     sim = HybridTurningController(fly=fly, cameras=[cam], arena=arena)
     
     for i in range(500):
@@ -368,31 +379,6 @@ element:
 
            ...
 
-Let’s also add some cameras so we can visualize the scene from different
-angles. This concludes the definition of our ``__init__`` method.
-
-.. code:: python
-
-           ...
-
-           # Add camera
-           self.birdeye_cam = self.root_element.worldbody.add(
-               "camera",
-               name="birdeye_cam",
-               mode="fixed",
-               pos=(15, 0, 35),
-               euler=(0, 0, 0),
-               fovy=45,
-           )
-           self.birdeye_cam_zoom = self.root_element.worldbody.add(
-               "camera",
-               name="birdeye_cam_zoom",
-               mode="fixed",
-               pos=(15, 0, 20),
-               euler=(0, 0, 0),
-               fovy=45,
-           )
-
 Next, let’s define a ``get_spawn_position`` class. This is applies an
 offset to the user-defined fly spawn position. For example, if there is
 a stage in your arena that is 1 mm high, and you want to place the fly
@@ -578,11 +564,10 @@ our arena and Gym environment:
         enable_adhesion=True,
         enable_vision=True,
     )
-    cam = Camera(
-        fly=fly,
-        camera_id="birdeye_cam",
-        play_speed=0.5,
-        window_size=(800, 608),
+    cam = Camera(attachment_point=fly.model.worldbody,
+        camera_name="camera_top_zoomout",
+        targeted_fly_names=fly.name,
+        play_speed=0.1,
     )
     sim = VisualTaxis(
         fly=fly,

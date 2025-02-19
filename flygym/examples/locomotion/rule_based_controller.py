@@ -258,7 +258,7 @@ def run_rule_based_simulation(sim, controller, run_time, pbar=True):
 
 
 if __name__ == "__main__":
-    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym import Fly, YawOnlyCamera, SingleFlySimulation
     from flygym.preprogrammed import all_leg_dofs
 
     run_time = 1
@@ -292,8 +292,10 @@ if __name__ == "__main__":
         draw_adhesion=True,
     )
 
-    cam = Camera(
-        fly=fly,
+    cam = YawOnlyCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_right",
+        targeted_fly_names=fly.name,
         play_speed=0.1,
     )
 

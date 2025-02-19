@@ -79,6 +79,7 @@ Let’s decide on a few hyperparameters defining our plume:
     import h5py
     from phi.torch import flow
     from tqdm import trange
+    from typing import Tuple
     from pathlib import Path
     
     np.random.seed(0)
@@ -391,35 +392,38 @@ follows:
        at the fly's location at the correct time.
        """
        def __init__(
-               self,
-               plume_data_path: Path,
-               dimension_scale_factor: float = 0.5,
-               plume_simulation_fps: float = 200,
-               intensity_scale_factor: float = 1.0,
-               friction: tuple[float, float, float] = (1, 0.005, 0.0001),
-               num_sensors: int = 4,
-           ):
-               """
-               Parameters
-               ----------
-               plume_data_path : Path
-                   Path to the HDF5 file containing the plume simulation data.
-               dimension_scale_factor : float, optional
-                   Scaling factor for the plume simulation grid. Each cell in the
-                   plume grid is this many millimeters in the simulation. By
-                   default 0.5.
-               plume_simulation_fps : float, optional
-                   Frame rate of the plume simulation. Each frame in the plume
-                   dataset is ``1 / plume_simulation_fps`` seconds in the physics
-                   simulation. By default 200.
-               intensity_scale_factor : float, optional
-                   Scaling factor for the intensity of the odor. By default 1.0.
-               friction : tuple[float, float, float], optional
-                   Friction parameters for the floor geom. By default (1, 0.005,
-                   0.0001).
-               num_sensors : int, optional
-                   Number of olfactory sensors on the fly. By default 4.
-               """
+            self,
+            plume_data_path: Path,
+            main_camera_name: str,
+            dimension_scale_factor: float = 0.5,
+            plume_simulation_fps: float = 200,
+            intensity_scale_factor: float = 1.0,
+            friction: Tuple[float, float, float] = (1, 0.005, 0.0001),
+            num_sensors: int = 4,
+        ):
+            """
+            Parameters
+            ----------
+            plume_data_path : Path
+                Path to the HDF5 file containing the plume simulation data.
+            main_camera_name : str
+                Name of the main camera used to render the plume simulation.
+            dimension_scale_factor : float, optional
+                Scaling factor for the plume simulation grid. Each cell in the
+                plume grid is this many millimeters in the simulation. By
+                default 0.5.
+            plume_simulation_fps : float, optional
+                Frame rate of the plume simulation. Each frame in the plume
+                dataset is ``1 / plume_simulation_fps`` seconds in the physics
+                simulation. By default 200.
+            intensity_scale_factor : float, optional
+                Scaling factor for the intensity of the odor. By default 1.0.
+            friction : Tuple[float, float, float], optional
+                Friction parameters for the floor geom. By default (1, 0.005,
+                0.0001).
+            num_sensors : int, optional
+                Number of olfactory sensors on the fly. By default 4.
+            """
 
                super().__init__()
 
@@ -455,22 +459,6 @@ follows:
                    pos=(self.arena_size[0] / 2, self.arena_size[1] / 2, -1),
                    material=floor_material,
                )
-
-               # Add birdeye camera
-               self.birdeye_cam = self.root_element.worldbody.add(
-                   "camera",
-                   name="birdeye_cam",
-                   mode="fixed",
-                   pos=(
-                       0.50 * self.arena_size[0],
-                       0.15 * self.arena_size[1],
-                       1.00 * self.arena_size[1],
-                   ),
-                   euler=(np.deg2rad(15), 0, 0),
-                   fovy=60,
-               )
-
-Note that we have added a bird’s eye camera for rendering.
 
 We will also implement a function that reads out the odor intensity for
 every sensor from the simulated smoke grid:
@@ -567,10 +555,12 @@ high plume FPS to make the simulation easier to run.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction import OdorPlumeArena
-    
+    from flygym.examples.olfaction.plume_tracking_arena import OdorPlumeArena
+
+    main_camera_name = "birdeye_camera"
     arena = OdorPlumeArena(
-        output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25
+        output_dir / "plume.hdf5", main_camera_name=main_camera_name,
+        plume_simulation_fps=8000, dimension_scale_factor=0.25
     )
 
 Now, we are ready to implement the main simulation loop. We will make
@@ -590,7 +580,21 @@ the fly stand still for the sake of this demonstration:
         spawn_pos=(60.0, 30.0, 0.25),
         spawn_orientation=(0, 0, -np.pi),
     )
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
+
+    cam_params = {"mode":"fixed",
+        "pos": (
+                    0.50 * arena.arena_size[0],
+                    0.15 * arena.arena_size[1],
+                    1.00 * arena.arena_size[1],
+                ),
+        "euler":(np.deg2rad(15), 0, 0), "fovy":60}
+        
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name=main_camera_name,
+        timestamp_text = False,
+        camera_parameters=cam_params
+    )   
     sim = SingleFlySimulation(fly=fly, arena=arena, cameras=[cam])
     
     preprogrammed_step = PreprogrammedSteps()
@@ -875,8 +879,21 @@ Let’s run a sample simulation where the fly walks blindly forward:
         spawn_pos=(60.0, 30.0, 0.25),
         spawn_orientation=(0, 0, -np.pi),
     )
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.2, timestamp_text=True)
-    
+    cam_params = {"mode":"fixed",
+        "pos": (
+                    0.50 * arena.arena_size[0],
+                    0.15 * arena.arena_size[1],
+                    1.00 * arena.arena_size[1],
+                ),
+        "euler":(np.deg2rad(15), 0, 0), "fovy":60}
+        
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name=main_camera_name,
+        timestamp_text = False,
+        camera_parameters=cam_params
+    )
+
     sim = PlumeNavigationTask(
         fly=fly,
         arena=arena,
@@ -1364,8 +1381,21 @@ Now, let’s run this controller:
     wind_dir = [1.0, 0.0]
     ctrl = SimplePlumeNavigationController(timestep, wind_dir=wind_dir)
     
-    cam = Camera(fly=fly, camera_id="birdeye_cam", play_speed=0.5, timestamp_text=True)
-    
+    cam_params = {"mode":"fixed",
+        "pos": (
+                    0.50 * arena.arena_size[0],
+                    0.15 * arena.arena_size[1],
+                    1.00 * arena.arena_size[1],
+                ),
+        "euler":(np.deg2rad(15), 0, 0), "fovy":60}
+        
+    cam = Camera(
+        attachment_point=arena.root_element.worldbody,
+        camera_name=main_camera_name,
+        timestamp_text = False,
+        camera_parameters=cam_params
+    )
+
     dm_cam = DmCamera(
         sim.physics,
         camera_id=cam.camera_id,
