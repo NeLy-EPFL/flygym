@@ -149,9 +149,6 @@ class PathIntegrationController(HybridTurningController):
         """
         obs, reward, terminated, truncated, info = super().step(action)
 
-        # Update camera position
-        self.arena.update_cam_pos(self.physics, obs["fly"][0, :2])
-
         # Calculate stride since last step for each leg
         ee_pos_rel = self.absolute_to_relative_pos(
             obs["end_effectors"][:, :2], obs["fly"][0, :2], obs["fly_orientation"][:2]

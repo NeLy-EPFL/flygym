@@ -116,11 +116,17 @@ iterations to allow it to stand on the ground in a stable manner.
         draw_adhesion=False,
     )
     
+    cam_params = {
+        "mode":"fixed",
+        "pos": (odor_source[:, 0].max() / 2, 0, 35),
+        "euler":(0, 0, 0), "fovy":45
+        }
+        
     cam = Camera(
-        fly=fly,
-        camera_id="birdeye_cam",
-        play_speed=0.5,
-        window_size=(800, 608),
+        attachment_point=arena.root_element.worldbody,
+        camera_name="birdeye_cam",
+        timestamp_text = False,
+        camera_parameters=cam_params
     )
     
     sim = HybridTurningController(

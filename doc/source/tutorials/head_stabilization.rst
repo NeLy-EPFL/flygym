@@ -66,7 +66,7 @@ implement the following function:
     from dm_control.utils import transformations
     from dm_control.rl.control import PhysicsError
     
-    from flygym import Fly, Camera
+    from flygym import Fly, ZStabilizedCamera
     from flygym.arena import FlatTerrain, BlocksTerrain
     from flygym.preprogrammed import get_cpg_biases
     from flygym.examples.locomotion import HybridTurningController
@@ -140,9 +140,10 @@ implement the following function:
             contact_sensor_placements=contact_sensor_placements,
             spawn_pos=(*spawn_xy, 0.25),
         )
-        cam = Camera(
-            fly=fly, camera_id="Animat/camera_left", play_speed=0.1, timestamp_text=True
-        )
+        cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
+            camera_name="camera_left",
+            targeted_fly_names=fly.name, play_speed=0.1
+        )                  
         sim = HybridTurningController(
             arena=arena,
             phase_biases=get_cpg_biases(gait),

@@ -188,6 +188,19 @@ class BaseArena(ABC):
         """
         return
 
+    @abstractmethod
+    def _get_max_floor_height(self) -> float:
+        """Get the height of the floor of the arena. This is useful for
+        camera rendering. The camera should be placed at a height that is
+        slightly above the floor to avoid rendering artifacts.
+
+        Returns
+        -------
+        float
+            The height of the floor of the arena in mm.
+        """
+        pass
+
 
 class FlatTerrain(BaseArena):
     """Flat terrain with no obstacles.
@@ -247,6 +260,7 @@ class FlatTerrain(BaseArena):
             material=grid,
             size=ground_size,
             friction=friction,
+            conaffinity=0,
         )
         self.friction = friction
         if scale_bar_pos:
@@ -263,3 +277,12 @@ class FlatTerrain(BaseArena):
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         return rel_pos, rel_angle
+
+    def _get_max_floor_height(self) -> float:
+        geom = self.root_element.find("geom", "ground")
+        try:
+            plane_height = geom.pos[2]
+        except TypeError:
+            plane_height = 0.0
+
+        return plane_height

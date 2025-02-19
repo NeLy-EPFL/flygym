@@ -5,6 +5,24 @@ Change Log
 
    FlyGym uses `EffVer <https://jacobtomlinson.dev/effver/>`_ as its versioning policy. The version number will communicate how much effort we expect a user to spend to adopt the new version. 
 
+.. note:: 
+  
+   See the `Release <https://github.com/NeLy-EPFL/flygym/releases>`_ page for previous releases and metadata such as release dates.
+
+* **1.2.0:**
+
+  * **API-breaking changes:**
+
+    * Enhance camera logic. See the `Camera API reference <api_ref/camera.html>`_ for details.
+    * Use the `FlyVis package <https://github.com/TuragaLab/flyvis>`_ as `published on PyPI <https://pypi.org/project/flyvis/>`_. Users should now use ``flyvis`` instead of ``flyvision`` as module name.
+
+  * **Other changes:**
+  
+    * Add NeuroMechFly game for outreach (used at EPFL Scientastic! Days, etc.).
+    * Transition from ``setup.py`` to ``pyproject.toml``, specifically using `Poetry <https://python-poetry.org/>`_ as the build backend. Users can now install FlyGym with the exact versions of dependencies used by the developers by running ``poetry install`` from the root directory. This will create a virtual environment with the correct dependencies as specified in the included ``poetry.lock`` file, which is version-tracked as a part of the FlyGym Github repository.
+    * Add `VS Code devcontainer <https://code.visualstudio.com/docs/devcontainers/containers>`_ support.
+    * Remove support for Python 3.9.
+   
 * **1.1.0:**
 
   * Added cardinal direction sensing (vectors describing +x, +y, +z of the fly) to the observation space.

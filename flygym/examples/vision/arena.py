@@ -45,6 +45,7 @@ class MovingObjArena(BaseArena):
         move_speed=10,
         move_direction="right",
         lateral_magnitude=2,
+        seed=0,
     ):
         super().__init__()
 
@@ -109,23 +110,8 @@ class MovingObjArena(BaseArena):
             material=obstacle,
         )
 
-        # Add camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(15, 0, 35),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-        self.birdeye_cam_zoom = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam_zoom",
-            mode="fixed",
-            pos=(15, 0, 20),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
+    def _get_max_floor_height(self) -> float:
+        return 0.0
 
     def get_spawn_position(self, rel_pos, rel_angle):
         return rel_pos, rel_angle
@@ -139,7 +125,8 @@ class MovingObjArena(BaseArena):
         physics.bind(self.object_body).mocap_pos = self.ball_pos
         self.curr_time += dt
 
-    def reset(self, physics):
+    def reset(self, physics, seed=0):
+        np.random.seed(seed)
         if self.move_direction == "random":
             self.y_mult = np.random.choice([-1, 1])
         self.curr_time = 0
@@ -312,23 +299,8 @@ class MovingFlyArena(BaseArena):
         )
         self.freejoint = spawn_site.attach(fly).add("freejoint")
 
-        # Add camera
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(5, 0, 35),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-        self.birdeye_cam_zoom = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam_zoom",
-            mode="fixed",
-            pos=(5, 0, 20),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
+    def _get_max_floor_height(self) -> float:
+        return -0.5
 
     def get_spawn_position(self, rel_pos, rel_angle):
         return rel_pos, rel_angle
@@ -417,15 +389,6 @@ class MovingBarArena(Tethered):
             material=cylinder_material,
         )
 
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(0, 0, 25),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-
     def reset(self, physics):
         """Resets the position of the cylinder."""
         self.curr_time = 0
@@ -459,9 +422,6 @@ class ObstacleOdorArena(BaseArena):
         diffuse_func: Callable = lambda x: x**-2,
         marker_colors: Optional[list[tuple[float, float, float, float]]] = None,
         marker_size: float = 0.1,
-        user_camera_settings: Optional[
-            tuple[tuple[float, float, float], tuple[float, float, float], float]
-        ] = None,
     ):
         self.terrain_arena = terrain
         self.obstacle_positions = obstacle_positions
@@ -538,50 +498,6 @@ class ObstacleOdorArena(BaseArena):
                 material=obstacle_material,
             )
 
-        # Add monitor cameras
-        self.side_cam = self.root_element.worldbody.add(
-            "camera",
-            name="side_cam",
-            mode="fixed",
-            pos=(odor_source[0, 0] / 2, -25, 10),
-            euler=(np.deg2rad(75), 0, 0),
-            fovy=50,
-        )
-        self.back_cam = self.root_element.worldbody.add(
-            "camera",
-            name="back_cam",
-            mode="fixed",
-            pos=(-9, 0, 7),
-            euler=(np.deg2rad(60), 0, -np.deg2rad(90)),
-            fovy=55,
-        )
-        self.birdeye_cam = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam",
-            mode="fixed",
-            pos=(7.5, 0, 25),
-            euler=(0, 0, 0),
-            fovy=45,
-        )
-        self.birdeye_cam_origin = self.root_element.worldbody.add(
-            "camera",
-            name="birdeye_cam_origin",
-            mode="fixed",
-            pos=(0, 0, 40),
-            euler=(0, 0, 0),
-            fovy=50,
-        )
-        if user_camera_settings is not None:
-            cam_pos, cam_euler, cam_fovy = user_camera_settings
-            self.root_element.worldbody.add(
-                "camera",
-                name="user_cam",
-                mode="fixed",
-                pos=cam_pos,
-                euler=cam_euler,
-                fovy=cam_fovy,
-            )
-
     def get_spawn_position(
         self, rel_pos: np.ndarray, rel_angle: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -602,3 +518,6 @@ class ObstacleOdorArena(BaseArena):
     def post_visual_render_hook(self, physics):
         for geom, rgba in zip(self._odor_marker_geoms, self.marker_colors):
             physics.bind(geom).rgba = np.array([*rgba[:3], 1])
+
+    def _get_max_floor_height(self) -> float:
+        return self.terrain_arena._get_max_floor_height()

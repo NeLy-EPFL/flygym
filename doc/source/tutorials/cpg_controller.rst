@@ -300,7 +300,7 @@ that the legs that should *not* swing together are coupled with a phase
 difference of 180 degrees, ensuring that they are out of phase once the
 network is synchronized. We will use other parameters from the
 `NeuroMechFly v2
-paper <https://www.biorxiv.org/content/10.1101/2023.09.18.556649>`__.
+paper <https://www.nature.com/articles/s41592-024-02497-y.epdf?sharing_token=jK2FbKWL99-O28WNqrpXWNRgN0jAjWel9jnR3ZoTv0MjiFZczOI3_5wYVxbEbClrTuJzjKyEfhm2kIwso489-ypEsSqlyasWAEsBCvR9WU5poT-q2bblI6hCc7Zji6wb_jZjfXl7KWLbd2pgZTmWvk_ADQ6RuzlnHwvQyipMJzg%3D>`__.
 
 
 .. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/cpg_controller/tripod_cpg.png?raw=true
@@ -543,12 +543,15 @@ We start by initializing the simulation:
 
 .. code:: ipython3
 
-    from flygym import Fly, Camera, SingleFlySimulation
+    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
     from flygym.preprogrammed import all_leg_dofs
-    
+
     run_time = 1
     fly = Fly(init_pose="stretch", actuated_joints=all_leg_dofs, control="position")
-    cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False)
+    cam = ZStabilizedCamera(
+        attachment_point=fly.model.worldbody, camera_name="camera_left",
+        targeted_fly_names=fly.name, play_speed=0.1
+    )
     sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
 
 We will also initialize a CPG network:
@@ -720,7 +723,9 @@ parts of the code that have been changed are indicated with comments.
         enable_adhesion=True,
         draw_adhesion=True,
     )
-    cam = Camera(fly=fly, play_speed=0.1, draw_contacts=False)
+    cam = ZStabilizedCamera(attachment_point=fly.model.worldbody,
+        camera_name="camera_left",
+        targeted_fly_names=fly.name, play_speed=0.1)
     sim = SingleFlySimulation(fly=fly, cameras=[cam], timestep=1e-4)
     
     cpg_network.reset()

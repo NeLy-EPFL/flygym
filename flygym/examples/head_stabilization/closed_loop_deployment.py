@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from tqdm import trange
-from flygym import Camera, NeckCamera, SingleFlySimulation
+from flygym import Camera, ZStabilizedCamera, SingleFlySimulation
 from flygym.vision import Retina
 from flygym.arena import BaseArena, FlatTerrain, BlocksTerrain
 from typing import Optional
@@ -54,22 +54,26 @@ def run_simulation(
         head_stabilization_model=head_stabilization_model,
     )
 
-    birdeye_camera = Camera(
-        fly=fly,
-        camera_id="Animat/camera_top_zoomout",
+    birdeye_cam_params = {"pos": (0, 0, 20), "euler": (0, 0, 0), "fovy": 45}
+
+    birdeye_camera = ZStabilizedCamera(
+        attachment_point=fly.model.worldbody,
+        camera_name="birdeye_cam",
+        targeted_fly_names=fly.name,
+        camera_parameters=birdeye_cam_params,
         play_speed=0.2,
         window_size=(600, 600),
         fps=24,
         play_speed_text=False,
     )
-    birdeye_camera._cam.pos -= np.array([0, 0, 20.0])
 
-    neck_camera = NeckCamera(
-        fly=fly,
+    neck_camera = Camera(
+        attachment_point=fly.model.worldbody,
+        camera_name="camera_neck_zoomin",
+        targeted_fly_names=fly.name,
         play_speed=0.2,
         fps=24,
         window_size=(600, 600),
-        camera_follows_fly_orientation=True,
         play_speed_text=False,
     )
 
