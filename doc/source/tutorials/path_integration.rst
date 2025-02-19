@@ -566,7 +566,7 @@ block:
     if not exploration_data_dir.is_dir():
         raise FileNotFoundError(
             "Pregenerated simulation data not found. Please download it from "
-            "https://dataverse.harvard.edu/file.xhtml?fileId=10163625&version=3.1."
+            "https://zenodo.org/records/14890040"
         )
     else:
         print(f"[OK] Pregenerated simulation data found. Ready to proceed.")
