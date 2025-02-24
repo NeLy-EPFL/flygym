@@ -324,7 +324,7 @@ class Fly:
         actuator_forcerange: Union[float, tuple[float, float], list] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
-        friction: float = (1.0, 0.005, 0.0001),
+        friction: tuple[float, float, float] = (1.0, 0.005, 0.0001),
         contact_solref: tuple[float, float] = (2e-4, 1e3),
         contact_solimp: tuple[float, float, float, float, float] = (
             9.99e-01,
