@@ -22,8 +22,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip cache purge
-          pip install -e ".[dev,examples]
-          pip install numpy<2"
+          pip install -e ".[dev,examples]""
+          pip install numpy<2
       - name: Test with pytest
         run: |
           python -m pytest
