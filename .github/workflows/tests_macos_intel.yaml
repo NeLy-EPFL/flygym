@@ -1,4 +1,4 @@
-name: Unit tests (macOS)
+name: Unit tests (macOS Intel)
 
 on: [push]
 
@@ -23,7 +23,8 @@ jobs:
           pip install --upgrade pip
           pip cache purge
           pip install -e ".[dev,examples]"
-          pip install numpy<2
+      - name: Downgrade numpy
+        run: pip install "numpy<2"
       - name: Test with pytest
         run: |
           python -m pytest
