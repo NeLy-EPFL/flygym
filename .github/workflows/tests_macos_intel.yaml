@@ -1,0 +1,29 @@
+name: Unit tests (macOS)
+
+on: [push]
+
+env:
+  SKIP_RENDERING: "true"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: ["macos-13"]
+        python-version: ["3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip cache purge
+          pip install -e ".[dev,examples]
+          pip install numpy<2"
+      - name: Test with pytest
+        run: |
+          python -m pytest
