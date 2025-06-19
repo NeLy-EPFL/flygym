@@ -1,6 +1,6 @@
 [project]
 name = "flygym"
-version = "1.2.0"
+version = "1.2.1"
 description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
 requires-python = ">=3.10,<3.13"
 authors = [
