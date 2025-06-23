@@ -1,4 +1,4 @@
-name: Unit tests (macOS)
+name: Unit tests (macOS Apple Silicon)
 
 on: [push]
 
