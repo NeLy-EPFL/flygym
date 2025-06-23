@@ -104,7 +104,7 @@ Exact configurations of the CI/CD tests can be found in the `GitHub Actions work
 
 .. note::
 
-    **For Macs with Intel-chip and older macOS versions:** `FlyGym v1.2.0 <https://github.com/NeLy-EPFL/flygym/releases/tag/v1.2.0>`_ was the last version to official support macOS 13, but you can get newer versions work by downgrading your numpy version ``pip install "numpy<2"`` after installing FlyGym.
+    **For Macs with Intel-chip and older macOS versions:** `FlyGym v1.2.0 <https://github.com/NeLy-EPFL/flygym/releases/tag/v1.2.0>`_ was the last version to official support macOS 13, but you can get newer versions to work by downgrading your numpy version ``pip install "numpy<2"`` after installing FlyGym.
 
 
 Special notes for rendering on machines without a display
