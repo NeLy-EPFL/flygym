@@ -324,7 +324,7 @@ class Fly:
         actuator_forcerange: Union[float, tuple[float, float], list] = 65.0,
         tarsus_stiffness: float = 7.5,
         tarsus_damping: float = 1e-2,
-        friction: float = (1.0, 0.005, 0.0001),
+        friction: tuple[float, float, float] = (1.0, 0.005, 0.0001),
         contact_solref: tuple[float, float] = (2e-4, 1e3),
         contact_solimp: tuple[float, float, float, float, float] = (
             9.99e-01,
@@ -1104,10 +1104,10 @@ class Fly:
             physics.named.model.geom_rgba[f"{self.name}/{geom}"] = [0.5, 0.5, 0.5, 1]
 
         sim.arena.post_visual_render_hook(physics)
-        self._curr_visual_input = np.array(ommatidia_readouts)
+        self._curr_visual_input = np.array(ommatidia_readouts).astype(np.float32)
 
         if self.render_raw_vision:
-            self._curr_raw_visual_input = np.array(raw_visual_input)
+            self._curr_raw_visual_input = np.array(raw_visual_input).astype(np.float32)
 
         self._last_vision_update_time = sim.curr_time
 
@@ -1266,7 +1266,7 @@ class Fly:
         # vision
         if self.enable_vision:
             self._update_vision(sim)
-            obs["vision"] = self._curr_visual_input.astype(np.float32)
+            obs["vision"] = self._curr_visual_input
 
         return obs
 
@@ -1319,7 +1319,7 @@ class Fly:
         info = {}
         if self.enable_vision:
             if self.render_raw_vision:
-                info["raw_vision"] = self._curr_raw_visual_input.astype(np.float32)
+                info["raw_vision"] = self._curr_raw_visual_input
         return info
 
     def reset(self, sim: "Simulation", **kwargs):

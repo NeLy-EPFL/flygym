@@ -55,7 +55,7 @@ class Simulation(gym.Env):
         self,
         flies: Union[Iterable[Fly], Fly],
         cameras: Union[Iterable[Camera], Camera, None],
-        arena: BaseArena = None,
+        arena: Optional[BaseArena] = None,
         timestep: float = 0.0001,
         gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):
@@ -358,7 +358,7 @@ class SingleFlySimulation(Simulation):
         self,
         fly: Fly,
         cameras: Union[Camera, Iterable[Camera], None] = None,
-        arena: BaseArena = None,
+        arena: Optional[BaseArena] = None,
         timestep: float = 0.0001,
         gravity: tuple[float, float, float] = (0.0, 0.0, -9.81e3),
     ):

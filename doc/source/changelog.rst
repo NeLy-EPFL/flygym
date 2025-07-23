@@ -9,6 +9,13 @@ Change Log
   
    See the `Release <https://github.com/NeLy-EPFL/flygym/releases>`_ page for previous releases and metadata such as release dates.
 
+* **1.2.1:**
+
+  * **Other changes:**
+  
+    * Improve vision readout computing time by avoiding redundant memory copies
+    * Bump NumPy version to 2.* and end official support for macOS 13
+
 * **1.2.0:**
 
   * **API-breaking changes:**
