@@ -40,7 +40,7 @@ pip install "flygym"
 Alternatively, we provide a [Docker image](https://hub.docker.com/r/nelyepfl/flygym). See [our website](https://neuromechfly.org/installation.html) for details, especially if you plan to install FlyGym in the developer mode (i.e. if you plan to make changes to the code). Dependencies are specified in [`pyproject.toml`](https://github.com/NeLy-EPFL/flygym/blob/main/pyproject.toml) and will be installed automatically upon installation using pip. Installation should take no more than a few minutes. The PyPI version of the current release of FlyGym is indicated on the shield at the top of this page. No special, paid software is required to use FlyGym.
 
 > [!NOTE]
-> **For Intel-chip Macs with older macOS versions**: [FlyGym v1.2.0](https://github.com/NeLy-EPFL/flygym/releases/tag/v1.2.0) was the last version to official support macOS 13, but you can get newer versions to work by downgrading your numpy version `pip install "numpy<2"` after installing FlyGym.
+> **For Intel-chip Macs with older macOS versions**: [FlyGym v1.2.0](https://github.com/NeLy-EPFL/flygym/releases/tag/v1.2.0) was the last version to officially support macOS 13, but you can get newer versions to work by downgrading your numpy version `pip install "numpy<2"` after installing FlyGym.
 
 ## Demos
 See [our website](https://neuromechfly.org/tutorials/index.html) for tutorials, including expected outputs. For code blocks that take more than a few seconds to run, the running time (on a 2020 MacBook Pro with M1 processor running macOS 13.5.2) is indicated, typically in the form of a progress bar.
