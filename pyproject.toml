@@ -1,6 +1,6 @@
 [project]
 name = "flygym"
-version = "1.2.0"
+version = "1.2.1"
 description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
 requires-python = ">=3.10,<3.13"
 authors = [
@@ -22,7 +22,7 @@ readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
     "gymnasium",
-    "numpy>=1.0,<2.0", #Fix numpy <2 until #231 is fixed / #234 is merged
+    "numpy>=2.0,<3.0",
     "scipy>=1.0,<2.0",
     "pyyaml>=6.0,<7.0",
     "jupyter>=1.0,<2.0",
