@@ -17,6 +17,74 @@ _roll_eye = np.roll(np.eye(4, 3), -1)
 
 
 class Camera:
+    """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
+    A set of preset configurations are available in the config file:
+    - Simple cameras like: "camera_top" "camera_right", "camera_left",
+    "camera_front", "camera_back", "camera_bottom"
+    - Compound rotated cameras with different zoom levels: "camera_top_right", "camera_top_zoomout"
+    "camera_right_front", "camera_left_top_zoomout", "camera_neck_zoomin",
+    "camera_head_zoomin", "camera_front_zoomin", "camera_LFTarsus1_zoomin"
+    - "camera_LFTarsus1_zoomin": Camera looking at the left tarsus of the first leg
+    - "camera_back_track": 3rd person camera following the fly
+
+    This camera can also be set with custom parameters by providing a dictionary of parameters.
+
+    Parameters
+    ----------
+    attachment_point: dm_control.mjcf.element._AttachableElement
+        Attachment point pf the camera
+    camera_name : str
+        Name of camera
+    targeted_fly_names: str | list[str]
+        If given as a string, the camera will track the fly with the given name and
+        draw contact forces for this fly.
+        If given as a list, the camera will track the 0th fly in the list. However,
+        contact forces will be drawn for all flies included in the list.
+    window_size : tuple[int, int]
+        Size of the rendered images in pixels, by default (640, 480).
+    play_speed : float
+        Play speed of the rendered video, by default 0.2.
+    fps: int
+        FPS of the rendered video when played at ``play_speed``, by
+        default 30.
+    timestamp_text : bool
+        If True, text indicating the current simulation time will be
+        added to the rendered video.
+    play_speed_text : bool
+        If True, text indicating the play speed will be added to the
+        rendered video.
+    camera_parameters : Optional[dict[str, Any]]
+        Parameters of the camera to be added to the model. If None, the
+    draw_contacts : bool
+        If True, arrows will be drawn to indicate contact forces between
+        the legs and the ground.
+    decompose_contacts : bool
+        If True, the arrows visualizing contact forces will be decomposed
+        into x-y-z components.
+    decompose_colors
+        Colors for the x, y, and z components of the contact force arrows.
+    force_arrow_scaling : float
+        Scaling factor determining the length of arrows visualizing contact
+        forces.
+    tip_length : float
+        Size of the arrows indicating the contact forces in pixels.
+    contact_threshold : float
+        The threshold for contact detection in mN (forces below this
+        magnitude will be ignored).
+    perspective_arrow_length : bool
+        If true, the length of the arrows indicating the contact forces
+        will be determined by the perspective.
+    draw_gravity : bool
+        If True, an arrow will be drawn indicating the direction of
+        gravity. This is useful during climbing simulations.
+    gravity_arrow_scaling : float
+        Scaling factor determining the size of the arrow indicating
+        gravity.
+    output_path : str or Path, optional
+        Path to which the rendered video should be saved. If None, the
+        video will not be saved. By default None.
+    """
+
     def __init__(
         self,
         attachment_point: dm_control.mjcf.element._AttachableElement,
@@ -41,73 +109,6 @@ class Camera:
         gravity_arrow_scaling: float = 1e-4,
         output_path: Optional[Union[str, Path]] = None,
     ):
-        """Initialize a Camera that can be attached to any attachable element and take any mujoco inbuilt parameters.
-        A set of preset configurations are available in the config file:
-        - Simple cameras like: "camera_top" "camera_right", "camera_left",
-        "camera_front", "camera_back", "camera_bottom"
-        - Compound rotated cameras with different zoom levels: "camera_top_right", "camera_top_zoomout"
-        "camera_right_front", "camera_left_top_zoomout", "camera_neck_zoomin",
-        "camera_head_zoomin", "camera_front_zoomin", "camera_LFTarsus1_zoomin"
-        - "camera_LFTarsus1_zoomin": Camera looking at the left tarsus of the first leg
-        - "camera_back_track": 3rd person camera following the fly
-
-        This camera can also be set with custom parameters by providing a dictionary of parameters.
-
-        Parameters
-        ----------
-        attachment_point: dm_control.mjcf.element._AttachableElement
-            Attachment point pf the camera
-        camera_name : str
-            Name of camera
-        targeted_fly_names: str | list[str]
-            If given as a string, the camera will track the fly with the given name and
-            draw contact forces for this fly.
-            If given as a list, the camera will track the 0th fly in the list. However,
-            contact forces will be drawn for all flies included in the list.
-        window_size : tuple[int, int]
-            Size of the rendered images in pixels, by default (640, 480).
-        play_speed : float
-            Play speed of the rendered video, by default 0.2.
-        fps: int
-            FPS of the rendered video when played at ``play_speed``, by
-            default 30.
-        timestamp_text : bool
-            If True, text indicating the current simulation time will be
-            added to the rendered video.
-        play_speed_text : bool
-            If True, text indicating the play speed will be added to the
-            rendered video.
-        camera_parameters : Optional[dict[str, Any]]
-            Parameters of the camera to be added to the model. If None, the
-        draw_contacts : bool
-            If True, arrows will be drawn to indicate contact forces between
-            the legs and the ground.
-        decompose_contacts : bool
-            If True, the arrows visualizing contact forces will be decomposed
-            into x-y-z components.
-        decompose_colors
-            Colors for the x, y, and z components of the contact force arrows.
-        force_arrow_scaling : float
-            Scaling factor determining the length of arrows visualizing contact
-            forces.
-        tip_length : float
-            Size of the arrows indicating the contact forces in pixels.
-        contact_threshold : float
-            The threshold for contact detection in mN (forces below this
-            magnitude will be ignored).
-        perspective_arrow_length : bool
-            If true, the length of the arrows indicating the contact forces
-            will be determined by the perspective.
-        draw_gravity : bool
-            If True, an arrow will be drawn indicating the direction of
-            gravity. This is useful during climbing simulations.
-        gravity_arrow_scaling : float
-            Scaling factor determining the size of the arrow indicating
-            gravity.
-        output_path : str or Path, optional
-            Path to which the rendered video should be saved. If None, the
-            video will not be saved. By default None.
-        """
         self.attachment_point = attachment_point
         if isinstance(targeted_fly_names, str):
             self.targeted_fly_names = [targeted_fly_names]
