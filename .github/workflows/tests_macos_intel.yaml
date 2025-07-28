@@ -2,6 +2,9 @@ name: Unit tests (macOS Intel)
 
 on: [push]
 
+permissions:
+  contents: read
+
 env:
   SKIP_RENDERING: "true"
 

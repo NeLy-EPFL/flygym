@@ -2,6 +2,9 @@ name: Unit tests (macOS Apple Silicon)
 
 on: [push]
 
+permissions:
+  contents: read
+
 env:
   SKIP_RENDERING: "true"
 

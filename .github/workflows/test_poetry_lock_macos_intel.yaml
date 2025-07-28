@@ -5,6 +5,9 @@ on: [push]
 env:
   SKIP_RENDERING: "true"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-13
