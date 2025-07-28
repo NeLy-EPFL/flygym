@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM python:3.13-bookworm
 
 ARG USERNAME=flygym
 ARG USER_UID=1000
