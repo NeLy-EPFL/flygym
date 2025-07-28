@@ -1,4 +1,4 @@
-FROM python:3.13-bookworm
+FROM python:3.12-bookworm
 
 # Set shell to bash (instead of sh)
 SHELL ["/bin/bash", "-c"]
