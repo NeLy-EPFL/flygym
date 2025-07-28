@@ -2,7 +2,7 @@
 name = "flygym"
 version = "1.3.0"
 description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.13"
 authors = [
     { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
     { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch>" },
