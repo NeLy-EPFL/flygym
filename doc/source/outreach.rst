@@ -58,10 +58,11 @@ Outreach Events
 ---------------
 We have used the NeuroMechFly Video Game as a tool to engage with the public and educate them about the neuroscience and biomechanics of behavior control. Here are some of the science outreach events:
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_00.jpg?raw=true
-   :width: 800
-   :alt: Outreach event
+.. raw:: html
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_01.jpg?raw=true
-   :width: 800
-   :alt: Outreach event
+   <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_00.jpg?raw=true" alt="Outreach event 1">
+   <small>EPFL Scientastic 2024. Lausanne, Switzerland. <a href="https://scientastic.epfl.ch/informations-pratiques/#:~:text=Nous%20souhaitons%20informer%20les%20visiteurs%20et%20participants%20que%20Scientastic%20est%20une%20manifestation%20publique%20sur%20un%20lieu%20public.%20Aussi%2C%20toute%20participation%20%C3%A0%20cet%20%C3%A9v%C3%A9nement%20a%20pour%20cons%C3%A9quence%20imm%C3%A9diate%20ou%20simultan%C3%A9e%20l%E2%80%99approbation%20explicite%20par%20les%20participants%20ou%20leurs%20repr%C3%A9sentants%20l%C3%A9gaux%20de%20l%E2%80%99exploitation%20illimit%C3%A9e%20dans%20le%20temps%20et%20dans%20l%E2%80%99espace%20et%20sans%20indemnisation%20des%20images%20et%20photographies%20r%C3%A9alis%C3%A9es%20durant%20l%E2%80%99%C3%A9v%C3%A9nement%20%28dans%20le%20cadre%20des%20mesures%20de%20communication%20que%20les%20organisateurs%20jugeront%20utiles%29%20sur%20lesquels%20les%20participants%20sont%20identifiables.">Photo authorization/droit à l'image</a>.</small>
+   <br>
+   <br>
+   <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_01.jpg?raw=true" alt="Outreach event 1">
+   <small>EPFL Scientastic 2024. Lausanne, Switzerland. <a href="https://scientastic.epfl.ch/informations-pratiques/#:~:text=Nous%20souhaitons%20informer%20les%20visiteurs%20et%20participants%20que%20Scientastic%20est%20une%20manifestation%20publique%20sur%20un%20lieu%20public.%20Aussi%2C%20toute%20participation%20%C3%A0%20cet%20%C3%A9v%C3%A9nement%20a%20pour%20cons%C3%A9quence%20imm%C3%A9diate%20ou%20simultan%C3%A9e%20l%E2%80%99approbation%20explicite%20par%20les%20participants%20ou%20leurs%20repr%C3%A9sentants%20l%C3%A9gaux%20de%20l%E2%80%99exploitation%20illimit%C3%A9e%20dans%20le%20temps%20et%20dans%20l%E2%80%99espace%20et%20sans%20indemnisation%20des%20images%20et%20photographies%20r%C3%A9alis%C3%A9es%20durant%20l%E2%80%99%C3%A9v%C3%A9nement%20%28dans%20le%20cadre%20des%20mesures%20de%20communication%20que%20les%20organisateurs%20jugeront%20utiles%29%20sur%20lesquels%20les%20participants%20sont%20identifiables.">Photo authorization/droit à l'image</a>.</small>
