@@ -1,0 +1,871 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DF8S7T56G7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-DF8S7T56G7');
+    </script>
+    <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Head Stabilization" href="head_stabilization.html" /><link rel="prev" title="Advanced Olfaction" href="olfaction.html" />
+        <link rel="prefetch" href="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" as="image" />
+
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+        <title>Path Integration - NeuroMechFly documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=25af2a20" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">NeuroMechFly documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">NeuroMechFly documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../neuromechfly.html">The NeuroMechFly Model</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../gallery/index.html">Gallery</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Gallery</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_3_forces.html">Estimating contact forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_4_climbing.html">Climbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_8_controller_comparison.html">Controller comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_9_visual_taxis.html">Visual taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_10_odour_taxis.html">Odour Taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_11_head_stabilization.html">Head stabilization on complex terrain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_12_multimodal_navigation.html">Multimodal navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_13_plume_navigation.html">Plume navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gallery/video_14_fly_follow_fly.html">Fly chasing with a connectome constrained visual system</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Tutorials</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/gym_basics_and_kinematic_replay.html">Interacting with NeuroMechFly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/cpg_controller.html">Controlling locomotion with CPGs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/rule_based_controller.html">Rule-based controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/hybrid_controller.html">Overcome complex terrain with a hybrid controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/turning.html">Encapsulating custom code into Gym environments: A turning controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/vision_basics.html">Vision basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/olfaction_basics.html">Olfaction basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/path_integration.html">Path integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/head_stabilization.html">Head stabilization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/advanced_vision.html">Connectome-constrained visual system model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/advanced_olfaction.html">Advanced olfaction: Navigating a complex odor plume</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../mdp_specs.html">MDP Task Specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../fly.html">Fly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../arena.html">Arena</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../camera.html">Camera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision.html">Vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../olfaction.html">Olfaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../preprogrammed.html">Preprogrammed</a></li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">FlyGym Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of FlyGym Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="locomotion.html">Locomotion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vision.html">Advanced Vision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="olfaction.html">Advanced Olfaction</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">Path Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="head_stabilization.html">Head Stabilization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../legacy.html">Legacy API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../workshop.html">NeuroMechFly Workshop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../outreach.html">NeuroMechFly Live and Outreach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/api_ref/examples/path_integration.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="path-integration">
+<h1>Path Integration<a class="headerlink" href="#path-integration" title="Link to this heading">¶</a></h1>
+<section id="arena">
+<h2>Arena<a class="headerlink" href="#arena" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationArenaBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">PathIntegrationArenaBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationArenaBase" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationArenaBase.get_spawn_position">
+<span class="sig-name descname"><span class="pre">get_spawn_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationArenaBase.get_spawn_position" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationArenaFlat">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">PathIntegrationArenaFlat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationArenaFlat" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBase" title="flygym.examples.path_integration.arena.PathIntegrationArenaBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PathIntegrationArenaBase</span></code></a>, <a class="reference internal" href="../arena.html#flygym.arena.FlatTerrain" title="flygym.arena.base.FlatTerrain"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlatTerrain</span></code></a></p>
+<p>Flat terrain for the path integration task with some fixed camera
+configurations.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationArenaBlocks">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">PathIntegrationArenaBlocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationArenaBlocks" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBase" title="flygym.examples.path_integration.arena.PathIntegrationArenaBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PathIntegrationArenaBase</span></code></a>, <a class="reference internal" href="../arena.html#flygym.arena.BlocksTerrain" title="flygym.arena.complex_terrain.BlocksTerrain"><code class="xref py py-class docutils literal notranslate"><span class="pre">BlocksTerrain</span></code></a></p>
+<p>Blocks terrain for the path integration task with some fixed camera
+configurations.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationArenaBlocks.get_spawn_position">
+<span class="sig-name descname"><span class="pre">get_spawn_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationArenaBlocks.get_spawn_position" title="Link to this definition">¶</a></dt>
+<dd><p>Given a relative entity spawn position and orientation (as if it
+was a simple flat terrain), return the adjusted position and
+orientation. This is useful for environments that have complex
+terrain (e.g. with obstacles) where the entity’s spawn position
+needs to be shifted accordingly.</p>
+<p>For example, if the arena has flat terrain, this method can simply
+return <code class="docutils literal notranslate"><span class="pre">rel_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">rel_angle</span></code> unchanged (as is the case by
+default). If there is are features on the ground that are 0.1 mm in
+height, then this method should return <code class="docutils literal notranslate"><span class="pre">rel_pos</span> <span class="pre">+</span> <span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">0.1],</span>
+<span class="pre">rel_angle</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>rel_pos</strong><span class="classifier">np.ndarray</span></dt><dd><p>(x, y, z) position of the entity in mm as supplied by the user
+(before any transformation).</p>
+</dd>
+<dt><strong>rel_angle</strong><span class="classifier">np.ndarray</span></dt><dd><p>Euler angle (rotation along x, y, z in radian) of the fly’s
+orientation as supplied by the user (before any
+transformation).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>Adjusted (x, y, z) position of the entity.</p>
+</dd>
+<dt>np.ndarray</dt><dd><p>Adjusted euler angles (rotations along x, y, z in radian) of the
+fly’s orientation.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="controller">
+<h2>Controller<a class="headerlink" href="#controller" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.RandomExplorationController">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">RandomExplorationController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_dn_drive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1.0,</span> <span class="pre">1.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_turn_dn_drive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(-0.4,</span> <span class="pre">1.2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_turn_dn_drive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(1.2,</span> <span class="pre">-0.4)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn_duration_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn_duration_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_turn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.RandomExplorationController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This controller drives a random exploration: the fly transitions
+between forward walking and turning in a Poisson process. When the fly
+turns, the turn direction is chosen randomly and the turn duration is
+drawn from a normal distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dt</strong><span class="classifier">float</span></dt><dd><p>Time step of the simulation.</p>
+</dd>
+<dt><strong>forward_dn_drive</strong><span class="classifier">tuple[float, float], optional</span></dt><dd><p>DN drives for forward walking, by default (1.0, 1.0).</p>
+</dd>
+<dt><strong>left_turn_dn_drive</strong><span class="classifier">tuple[float, float], optional</span></dt><dd><p>DN drives for turning left, by default (-0.4, 1.2).</p>
+</dd>
+<dt><strong>right_turn_dn_drive</strong><span class="classifier">tuple[float, float], optional</span></dt><dd><p>DN drives for turning right, by default (1.2, -0.4).</p>
+</dd>
+<dt><strong>turn_duration_mean</strong><span class="classifier">float, optional</span></dt><dd><p>Mean of the turn duration distribution in seconds, by default
+0.4.</p>
+</dd>
+<dt><strong>turn_duration_std</strong><span class="classifier">float, optional</span></dt><dd><p>Standard deviation of the turn duration distribution in
+seconds, by default 0.1.</p>
+</dd>
+<dt><strong>lambda_turn</strong><span class="classifier">float, optional</span></dt><dd><p>Rate of the Poisson process for turning, by default 1.0.</p>
+</dd>
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>Random seed, by default 0.</p>
+</dd>
+<dt><strong>init_time</strong><span class="classifier">float, optional</span></dt><dd><p>Initial time, in seconds, during which the fly walks straight,
+by default 0.1.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.RandomExplorationController.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.RandomExplorationController.step" title="Link to this definition">¶</a></dt>
+<dd><p>Update the fly’s walking state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>WalkingState</dt><dd><p>The next state of the fly.</p>
+</dd>
+<dt>tuple[float, float]</dt><dd><p>The next DN drives.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">PathIntegrationController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="locomotion.html#flygym.examples.locomotion.HybridTurningController" title="flygym.examples.locomotion.turning_controller.HybridTurningController"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridTurningController</span></code></a></p>
+<p>A wrapper of <code class="docutils literal notranslate"><span class="pre">HybridTurningController</span></code> that records variables that
+are used to perform path integration.</p>
+<p class="rubric">Notes</p>
+<p>Please refer to the <a class="reference external" href="https://neuromechfly.org/api_ref/mdp_specs.html#path-integration-task-pathintegrationcontroller">“MPD Task Specifications” page</a>
+of the API references for the detailed specifications of the action
+space, the observation space, the reward, the “terminated” and
+“truncated” flags, and the “info” dictionary.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.absolute_to_relative_pos">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">absolute_to_relative_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.absolute_to_relative_pos" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.action_space">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">action_space</span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.action_space" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.close" title="Link to this definition">¶</a></dt>
+<dd><p>Close the simulation, save data, and release any resources.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.get_observation">
+<span class="sig-name descname"><span class="pre">get_observation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ObsType</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.get_observation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.get_wrapper_attr">
+<span class="sig-name descname"><span class="pre">get_wrapper_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.get_wrapper_attr" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the attribute <cite>name</cite> from the environment.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.gravity">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gravity</span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.gravity" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.has_wrapper_attr">
+<span class="sig-name descname"><span class="pre">has_wrapper_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.has_wrapper_attr" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if the attribute <cite>name</cite> exists in the environment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'render_modes':</span> <span class="pre">[]}</span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.np_random">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">np_random</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Generator</span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.np_random" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the environment’s internal <code class="xref py py-attr docutils literal notranslate"><span class="pre">_np_random</span></code> that if not set will initialise with a random seed.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Instances of <cite>np.random.Generator</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.np_random_seed">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">np_random_seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.np_random_seed" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the environment’s internal <code class="xref py py-attr docutils literal notranslate"><span class="pre">_np_random_seed</span></code> that if not set will first initialise with a random int as seed.</p>
+<p>If <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.np_random_seed" title="flygym.examples.path_integration.PathIntegrationController.np_random_seed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">np_random_seed</span></code></a> was set directly instead of through <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.reset" title="flygym.examples.path_integration.PathIntegrationController.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">set_np_random_through_seed()</span></code>,
+the seed will take the value -1.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>int: the seed of the current <cite>np_random</cite> or -1, if the seed of the rng is unknown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.observation_space">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">observation_space</span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.observation_space" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.render" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the render frames as specified by <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render_mode" title="flygym.examples.path_integration.PathIntegrationController.render_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_mode</span></code></a> during the initialization of the environment.</p>
+<p>The environment’s <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.metadata" title="flygym.examples.path_integration.PathIntegrationController.metadata"><code class="xref py py-attr docutils literal notranslate"><span class="pre">metadata</span></code></a> render modes (<cite>env.metadata[“render_modes”]</cite>) should contain the possible
+ways to implement the render modes. In addition, list versions for most render modes is achieved through
+<cite>gymnasium.make</cite> which automatically applies a wrapper to collect rendered frames.</p>
+<dl class="simple">
+<dt>Note:</dt><dd><p>As the <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render_mode" title="flygym.examples.path_integration.PathIntegrationController.render_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_mode</span></code></a> is known during <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, the objects used to render the environment state
+should be initialised in <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
+</dd>
+</dl>
+<p>By convention, if the <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render_mode" title="flygym.examples.path_integration.PathIntegrationController.render_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_mode</span></code></a> is:</p>
+<ul class="simple">
+<li><p>None (default): no render is computed.</p></li>
+<li><p>“human”: The environment is continuously rendered in the current display or terminal, usually for human consumption.
+This rendering should occur during <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.step" title="flygym.examples.path_integration.PathIntegrationController.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> and <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render" title="flygym.examples.path_integration.PathIntegrationController.render"><code class="xref py py-meth docutils literal notranslate"><span class="pre">render()</span></code></a> doesn’t need to be called. Returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p>“rgb_array”: Return a single frame representing the current state of the environment.
+A frame is a <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with shape <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">3)</span></code> representing RGB values for an x-by-y pixel image.</p></li>
+<li><p>“ansi”: Return a strings (<code class="docutils literal notranslate"><span class="pre">str</span></code>) or <code class="docutils literal notranslate"><span class="pre">StringIO.StringIO</span></code> containing a terminal-style text representation
+for each time step. The text can include newlines and ANSI escape sequences (e.g. for colors).</p></li>
+<li><p>“rgb_array_list” and “ansi_list”: List based version of render modes are possible (except Human) through the
+wrapper, <code class="xref py py-class docutils literal notranslate"><span class="pre">gymnasium.wrappers.RenderCollection</span></code> that is automatically applied during <code class="docutils literal notranslate"><span class="pre">gymnasium.make(...,</span> <span class="pre">render_mode=&quot;rgb_array_list&quot;)</span></code>.
+The frames collected are popped after <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render" title="flygym.examples.path_integration.PathIntegrationController.render"><code class="xref py py-meth docutils literal notranslate"><span class="pre">render()</span></code></a> is called or <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.reset" title="flygym.examples.path_integration.PathIntegrationController.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p></li>
+</ul>
+<dl class="simple">
+<dt>Note:</dt><dd><p>Make sure that your class’s <a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.metadata" title="flygym.examples.path_integration.PathIntegrationController.metadata"><code class="xref py py-attr docutils literal notranslate"><span class="pre">metadata</span></code></a> <code class="docutils literal notranslate"><span class="pre">&quot;render_modes&quot;</span></code> key includes the list of supported modes.</p>
+</dd>
+</dl>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.25.0: </span>The render function was changed to no longer accept parameters, rather these parameters should be specified
+in the environment initialised, i.e., <code class="docutils literal notranslate"><span class="pre">gymnasium.make(&quot;CartPole-v1&quot;,</span> <span class="pre">render_mode=&quot;human&quot;)</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.render_mode">
+<span class="sig-name descname"><span class="pre">render_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.render_mode" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_magnitudes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.reset" title="Link to this definition">¶</a></dt>
+<dd><p>Reset the simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>Seed for the random number generator. If None, the simulation
+is re-seeded without a specific seed. For reproducibility,
+always specify a seed.</p>
+</dd>
+<dt><strong>init_phases</strong><span class="classifier">np.ndarray, optional</span></dt><dd><p>Initial phases of the CPGs. See <code class="docutils literal notranslate"><span class="pre">CPGNetwork</span></code> for details.</p>
+</dd>
+<dt><strong>init_magnitudes</strong><span class="classifier">np.ndarray, optional</span></dt><dd><p>Initial magnitudes of the CPGs. See <code class="docutils literal notranslate"><span class="pre">CPGNetwork</span></code> for details.</p>
+</dd>
+<dt><strong>**kwargs</strong></dt><dd><p>Additional keyword arguments to be passed to
+<code class="docutils literal notranslate"><span class="pre">SingleFlySimulation.reset</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>Initial observation upon reset.</p>
+</dd>
+<dt>dict</dt><dd><p>Additional information.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.set_slope">
+<span class="sig-name descname"><span class="pre">set_slope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slope</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rot_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.set_slope" title="Link to this definition">¶</a></dt>
+<dd><p>Set the slope of the simulation environment and modify the
+camera orientation so that gravity is always pointing down.
+Changing the gravity vector might be useful during climbing
+simulations. The change in the camera angle has been extensively
+tested for the simple cameras (left, right, top, bottom, front,
+back) but not for the composed ones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>slope</strong><span class="classifier">float</span></dt><dd><p>The desired_slope of the environment in degrees.</p>
+</dd>
+<dt><strong>rot_axis</strong><span class="classifier">str, optional</span></dt><dd><p>The axis about which the slope is applied, by default “y”.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.set_wrapper_attr">
+<span class="sig-name descname"><span class="pre">set_wrapper_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.set_wrapper_attr" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the attribute <cite>name</cite> on the environment with <cite>value</cite>, see <cite>Wrapper.set_wrapper_attr</cite> for more info.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.spec">
+<span class="sig-name descname"><span class="pre">spec</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">EnvSpec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.spec" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.step" title="Link to this definition">¶</a></dt>
+<dd><p>Same as <code class="docutils literal notranslate"><span class="pre">HybridTurningController.step</span></code>, but also records the
+stride for each leg (i.e., how much the leg tip has moved in the
+fly’s egocentric frame since the last step) in the observation
+space under the key “stride_diff_unmasked”. Note that this
+calculation does not take into account whether the “stride” is
+actually made during a power stroke (i.e., stance phase); it only
+reports the change in end effector positions in an “unmasked”
+manner. The user should post-process it using the contact mask as a
+part of the model. The order of legs in stride_diff_unmasked is:
+LF, LM, LH, RF, RM, RH.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.PathIntegrationController.unwrapped">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unwrapped</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Env</span><span class="p"><span class="pre">[</span></span><span class="pre">ObsType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ActType</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#flygym.examples.path_integration.PathIntegrationController.unwrapped" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the base non-wrapped environment.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Env: The base non-wrapped <code class="xref py py-class docutils literal notranslate"><span class="pre">gymnasium.Env</span></code> instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.LinearModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">LinearModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coefs_all</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.LinearModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple linear model for predicting change in heading and displacement.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.path_integrate">
+<span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.</span></span><span class="sig-name descname"><span class="pre">path_integrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#flygym.examples.path_integration.LinearModel" title="flygym.examples.path_integration.model.LinearModel"><span class="pre">LinearModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">displacement_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#flygym.examples.path_integration.LinearModel" title="flygym.examples.path_integration.model.LinearModel"><span class="pre">LinearModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact_force_thr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flygym.examples.path_integration.path_integrate" title="Link to this definition">¶</a></dt>
+<dd><p>Perform path integration on trial data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>trial_data</strong><span class="classifier">dict[str, np.ndarray]</span></dt><dd><p>Dictionary containing trial data.</p>
+</dd>
+<dt><strong>heading_model</strong><span class="classifier">LinearModel</span></dt><dd><p>Model for predicting change in heading.</p>
+</dd>
+<dt><strong>displacement_model</strong><span class="classifier">LinearModel</span></dt><dd><p>Model for predicting change in displacement.</p>
+</dd>
+<dt><strong>time_scale</strong><span class="classifier">float</span></dt><dd><p>Time scale for path integration.</p>
+</dd>
+<dt><strong>contact_force_thr</strong><span class="classifier">tuple[float, float, float]</span></dt><dd><p>Thresholds for contact forces. These are used to determine whether
+a leg is in contact with the ground.</p>
+</dd>
+<dt><strong>legs</strong><span class="classifier">str</span></dt><dd><p>String indicating which legs are included. Can be any combination
+of “F”, “M”, and “H”.</p>
+</dd>
+<dt><strong>dt</strong><span class="classifier">float</span></dt><dd><p>Time step of the physics simulation in the trial.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict[str, np.ndarray]</dt><dd><p>Dictionary containing the following keys:
+* “heading_pred”: Predicted heading.
+* “heading_actual”: Actual heading.
+* “pos_pred”: Predicted position.
+* “pos_actual”: Actual position.
+* “heading_diff_pred”: Predicted change in heading.
+* “heading_diff_actual”: Actual change in heading.
+* “displacement_diff_pred”: Predicted change in displacement.
+* “displacement_diff_actual”: Actual change in displacement.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.util.get_leg_mask">
+<span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.util.</span></span><span class="sig-name descname"><span class="pre">get_leg_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#flygym.examples.path_integration.util.get_leg_mask" title="Link to this definition">¶</a></dt>
+<dd><p>Given a list of legs, return a boolean mask indicating which legs are
+included.</p>
+<p>If legs == “F”, the mask is np.array([True, False, False])
+If legs == “FM”, the mask is np.array([True, True, False])
+…</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flygym.examples.path_integration.util.extract_variables">
+<span class="sig-prename descclassname"><span class="pre">flygym.examples.path_integration.util.</span></span><span class="sig-name descname"><span class="pre">extract_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact_force_thr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-4</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#flygym.examples.path_integration.util.extract_variables" title="Link to this definition">¶</a></dt>
+<dd><p>Extract variables used for path integration from trial data.
+The difference between <code class="docutils literal notranslate"><span class="pre">load_trial_data</span></code> and <code class="docutils literal notranslate"><span class="pre">extract_variables</span></code> is
+that the former loads the raw data from the trial (i.e., physics
+simulation). The latter extracts variables from these raw data subject
+to additional parameters such as time scale. For each trial, we only
+call <code class="docutils literal notranslate"><span class="pre">load_trial_data</span></code> once, but we may call <code class="docutils literal notranslate"><span class="pre">extract_variables</span></code>
+multiple times with different parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>trial_data</strong><span class="classifier">dict[str, np.ndarray]</span></dt><dd><p>Dictionary containing trial data.</p>
+</dd>
+<dt><strong>time_scale</strong><span class="classifier">float</span></dt><dd><p>Time scale for path integration.</p>
+</dd>
+<dt><strong>contact_force_thr</strong><span class="classifier">tuple[float, float, float]</span></dt><dd><p>Thresholds for contact forces. These are used to determine whether
+a leg is in contact with the ground.</p>
+</dd>
+<dt><strong>legs</strong><span class="classifier">str</span></dt><dd><p>String indicating which legs are included. Can be any combination
+of “F”, “M”, and “H”.</p>
+</dd>
+<dt><strong>dt</strong><span class="classifier">float, optional</span></dt><dd><p>Time step of the physics simulation in the trial, by default 1e-4.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="head_stabilization.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Head Stabilization</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="olfaction.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Advanced Olfaction</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Neuroengineering Laboratory, EPFL
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/NeLy-EPFL/flygym" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Path Integration</a><ul>
+<li><a class="reference internal" href="#arena">Arena</a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBase"><code class="docutils literal notranslate"><span class="pre">PathIntegrationArenaBase</span></code></a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBase.get_spawn_position"><code class="docutils literal notranslate"><span class="pre">PathIntegrationArenaBase.get_spawn_position()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaFlat"><code class="docutils literal notranslate"><span class="pre">PathIntegrationArenaFlat</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBlocks"><code class="docutils literal notranslate"><span class="pre">PathIntegrationArenaBlocks</span></code></a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationArenaBlocks.get_spawn_position"><code class="docutils literal notranslate"><span class="pre">PathIntegrationArenaBlocks.get_spawn_position()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#controller">Controller</a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.RandomExplorationController"><code class="docutils literal notranslate"><span class="pre">RandomExplorationController</span></code></a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.RandomExplorationController.step"><code class="docutils literal notranslate"><span class="pre">RandomExplorationController.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController</span></code></a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.absolute_to_relative_pos"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.absolute_to_relative_pos()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.action_space"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.action_space</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.close"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.close()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.get_observation"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.get_observation()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.get_wrapper_attr"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.get_wrapper_attr()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.gravity"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.gravity</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.has_wrapper_attr"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.has_wrapper_attr()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.metadata"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.metadata</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.np_random"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.np_random</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.np_random_seed"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.np_random_seed</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.observation_space"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.render()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.render_mode"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.render_mode</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.reset"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.reset()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.set_slope"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.set_slope()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.set_wrapper_attr"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.set_wrapper_attr()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.spec"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.spec</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.step"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.step()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.PathIntegrationController.unwrapped"><code class="docutils literal notranslate"><span class="pre">PathIntegrationController.unwrapped</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#model">Model</a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.LinearModel"><code class="docutils literal notranslate"><span class="pre">LinearModel</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.path_integrate"><code class="docutils literal notranslate"><span class="pre">path_integrate()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#utilities">Utilities</a><ul>
+<li><a class="reference internal" href="#flygym.examples.path_integration.util.get_leg_mask"><code class="docutils literal notranslate"><span class="pre">get_leg_mask()</span></code></a></li>
+<li><a class="reference internal" href="#flygym.examples.path_integration.util.extract_variables"><code class="docutils literal notranslate"><span class="pre">extract_variables()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

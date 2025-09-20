@@ -1,0 +1,1114 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DF8S7T56G7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-DF8S7T56G7');
+    </script>
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Encapsulating custom code into Gym environments: A turning controller" href="turning.html" /><link rel="prev" title="Rule-based controller" href="rule_based_controller.html" />
+        <link rel="prefetch" href="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" as="image" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+        <title>Overcome complex terrain with a hybrid controller - NeuroMechFly documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=25af2a20" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">NeuroMechFly documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">NeuroMechFly documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../neuromechfly.html">The NeuroMechFly Model</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../gallery/index.html">Gallery</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Gallery</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_3_forces.html">Estimating contact forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_4_climbing.html">Climbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_8_controller_comparison.html">Controller comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_9_visual_taxis.html">Visual taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_10_odour_taxis.html">Odour Taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_11_head_stabilization.html">Head stabilization on complex terrain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_12_multimodal_navigation.html">Multimodal navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_13_plume_navigation.html">Plume navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_14_fly_follow_fly.html">Fly chasing with a connectome constrained visual system</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Tutorials</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gym_basics_and_kinematic_replay.html">Interacting with NeuroMechFly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cpg_controller.html">Controlling locomotion with CPGs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rule_based_controller.html">Rule-based controller</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Overcome complex terrain with a hybrid controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="turning.html">Encapsulating custom code into Gym environments: A turning controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vision_basics.html">Vision basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="olfaction_basics.html">Olfaction basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="path_integration.html">Path integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_stabilization.html">Head stabilization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced_vision.html">Connectome-constrained visual system model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced_olfaction.html">Advanced olfaction: Navigating a complex odor plume</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_ref/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/mdp_specs.html">MDP Task Specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/fly.html">Fly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/arena.html">Arena</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/camera.html">Camera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/vision.html">Vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/olfaction.html">Olfaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/preprogrammed.html">Preprogrammed</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../api_ref/examples/index.html">FlyGym Examples</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of FlyGym Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/locomotion.html">Locomotion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/vision.html">Advanced Vision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/olfaction.html">Advanced Olfaction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/path_integration.html">Path Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/head_stabilization.html">Head Stabilization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/legacy.html">Legacy API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../workshop.html">NeuroMechFly Workshop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../outreach.html">NeuroMechFly Live and Outreach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/tutorials/hybrid_controller.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="overcome-complex-terrain-with-a-hybrid-controller">
+<h1>Overcome complex terrain with a hybrid controller<a class="headerlink" href="#overcome-complex-terrain-with-a-hybrid-controller" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Authors:</strong> Victor Alfred Stimpfling, Sibo Wang-Chen</p>
+<p>The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the <a class="reference external" href="https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/">examples folder of
+the FlyGym repository on
+GitHub</a>.</p>
+<p>This tutorial is available in <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> format in the
+<a class="reference external" href="https://github.com/NeLy-EPFL/flygym/tree/main/notebooks">notebooks folder of the FlyGym repository</a>.</p>
+</div>
+<p><strong>Summary</strong>: In this tutorial, we will illustrate how CPG- and
+rule-based controllers fail to produce robust locomotion over complex
+terrain. We will then build a combined CPG and sensory feedback-based
+hybrid controller that overcomes these deficits and generates more
+robust walking.</p>
+<p>In the <a class="reference external" href="https://neuromechfly.org/tutorials/cpg_controller.html">Controlling locomotion with
+CPGs</a> and
+<a class="reference external" href="https://neuromechfly.org/tutorials/rule_based_controller.html">Rule-based
+controller</a>
+tutorials, we have demonstrated how different control strategies can
+lead to effective walking over simple, flat terrain. However, in the
+real world animals locomote over rugged surfaces. To achieve this,
+animals likely use a combination of CPGs and sensory feedback to produce
+agile, adaptive body kinematics. To explore how sensory feedback can
+facilitate locomotion over rugged surfaces, we have developed three
+terrain types that complement our baseline smooth terrain: one with gaps
+perpendicular to the initial heading of the fly, one with blocks of
+variable height, and one that is a mixture of these two. Using these new
+terrain types, we will now demonstrate how one can examine the efficacy
+of different bioinspired locomotor control strategies.</p>
+<section id="defining-the-arena">
+<h2>Defining the arena<a class="headerlink" href="#defining-the-arena" title="Link to this heading">¶</a></h2>
+<p>The environment that the fly is situated in is defined by the Arena
+class. So far, we have been using the default terrain: <code class="docutils literal notranslate"><span class="pre">FlatTerrain</span></code>.
+Some other arenas are also included in FlyGym package, including
+<code class="docutils literal notranslate"><span class="pre">GappedTerrain</span></code>, <code class="docutils literal notranslate"><span class="pre">BlocksTerrain</span></code>, and <code class="docutils literal notranslate"><span class="pre">MixedTerrain</span></code>. In future
+tutorials, we will introduce more arenas with sensory (visual,
+olfactory) features. The user can define custom arenas by inheriting
+from the <code class="docutils literal notranslate"><span class="pre">flygym.mujoco.arena.BaseArena</span></code> abstract class.</p>
+<p>Let’s start by defining a couple of terrains:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flygym.arena</span><span class="w"> </span><span class="kn">import</span> <span class="n">FlatTerrain</span><span class="p">,</span> <span class="n">GappedTerrain</span><span class="p">,</span> <span class="n">BlocksTerrain</span><span class="p">,</span> <span class="n">MixedTerrain</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_arena</span><span class="p">(</span><span class="n">arena_type</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">arena_type</span> <span class="o">==</span> <span class="s2">&quot;flat&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FlatTerrain</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">arena_type</span> <span class="o">==</span> <span class="s2">&quot;gapped&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">GappedTerrain</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">arena_type</span> <span class="o">==</span> <span class="s2">&quot;blocks&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BlocksTerrain</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">arena_type</span> <span class="o">==</span> <span class="s2">&quot;mixed&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">MixedTerrain</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown arena type: </span><span class="si">{</span><span class="n">arena_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s put a fly into each of these terrains, run 0.01 seconds of the
+simulation so the fly can stabilize on the floor, and visualize how the
+fly looks while walking over these different terrain types:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span><span class="p">,</span> <span class="n">trange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flygym</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fly</span><span class="p">,</span> <span class="n">ZStabilizedCamera</span><span class="p">,</span> <span class="n">SingleFlySimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flygym.examples.locomotion</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreprogrammedSteps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;./outputs/hybrid_controller&quot;</span><span class="p">)</span>
+<span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">preprogrammed_steps</span> <span class="o">=</span> <span class="n">PreprogrammedSteps</span><span class="p">()</span>  <span class="c1"># we will use the neutral pose from this</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">terrain_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span> <span class="s2">&quot;gapped&quot;</span><span class="p">,</span> <span class="s2">&quot;blocks&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">terrain_type</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">terrain_types</span><span class="p">)):</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">terrain</span> <span class="o">=</span> <span class="n">get_arena</span><span class="p">(</span><span class="n">terrain_type</span><span class="p">)</span>
+    <span class="c1"># Initialize NeuroMechFly simulation</span>
+    <span class="n">fly</span> <span class="o">=</span> <span class="n">Fly</span><span class="p">(</span>
+        <span class="n">enable_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">draw_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">init_pose</span><span class="o">=</span><span class="s2">&quot;stretch&quot;</span><span class="p">,</span>
+        <span class="n">control</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cam</span> <span class="o">=</span> <span class="n">ZStabilizedCamera</span><span class="p">(</span>
+        <span class="n">attachment_point</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">worldbody</span><span class="p">,</span>
+        <span class="n">camera_name</span><span class="o">=</span><span class="s2">&quot;camera_left&quot;</span><span class="p">,</span>
+        <span class="n">targeted_fly_names</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">play_speed</span><span class="o">=</span><span class="mf">0.1</span>
+    <span class="p">)</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">SingleFlySimulation</span><span class="p">(</span>
+        <span class="n">fly</span><span class="o">=</span><span class="n">fly</span><span class="p">,</span>
+        <span class="n">cameras</span><span class="o">=</span><span class="p">[</span><span class="n">cam</span><span class="p">],</span>
+        <span class="n">timestep</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+        <span class="n">arena</span><span class="o">=</span><span class="n">terrain</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;joints&quot;</span><span class="p">:</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">default_pose</span><span class="p">,</span>
+            <span class="s2">&quot;adhesion&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">cameras</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_frames</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">terrain_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s2"> terrain&quot;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;complex_terrain_overview.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">4</span><span class="n">it</span> <span class="p">[</span><span class="mi">00</span><span class="p">:</span><span class="mi">14</span><span class="p">,</span>  <span class="mf">3.75</span><span class="n">s</span><span class="o">/</span><span class="n">it</span><span class="p">]</span>
+</pre></div>
+</div>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/complex_terrain_overview.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/complex_terrain_overview.png?raw=true" />
+</section>
+<section id="basic-cpg-and-rule-based-controllers">
+<h2>Basic CPG- and rule-based controllers<a class="headerlink" href="#basic-cpg-and-rule-based-controllers" title="Link to this heading">¶</a></h2>
+<p>Do the CPG- and rule-based controllers work well over complex terrain?
+Let’s run the simulation for 0.5 seconds using each of these controllers
+on each of the different terrain types:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flygym.examples.locomotion.cpg_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">CPGNetwork</span><span class="p">,</span> <span class="n">run_cpg_simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flygym.examples.locomotion.rule_based_controller</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RuleBasedController</span><span class="p">,</span>
+    <span class="n">construct_rules_graph</span><span class="p">,</span>
+    <span class="n">run_rule_based_simulation</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">run_time</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">timestep</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+<span class="k">for</span> <span class="n">controller_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;CPG-based&quot;</span><span class="p">,</span> <span class="s2">&quot;Rule-based&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">terrain_name</span> <span class="ow">in</span> <span class="n">terrain_types</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;* Running </span><span class="si">{</span><span class="n">controller_name</span><span class="si">}</span><span class="s2"> controller on </span><span class="si">{</span><span class="n">terrain_name</span><span class="si">}</span><span class="s2"> terrain&quot;</span><span class="p">)</span>
+
+        <span class="n">terrain</span> <span class="o">=</span> <span class="n">get_arena</span><span class="p">(</span><span class="n">terrain_name</span><span class="p">)</span>
+
+        <span class="c1"># Initialize the simulation</span>
+        <span class="n">fly</span> <span class="o">=</span> <span class="n">Fly</span><span class="p">(</span>
+            <span class="n">enable_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">draw_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">init_pose</span><span class="o">=</span><span class="s2">&quot;stretch&quot;</span><span class="p">,</span>
+            <span class="n">control</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">cam</span> <span class="o">=</span> <span class="n">ZStabilizedCamera</span><span class="p">(</span>
+            <span class="n">attachment_point</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">worldbody</span><span class="p">,</span>
+            <span class="n">camera_name</span><span class="o">=</span><span class="s2">&quot;camera_left&quot;</span><span class="p">,</span>
+            <span class="n">targeted_fly_names</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">play_speed</span><span class="o">=</span><span class="mf">0.1</span>
+        <span class="p">)</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">SingleFlySimulation</span><span class="p">(</span>
+            <span class="n">fly</span><span class="o">=</span><span class="n">fly</span><span class="p">,</span>
+            <span class="n">cameras</span><span class="o">=</span><span class="p">[</span><span class="n">cam</span><span class="p">],</span>
+            <span class="n">timestep</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+            <span class="n">arena</span><span class="o">=</span><span class="n">terrain</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">controller_name</span> <span class="o">==</span> <span class="s2">&quot;CPG-based&quot;</span><span class="p">:</span>
+            <span class="n">intrinsic_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">12</span>
+            <span class="n">intrinsic_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span>
+            <span class="n">phase_biases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">coupling_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">phase_biases</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span>
+            <span class="n">convergence_coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">20</span>
+            <span class="n">cpg_network</span> <span class="o">=</span> <span class="n">CPGNetwork</span><span class="p">(</span>
+                <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+                <span class="n">intrinsic_freqs</span><span class="o">=</span><span class="n">intrinsic_freqs</span><span class="p">,</span>
+                <span class="n">intrinsic_amps</span><span class="o">=</span><span class="n">intrinsic_amps</span><span class="p">,</span>
+                <span class="n">coupling_weights</span><span class="o">=</span><span class="n">coupling_weights</span><span class="p">,</span>
+                <span class="n">phase_biases</span><span class="o">=</span><span class="n">phase_biases</span><span class="p">,</span>
+                <span class="n">convergence_coefs</span><span class="o">=</span><span class="n">convergence_coefs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">run_cpg_simulation</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">cpg_network</span><span class="p">,</span> <span class="n">preprogrammed_steps</span><span class="p">,</span> <span class="n">run_time</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">controller_name</span> <span class="o">==</span> <span class="s2">&quot;Rule-based&quot;</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;rule1&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span>
+                <span class="s2">&quot;rule2_ipsi&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+                <span class="s2">&quot;rule2_contra&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;rule3_ipsi&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+                <span class="s2">&quot;rule3_contra&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">rules_graph</span> <span class="o">=</span> <span class="n">construct_rules_graph</span><span class="p">()</span>
+            <span class="n">controller</span> <span class="o">=</span> <span class="n">RuleBasedController</span><span class="p">(</span>
+                <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+                <span class="n">rules_graph</span><span class="o">=</span><span class="n">rules_graph</span><span class="p">,</span>
+                <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+                <span class="n">preprogrammed_steps</span><span class="o">=</span><span class="n">preprogrammed_steps</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">run_rule_based_simulation</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">run_time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown controller: </span><span class="si">{</span><span class="n">controller</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">x_pos</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_observation</span><span class="p">()[</span><span class="s2">&quot;fly&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final x position: </span><span class="si">{</span><span class="n">x_pos</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> mm&quot;</span><span class="p">)</span>
+
+        <span class="n">cam</span><span class="o">.</span><span class="n">save_video</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">controller_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">terrain_name</span><span class="si">}</span><span class="s2">.mp4&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>* Running CPG-based controller on flat terrain
+100%|██████████| 10000/10000 [00:26&lt;00:00, 377.15it/s]
+Final x position: 13.8034 mm
+* Running CPG-based controller on gapped terrain
+100%|██████████| 10000/10000 [01:23&lt;00:00, 119.61it/s]
+Final x position: 4.3090 mm
+* Running CPG-based controller on blocks terrain
+100%|██████████| 10000/10000 [00:41&lt;00:00, 241.69it/s]
+Final x position: 9.0447 mm
+* Running CPG-based controller on mixed terrain
+100%|██████████| 10000/10000 [00:53&lt;00:00, 185.22it/s]
+Final x position: 6.3057 mm
+* Running Rule-based controller on flat terrain
+100%|██████████| 10000/10000 [00:29&lt;00:00, 335.04it/s]
+Final x position: 6.2626 mm
+* Running Rule-based controller on gapped terrain
+100%|██████████| 10000/10000 [01:14&lt;00:00, 133.59it/s]
+Final x position: 4.4435 mm
+* Running Rule-based controller on blocks terrain
+100%|██████████| 10000/10000 [00:41&lt;00:00, 242.36it/s]
+Final x position: 4.6136 mm
+* Running Rule-based controller on mixed terrain
+100%|██████████| 10000/10000 [00:51&lt;00:00, 192.58it/s]
+Final x position: 5.2407 mm
+</pre></div>
+</div>
+<p>Though we have only tested one initial condition (spawn position,
+controller) per case, we can already begin to observe that the CPG- and
+rule-based controllers may not perform robustly over complex terrain. In
+fact, if we run 20 initial conditions for 1 second each, we get a result
+like the one reported in the NeuroMechFly v2 paper (Wang-Chen et al.,
+2024):</p>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_comparison.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_comparison.png?raw=true" />
+<p>We can look more closely at some examples of failed locomotion:</p>
+<p><em>CPG-based controller over gapped terrain:</em></p>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/hybrid_controller/CPG-based_mixed.mp4" controls="controls" style="max-width: 400px;"></video><p><em>Rule-based controller over gapped terrain:</em></p>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/hybrid_controller/Rule-based_mixed.mp4" controls="controls" style="max-width: 400px;"></video><p>In the next section, we will show how, by combining CPGs with sensory
+feedback, we can build a more robust “hybrid” controller.</p>
+</section>
+<section id="building-a-hybrid-controller">
+<h2>Building a hybrid controller<a class="headerlink" href="#building-a-hybrid-controller" title="Link to this heading">¶</a></h2>
+<p>Now, we will build a hybrid controller that integrates both CPG-like
+oscillators and sensory feedback-based rules that reposition the legs
+when they get stuck. As described in the NeuroMechFly v2 paper, we will
+detect the following conditions:</p>
+<ol class="arabic simple">
+<li><p><strong>Retraction:</strong> In principle, with the tripod gait, there should
+always be three legs on the ground. Therefore, if any leg is extended
+farther than the third most extended leg in the z-direction (height),
+this leg may be stuck in a hole. This rule will lift the leg to
+recover it from a stuck position.</p></li>
+<li><p><strong>Stumbling:</strong> In principle, only the tip of the tarsus of each leg
+should contact with the ground. Therefore, we will consider the fly
+to be stumbling if the tibia or upper tarsal segments (1 and 2)
+collide with terrain resulting in a supra-threshold force against the
+direction of the fly’s heading. To correct for stumbling we will lift
+the stumbling leg.</p></li>
+</ol>
+<p>To implement these rules, we will create a variable for each rule that
+keeps track of the extent to which a given leg should be lifted:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">retraction_correction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">stumbling_correction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+<span class="n">retraction_persistence_counter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We will also define a vector representing how each DoF should be
+adjusted to implement leg lifting. We will call this
+<span class="math notranslate nohighlight">\(\vec{v}_\text{leg}\)</span>.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">correction_vectors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># &quot;leg pos&quot;: (Coxa, Coxa_roll, Coxa_yaw, Femur, Femur_roll, Tibia, Tarsus1)</span>
+    <span class="c1"># unit: radian</span>
+    <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.03</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">]),</span>
+    <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.015</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.025</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span>
+    <span class="s2">&quot;H&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.02</span><span class="p">]),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>That is, when the leg should be lifted, we will increment the joint
+angles on this leg by <span class="math notranslate nohighlight">\(\vec{v}_\text{leg}\)</span> scaled by a factor
+defining the extent of correction. When the condition is no longer met,
+we will reduce the correction term until it reaches zero (i.e., with no
+adjustment) so that the target angles applied to the simulator are those
+suggested by the corresponding CPGs.</p>
+<p>Next, we need to define the factor dictating the extent of correction.
+Recall that we will progressively lift the leg when an adjustment is
+necessary. Therefore, let’s also define the rate of adjustment
+<span class="math notranslate nohighlight">\(k_\text{inc}\)</span> when the condition is met and the rate of recovery
+<span class="math notranslate nohighlight">\(k_\text{dec}\)</span> when the condition is no longer met:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">correction_rates</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># &quot;rule&quot;: (increment rate, decrement rate). unit: 1/sec</span>
+    <span class="s2">&quot;retraction&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">700</span><span class="p">),</span>
+    <span class="s2">&quot;stumbling&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2200</span><span class="p">,</span> <span class="mi">1800</span><span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Concretely, we will initialize the amount of correction <span class="math notranslate nohighlight">\(c\)</span> to 0.
+This variable is unitless. For every <span class="math notranslate nohighlight">\(t\)</span> amount of time that the
+condition is met, we increment <span class="math notranslate nohighlight">\(c\)</span> by <span class="math notranslate nohighlight">\(k_\text{inc}t\)</span> where
+<span class="math notranslate nohighlight">\(k_\text{inc}\)</span> is the appropriate correction rate. Similarly, for
+every <span class="math notranslate nohighlight">\(t\)</span> amount of time that the condition is no longer met, we
+will decrement <span class="math notranslate nohighlight">\(c\)</span> by <span class="math notranslate nohighlight">\(k_\text{dec}t\)</span> until it reaches 0. We
+will therefore adjust the leg joint angles by adding
+<span class="math notranslate nohighlight">\(c\vec{v}_\text{leg}\)</span> to it.</p>
+<p>We should also define a threshold for the stumbling force. Note that a
+negative number indicates a force against the direction in which the fly
+is facing:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stumbling_force_threshold</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>Next, we will define the underlying CPG network as we did in the
+<a class="reference external" href="https://neuromechfly.org/tutorials/cpg_controller.html">tutorial on CPG-based
+control</a>:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">run_time</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">timestep</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+<span class="c1"># define parameters for persistence and cap the increment</span>
+<span class="n">max_increment</span> <span class="o">=</span> <span class="mi">80</span> <span class="o">/</span> <span class="mf">1e-4</span>
+<span class="n">retraction_persistence</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">/</span> <span class="mf">1e-4</span>
+<span class="n">persistence_init_thr</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">/</span> <span class="mf">1e-4</span>
+
+<span class="n">right_leg_inversion</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Initialize the CPG network</span>
+<span class="n">intrinsic_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">12</span>
+<span class="n">intrinsic_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span>
+<span class="n">phase_biases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">coupling_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">phase_biases</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span>
+<span class="n">convergence_coefs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="mi">20</span>
+<span class="n">cpg_network</span> <span class="o">=</span> <span class="n">CPGNetwork</span><span class="p">(</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+    <span class="n">intrinsic_freqs</span><span class="o">=</span><span class="n">intrinsic_freqs</span><span class="p">,</span>
+    <span class="n">intrinsic_amps</span><span class="o">=</span><span class="n">intrinsic_amps</span><span class="p">,</span>
+    <span class="n">coupling_weights</span><span class="o">=</span><span class="n">coupling_weights</span><span class="p">,</span>
+    <span class="n">phase_biases</span><span class="o">=</span><span class="n">phase_biases</span><span class="p">,</span>
+    <span class="n">convergence_coefs</span><span class="o">=</span><span class="n">convergence_coefs</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly, let’s define the preprogrammed steps:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize preprogrammed steps</span>
+<span class="n">preprogrammed_steps</span> <span class="o">=</span> <span class="n">PreprogrammedSteps</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In our hybrid controller the action performed by a leg stuck in a hole
+or colliding with an edge depends on the stepping phase. Upon on
+activating one of the rules, when the leg is in stance and adhesion is
+on, the leg can be slightly more extended to allow the other legs to
+overcome an obstacle. When the leg is in swing and one of the legs is
+active, the leg can be retracted higher to help overcome the obstacle.
+Here we define the phasic gain that will help to implement this
+behavior.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="n">step_phase_gain</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">leg</span> <span class="ow">in</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">legs</span><span class="p">:</span>
+    <span class="n">swing_start</span><span class="p">,</span> <span class="n">swing_end</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">swing_period</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span>
+
+    <span class="n">step_points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">swing_start</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">swing_start</span><span class="p">,</span> <span class="n">swing_end</span><span class="p">]),</span>
+        <span class="n">swing_end</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">swing_end</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">]),</span>
+        <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">swing_period</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">swing_start</span><span class="p">,</span> <span class="n">swing_end</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">increment_vals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">step_phase_gain</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span>
+        <span class="n">step_points</span><span class="p">,</span> <span class="n">increment_vals</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span>
+    <span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">step_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">step_phase</span><span class="p">,</span> <span class="n">step_phase_gain</span><span class="p">[</span><span class="n">leg</span><span class="p">](</span><span class="n">step_phase</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)),</span> <span class="n">label</span><span class="o">=</span><span class="n">leg</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span>
+        <span class="n">swing_start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+        <span class="n">swing_end</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;swing&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Phase (rad)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Gain&quot;</span><span class="p">)</span>
+<span class="c1"># label in pi</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$2\pi$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$3\pi$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$4\pi$&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Step phase dependent gain&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;step_phase_dependent_gain.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/step_phase_dependent_gain.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/step_phase_dependent_gain.png?raw=true" />
+<p>… and the NeuroMechFly simulation over mixed terrain. We will enable
+contact detection for all tibial and tarsal segments to achieve
+stumbling detection:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize NeuroMechFly simulation</span>
+<span class="c1"># Initialize the simulation</span>
+
+<span class="n">contact_sensor_placements</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}{</span><span class="n">segment</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">for</span> <span class="n">leg</span> <span class="ow">in</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">legs</span>
+    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Tibia&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus1&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus2&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus3&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus4&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus5&quot;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">fly</span> <span class="o">=</span> <span class="n">Fly</span><span class="p">(</span>
+    <span class="n">enable_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">draw_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">init_pose</span><span class="o">=</span><span class="s2">&quot;stretch&quot;</span><span class="p">,</span>
+    <span class="n">control</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">,</span>
+    <span class="n">contact_sensor_placements</span><span class="o">=</span><span class="n">contact_sensor_placements</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">cam</span> <span class="o">=</span> <span class="n">ZStabilizedCamera</span><span class="p">(</span>
+    <span class="n">attachment_point</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">worldbody</span><span class="p">,</span>
+    <span class="n">camera_name</span><span class="o">=</span><span class="s2">&quot;camera_left&quot;</span><span class="p">,</span>
+    <span class="n">targeted_fly_names</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">play_speed</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+<span class="n">arena</span> <span class="o">=</span> <span class="n">MixedTerrain</span><span class="p">()</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">SingleFlySimulation</span><span class="p">(</span>
+    <span class="n">fly</span><span class="o">=</span><span class="n">fly</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="p">[</span><span class="n">cam</span><span class="p">],</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+    <span class="n">arena</span><span class="o">=</span><span class="n">arena</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Let’s build a dictionary containing the indices of the contact sensors
+on each leg. These will be used to detect stumbling:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">detected_segments</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Tibia&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus1&quot;</span><span class="p">,</span> <span class="s2">&quot;Tarsus2&quot;</span><span class="p">]</span>
+<span class="n">stumbling_sensors</span> <span class="o">=</span> <span class="p">{</span><span class="n">leg</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">leg</span> <span class="ow">in</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">legs</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sensor_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fly</span><span class="o">.</span><span class="n">contact_sensor_placements</span><span class="p">):</span>
+    <span class="n">leg</span> <span class="o">=</span> <span class="n">sensor_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># sensor_name: eg. &quot;Animat/LFTarsus1&quot;</span>
+    <span class="n">segment</span> <span class="o">=</span> <span class="n">sensor_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">detected_segments</span><span class="p">:</span>
+        <span class="n">stumbling_sensors</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="n">stumbling_sensors</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">stumbling_sensors</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+<p>As a sanity check, let’s make sure that the number of stumble sensors
+per leg is as expected:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">detected_segments</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">stumbling_sensors</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="s2">&quot;Contact detection must be enabled for all tibia, tarsus1, and tarsus2 &quot;</span>
+        <span class="s2">&quot;segments for stumbling detection.&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>We are now ready to write the main simulation loop. We will implement
+and execute the entire loop before explaining its constituent
+components:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target_num_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">run_time</span> <span class="o">/</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span><span class="p">)</span>
+<span class="n">obs_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">physics_error</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trange</span><span class="p">(</span><span class="n">target_num_steps</span><span class="p">):</span>
+    <span class="c1"># retraction rule: does a leg need to be retracted from a hole?</span>
+    <span class="n">end_effector_z_pos</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;fly&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;end_effectors&quot;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">end_effector_z_pos_sorted_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">end_effector_z_pos</span><span class="p">)</span>
+    <span class="n">end_effector_z_pos_sorted</span> <span class="o">=</span> <span class="n">end_effector_z_pos</span><span class="p">[</span><span class="n">end_effector_z_pos_sorted_idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">end_effector_z_pos_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">end_effector_z_pos_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">:</span>
+        <span class="n">leg_to_correct_retraction</span> <span class="o">=</span> <span class="n">end_effector_z_pos_sorted_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">retraction_correction</span><span class="p">[</span><span class="n">leg_to_correct_retraction</span><span class="p">]</span>
+            <span class="o">&gt;</span> <span class="n">persistence_init_thr</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+        <span class="p">):</span>
+            <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">leg_to_correct_retraction</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">leg_to_correct_retraction</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># update persistence counter</span>
+    <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">retraction_persistence_counter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">retraction_persistence_counter</span><span class="p">[</span>
+        <span class="n">retraction_persistence_counter</span> <span class="o">&gt;</span> <span class="n">retraction_persistence</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">cpg_network</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">joints_angles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">adhesion_onoff</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">all_net_corrections</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">legs</span><span class="p">):</span>
+        <span class="c1"># update amount of retraction correction</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">i</span> <span class="o">==</span> <span class="n">leg_to_correct_retraction</span> <span class="ow">or</span> <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">):</span>  <span class="c1"># lift leg</span>
+            <span class="n">increment</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;retraction&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+            <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">increment</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">fly</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">physics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Tibia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># condition no longer met, lower leg</span>
+            <span class="n">decrement</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;retraction&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+            <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">decrement</span><span class="p">)</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">fly</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">physics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Tibia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># update amount of stumbling correction</span>
+        <span class="n">contact_forces</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;contact_forces&quot;</span><span class="p">][</span><span class="n">stumbling_sensors</span><span class="p">[</span><span class="n">leg</span><span class="p">],</span> <span class="p">:]</span>
+        <span class="n">fly_orientation</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;fly_orientation&quot;</span><span class="p">]</span>
+        <span class="c1"># force projection should be negative if against fly orientation</span>
+        <span class="n">force_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">contact_forces</span><span class="p">,</span> <span class="n">fly_orientation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">force_proj</span> <span class="o">&lt;</span> <span class="n">stumbling_force_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">increment</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;stumbling&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+            <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">increment</span>
+            <span class="k">if</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sim</span><span class="o">.</span><span class="n">fly</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">physics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Femur&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">decrement</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;stumbling&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+            <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">decrement</span><span class="p">)</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">fly</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">physics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Femur&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># retraction correction is prioritized</span>
+        <span class="k">if</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">net_correction</span> <span class="o">=</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">net_correction</span> <span class="o">=</span> <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1"># get target angles from CPGs and apply correction</span>
+        <span class="n">my_joints_angles</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_joint_angles</span><span class="p">(</span>
+            <span class="n">leg</span><span class="p">,</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_magnitudes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">net_correction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">net_correction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_increment</span> <span class="o">*</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">leg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span><span class="p">:</span>
+            <span class="n">net_correction</span> <span class="o">*=</span> <span class="n">right_leg_inversion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1"># apply phase-dependent gain</span>
+        <span class="n">net_correction</span> <span class="o">*=</span> <span class="n">step_phase_gain</span><span class="p">[</span><span class="n">leg</span><span class="p">](</span><span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+
+        <span class="n">my_joints_angles</span> <span class="o">+=</span> <span class="n">net_correction</span> <span class="o">*</span> <span class="n">correction_vectors</span><span class="p">[</span><span class="n">leg</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">joints_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">my_joints_angles</span><span class="p">)</span>
+
+        <span class="n">all_net_corrections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">net_correction</span><span class="p">)</span>
+
+        <span class="c1"># get adhesion on/off signal</span>
+        <span class="n">my_adhesion_onoff</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_adhesion_onoff</span><span class="p">(</span>
+            <span class="n">leg</span><span class="p">,</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">adhesion_onoff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">my_adhesion_onoff</span><span class="p">)</span>
+
+    <span class="n">action</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;joints&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">joints_angles</span><span class="p">)),</span>
+        <span class="s2">&quot;adhesion&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adhesion_onoff</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;net_correction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_net_corrections</span>
+    <span class="n">obs_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>100%|██████████| 10000/10000 [00:53&lt;00:00, 187.59it/s]
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Simulation terminated: </span><span class="si">{</span><span class="n">obs_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;fly&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">obs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;fly&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Simulation</span> <span class="n">terminated</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.464745</span>    <span class="mf">2.3659656</span>  <span class="o">-</span><span class="mf">0.44085807</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>At each simulation time step, we first check whether the retraction rule
+is met. This depends on whether any leg is extended further than the
+third most extended leg in the z-direction by a margin of 0.05 mm. This
+margin is important because contact calculations in the physics
+simulator are imperfect sometimes causing the leg to penetrate the floor
+by a small amount. If two legs meet this condition, only the most
+extended leg is corrected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span> <span class="c1"># retraction rule: does a leg need to be retracted from a hole?</span>
+ <span class="n">end_effector_z_pos</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;fly&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;end_effectors&quot;</span><span class="p">][:,</span> <span class="mi">2</span><span class="p">]</span>
+ <span class="n">end_effector_z_pos_sorted_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">end_effector_z_pos</span><span class="p">)</span>
+ <span class="n">end_effector_z_pos_sorted</span> <span class="o">=</span> <span class="n">end_effector_z_pos</span><span class="p">[</span><span class="n">end_effector_z_pos_sorted_idx</span><span class="p">]</span>
+<span class="k">if</span> <span class="n">end_effector_z_pos_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">end_effector_z_pos_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">:</span>
+     <span class="n">leg_to_correct_retraction</span> <span class="o">=</span> <span class="n">end_effector_z_pos_sorted_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+     <span class="k">if</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">leg_to_correct_retraction</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">persistence_init_thr</span><span class="o">*</span><span class="n">sim</span><span class="o">.</span><span class="n">timestep</span><span class="p">:</span>
+         <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">leg_to_correct_retraction</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+ <span class="k">else</span><span class="p">:</span>
+     <span class="n">leg_to_correct_retraction</span> <span class="o">=</span> <span class="kc">None</span>
+
+ <span class="c1"># update persistence counter</span>
+ <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">retraction_persistence_counter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+ <span class="n">retraction_persistence_counter</span><span class="p">[</span>
+     <span class="n">retraction_persistence_counter</span> <span class="o">&gt;</span> <span class="n">retraction_persistence</span><span class="o">*</span><span class="n">sim</span><span class="o">.</span><span class="n">timestep</span>
+ <span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>We also implemented persistence so that the rule is still active for a
+few steps after the condition is no longer met. The leg’s protraction
+should be maintained for some time to avoid it falling back into the
+hole.</p>
+<p>Then, have an inner loop that iterates over all legs. The joint angles
+and adhesion on/off signals are calculated here. We first update the
+amount of correction :math:<code class="docutils literal notranslate"><span class="pre">c</span></code> for the retraction rule:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># update amount of retraction correction</span>
+<span class="k">if</span> <span class="p">(</span>
+    <span class="n">i</span> <span class="o">==</span> <span class="n">leg_to_correct_retraction</span> <span class="ow">or</span> <span class="n">retraction_persistence_counter</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<span class="p">):</span>  <span class="c1"># lift leg</span>
+    <span class="n">increment</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;retraction&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nmf</span><span class="o">.</span><span class="n">timestep</span>
+    <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">increment</span>
+    <span class="n">nmf</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Tibia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>  <span class="c1"># condition no longer met, lower leg</span>
+    <span class="n">decrement</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;retraction&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">nmf</span><span class="o">.</span><span class="n">timestep</span>
+    <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">decrement</span><span class="p">)</span>
+    <span class="n">nmf</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Tibia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Similarly, we update the correction amount <span class="math notranslate nohighlight">\(c\)</span> for the stumbling
+rule:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># update amount of stumbling correction</span>
+<span class="n">contact_forces</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;contact_forces&quot;</span><span class="p">][</span><span class="n">stumbling_sensors</span><span class="p">[</span><span class="n">leg</span><span class="p">],</span> <span class="p">:]</span>
+<span class="n">fly_orientation</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s2">&quot;fly_orientation&quot;</span><span class="p">]</span>
+<span class="c1"># force projection should be negative if against fly orientation</span>
+<span class="n">force_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">contact_forces</span><span class="p">,</span> <span class="n">fly_orientation</span><span class="p">)</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">force_proj</span> <span class="o">&lt;</span> <span class="n">stumbling_force_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+    <span class="n">increment</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;stumbling&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nmf</span><span class="o">.</span><span class="n">timestep</span>
+    <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">increment</span>
+    <span class="k">if</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">nmf</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Femur&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">decrement</span> <span class="o">=</span> <span class="n">correction_rates</span><span class="p">[</span><span class="s2">&quot;stumbling&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">nmf</span><span class="o">.</span><span class="n">timestep</span>
+    <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">decrement</span><span class="p">)</span>
+    <span class="n">nmf</span><span class="o">.</span><span class="n">change_segment_color</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2">Femur&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>In case both rules are active for the same leg, we will only apply the
+retraction correction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># retraction correction is prioritized</span>
+<span class="k">if</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">net_correction</span> <span class="o">=</span> <span class="n">retraction_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">net_correction</span> <span class="o">=</span> <span class="n">stumbling_correction</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Let’s first obtain the initial joint angles based purely on the CPG
+phase and preprogrammed step. Then, we will apply the lifting
+correction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get target angles from CPGs and apply correction</span>
+<span class="n">my_joints_angles</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_joint_angles</span><span class="p">(</span>
+    <span class="n">leg</span><span class="p">,</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_magnitudes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">my_joints_angles</span> <span class="o">+=</span> <span class="n">net_correction</span> <span class="o">*</span> <span class="n">correction_vectors</span><span class="p">[</span><span class="n">leg</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+<span class="n">joints_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">my_joints_angles</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The net correction for roll and yaw angles needs to be inverted for the
+resulting action to be symmetric</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">net_correction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">net_correction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_increment</span><span class="o">*</span><span class="n">sim</span><span class="o">.</span><span class="n">timestep</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">leg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span><span class="p">:</span>
+       <span class="n">net_correction</span> <span class="o">*=</span> <span class="n">right_leg_inversion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The net correction needs to be reversed to lead to retraction or
+protraction if during swing or stance phase</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># apply phase dependent gain</span>
+<span class="n">net_correction</span> <span class="o">*=</span> <span class="n">step_phase_gain</span><span class="p">[</span><span class="n">leg</span><span class="p">](</span><span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Finally, we can obtain the adhesion on/off signal based on the leg phase
+as well:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get adhesion on/off signal</span>
+<span class="n">my_adhesion_onoff</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_adhesion_onoff</span><span class="p">(</span>
+    <span class="n">leg</span><span class="p">,</span> <span class="n">cpg_network</span><span class="o">.</span><span class="n">curr_phases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">adhesion_onoff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">my_adhesion_onoff</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We now have all we need to feed the action into the NeuroMechFly
+simulation. Don’t forget to call <code class="docutils literal notranslate"><span class="pre">.render()</span></code> to record the video
+correctly.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">action</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;joints&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">joints_angles</span><span class="p">)),</span>
+    <span class="s2">&quot;adhesion&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adhesion_onoff</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">nmf</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+<span class="n">nmf</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Let’s visualize the results:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cam</span><span class="o">.</span><span class="n">save_video</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;hybrid_controller_mixed_terrain.mp4&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/hybrid_controller/hybrid_controller_mixed_terrain.mp4" controls="controls" style="max-width: 400px;"></video><p>Even based on this single example, this hybrid controller looks better
+than the CPG- or rule-based controller. Indeed, we obtained the
+following results by running 20 simulations for each controller over
+each terrain type starting with different initial conditions. These show
+that a hybrid controller outperforms the other two controllers (see the
+NeuroMechFly v2 paper for details):</p>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_hybrid_comparison.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_hybrid_comparison.png?raw=true" />
+<p>These results demonstrate how rugged terrain can expose failure modes
+for controllers that otherwise work well on flat terrain, and how you
+can use NeuroMechFly to benchmark different control strategies that go
+beyond the classic dichotomy of CPG- versus rule-based control.</p>
+<p>In the next tutorial, we will refactor our hybrid controller code into a
+Python class that implements the Gym interface. This will allow us to
+show how to build control models with different degrees of abstraction
+and preprogrammed computations.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="turning.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Encapsulating custom code into Gym environments: A turning controller</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="rule_based_controller.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Rule-based controller</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Neuroengineering Laboratory, EPFL
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/NeLy-EPFL/flygym" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Overcome complex terrain with a hybrid controller</a><ul>
+<li><a class="reference internal" href="#defining-the-arena">Defining the arena</a></li>
+<li><a class="reference internal" href="#basic-cpg-and-rule-based-controllers">Basic CPG- and rule-based controllers</a></li>
+<li><a class="reference internal" href="#building-a-hybrid-controller">Building a hybrid controller</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

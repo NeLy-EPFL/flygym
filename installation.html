@@ -1,0 +1,513 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DF8S7T56G7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-DF8S7T56G7');
+    </script>
+    <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Tutorials" href="tutorials/index.html" /><link rel="prev" title="Fly chasing with a connectome constrained visual system" href="gallery/video_14_fly_follow_fly.html" />
+        <link rel="prefetch" href="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" as="image" />
+
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+        <title>Installation - NeuroMechFly documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">NeuroMechFly documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">NeuroMechFly documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="neuromechfly.html">The NeuroMechFly Model</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="gallery/index.html">Gallery</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Gallery</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_3_forces.html">Estimating contact forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_4_climbing.html">Climbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_8_controller_comparison.html">Controller comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_9_visual_taxis.html">Visual taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_10_odour_taxis.html">Odour Taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_11_head_stabilization.html">Head stabilization on complex terrain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_12_multimodal_navigation.html">Multimodal navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_13_plume_navigation.html">Plume navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gallery/video_14_fly_follow_fly.html">Fly chasing with a connectome constrained visual system</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Tutorials</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/gym_basics_and_kinematic_replay.html">Interacting with NeuroMechFly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/cpg_controller.html">Controlling locomotion with CPGs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/rule_based_controller.html">Rule-based controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/hybrid_controller.html">Overcome complex terrain with a hybrid controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/turning.html">Encapsulating custom code into Gym environments: A turning controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/vision_basics.html">Vision basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/olfaction_basics.html">Olfaction basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/path_integration.html">Path integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/head_stabilization.html">Head stabilization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/advanced_vision.html">Connectome-constrained visual system model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/advanced_olfaction.html">Advanced olfaction: Navigating a complex odor plume</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api_ref/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/mdp_specs.html">MDP Task Specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/fly.html">Fly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/arena.html">Arena</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/camera.html">Camera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/vision.html">Vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/olfaction.html">Olfaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/preprogrammed.html">Preprogrammed</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="api_ref/examples/index.html">FlyGym Examples</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of FlyGym Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="api_ref/examples/locomotion.html">Locomotion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api_ref/examples/vision.html">Advanced Vision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api_ref/examples/olfaction.html">Advanced Olfaction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api_ref/examples/path_integration.html">Path Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api_ref/examples/head_stabilization.html">Head Stabilization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api_ref/legacy.html">Legacy API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="workshop.html">NeuroMechFly Workshop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outreach.html">NeuroMechFly Live and Outreach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/installation.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<p>FlyGym can be installed in one of three ways:</p>
+<section id="option-1-installation-in-your-separately-managed-python-environment">
+<h2>Option 1: Installation in your separately managed Python environment<a class="headerlink" href="#option-1-installation-in-your-separately-managed-python-environment" title="Link to this heading">¶</a></h2>
+<p>If you are using FlyGym as a library in your own code, you might want to use FlyGym in your separately managed Python environment, you can install FlyGym via the <a class="reference external" href="https://pypi.org/project/flygym/">FlyGym package on the Python Package Index (PyPI)</a>. Note that you are responsible of managing the Python environment in this case, subjected to the dependencies and version constraints of FlyGym.</p>
+<p>In the most basic case, if you just want the bare core of FlyGym, you can install FlyGym with a single command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;flygym&quot;</span>
+</pre></div>
+</div>
+<p>Additionally, you can also install the following optional dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># If you want to run the examples published in our paper, you need to install</span>
+<span class="c1"># additional dependencies for fluid dynamics simulation, network analysis,</span>
+<span class="c1"># deep learning, etc. You can do this by running:</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;flygym[examples]&quot;</span>
+
+<span class="c1"># If you want to contribute the FlyGym, you might want to install additional</span>
+<span class="c1"># tools for documentation, testing, and code formatting. You can do this by</span>
+<span class="c1"># running:</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;flygym[dev]&quot;</span>
+
+<span class="c1"># If you want both, run:</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;flygym[examples,dev]&quot;</span>
+</pre></div>
+</div>
+<p><strong>Importantly,</strong> if you want to run FlyGym on a machine without a display (e.g. a server or a node on a cluster), please check the special instructions at the bottom of this page.</p>
+</section>
+<section id="option-2-installation-with-strict-dependency-specification-using-poetry">
+<h2>Option 2: Installation with strict dependency specification using Poetry<a class="headerlink" href="#option-2-installation-with-strict-dependency-specification-using-poetry" title="Link to this heading">¶</a></h2>
+<p>If you want the exact dependencies and versions that we use in our development, you can install FlyGym using <a class="reference external" href="https://python-poetry.org/">Poetry</a>—a dependency management and packaging tool that ensures a reproducible environment. In brief, we have generated a full recipe of the exact versions of libraries required by FlyGym. This recipe, contained in the <cite>poetry.lock</cite> file, is part of the FlyGym package. You can simply download the FlyGym repository and ask Poetry to install the dependencies according to this recipe.</p>
+<p>This is the recommended method of installation for the following cases:</p>
+<ol class="arabic simple">
+<li><p>You require a strict dependency specification to ensure that things work out of the box—for example, if you are using FlyGym for educational purposes in the classroom.</p></li>
+<li><p>You are a developer who wants to contribute to FlyGym and wants to ensure that your changes are compatible with the rest of the codebase.</p></li>
+<li><p>You are already maintaining the rest of your codebase with Poetry.</p></li>
+</ol>
+<p>To use this method, you first need to install Poetry (and <code class="docutils literal notranslate"><span class="pre">pipx</span></code> if you don’t have it already, because Poetry is installed with <code class="docutils literal notranslate"><span class="pre">pipx</span></code>). You can find instructions on how to do this on <a class="reference external" href="https://python-poetry.org/docs/#installation">Poetry’s online documentation</a>.</p>
+<p>Once you have Poetry installed, you can install FlyGym by running the following commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the FlyGym repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/NeLy-EPFL/flygym.git
+<span class="c1"># Alternatively, use SSH if you have it set up already or if you want to</span>
+<span class="c1"># contribute to the FlyGym project:</span>
+<span class="c1"># git clone https://github.com/NeLy-EPFL/flygym.git</span>
+
+<span class="c1"># Change into the FlyGym directory</span>
+<span class="nb">cd</span><span class="w"> </span>flygym
+
+<span class="c1"># Install with Poetry</span>
+poetry<span class="w"> </span>install
+
+<span class="c1"># If you want to run the examples published in our paper, you need to install</span>
+<span class="c1"># additional dependencies for fluid dynamics simulation, network analysis,</span>
+<span class="c1"># deep learning, etc. You can do this by running:</span>
+poetry<span class="w"> </span>install<span class="w"> </span>-E<span class="w"> </span>examples
+
+<span class="c1"># If you want to contribute the FlyGym, you might want to install additional</span>
+<span class="c1"># tools for documentation, testing, and code formatting. You can do this by</span>
+<span class="c1"># running:</span>
+poetry<span class="w"> </span>install<span class="w"> </span>-E<span class="w"> </span>dev
+</pre></div>
+</div>
+<p><strong>Importantly,</strong> if you want to run FlyGym on a machine without a display (e.g. a server or a node on a cluster), please check the special instructions at the bottom of this page.</p>
+</section>
+<section id="option-3-installation-with-docker">
+<h2>Option 3: Installation with Docker<a class="headerlink" href="#option-3-installation-with-docker" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Containerization_(computing)">“Containerization”</a> is a way of virtualization that aims to bundle an application and its dependencies into a single portable, executable unit called a <em>container</em>. <a class="reference external" href="https://docs.docker.com/guides/docker-overview/">Docker</a> is a popular platform for developing, shipping, and running containers, making it easier to manage and deploy applications in a consistent manner.</p>
+<p>Instead of installing FlyGym on your machine directly, you can also install Docker on your machine and run FlyGym through Docker. This might be particularly helpful if you are using container-as-a-service (CaaS) systems such as Kubernetes to train or deploy models at scale. We provide a Docker image with FlyGym and its dependencies pre-installed and publish it to <a class="reference external" href="https://hub.docker.com/r/nelyepfl/flygym">Docker Hub</a>. This image is defined by the <a class="reference external" href="https://github.com/NeLy-EPFL/flygym/blob/main/Dockerfile">Dockerfile</a> at the root level of the directory.</p>
+<p>For more information about how to interact with Docker, please refer to the <a class="reference external" href="https://docs.docker.com/guides/">official Docker guides</a>. Note that you need to <a class="reference external" href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">install NVIDIA Container Toolkit</a> if you would like to use an NVIDIA GPU from the container.</p>
+</section>
+<section id="cross-platform-compatibility">
+<h2>Cross-platform compatibility<a class="headerlink" href="#cross-platform-compatibility" title="Link to this heading">¶</a></h2>
+<p>FlyGym supports Linux, macOS, and Windows. The codebase is continuously and automatically tested through [CI/CD](<a class="reference external" href="https://en.wikipedia.org/wiki/CI/CD">https://en.wikipedia.org/wiki/CI/CD</a>), and we verified that all tests pass for every release. An exception is that rendering on headless Mac and Windows servers (i.e., without displays) is not tested.</p>
+<p>Specifically, FlyGym is automatically tested in the following setups:</p>
+<ul class="simple">
+<li><p>Linux: latest version of Ubuntu, with Python 3.10, 3.11, and 3.12.</p></li>
+<li><p>macOS: latest version of macOS (Apple silicon) and macOS 13 Ventura (pre Apple silicon), with Python 3.12, without rendering. We do not support the examples provided in the paper on macOS 13 Ventura. This is because Macs with Intel chips are not supported by the latest version of PyTorch.</p></li>
+<li><p>Windows: latest version of Windows, with Python 3.12, without rendering.</p></li>
+</ul>
+<p>Exact configurations of the CI/CD tests can be found in the <a class="reference external" href="https://github.com/NeLy-EPFL/flygym/tree/main/.github/workflows">GitHub Actions workflows</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>For Macs with Intel-chip and older macOS versions:</strong> <a class="reference external" href="https://github.com/NeLy-EPFL/flygym/releases/tag/v1.2.0">FlyGym v1.2.0</a> was the last version to officially support macOS 13, but you can get newer versions to work by downgrading your numpy version <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;numpy&lt;2&quot;</span></code> after installing FlyGym.</p>
+</div>
+</section>
+<section id="special-notes-for-rendering-on-machines-without-a-display">
+<h2>Special notes for rendering on machines without a display<a class="headerlink" href="#special-notes-for-rendering-on-machines-without-a-display" title="Link to this heading">¶</a></h2>
+<p>If you are using a machine without a display (e.g. a server), you will need to change the renderer to EGL (see <a class="reference external" href="https://pytorch.org/rl/main/reference/generated/knowledge_base/MUJOCO_INSTALLATION.html#prerequisite-for-rendering-all-mujoco-versions">this link</a> for details). This requires setting the following environment variables before running FlyGym:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">MUJOCO_GL</span><span class="o">=</span>egl
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYOPENGL_PLATFORM</span><span class="o">=</span>egl
+</pre></div>
+</div>
+<p>If you want to change this setting by default, you can add the two lines above to the end of your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code> file.</p>
+<p>If you are using a Conda environment, you can change the environment variables as follows (replacing <code class="docutils literal notranslate"><span class="pre">my-env-name</span></code> accordingly), and then re-activate the environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>my-env-name
+conda<span class="w"> </span>env<span class="w"> </span>config<span class="w"> </span>vars<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">MUJOCO_GL</span><span class="o">=</span>egl<span class="w"> </span><span class="nv">PYOPENGL_PLATFORM</span><span class="o">=</span>egl
+</pre></div>
+</div>
+<p>You might need to install EGL-related dependencies on your machine. For example, on some Ubuntu/Debian systems, you might need to install the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>apt-get<span class="w"> </span>install<span class="w"> </span>libegl1-mesa-dev
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AttributeError:</span> <span class="pre">module</span> <span class="pre">'pkgutil'</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">attribute</span> <span class="pre">'ImpImporter'.</span> <span class="pre">Did</span> <span class="pre">you</span> <span class="pre">mean:</span> <span class="pre">'zipimporter'?</span></code> during <code class="docutils literal notranslate"><span class="pre">opencv-python</span></code> installation:</p>
+<ul>
+<li><p>This appears to be an issue with <code class="docutils literal notranslate"><span class="pre">opencv-python</span></code> on certain Mac systems with Python 3.12. Please refer to <a class="reference external" href="https://github.com/opencv/opencv-python/issues/988">this GitHub issue</a>. Temporary fixes (from simple to complex) include:</p>
+<ul>
+<li><p>Use Python 3.11 instead.</p></li>
+<li><p>Uninstall <code class="docutils literal notranslate"><span class="pre">opencv-python</span></code>, clone <code class="docutils literal notranslate"><span class="pre">opencv-python</span></code> from GitHub, remove the line <code class="docutils literal notranslate"><span class="pre">&quot;setuptools==59.2.0&quot;,</span></code> in its <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, install an up-to-date version of <code class="docutils literal notranslate"><span class="pre">setuptools</span></code> (e.g., 70.0.0), and install <code class="docutils literal notranslate"><span class="pre">opencv-python</span></code> locally from the cloned directory. Then, continue with the FlyGym installation.</p></li>
+<li><p>Use Docker to run FlyGym (see above).</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="tutorials/index.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Tutorials</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="gallery/video_14_fly_follow_fly.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Fly chasing with a connectome constrained visual system</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Neuroengineering Laboratory, EPFL
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/NeLy-EPFL/flygym" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#option-1-installation-in-your-separately-managed-python-environment">Option 1: Installation in your separately managed Python environment</a></li>
+<li><a class="reference internal" href="#option-2-installation-with-strict-dependency-specification-using-poetry">Option 2: Installation with strict dependency specification using Poetry</a></li>
+<li><a class="reference internal" href="#option-3-installation-with-docker">Option 3: Installation with Docker</a></li>
+<li><a class="reference internal" href="#cross-platform-compatibility">Cross-platform compatibility</a></li>
+<li><a class="reference internal" href="#special-notes-for-rendering-on-machines-without-a-display">Special notes for rendering on machines without a display</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

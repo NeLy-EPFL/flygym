@@ -1,0 +1,938 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DF8S7T56G7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-DF8S7T56G7');
+    </script>
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Overcome complex terrain with a hybrid controller" href="hybrid_controller.html" /><link rel="prev" title="Controlling locomotion with CPGs" href="cpg_controller.html" />
+        <link rel="prefetch" href="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" as="image" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+        <title>Rule-based controller - NeuroMechFly documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=25af2a20" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">NeuroMechFly documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_small.jpg?raw=true" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">NeuroMechFly documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../neuromechfly.html">The NeuroMechFly Model</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../gallery/index.html">Gallery</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Gallery</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_3_forces.html">Estimating contact forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_4_climbing.html">Climbing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_8_controller_comparison.html">Controller comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_9_visual_taxis.html">Visual taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_10_odour_taxis.html">Odour Taxis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_11_head_stabilization.html">Head stabilization on complex terrain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_12_multimodal_navigation.html">Multimodal navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_13_plume_navigation.html">Plume navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gallery/video_14_fly_follow_fly.html">Fly chasing with a connectome constrained visual system</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Tutorials</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gym_basics_and_kinematic_replay.html">Interacting with NeuroMechFly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cpg_controller.html">Controlling locomotion with CPGs</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Rule-based controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_controller.html">Overcome complex terrain with a hybrid controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="turning.html">Encapsulating custom code into Gym environments: A turning controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vision_basics.html">Vision basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="olfaction_basics.html">Olfaction basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="path_integration.html">Path integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_stabilization.html">Head stabilization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced_vision.html">Connectome-constrained visual system model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced_olfaction.html">Advanced olfaction: Navigating a complex odor plume</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_ref/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/mdp_specs.html">MDP Task Specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/fly.html">Fly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/arena.html">Arena</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/camera.html">Camera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/simulation.html">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/state.html">State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/vision.html">Vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/olfaction.html">Olfaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/preprogrammed.html">Preprogrammed</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../api_ref/examples/index.html">FlyGym Examples</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of FlyGym Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/locomotion.html">Locomotion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/vision.html">Advanced Vision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/olfaction.html">Advanced Olfaction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/path_integration.html">Path Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api_ref/examples/head_stabilization.html">Head Stabilization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api_ref/legacy.html">Legacy API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../workshop.html">NeuroMechFly Workshop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../outreach.html">NeuroMechFly Live and Outreach</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/tutorials/rule_based_controller.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="rule-based-controller">
+<h1>Rule-based controller<a class="headerlink" href="#rule-based-controller" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Authors:</strong> Victor Alfred Stimpfling, Sibo Wang-Chen</p>
+<p>The code presented in this notebook has been simplified and
+restructured for display in a notebook format. A more complete and
+better structured implementation can be found in the <a class="reference external" href="https://github.com/NeLy-EPFL/flygym/tree/main/flygym/examples/">examples folder of
+the FlyGym repository on
+GitHub</a>.</p>
+<p>This tutorial is available in <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> format in the
+<a class="reference external" href="https://github.com/NeLy-EPFL/flygym/tree/main/notebooks">notebooks folder of the FlyGym repository</a>.</p>
+</div>
+<p><strong>Summary:</strong> In this tutorial, we will show how locomotion can be
+achieved using local coordination rules in the absence of centralized
+mechanism like coupled CPGs.</p>
+<p>Previously, we covered how a centralized network of coupled oscillators
+(CPGs) can give rise to locomotion. A more decentralized mechanism for
+insect locomotion has been proposed as an alternative: locomotion can
+emerge from the application of sensory feedback-based rules that dictate
+for each leg when to lift, swing, or remain in stance phase (see Walknet
+described in <a class="reference external" href="https://doi.org/10.1016/S0893-6080(98)00067-7">Cruse et al,
+1998</a> and reviewed in
+<a class="reference external" href="https://doi.org/10.1007/s00422-013-0563-5">Schilling et al, 2013</a>).
+This control approach has been applied to robotic locomotor control
+(<a class="reference external" href="https://doi.org/10.1007/978-3-642-27482-4_24">Schneider et al,
+2012</a>).</p>
+<p>In this tutorial, we will implement a controller based on the first
+three rules of Walknet, namely:</p>
+<ol class="arabic simple">
+<li><p>The swing (“return stroke” as described in the Walknet paper) of a
+leg inhibits the swing of the rostral neighboring leg</p></li>
+<li><p>The start of the stance phase (“power stroke” as described in the
+Walknet paper) of a leg excites the swing of the rostral
+contralateral neighboring legs.</p></li>
+<li><p>The completion of the stance phase (“caudal position” as described in
+the Walknet paper) excites the swing of the caudal and contralateral
+neighboring legs.</p></li>
+</ol>
+<p>These rules are be summarized in this figure:</p>
+<a class="reference internal image-reference" href="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based.png?raw=true"><img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based.png?raw=true" style="width: 400px;" />
+</a>
+<section id="preprogrammed-steps-refactored">
+<h2>Preprogrammed steps, refactored<a class="headerlink" href="#preprogrammed-steps-refactored" title="Link to this heading">¶</a></h2>
+<p>We start by loading the preprogrammed steps as explained in the tutorial
+<a class="reference external" href="https://neuromechfly.org/tutorials/cpg_controller.html#controlling-leg-stepping-with-cpgs">Controlling locomotion with
+CPGs</a>.
+This time, we will use the <code class="docutils literal notranslate"><span class="pre">PreprogrammedSteps</span></code> Python class that
+encapsulates much of the code implemented in the previous tutorial. See
+<a class="reference external" href="https://neuromechfly.org/api_ref/examples/locomotion.html#preprogrammed-steps">this section of the API reference</a>
+for documentation of this class.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flygym.examples.locomotion</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreprogrammedSteps</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pygame</span> <span class="mf">2.5.1</span> <span class="p">(</span><span class="n">SDL</span> <span class="mf">2.28.2</span><span class="p">,</span> <span class="n">Python</span> <span class="mf">3.11.0</span><span class="p">)</span>
+<span class="n">Hello</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">pygame</span> <span class="n">community</span><span class="o">.</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">pygame</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">contribute</span><span class="o">.</span><span class="n">html</span>
+</pre></div>
+</div>
+<p>We can verify that this works by regenerating the following plot from
+the CPGs tutorial:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;./outputs/rule_based_controller&quot;</span><span class="p">)</span>
+<span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">preprogrammed_steps</span> <span class="o">=</span> <span class="n">PreprogrammedSteps</span><span class="p">()</span>
+<span class="n">theta_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">r_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i_side</span><span class="p">,</span> <span class="n">side</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i_pos</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s2">&quot;FMH&quot;</span><span class="p">):</span>
+        <span class="n">leg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">side</span><span class="si">}{</span><span class="n">pos</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="n">i_pos</span><span class="p">,</span> <span class="n">i_side</span><span class="p">]</span>
+        <span class="n">joint_angles</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_joint_angles</span><span class="p">(</span><span class="n">leg</span><span class="p">,</span> <span class="n">theta_ts</span><span class="p">,</span> <span class="n">r_ts</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i_dof</span><span class="p">,</span> <span class="n">dof_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">dofs_per_leg</span><span class="p">):</span>
+            <span class="n">legend</span> <span class="o">=</span> <span class="n">dof_name</span> <span class="k">if</span> <span class="n">i_pos</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i_side</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">theta_ts</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">joint_angles</span><span class="p">[</span><span class="n">i_dof</span><span class="p">,</span> <span class="p">:]),</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">legend</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i_cycle</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">my_swing_period</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">swing_period</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span>
+            <span class="n">theta_offset</span> <span class="o">=</span> <span class="n">i_cycle</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span>
+                <span class="n">theta_offset</span> <span class="o">+</span> <span class="n">my_swing_period</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">theta_offset</span> <span class="o">+</span> <span class="n">my_swing_period</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">my_swing_period</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+                <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Swing&quot;</span> <span class="k">if</span> <span class="n">i_pos</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i_side</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i_cycle</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">i_pos</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Phase&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="s2">&quot;0&quot;</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">$\pi$&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">7</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">i_side</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;DoF angle ($\degree$)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">leg</span><span class="si">}</span><span class="s2"> leg&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="o">-</span><span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">180</span><span class="p">])</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">right</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;preprogrammed_steps_class.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/preprogrammed_steps_class.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/preprogrammed_steps_class.png?raw=true" />
+</section>
+<section id="implementing-the-rules">
+<h2>Implementing the rules<a class="headerlink" href="#implementing-the-rules" title="Link to this heading">¶</a></h2>
+<p>Next, we implement the first three rules from Walknet. To encode the
+graph representing the local coordination rules (the first figure of
+this tutorial), we will construct a <code class="docutils literal notranslate"><span class="pre">MultiDiGraph</span></code> using the Python
+graph library <a class="reference external" href="https://networkx.org/">NetworkX</a>. This is a convenient
+way to manipulate a directed graph with multiple edges between the same
+nodes (in our case, each node represents a leg and each edge represents
+a coupling rule). Note that this graph representation is not strictly
+necessary; the user can alternatively implement the same logic using
+lots of lists and dictionaries in native Python.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="c1"># For each rule, the keys are the source nodes and the values are the</span>
+<span class="c1"># target nodes influenced by the source nodes</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;rule1&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;LM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LF&quot;</span><span class="p">],</span> <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LM&quot;</span><span class="p">],</span> <span class="s2">&quot;RM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RF&quot;</span><span class="p">],</span> <span class="s2">&quot;RH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RM&quot;</span><span class="p">]},</span>
+    <span class="s2">&quot;rule2&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;LF&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;LM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RM&quot;</span><span class="p">,</span> <span class="s2">&quot;LF&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RH&quot;</span><span class="p">,</span> <span class="s2">&quot;LM&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LF&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LM&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LH&quot;</span><span class="p">,</span> <span class="s2">&quot;RM&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;rule3&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;LF&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;LM&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;LM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RM&quot;</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;RH&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LF&quot;</span><span class="p">,</span> <span class="s2">&quot;RM&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RM&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LM&quot;</span><span class="p">,</span> <span class="s2">&quot;RH&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LH&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># Construct the rules graph</span>
+<span class="n">rules_graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiDiGraph</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">rule_type</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt_nodes</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="n">tgt_nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rule_type</span> <span class="o">==</span> <span class="s2">&quot;rule1&quot;</span><span class="p">:</span>
+                <span class="n">rule_type_detailed</span> <span class="o">=</span> <span class="n">rule_type</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">side</span> <span class="o">=</span> <span class="s2">&quot;ipsi&quot;</span> <span class="k">if</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">tgt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;contra&quot;</span>
+                <span class="n">rule_type_detailed</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rule_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">rules_graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">rule</span><span class="o">=</span><span class="n">rule_type_detailed</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, we will implement a helper function that selects the edges given
+the rule and the source node. This will become handy in the next
+section.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">filter_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">rule</span><span class="p">,</span> <span class="n">src_node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of edges that match the given rule and source node.</span>
+<span class="sd">    The edges are returned as a list of tuples (src, tgt).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">rule_type</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;rule&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">rule_type</span> <span class="o">==</span> <span class="n">rule</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">src_node</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">src</span> <span class="o">==</span> <span class="n">src_node</span><span class="p">)</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+<p>Using <code class="docutils literal notranslate"><span class="pre">rules_graph</span></code> and the function <code class="docutils literal notranslate"><span class="pre">filter_edges</span></code>, let’s visualize
+connections for each of the three rules. The ipsilateral and
+contralateral connections of the same rule can have different weights,
+so let’s visualize them separately:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">node_pos</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;LF&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="s2">&quot;LM&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="s2">&quot;RF&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="s2">&quot;RM&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;RH&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+    <span class="p">[</span><span class="s2">&quot;rule1&quot;</span><span class="p">,</span> <span class="s2">&quot;rule2_ipsi&quot;</span><span class="p">,</span> <span class="s2">&quot;rule2_contra&quot;</span><span class="p">,</span> <span class="s2">&quot;rule3_ipsi&quot;</span><span class="p">,</span> <span class="s2">&quot;rule3_contra&quot;</span><span class="p">]</span>
+<span class="p">):</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">selected_edges</span> <span class="o">=</span> <span class="n">filter_edges</span><span class="p">(</span><span class="n">rules_graph</span><span class="p">,</span> <span class="n">rule</span><span class="p">)</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">rules_graph</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">node_pos</span><span class="p">,</span> <span class="n">edgelist</span><span class="o">=</span><span class="n">selected_edges</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;on&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;rules_graph.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rules_graph.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rules_graph.png?raw=true" />
+<p>Using this rules graph, we will proceed to implement the rule-based leg
+stepping coordination model. To do this, we will once again construct a
+Python class.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of the class, we will save some metadata and
+initialize arrays for the contributions to the stepping likelihood
+scores from each of the three rules. We will also initialize an array to
+track the current stepping phase — that is, how far into the
+preprogrammed step the leg is, normalized to [0, 2π]. If a step has
+completed but a new step has not been initiated, the leg remains at
+phase 0 indefinitely. To indicate whether the legs are stepping at all,
+we will create a boolean mask. Finally, we will create two dictionaries
+to map the leg names to the leg indices and vice versa:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RuleBasedSteppingCoordinator</span><span class="p">:</span>
+    <span class="n">legs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;LF&quot;</span><span class="p">,</span> <span class="s2">&quot;LM&quot;</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;RM&quot;</span><span class="p">,</span> <span class="s2">&quot;RH&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">rules_graph</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">preprogrammed_steps</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestep</span> <span class="o">=</span> <span class="n">timestep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rules_graph</span> <span class="o">=</span> <span class="n">rules_graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprogrammed_steps</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="n">margin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase_inc_per_step</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">timestep</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_step</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rule1_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rule2_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rule3_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_is_stepping</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_leg2id</span> <span class="o">=</span> <span class="p">{</span><span class="n">leg</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">legs</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id2leg</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">leg</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">legs</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>Let’s implement a special <code class="docutils literal notranslate"><span class="pre">combined_score</span></code> method with a <code class="docutils literal notranslate"><span class="pre">&#64;property</span></code>
+decorator to provide easy access to the sum of all three scores. This
+way, we can access the total score simply with
+<code class="docutils literal notranslate"><span class="pre">stepping_coordinator.combined_score</span></code>. Refer to <a class="reference external" href="https://www.programiz.com/python-programming/property">this
+tutorial</a> if
+you want to understand how property methods work in Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">combined_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule1_scores</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule2_scores</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule3_scores</span>
+</pre></div>
+</div>
+<p>As described in the NeuroMechFly v2 paper, the leg with the highest
+positive score is stepped. If multiple legs are within a small margin of
+the highest score, we choose one of these legs at random to avoid bias
+from numerical artifacts. Let’s implement a method that selects the legs
+that are eligible for stepping:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_get_eligible_legs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">score_thr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">combined_scores</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">score_thr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">score_thr</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">score_thr</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span><span class="p">)</span>
+    <span class="n">mask_is_eligible</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">combined_scores</span> <span class="o">&gt;=</span> <span class="n">score_thr</span><span class="p">)</span>  <span class="c1"># highest or almost highest score</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">combined_scores</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># score is positive</span>
+        <span class="o">&amp;</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_is_stepping</span>  <span class="c1"># leg is not currently stepping</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_is_eligible</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Then, let’s implement another method that chooses one of the eligible
+legs at random if at least one leg is eligible, and returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if
+no leg can be stepped:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_select_stepping_leg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">eligible_legs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_eligible_legs</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eligible_legs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">eligible_legs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, let’s write a method that applies Rule 1 based on the swing mask
+and the current phases of the legs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_apply_rule1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">legs</span><span class="p">):</span>
+            <span class="n">is_swinging</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mi">0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">swing_period</span><span class="p">[</span><span class="n">leg</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">filter_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_graph</span><span class="p">,</span> <span class="s2">&quot;rule1&quot;</span><span class="p">,</span> <span class="n">src_node</span><span class="o">=</span><span class="n">leg</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rule1_scores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_leg2id</span><span class="p">[</span><span class="n">tgt</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="s2">&quot;rule1&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_swinging</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="p">)</span>
+</pre></div>
+</div>
+<p>Rules 2 and 3 are based on “early” and “late” stance periods (power
+stroke). We will scale their weights by γ, a ratio indicating how far
+the leg is into the stance phase. Let’s define a helper method that
+calculates γ:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_get_stance_progress_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leg</span><span class="p">):</span>
+    <span class="n">swing_start</span><span class="p">,</span> <span class="n">swing_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">swing_period</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span>
+    <span class="n">stance_duration</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">swing_end</span>
+    <span class="n">curr_stance_progress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_leg2id</span><span class="p">[</span><span class="n">leg</span><span class="p">]]</span> <span class="o">-</span> <span class="n">swing_end</span>
+    <span class="n">curr_stance_progress</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">curr_stance_progress</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">curr_stance_progress</span> <span class="o">/</span> <span class="n">stance_duration</span>
+</pre></div>
+</div>
+<p>Now, we can implement Rule 2 and Rule 3:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_apply_rule2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">rule2_scores</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">legs</span><span class="p">):</span>
+        <span class="n">stance_progress_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stance_progress_ratio</span><span class="p">(</span><span class="n">leg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stance_progress_ratio</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ipsi&quot;</span><span class="p">,</span> <span class="s2">&quot;contra&quot;</span><span class="p">]:</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">filter_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_graph</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rule2_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">src_node</span><span class="o">=</span><span class="n">leg</span><span class="p">)</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;rule2_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">tgt_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_leg2id</span><span class="p">[</span><span class="n">tgt</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rule2_scores</span><span class="p">[</span><span class="n">tgt_id</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">stance_progress_ratio</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_rule3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">rule3_scores</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">leg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">legs</span><span class="p">):</span>
+        <span class="n">stance_progress_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_stance_progress_ratio</span><span class="p">(</span><span class="n">leg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stance_progress_ratio</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ipsi&quot;</span><span class="p">,</span> <span class="s2">&quot;contra&quot;</span><span class="p">]:</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">filter_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_graph</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rule3_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">src_node</span><span class="o">=</span><span class="n">leg</span><span class="p">)</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;rule3_</span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">tgt_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_leg2id</span><span class="p">[</span><span class="n">tgt</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rule3_scores</span><span class="p">[</span><span class="n">tgt_id</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">stance_progress_ratio</span>
+</pre></div>
+</div>
+<p>Finally, let’s implement the main <code class="docutils literal notranslate"><span class="pre">step()</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">curr_step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># The first step is always a fore leg or mid leg</span>
+        <span class="n">stepping_leg_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stepping_leg_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_stepping_leg</span><span class="p">()</span>
+
+    <span class="c1"># Initiate a new step, if conditions are met for any leg</span>
+    <span class="k">if</span> <span class="n">stepping_leg_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_is_stepping</span><span class="p">[</span><span class="n">stepping_leg_id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># start stepping this leg</span>
+
+    <span class="c1"># Progress all stepping legs</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_is_stepping</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_inc_per_step</span>
+
+    <span class="c1"># Check if any stepping legs has completed a step</span>
+    <span class="n">mask_has_newly_completed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">leg_phases</span><span class="p">[</span><span class="n">mask_has_newly_completed</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">mask_is_stepping</span><span class="p">[</span><span class="n">mask_has_newly_completed</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Update scores</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_apply_rule1</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_apply_rule2</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_apply_rule3</span><span class="p">()</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">curr_step</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>This class is actually included in <code class="docutils literal notranslate"><span class="pre">flygym.examples</span></code>. Let’s import it.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flygym.examples.locomotion</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuleBasedController</span>
+</pre></div>
+</div>
+<p>Let’s define the weights of the rules and run 1 second of simulation:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">run_time</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">timestep</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+<span class="n">weights</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;rule1&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span>
+    <span class="s2">&quot;rule2_ipsi&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+    <span class="s2">&quot;rule2_contra&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;rule3_ipsi&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="s2">&quot;rule3_contra&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">controller</span> <span class="o">=</span> <span class="n">RuleBasedController</span><span class="p">(</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+    <span class="n">rules_graph</span><span class="o">=</span><span class="n">rules_graph</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+    <span class="n">preprogrammed_steps</span><span class="o">=</span><span class="n">preprogrammed_steps</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">score_hist_overall</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">score_hist_rule1</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">score_hist_rule2</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">score_hist_rule3</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">leg_phases_hist</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">run_time</span> <span class="o">/</span> <span class="n">controller</span><span class="o">.</span><span class="n">timestep</span><span class="p">)):</span>
+    <span class="n">controller</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">score_hist_overall</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">combined_scores</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">score_hist_rule1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">rule1_scores</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">score_hist_rule2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">rule2_scores</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">score_hist_rule3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">rule3_scores</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">leg_phases_hist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">leg_phases</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+<span class="n">score_hist_overall</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score_hist_overall</span><span class="p">)</span>
+<span class="n">score_hist_rule1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score_hist_rule1</span><span class="p">)</span>
+<span class="n">score_hist_rule2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score_hist_rule2</span><span class="p">)</span>
+<span class="n">score_hist_rule3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score_hist_rule3</span><span class="p">)</span>
+<span class="n">leg_phases_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">leg_phases_hist</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s also implement a plotting helper function and visualize the leg
+phases and stepping likelihood scores over time:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_time_series_multi_legs</span><span class="p">(</span>
+    <span class="n">time_series_block</span><span class="p">,</span>
+    <span class="n">timestep</span><span class="p">,</span>
+    <span class="n">spacing</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">legs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LF&quot;</span><span class="p">,</span> <span class="s2">&quot;LM&quot;</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">,</span> <span class="s2">&quot;RF&quot;</span><span class="p">,</span> <span class="s2">&quot;RM&quot;</span><span class="p">,</span> <span class="s2">&quot;RH&quot;</span><span class="p">],</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a time series of scores for multiple legs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_series_block : np.ndarray</span>
+<span class="sd">        Time series of scores for multiple legs. The shape of the array</span>
+<span class="sd">        should be (n, m), where n is the number of time steps and m is the</span>
+<span class="sd">        length of ``legs``.</span>
+<span class="sd">    timestep : float</span>
+<span class="sd">        Timestep of the time series in seconds.</span>
+<span class="sd">    spacing : float, optional</span>
+<span class="sd">        Spacing between the time series of different legs. Default: 10.</span>
+<span class="sd">    legs : list[str], optional</span>
+<span class="sd">        List of leg names. Default: [&quot;LF&quot;, &quot;LM&quot;, &quot;LH&quot;, &quot;RF&quot;, &quot;RM&quot;, &quot;RH&quot;].</span>
+<span class="sd">    ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">        Axes to plot on. If None, a new figure and axes will be created.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matplotlib.axes.Axes</span>
+<span class="sd">        Axes containing the plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">time_series_block</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">timestep</span>
+    <span class="n">spacing</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">spacing</span>
+    <span class="n">score_hist_viz</span> <span class="o">=</span> <span class="n">time_series_block</span> <span class="o">+</span> <span class="n">offset</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">legs</span><span class="p">)):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">offset</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="n">i</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_grid</span><span class="p">,</span> <span class="n">score_hist_viz</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">legs</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Plot leg phases</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">plot_time_series_multi_legs</span><span class="p">(</span><span class="n">leg_phases_hist</span><span class="p">,</span> <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Leg phases&quot;</span><span class="p">)</span>
+
+<span class="c1"># Plot combined stepping scores</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">plot_time_series_multi_legs</span><span class="p">(</span><span class="n">score_hist_overall</span><span class="p">,</span> <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Stepping scores (combined)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Plot stepping scores (rule 1)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">plot_time_series_multi_legs</span><span class="p">(</span><span class="n">score_hist_rule1</span><span class="p">,</span> <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Stepping scores (rule 1 contribution)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Plot stepping scores (rule 2)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">plot_time_series_multi_legs</span><span class="p">(</span><span class="n">score_hist_rule2</span><span class="p">,</span> <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Stepping scores (rule 2 contribution)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Plot stepping scores (rule 3)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<span class="n">plot_time_series_multi_legs</span><span class="p">(</span><span class="n">score_hist_rule3</span><span class="p">,</span> <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Stepping scores (rule 3 contribution)&quot;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;rule_based_control_signals.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based_control_signals.png?raw=true" src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based_control_signals.png?raw=true" />
+</section>
+<section id="plugging-the-controller-into-the-simulation">
+<h2>Plugging the controller into the simulation<a class="headerlink" href="#plugging-the-controller-into-the-simulation" title="Link to this heading">¶</a></h2>
+<p>By now, we have:</p>
+<ul class="simple">
+<li><p>implemented the <code class="docutils literal notranslate"><span class="pre">RuleBasedSteppingCoordinator</span></code> that controls the
+stepping of the legs</p></li>
+<li><p>(re)implemented <code class="docutils literal notranslate"><span class="pre">PreprogrammedSteps</span></code> which controls the kinematics
+of each individual step given the stepping state</p></li>
+</ul>
+<p>The final task is to put everything together and plug the control
+signals (joint positions) into the NeuroMechFly physics simulation:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flygym</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fly</span><span class="p">,</span> <span class="n">ZStabilizedCamera</span><span class="p">,</span> <span class="n">SingleFlySimulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flygym.preprogrammed</span><span class="w"> </span><span class="kn">import</span> <span class="n">all_leg_dofs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">trange</span>
+
+
+<span class="n">controller</span> <span class="o">=</span> <span class="n">RuleBasedController</span><span class="p">(</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+    <span class="n">rules_graph</span><span class="o">=</span><span class="n">rules_graph</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+    <span class="n">preprogrammed_steps</span><span class="o">=</span><span class="n">preprogrammed_steps</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">fly</span> <span class="o">=</span> <span class="n">Fly</span><span class="p">(</span>
+    <span class="n">init_pose</span><span class="o">=</span><span class="s2">&quot;stretch&quot;</span><span class="p">,</span>
+    <span class="n">actuated_joints</span><span class="o">=</span><span class="n">all_leg_dofs</span><span class="p">,</span>
+    <span class="n">control</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">,</span>
+    <span class="n">enable_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">draw_adhesion</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">cam</span> <span class="o">=</span> <span class="n">ZStabilizedCamera</span><span class="p">(</span>
+    <span class="n">attachment_point</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">worldbody</span><span class="p">,</span>
+    <span class="n">camera_name</span><span class="o">=</span><span class="s2">&quot;camera_left&quot;</span><span class="p">,</span>
+    <span class="n">targeted_fly_names</span><span class="o">=</span><span class="n">fly</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">play_speed</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+
+<span class="n">sim</span> <span class="o">=</span> <span class="n">SingleFlySimulation</span><span class="p">(</span>
+    <span class="n">fly</span><span class="o">=</span><span class="n">fly</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="p">[</span><span class="n">cam</span><span class="p">],</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">obs</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">trange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">run_time</span> <span class="o">/</span> <span class="n">sim</span><span class="o">.</span><span class="n">timestep</span><span class="p">)):</span>
+    <span class="n">controller</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">joint_angles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">adhesion_onoff</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">leg</span><span class="p">,</span> <span class="n">phase</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">legs</span><span class="p">,</span> <span class="n">controller</span><span class="o">.</span><span class="n">leg_phases</span><span class="p">):</span>
+        <span class="n">joint_angles_arr</span> <span class="o">=</span> <span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_joint_angles</span><span class="p">(</span><span class="n">leg</span><span class="p">,</span> <span class="n">phase</span><span class="p">)</span>
+        <span class="n">joint_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joint_angles_arr</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+        <span class="n">adhesion_onoff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">preprogrammed_steps</span><span class="o">.</span><span class="n">get_adhesion_onoff</span><span class="p">(</span><span class="n">leg</span><span class="p">,</span> <span class="n">phase</span><span class="p">))</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;joints&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">joint_angles</span><span class="p">),</span>
+        <span class="s2">&quot;adhesion&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adhesion_onoff</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>100%|██████████| 10000/10000 [00:27&lt;00:00, 366.94it/s]
+</pre></div>
+</div>
+<p>Let’s take a look at the result:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cam</span><span class="o">.</span><span class="n">save_video</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;rule_based_controller.mp4&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/rule_based_controller/rule_based_controller.mp4" controls="controls" style="max-width: 400px;"></video></section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="hybrid_controller.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Overcome complex terrain with a hybrid controller</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="cpg_controller.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Controlling locomotion with CPGs</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Neuroengineering Laboratory, EPFL
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/NeLy-EPFL/flygym" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Rule-based controller</a><ul>
+<li><a class="reference internal" href="#preprogrammed-steps-refactored">Preprogrammed steps, refactored</a></li>
+<li><a class="reference internal" href="#implementing-the-rules">Implementing the rules</a></li>
+<li><a class="reference internal" href="#plugging-the-controller-into-the-simulation">Plugging the controller into the simulation</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
