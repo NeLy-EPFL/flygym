@@ -17,6 +17,7 @@ Simulating embodied sensorimotor control with NeuroMechFly v2
    tutorials/index
    api_ref/index
    workshop
+   outreach
    changelog
    contributing
 
