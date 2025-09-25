@@ -2,6 +2,9 @@ name: Check poetry install Windows
 
 on: [push]
 
+permissions:
+  contents: read
+
 env:
   SKIP_RENDERING: "true"
 

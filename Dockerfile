@@ -4,7 +4,7 @@ FROM python:3.12-bookworm
 SHELL ["/bin/bash", "-c"]
 
 # Change working directory
-ENV HOME /root
+ENV HOME=/root
 WORKDIR $HOME/flygym
 
 # Install system dependencies

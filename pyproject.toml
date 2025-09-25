@@ -1,6 +1,6 @@
 [project]
 name = "flygym"
-version = "1.2.1"
+version = "1.3.0"
 description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
 requires-python = ">=3.10,<3.13"
 authors = [
@@ -11,6 +11,7 @@ authors = [
     { name = "Louise Genoud", email = "louise.genoud@epfl.ch" },
     { name = "Femke Hurtak", email = "femke.hurtak@epfl.ch" },
     { name = "Pavan Ramdya", email = "pavan.ramdya@epfl.ch" },
+    { name = "Dominic Dall'Osto", email = "dominic.dallosto@epfl.ch" },
 ]
 maintainers = [
     { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
@@ -32,8 +33,8 @@ dependencies = [
     # Fixing mujoco and dm_control versions - due to frequent API-breaking
     # changes in previous experience. The versions of these two will be
     # manually updated in this file and tested with each new flygym release.
-    "mujoco==3.2.7",
-    "dm_control==1.0.27",
+    "mujoco==3.3.4",
+    "dm_control==1.0.31",
     # dm-tree 0.1.9 fails to install on macOS as of now, see #128 on its repo
     "dm_tree==0.1.8",
     "numba==0.60.0",
@@ -53,6 +54,7 @@ dev = [
     "rasterio>=1.0,<2.0",
     "requests>=2.0,<3.0",
     "build>=1.2,<2.0",
+    "twine>=6.1,<7.0",
 ]
 examples = [
     "joblib>=1.0,<2.0",
@@ -63,8 +65,7 @@ examples = [
     "scikit-learn>=1.0,<2.0",
     "seaborn==0.13",
     "torch>=2.0,<3.0",
-    "phiflow>=3.3.0,<4.0",
-    "phiml>=1.12.0,<2.0", # need this until https://github.com/tum-pbs/PhiFlow/issues/192 is fixed
+    "phiflow>=3.4.0,<4.0",
     "h5py>=3.0,<4.0",
     "flyvis==1.1.2",
 ]
