@@ -1,0 +1,182 @@
+# VISUALIZATION SET SCHEMA
+# See the "asset/material" and "asset/texture" sections of the MuJoCo XML reference
+# for all options: https://mujoco.readthedocs.io/en/stable/XMLreference.html
+# "apply_to" and "material" must be non-empty. All other attributes are optional.
+#
+# vis_set_name:                  # Name can be arbitrary; it's ignored by the model
+#   apply_to: "*_coxa"           # String or list of strings, each matching a set of
+#                                # body parts that this visualization set applies to
+#                                # (wildcard '*' matches any substring)
+#   material:
+#     specular: 0.1              # How shiny the material is
+#     shininess: 0.1             # How sharp the specular highlights are
+#     rgba: [1, 1, 1, 0.8]       # Color and transparency. If texture is specified, the
+#                                # final color is this multiplied by texture color, so
+#                                # it's better to use [1, 1, 1, alpha] here and set the
+#                                # RGB values in texture instead.
+#   texture:                     # Texture attributes. Use plain texture if unspecified.
+#     builtin: flat              # Built-in procedural texture generator
+#     rgb1: [0.59, 0.39, 0.12]   # Base color
+#     rgb2: [0.82, 0.67, 0.47]   # Second color (used e.g. in gradient texture)
+#     mark: random               # Enable random markings in procedural texture
+#     markrgb: [0, 0, 0]         # Color of random markings
+#     random: 0.05               # Probability of a pixel being marked
+#     width: 50                  # Width of the procedural texture pattern in pixels
+#     height: 50                 # Height of the procedural texture pattern in pixels
+
+
+wing:
+  apply_to: "*_wing"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [0.8, 0.8, 0.9, 0.3]
+
+eye:
+  apply_to: "*_eye"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [0.67, 0.21, 0.12, 1]
+
+arista:
+  apply_to: "*_arista"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [0.26, 0.2, 0.16, 1.0]
+
+haltere:
+  apply_to: "*_haltere"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [0.59, 0.43, 0.24, 0.6]
+
+headthorax:
+  apply_to: ["c_head", "c_thorax"]
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 1]
+  texture:
+    builtin: flat
+    rgb1: [0.59, 0.39, 0.12]
+    rgb2: [0.59, 0.39, 0.12]
+    mark: random
+    markrgb: [0.7, 0.49, 0.2]
+    random: 0.3
+    width: 50
+    height: 50
+
+antennaproboscis:
+  apply_to: ["*_pedicel", "*_funiculus", "c_rostrum", "c_haustellum"]
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 0.8]
+  texture:
+    builtin: flat
+    rgb1: [0.59, 0.39, 0.12]
+    rgb2: [0.59, 0.39, 0.12]
+    mark: random
+    markrgb: [0, 0, 0]
+    random: 0.1
+    width: 50
+    height: 50
+
+abdomen12345:
+  apply_to: ["c_abdomen12", "c_abdomen3", "c_abdomen4", "c_abdomen5"]
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 1]
+  texture:
+    builtin: gradient
+    rgb1: [0.59, 0.39, 0.12]
+    rgb2: [0.82, 0.67, 0.47]
+    mark: random
+    markrgb: [0.7, 0.49, 0.2]
+    random: 0.3
+    width: 50
+    height: 50
+
+abdomen6:
+  apply_to: "c_abdomen6"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 1]
+  texture:
+    builtin: gradient
+    rgb1: [0.39, 0.2, 0]
+    rgb2: [0.82, 0.67, 0.47]
+    mark: random
+    markrgb: [0.7, 0.49, 0.2]
+    random: 0.3
+    width: 50
+    height: 50
+
+coxa:
+  apply_to: "*_coxa"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 0.8]
+  texture:
+    builtin: flat
+    rgb1: [0.59, 0.39, 0.12]
+    rgb2: [0.59, 0.39, 0.12]
+    mark: random
+    markrgb: [0, 0, 0]
+    random: 0.05
+    width: 50
+    height: 50
+
+trochanterfemur:
+  apply_to: "*_trochanterfemur"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 0.7]
+  texture:
+    builtin: flat
+    rgb1: [0.63, 0.43, 0.16]
+    rgb2: [0.63, 0.43, 0.16]
+    mark: random
+    markrgb: [0, 0, 0]
+    random: 0.05
+    width: 50
+    height: 50
+
+tibia:
+  apply_to: "*_tibia"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 0.6]
+  texture:
+    builtin: flat
+    rgb1: [0.67, 0.47, 0.2]
+    rgb2: [0.67, 0.47, 0.2]
+    mark: random
+    markrgb: [0, 0, 0]
+    random: 0.05
+    width: 50
+    height: 50
+
+tarsus:
+  apply_to: "*_tarsus*"
+  material:
+    specular: 0.2
+    shininess: 0.2
+    rgba: [1, 1, 1, 0.5]
+  texture:
+    builtin: flat
+    rgb1: [0.71, 0.51, 0.24]
+    rgb2: [0.71, 0.51, 0.24]
+    mark: random
+    markrgb: [0, 0, 0]
+    random: 0.05
+    width: 50
+    height: 50

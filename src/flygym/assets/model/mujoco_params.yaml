@@ -1,0 +1,27 @@
+compiler:
+  autolimits: true
+  angle: radian
+  eulerseq: XYZ
+  fusestatic: true
+  boundmass: 1e-6  # some tarsal segments have their masses increased to this
+  boundinertia: 1e-12
+
+option:
+  timestep: 0.0001
+  integrator: Euler
+  solver: Newton
+  iterations: 1000
+  gravity: 0 0 -9810
+#  The following are from the NMFv2 paper: unclear if they're really useful
+#  tolerance: 1e-12
+#  ccd_iterations: 100
+#  noslip_tolerance: 1e-8
+
+  flag:
+    multiccd: enable
+    energy: enable
+
+visual:
+  headlight:
+    ambient: [0.3, 0.3, 0.3]
+    specular: [0.3, 0.3, 0.3]

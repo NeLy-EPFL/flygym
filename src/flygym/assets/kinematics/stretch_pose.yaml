@@ -1,0 +1,20 @@
+angle_unit: degree
+
+joint_angles:
+  joint-rfcoxa-pitch = 20
+  joint-rffemur-pitch = -130
+
+  joint-lfcoxa-pitch = 20
+  joint-lffemur-pitch = -130
+
+  joint-rmcoxa-roll = 90
+  joint-rmfemur-pitch = -100
+
+  joint-lmcoxa-roll = -90
+  joint-lmfemur-pitch = -100
+
+  joint-rhcoxa-roll = 150
+  joint-rhfemur-pitch = -100
+
+  joint-lhcoxa-roll = -150
+  joint-lhfemur-pitch = -100

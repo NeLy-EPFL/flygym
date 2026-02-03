@@ -1,0 +1,319 @@
+# This file is copied from https://github.com/NeLy-EPFL/flygym/blob/v1.2.1/flygym/config.yaml
+
+appearance:
+  wing:
+    apply_to: ["LWing", "RWing"]
+    texture: null
+    material:
+      rgba: [0.8, 0.8, 0.9, 0.3]
+  eye:
+    apply_to: ["LEye", "REye"]
+    texture: null
+    material:
+      rgba: [0.67, 0.21, 0.12, 1]
+  arista:
+    apply_to: ["LArista", "RArista"]
+    texture: null
+    material:
+      rgba: [0.26, 0.2, 0.16, 1.0]
+  haltere:
+    apply_to: ["LHaltere", "RHaltere"]
+    texture: null
+    material:
+      rgba: [0.59, 0.43, 0.24, 0.6]
+  head:
+    apply_to: ["Head"]
+    texture:
+      builtin: flat
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.59, 0.39, 0.12]
+      markrgb: [0.7, 0.49, 0.2]
+      size: 50
+      random: 0.3
+    material:
+      rgba: [1, 1, 1, 1]
+  thorax:
+    apply_to: ["Thorax"]
+    texture:
+      builtin: flat
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.59, 0.39, 0.12]
+      markrgb: [0.7, 0.49, 0.2]
+      size: 50
+      random: 0.3
+    material:
+      rgba: [1, 1, 1, 1]
+  antenna:
+    apply_to: ["LPedicel", "RPedicel", "LFuniculus", "RFuniculus"]
+    texture:
+      builtin: flat
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.59, 0.39, 0.12]
+      markrgb: [0, 0, 0]
+      size: 50
+      random: 0.1
+    material:
+      rgba: [1, 1, 1, 0.8]
+  proboscis:
+    apply_to: ["Haustellum", "Rostrum"]
+    texture:
+      builtin: flat
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.59, 0.39, 0.12]
+      markrgb: [0, 0, 0]
+      size: 50
+      random: 0.1
+    material:
+      rgba: [1, 1, 1, 0.8]
+  coxa:
+    apply_to: ["LFCoxa", "RFCoxa", "LMCoxa", "RMCoxa", "LHCoxa", "RHCoxa"]
+    texture:
+      builtin: flat
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.59, 0.39, 0.12]
+      markrgb: [0, 0, 0]
+      size: 500
+      random: 0.05
+    material:
+      rgba: [1, 1, 1, 0.8]
+  femur:
+    apply_to: ["LFFemur", "RFFemur", "LMFemur", "RMFemur", "LHFemur", "RHFemur"]
+    texture:
+      builtin: flat
+      rgb1: [0.63, 0.43, 0.16]
+      rgb2: [0.63, 0.43, 0.16]
+      markrgb: [0, 0, 0]
+      size: 500
+      random: 0.05
+    material:
+      rgba: [1, 1, 1, 0.7]
+  tibia:
+    apply_to: ["LFTibia", "RFTibia", "LMTibia", "RMTibia", "LHTibia", "RHTibia"]
+    texture:
+      builtin: flat
+      rgb1: [0.67, 0.47, 0.2]
+      rgb2: [0.67, 0.47, 0.2]
+      markrgb: [0, 0, 0]
+      size: 500
+      random: 0.05
+    material:
+      rgba: [1, 1, 1, 0.6]
+  tarsus:
+    apply_to: [
+      "LFTarsus1", "RFTarsus1", "LMTarsus1", "RMTarsus1", "LHTarsus1", "RHTarsus1",
+      "LFTarsus2", "RFTarsus2", "LMTarsus2", "RMTarsus2", "LHTarsus2", "RHTarsus2",
+      "LFTarsus3", "RFTarsus3", "LMTarsus3", "RMTarsus3", "LHTarsus3", "RHTarsus3",
+      "LFTarsus4", "RFTarsus4", "LMTarsus4", "RMTarsus4", "LHTarsus4", "RHTarsus4",
+      "LFTarsus5", "RFTarsus5", "LMTarsus5", "RMTarsus5", "LHTarsus5", "RHTarsus5",
+    ]
+    texture:
+      builtin: flat
+      rgb1: [0.71, 0.51, 0.24]
+      rgb2: [0.71, 0.51, 0.24]
+      markrgb: [0, 0, 0]
+      size: 500
+      random: 0.05
+    material:
+      rgba: [1, 1, 1, 0.5]
+  a12345:
+    apply_to: ["A1A2", "A3", "A4", "A5"]
+    texture:
+      builtin: gradient
+      rgb1: [0.59, 0.39, 0.12]
+      rgb2: [0.82, 0.67, 0.47]
+      markrgb: [0.7, 0.49, 0.2]
+      size: 200
+      random: 0.3
+    material:
+      rgba: [1, 1, 1, 1]
+  a6:
+    apply_to: ["A6"]
+    texture:
+      builtin: gradient
+      rgb1: [0.39, 0.2, 0]
+      rgb2: [0.82, 0.67, 0.47]
+      markrgb: [0.7, 0.49, 0.2]
+      size: 200
+      random: 0.3
+    material:
+      rgba: [1, 1, 1, 1]
+
+vision:
+  fovy_per_eye: 157
+  raw_img_height_px: 512
+  raw_img_width_px: 450
+  num_ommatidia_per_eye: 721
+  fisheye_distortion_coefficient: 3.8
+  fisheye_zoom: 2.72
+  hidden_segments:
+    - LFCoxa
+    - LEye
+    - LArista
+    - LFuniculus
+    - LPedicel
+    - RFCoxa
+    - REye
+    - RArista
+    - RFuniculus
+    - RPedicel
+    - Head
+    - Rostrum
+    - Haustellum
+    - Thorax
+  sensor_positions:
+    LEye_cam:
+      parent: LEye
+      rel_pos: [-0.03, 0.38, 0]
+      orientation: [1.57, 0.00, -0.47]
+      marker_rgba: [0.07, 0.45, 0.35, 1]
+    REye_cam:
+      parent: REye
+      rel_pos: [-0.03, -0.38, 0]
+      orientation: [-1.57, 3.14, 0.47]
+      marker_rgba: [0.07, 0.45, 0.35, 1]
+
+olfaction:
+  sensor_positions:
+    LMaxillaryPalp_sensor:
+      parent: Rostrum
+      rel_pos: [-0.15, 0.15, -0.15]
+      marker_rgba: [0.9, 0.73, 0.08, 1]
+    RMaxillaryPalp_sensor:
+      parent: Rostrum
+      rel_pos: [-0.15, -0.15, -0.15]
+      marker_rgba: [0.9, 0.73, 0.08, 1]
+    LAntenna_sensor:
+      parent: LFuniculus
+      rel_pos: [0.02, 0.00, -0.10]
+      marker_rgba: [0.08, 0.4, 0.9, 1]
+    RAntenna_sensor:
+      parent: RFuniculus
+      rel_pos: [0.02, 0.00, -0.10]
+      marker_rgba: [0.08, 0.4, 0.9, 1]
+
+paths:
+  mjcf:
+    deepfly3d: mjcf/neuromechfly_deepfly3d_kinorder_ryp.xml
+    seqik: mjcf/neuromechfly_seqik_kinorder_ypr.xml
+    seqik_simple: mjcf/neuromechfly_seqik_kinorder_ypr_capsuletarsus.xml
+  ommatidia_id_map: vision/ommatidia_id_map.npy
+  canonical_pale_type_mask: "vision/pale_mask.npy"
+
+color_cycle_rgb:
+  - [31, 119, 180]
+  - [255, 127, 14]
+  - [44, 160, 44]
+  - [214, 39, 40]
+  - [148, 103, 189]
+  - [140, 86, 75]
+  - [227, 119, 194]
+  - [127, 127, 127]
+  - [188, 189, 34]
+  - [23, 190, 207]
+
+cameras:
+  camera_LFTarsus1_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [-0.5, -2, 0]
+    euler: [1.67, 0, -0.3]
+    fovy: 60
+  camera_back:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [-8, 0, 1.0]
+    euler: [1.57, 0.0, -1.57]
+  camera_back_track:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [-12, 0, 6]
+    euler: [1.2, 0.0, -1.57]
+  camera_back_track_game:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [-7, 0, 4]
+    euler: [1.2, 0.0, -1.57]
+  camera_front:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [8, 0, 1.0]
+    euler: [1.57, 0.0, 1.57]
+  camera_left:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 8, 1.0]
+    euler: [-1.57, 3.14, 0]
+  camera_right:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, -8, 1.0]
+    euler: [1.57, 0, 0]
+  camera_top_right:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [0, -8, 5]
+    euler: [1.1, 0, 0]
+  camera_top:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, 8]
+    euler: [0, 0, 0]
+  camera_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, 40]
+    euler: [0, 0, 0]
+  camera_bottom:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 0, -8]
+    euler: [0, 3.14, 0]
+  camera_right_front:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [4, -6, 1.0]
+    euler: [1.57, 0, 0.588]
+  camera_left_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, 8, 5]
+    euler: [-2.129, 3.14, 0]
+  camera_right_top_zoomout:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [0, -8, 5]
+    euler: [1.011, 0, 0]
+  camera_head_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [3, -3, 1]
+    euler: [1.57, 0, 0.72]
+    fovy: 30
+  camera_front_zoomin:
+    class: nmf
+    mode: track
+    ipd: 0.068
+    pos: [8, 0, 1]
+    euler: [1.57, 0, 1.57]
+    fovy: 15
+  camera_neck_zoomin:
+    class: nmf
+    mode: fixed
+    ipd: 0.068
+    pos: [0.5, 2, 1.2]
+    euler: [-1.57, 3.14, 0]
