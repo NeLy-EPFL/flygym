@@ -4,7 +4,6 @@ from enum import Enum
 from fnmatch import filter as filter_with_wildcard
 from collections import defaultdict
 from typing import Iterable
-from abc import ABC, abstractmethod
 
 import dm_control.mjcf as mjcf
 import yaml
@@ -17,7 +16,7 @@ from flygym.compose._base import BaseCompositionElement
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 
-__all__ = ["BaseFly", "Fly", "ActuatorType"]
+__all__ = ["Fly", "ActuatorType"]
 
 
 DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
@@ -37,16 +36,7 @@ class ActuatorType(Enum):
     ADHESION = "adhesion"
 
 
-class BaseFly(BaseCompositionElement, ABC):
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """All flies must have a name for identification in the world. This
-        is necessary because multiple flies can exist in the same world."""
-        pass
-
-
-class Fly(BaseFly):
+class Fly(BaseCompositionElement):
     def __init__(
         self,
         name: str = "neuromechfly",
@@ -189,10 +179,11 @@ class Fly(BaseFly):
         stiffness: float = 10.0,
         damping: float = 0.5,
         **kwargs,
-    ) -> None:
+    ) -> dict[JointDOF, mjcf.Element]:
+        return_dict = {}
         for jointdof in skeleton.iter_jointdofs(self.root_segment):
             child_body = self.bodyseg_to_mjcfbody[jointdof.child]
-            self.jointdof_to_mjcfjoint[jointdof] = child_body.add(
+            return_dict[jointdof] = child_body.add(
                 "joint",
                 name=jointdof.name,
                 type="hinge",
@@ -201,6 +192,8 @@ class Fly(BaseFly):
                 damping=damping,
                 **kwargs,
             )
+        self.jointdof_to_mjcfjoint.update(return_dict)
+        return return_dict
 
     @staticmethod
     def _parse_visuals_config(
@@ -248,20 +241,21 @@ class Fly(BaseFly):
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-50.0, 50.0),
         **kwargs,
-    ) -> None:
+    ) -> dict[JointDOF, mjcf.Element]:
         actuator_type = ActuatorType(actuator_type)
+        return_dict = {}
         for jointdof in jointdofs:
-            actuator_name = f"{jointdof.name}-{actuator_type.value}"
-            self.jointdof_to_mjcfactuator_by_type[jointdof][actuator_type] = (
-                self.mjcf_root.actuator.add(
-                    actuator_type.value,
-                    name=actuator_name,
-                    joint=jointdof.name,
-                    forcelimited=forcelimited,
-                    forcerange=forcerange,
-                    **kwargs,
-                )
+            actuator = self.mjcf_root.actuator.add(
+                actuator_type.value,
+                name=f"{jointdof.name}-{actuator_type.value}",
+                joint=jointdof.name,
+                forcelimited=forcelimited,
+                forcerange=forcerange,
+                **kwargs,
             )
+            return_dict[jointdof] = actuator
+            self.jointdof_to_mjcfactuator_by_type[jointdof][actuator_type] = actuator
+        return return_dict
 
     def add_tracking_camera(
         self,
@@ -271,8 +265,8 @@ class Fly(BaseFly):
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
         **kwargs,
-    ) -> None:
-        self.mjcf_root.worldbody.add(
+    ) -> mjcf.Element:
+        camera = self.mjcf_root.worldbody.add(
             "camera",
             name=name,
             mode=mode,
@@ -282,6 +276,5 @@ class Fly(BaseFly):
             **rotation.as_kwargs(),
             **kwargs,
         )
-
-    def get_mjcf_root(self) -> mjcf.RootElement:
-        return self.mjcf_root
+        self.cameraname_to_mjcfcamera[name] = camera
+        return camera

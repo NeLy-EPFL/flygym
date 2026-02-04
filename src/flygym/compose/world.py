@@ -1,35 +1,49 @@
-from abc import ABC, abstractmethod
 from collections.abc import Collection
 
 import dm_control.mjcf as mjcf
 
 from flygym.anatomy import ContactBodiesPreset, BodySegment
 from flygym.compose._base import BaseCompositionElement
-from flygym.compose.fly import BaseFly
+from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D, Vec3, Vec4, Vec6
-
 
 __all__ = ["BaseWorld", "FlatGroundWorld"]
 
 
-class BaseWorld(BaseCompositionElement, ABC):
-    @property
-    @abstractmethod
-    def fly_lookup(self) -> dict[str, BaseFly]:
-        """Dictionary mapping fly names to fly instances in the world."""
-        pass
+class BaseWorld(BaseCompositionElement):
+    def __init__(self, name: str) -> None:
+        self._mjcf_root = mjcf.RootElement(model=name)
+        self._fly_lookup: dict[str, Fly] = {}
 
-    @abstractmethod
+    @property
+    def fly_lookup(self) -> dict[str, Fly]:
+        return self._fly_lookup
+
+    @property
+    def mjcf_root(self) -> mjcf.RootElement:
+        return self._mjcf_root
+
     def add_fly(
         self,
-        fly: BaseFly,
+        fly: Fly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D | tuple[str, Vec3 | Vec4 | Vec6],
-        **kwargs,
-    ) -> None:
-        """Adds a fly to the world at the specified position and orientation."""
-        pass
+    ):
+        if fly.name in self._fly_lookup:
+            raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
+        self._fly_lookup[fly.name] = fly
+
+        if not isinstance(spawn_rotation, Rotation3D):
+            spawn_rotation = Rotation3D(*spawn_rotation)
+
+        spawn_site = self.mjcf_root.worldbody.add(
+            "site",
+            name=fly.name,
+            pos=spawn_position,
+            **spawn_rotation.as_kwargs(),
+        )
+        spawn_site.attach(fly.mjcf_root).add("freejoint", name=f"{fly.name}")
 
 
 class FlatGroundWorld(BaseWorld):
@@ -39,8 +53,7 @@ class FlatGroundWorld(BaseWorld):
         *,
         half_size: float = 1000,
     ) -> None:
-        self._mjcf_root = mjcf.RootElement(model=name)
-        self._fly_lookup: dict[str, BaseFly] = {}
+        super().__init__(name=name)
 
         checker_texture = self.mjcf_root.asset.add(
             "texture",
@@ -71,17 +84,9 @@ class FlatGroundWorld(BaseWorld):
         )
         self.ground_contact_geoms = [ground_geom]
 
-    @property
-    def fly_lookup(self) -> dict[str, BaseFly]:
-        return self._fly_lookup
-    
-    @property
-    def mjcf_root(self) -> mjcf.RootElement:
-        return self._mjcf_root
-
     def add_fly(
         self,
-        fly: BaseFly,
+        fly: Fly,
         spawn_position: Vec3 = (0, 0, 1),
         spawn_rotation: Rotation3D = Rotation3D("quat", (1, 0, 0, 0)),
         *,
@@ -90,23 +95,7 @@ class FlatGroundWorld(BaseWorld):
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
     ):
-        if fly.name in self._fly_lookup:
-            raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
-        self._fly_lookup[fly.name] = fly
-
-        self.bodysegs_with_ground_contact = bodysegs_with_ground_contact
-        self.ground_contact_params = ground_contact_params
-
-        if not isinstance(spawn_rotation, Rotation3D):
-            spawn_rotation = Rotation3D(*spawn_rotation)
-
-        spawn_site = self.mjcf_root.worldbody.add(
-            "site",
-            name=fly.name,
-            pos=spawn_position,
-            **spawn_rotation.as_kwargs(),
-        )
-        spawn_site.attach(fly.mjcf_root).add("freejoint", name=f"{fly.name}")
+        super().add_fly(fly, spawn_position, spawn_rotation)
 
         self._enable_ground_contact(
             fly, bodysegs_with_ground_contact, ground_contact_params
@@ -114,7 +103,7 @@ class FlatGroundWorld(BaseWorld):
 
     def _enable_ground_contact(
         self,
-        fly: BaseFly,
+        fly: Fly,
         bodysegs_with_ground_contact: (
             Collection[BodySegment] | ContactBodiesPreset | str
         ),
@@ -123,7 +112,7 @@ class FlatGroundWorld(BaseWorld):
         if isinstance(bodysegs_with_ground_contact, ContactBodiesPreset | str):
             preset = ContactBodiesPreset(bodysegs_with_ground_contact)
             bodysegs_with_ground_contact = preset.to_body_segments_list()
-            
+
         for i, ground_geom in enumerate(self.ground_contact_geoms):
             for body_segment in bodysegs_with_ground_contact:
                 body_geom = fly.mjcf_root.find("geom", f"{body_segment.name}")

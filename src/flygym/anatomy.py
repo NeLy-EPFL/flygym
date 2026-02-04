@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TypeAlias, Iterator, Iterable
-from collections.abc import Sequence
+from collections.abc import Sequence, Collection
 
 from flygym.utils.math import orderedset, Tree
 
@@ -68,7 +68,7 @@ class AxisOrder(Enum):
     YPR = YAW_PITCH_ROLL
     YAW_ROLL_PITCH = (RotationAxis.YAW, RotationAxis.ROLL, RotationAxis.PITCH)
     YRP = YAW_ROLL_PITCH
-    
+
     DONTCARE = PITCH_ROLL_YAW
 
     @classmethod
@@ -194,49 +194,6 @@ class AnatomicalJoint:
                 yield JointDOF(self.parent, self.child, axis)
 
 
-class Skeleton:
-    def __init__(
-        self,
-        *,
-        axis_order: AxisOrder | Sequence[RotationAxis | str],
-        joint_preset: "JointPreset | str | None" = None,
-        anatomical_joints: list[AnatomicalJoint] | None = None,
-    ) -> None:
-        if int(joint_preset is None) + int(anatomical_joints is None) != 1:
-            raise ValueError(
-                "Skeleton must be initiated from either joint_preset or "
-                "anatomical_joints, but not both."
-            )
-
-        if joint_preset is not None:
-            anatomical_joints = JointPreset(joint_preset).to_joint_list()
-
-        self.joint_lookup = {(j.parent, j.child): j for j in anatomical_joints}
-        self.body_segments = orderedset(
-            [seg for nodes in self.joint_lookup.keys() for seg in nodes]
-        )
-        self.axis_order = AxisOrder(axis_order)
-
-    def get_tree(self) -> Tree:
-        try:
-            tree = Tree(nodes=self.body_segments, edges=self.joint_lookup.keys())
-        except ValueError as e:
-            raise ValueError("Skeleton is invalid - must be a tree.") from e
-        return tree
-
-    def iter_jointdofs(
-        self,
-        root: BodySegment | str = "c_thorax",
-    ) -> Iterator[JointDOF]:
-        if isinstance(root, str):
-            root = BodySegment(root)
-        tree = self.get_tree()
-        for parent, child in tree.dfs_edges(root):
-            anatomical_joint = self.joint_lookup[(parent, child)]
-            for jointdof in anatomical_joint.iter_dofs(self.axis_order):
-                yield jointdof
-
-
 class JointPreset(Enum):
     ALL_POSSIBLE = "all_possible"
     ALL_BIOLOGICAL = "all_biological"
@@ -299,25 +256,22 @@ class ActuatedDOFPreset(Enum):
     LEGS_ONLY = "legs_only"
     LEGS_ACTIVE_ONLY = "legs_active_only"
 
-    def find_actuated_dofs_in(self, skeleton: Skeleton) -> list[JointDOF]:
+    def filter(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
         match self:
             case ActuatedDOFPreset.ALL:
-                return self._get_all_jointdofs(skeleton)
+                return list(jointdofs)
             case ActuatedDOFPreset.LEGS_ONLY:
-                return self._get_leg_jointdofs(skeleton)
+                return self._get_leg_only(jointdofs)
             case ActuatedDOFPreset.LEGS_ACTIVE_ONLY:
-                return self._get_leg_active_jointdofs(skeleton)
+                return self._get_leg_active_only(jointdofs)
 
-    def _get_all_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
-        return list(skeleton.iter_jointdofs())
+    def _get_leg_only(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
+        return [dof for dof in jointdofs if dof.child.is_leg()]
 
-    def _get_leg_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
-        return [dof for dof in self._get_all_jointdofs(skeleton) if dof.child.is_leg()]
-
-    def _get_leg_active_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
+    def _get_leg_active_only(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
         return [
             dof
-            for dof in self._get_leg_jointdofs(skeleton)
+            for dof in self._get_leg_only(jointdofs)
             if dof.child.link not in PASSIVE_TARSAL_LINKS
         ]
 
@@ -335,9 +289,13 @@ class ContactBodiesPreset(Enum):
             case ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD:
                 return ContactBodiesPreset._get_legs_thorax_abdomen_segments()
             case ContactBodiesPreset.LEGS_ONLY:
-                return ContactBodiesPreset._get_legs_thorax_abdomen_segments()
+                return ContactBodiesPreset._get_leg_segments()
             case ContactBodiesPreset.TIBIA_TARSUS_ONLY:
                 return ContactBodiesPreset._get_tibia_tarsus_segments()
+            case _:
+                assert (
+                    False
+                ), f"FlyGym internal error: unhandled ContactBodiesPreset {self}"
 
     @staticmethod
     def _get_all_segments() -> list[BodySegment]:
@@ -362,3 +320,52 @@ class ContactBodiesPreset(Enum):
             for seg in ContactBodiesPreset._get_leg_segments()
             if seg.link == "tibia" or seg.link.startswith("tarsus")
         ]
+
+
+class Skeleton:
+    def __init__(
+        self,
+        *,
+        axis_order: AxisOrder | Sequence[RotationAxis | str],
+        joint_preset: "JointPreset | str | None" = None,
+        anatomical_joints: list[AnatomicalJoint] | None = None,
+    ) -> None:
+        if int(joint_preset is None) + int(anatomical_joints is None) != 1:
+            raise ValueError(
+                "Skeleton must be initiated from either joint_preset or "
+                "anatomical_joints, but not both."
+            )
+
+        if joint_preset is not None:
+            anatomical_joints = JointPreset(joint_preset).to_joint_list()
+
+        self.joint_lookup = {(j.parent, j.child): j for j in anatomical_joints}
+        self.body_segments = orderedset(
+            [seg for nodes in self.joint_lookup.keys() for seg in nodes]
+        )
+        self.axis_order = AxisOrder(axis_order)
+
+    def get_tree(self) -> Tree:
+        try:
+            tree = Tree(nodes=self.body_segments, edges=self.joint_lookup.keys())
+        except ValueError as e:
+            raise ValueError("Skeleton is invalid - must be a tree.") from e
+        return tree
+
+    def iter_jointdofs(
+        self,
+        root: BodySegment | str = "c_thorax",
+    ) -> Iterator[JointDOF]:
+        if isinstance(root, str):
+            root = BodySegment(root)
+        tree = self.get_tree()
+        for parent, child in tree.dfs_edges(root):
+            anatomical_joint = self.joint_lookup[(parent, child)]
+            for jointdof in anatomical_joint.iter_dofs(self.axis_order):
+                yield jointdof
+
+    def get_actuated_dofs_from_preset(
+        self, preset: ActuatedDOFPreset | str
+    ) -> list[JointDOF]:
+        preset = ActuatedDOFPreset(preset)
+        return preset.filter(list(self.iter_jointdofs()))

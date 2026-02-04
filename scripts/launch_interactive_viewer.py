@@ -1,7 +1,7 @@
 import mujoco
 import tyro
 
-from flygym.anatomy import Skeleton, ActuatedDOFPreset
+from flygym.anatomy import Skeleton
 from flygym.compose import Fly, FlatGroundWorld
 from flygym.rendering import launch_interactive_viewer
 
@@ -21,7 +21,7 @@ def launch_viewer(
     fly = Fly()
     fly.add_joints(skeleton)
 
-    actuated_dofs = ActuatedDOFPreset(actuated_joints).find_actuated_dofs_in(skeleton)
+    actuated_dofs = skeleton.get_actuated_dofs_from_preset(actuated_joints)
     if actuator_type == "position":
         fly.add_actuators(
             actuated_dofs, actuator_type=actuator_type, kp=position_actuator_kp
