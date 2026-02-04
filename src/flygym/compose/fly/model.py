@@ -84,7 +84,7 @@ class Fly(BaseFly):
                 raise FileNotFoundError(f"Mesh file not found: {mesh_path}")
             self.mjcf_model.asset.add(
                 "mesh",
-                name=f"mesh-{segment_name}",
+                name=segment_name,
                 file=str(mesh_path),
                 dclass=self.default_class,
                 scale=(scale, y_sign * scale, scale),
@@ -136,17 +136,17 @@ class Fly(BaseFly):
     ) -> tuple[mjcf.Element, mjcf.Element]:
         body_element = parent_body.add(
             "body",
-            name=f"body-{segment.name}",
+            name=segment.name,
             pos=my_rigging_config["pos"],
             quat=my_rigging_config["quat"],
         )
         geom_element = body_element.add(
             "geom",
-            name=f"geom-{segment.name}",
+            name=segment.name,
             dclass=self.default_class,
             group=self.group,
             type="mesh",
-            mesh=f"mesh-{segment.name}",
+            mesh=segment.name,
             mass=my_rigging_config["mass"],
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
@@ -163,17 +163,17 @@ class Fly(BaseFly):
 
         for vis_set_name, params in vis_sets_all.items():
             material = self.mjcf_model.asset.add(
-                "material", name=f"material-{vis_set_name}", **params["material"]
+                "material", name=vis_set_name, **params["material"]
             )
             if texture_params := params.get("texture"):
                 texture = self.mjcf_model.asset.add(
-                    "texture", name=f"texture-{vis_set_name}", **texture_params
+                    "texture", name=vis_set_name, **texture_params
                 )
                 material.texture = texture
 
         for segment, geom in self.geoms.items():
             vis_set_name = lookup[segment]
-            geom.set_attributes(material=f"material-{vis_set_name}")
+            geom.set_attributes(material=vis_set_name)
 
     def add_joints(
         self,
@@ -249,8 +249,7 @@ class Fly(BaseFly):
     ) -> None:
         actuator_type = ActuatorType(actuator_type)
         for joint_dof in joint_dofs:
-            dof_name = joint_dof.name.replace("joint-", "")
-            actuator_name = f"actuator-{actuator_type.value}-{dof_name}"
+            actuator_name = f"{joint_dof.name}-{actuator_type.value}"
             self.actuators[(joint_dof, actuator_type)] = self.mjcf_model.actuator.add(
                 actuator_type.value,
                 name=actuator_name,

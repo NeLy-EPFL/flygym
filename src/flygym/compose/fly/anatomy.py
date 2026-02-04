@@ -175,7 +175,7 @@ class JointDOF:
 
     @property
     def name(self):
-        return f"joint-{self.parent.name}-{self.child.name}-{self.axis.value}"
+        return f"{self.parent.name}-{self.child.name}-{self.axis.value}"
 
 
 @dataclass

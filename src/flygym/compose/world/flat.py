@@ -67,11 +67,11 @@ class FlatGroundWorld(BaseWorld):
         fly_name = fly_mjcf_root.model
         spawn_site = self.mjcf_model.worldbody.add(
             "site",
-            name=f"spawnsite-{fly_name}",
+            name=fly_name,
             pos=spawn_position,
             **spawn_rotation.as_kwargs(),
         )
-        spawn_site.attach(fly_mjcf_root).add("freejoint", name=f"freejoint-{fly_name}")
+        spawn_site.attach(fly_mjcf_root).add("freejoint", name=f"{fly_name}")
         self._enable_ground_contact(
             fly, body_segments_with_ground_contact, ground_contact_params
         )
@@ -94,15 +94,15 @@ class FlatGroundWorld(BaseWorld):
         fly_mjcf_root = fly.get_mjcf_root()
         for i, ground_geom in enumerate(self.ground_contact_geoms):
             for body_segment in body_segments_with_ground_contact:
-                body_geom = fly_mjcf_root.find("geom", f"geom-{body_segment.name}")
+                body_geom = fly_mjcf_root.find("geom", f"{body_segment.name}")
                 ground_geom_name = (
-                    f"groundgeom-{i}" if ground_geom.name is None else ground_geom.name
+                    f"ground{i}" if ground_geom.name is None else ground_geom.name
                 )
                 self.mjcf_model.contact.add(
                     "pair",
                     geom1=ground_geom,
                     geom2=body_geom,
-                    name=f"groundcontact-{body_segment.name}-{ground_geom_name}",
+                    name=f"{body_segment.name}-{ground_geom_name}",
                     friction=ground_contact_params.get_friction_tuple(),
                     solref=ground_contact_params.get_solref_tuple(),
                     solimp=ground_contact_params.get_solimp_tuple(),
