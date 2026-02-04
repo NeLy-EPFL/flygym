@@ -7,11 +7,11 @@ compiler:
   boundinertia: 1e-12
 
 option:
+  gravity: [0, 0, -9810]  # in mm/s^2
   timestep: 0.0001
   integrator: Euler
   solver: Newton
   iterations: 1000
-  gravity: 0 0 -9810
 #  The following are from the NMFv2 paper: unclear if they're really useful
 #  tolerance: 1e-12
 #  ccd_iterations: 100

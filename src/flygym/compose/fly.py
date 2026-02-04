@@ -2,21 +2,28 @@ from pathlib import Path
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
+from collections import defaultdict
 from typing import Iterable
+from abc import ABC, abstractmethod
 
 import dm_control.mjcf as mjcf
 import yaml
 
-import flygym
-import flygym.compose.fly.anatomy as anatomy
-from flygym.compose.base import BaseFly
-from flygym.compose.util import set_params_recursive
+from flygym import assets_dir
+from flygym.anatomy import BodySegment, JointDOF, Skeleton  # anatomical features
+from flygym.anatomy import RotationAxis, AxisOrder  # rotation representations
+from flygym.anatomy import JointPreset, ALL_SEGMENT_NAMES  # presets and constants
+from flygym.compose._base import BaseCompositionElement
+from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 
-DEFAULT_RIGGING_CONFIG_PATH = flygym.assets_dir / "model/rigging.yaml"
-DEFAULT_MUJOCO_PARAMS_PATH = flygym.assets_dir / "model/mujoco_params.yaml"
-DEFAULT_MESH_DIR = flygym.assets_dir / "model/meshes"
-DEFAULT_VISUALS_CONFIG_PATH = flygym.assets_dir / "model/visuals.yaml"
+__all__ = ["BaseFly", "Fly", "ActuatorType"]
+
+
+DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
+DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
+DEFAULT_MESH_DIR = assets_dir / "model/meshes"
+DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
 
 
 class ActuatorType(Enum):
@@ -30,6 +37,15 @@ class ActuatorType(Enum):
     ADHESION = "adhesion"
 
 
+class BaseFly(BaseCompositionElement, ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """All flies must have a name for identification in the world. This
+        is necessary because multiple flies can exist in the same world."""
+        pass
+
+
 class Fly(BaseFly):
     def __init__(
         self,
@@ -37,43 +53,45 @@ class Fly(BaseFly):
         *,
         rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
         mesh_dir: PathLike = DEFAULT_MESH_DIR,
-        mujoco_params_path: PathLike = DEFAULT_MUJOCO_PARAMS_PATH,
-        group: int = 1,
-        root_segment: anatomy.BodySegment | str = "c_thorax",
-        default_class: str = "neuromechfly",
-        mirror_right_from_left: bool = True,
+        mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
+        root_segment: BodySegment | str = "c_thorax",
+        mirror_left2right: bool = True,
     ) -> None:
-        self.name = name
-        self.group = group
+        self._name = name
+        self._mjcf_root = mjcf.RootElement(model=name)
+        set_mujoco_globals(self.mjcf_root, mujoco_globals_path)
+
+        self.bodyseg_to_mjcfmesh = {}
+        self.bodyseg_to_mjcfbody = {}
+        self.bodyseg_to_mjcfgeom = {}
+        self.jointdof_to_mjcfjoint = {}
+        self.jointdof_to_mjcfactuator_by_type = defaultdict(dict)
+        self.sensorname_to_mjcfsensor = {}
+        self.cameraname_to_mjcfcamera = {}
+
         if isinstance(root_segment, str):
-            root_segment = anatomy.BodySegment(root_segment)
+            root_segment = BodySegment(root_segment)
         self.root_segment = root_segment
-        self.default_class = default_class
-        self.mjcf_model = mjcf.RootElement(model=name)
-        self.mjcf_model.default.add("default", dclass=default_class)
-        self._set_mujoco_params(mujoco_params_path)
-        self._add_mesh_assets(
-            mesh_dir, scale=1000, mirror_right_from_left=mirror_right_from_left
-        )
-        self.bodies, self.geoms = self._add_bodies_and_geoms(rigging_config_path)
-        self.joints = {}
-        self.actuators = {}
-        self.sensors = {}
 
-    def _set_mujoco_params(self, mujoco_params_path: PathLike) -> None:
-        with open(mujoco_params_path) as f:
-            mujoco_params = yaml.safe_load(f)
-        set_params_recursive(self.mjcf_model, mujoco_params)
+        self._add_mesh_assets(mesh_dir, mirror_left2right)
+        self._add_bodies_and_geoms(rigging_config_path)
 
-    def _add_mesh_assets(
-        self,
-        mesh_dir: PathLike,
-        scale: float,
-        mirror_right_from_left: bool,
-    ) -> None:
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def mjcf_root(self) -> mjcf.RootElement:
+        return self._mjcf_root
+
+    def _add_mesh_assets(self, mesh_dir: PathLike, mirror_left2right: bool) -> None:
+        # For numerical reasons, we simulate length in mm, not m. This changes the units
+        # of other quantities as well, for example acceleration is now in mm/s^2.
+        SCALE = 1000
+
         mesh_dir = Path(mesh_dir)
-        for segment_name in anatomy.ALL_SEGMENT_NAMES:
-            if mirror_right_from_left and segment_name[0] == "r":
+        for segment_name in ALL_SEGMENT_NAMES:
+            if mirror_left2right and segment_name[0] == "r":
                 mesh_to_use = f"l{segment_name[1:]}"
                 y_sign = -1
             else:
@@ -82,57 +100,49 @@ class Fly(BaseFly):
             mesh_path = (mesh_dir / f"{mesh_to_use}.stl").resolve()
             if not mesh_path.exists():
                 raise FileNotFoundError(f"Mesh file not found: {mesh_path}")
-            self.mjcf_model.asset.add(
+            self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.asset.add(
                 "mesh",
                 name=segment_name,
                 file=str(mesh_path),
-                dclass=self.default_class,
-                scale=(scale, y_sign * scale, scale),
+                scale=(SCALE, y_sign * SCALE, SCALE),
             )
 
-    def _add_bodies_and_geoms(
-        self,
-        rigging_config_path: PathLike,
-    ) -> tuple[
-        dict[anatomy.BodySegment, mjcf.Element], dict[anatomy.BodySegment, mjcf.Element]
-    ]:
+    def _add_bodies_and_geoms(self, rigging_config_path: PathLike) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
 
         # Add root body and geom
-        virtual_root = self.mjcf_model.worldbody.add("body", name="rootbody")
+        virtual_root = self.mjcf_root.worldbody.add("body", name="rootbody")
         body, geom = self._add_one_body_and_geom(
             virtual_root, self.root_segment, rigging_config[self.root_segment.name]
         )
-        body_lookup = {self.root_segment: body}
-        geom_lookup = {self.root_segment: geom}
+        self.bodyseg_to_mjcfbody[self.root_segment] = body
+        self.bodyseg_to_mjcfgeom[self.root_segment] = geom
 
-        # Add all other bodies and geoms
-        full_skeleton = anatomy.Skeleton(joint_preset=anatomy.JointPreset.ALL_POSSIBLE)
-        # The axis order doesn't matter here: we're only adding bodies/geoms, not joints
-        axis_order = anatomy.AxisOrder.PITCH_ROLL_YAW
-        for joint_dof in full_skeleton.iter_joint_dofs(axis_order, self.root_segment):
-            if joint_dof.axis != anatomy.RotationAxis.PITCH:
+        full_skeleton = Skeleton(
+            joint_preset=JointPreset.ALL_POSSIBLE, axis_order=AxisOrder.DONTCARE
+        )
+
+        for jointdof in full_skeleton.iter_jointdofs(self.root_segment):
+            if jointdof.axis != RotationAxis.PITCH:
                 # Look at only 1 DoF per joint as we're still just adding bodies/geoms
                 continue
-            parent_body = body_lookup.get(joint_dof.parent)
+            parent_body = self.bodyseg_to_mjcfbody.get(jointdof.parent)
             assert parent_body is not None, "Kinematic tree DFS error"
-            my_rigging_config = rigging_config.get(joint_dof.child.name)
+            my_rigging_config = rigging_config.get(jointdof.child.name)
             assert my_rigging_config is not None, "Missing rigging config for body"
             body, geom = self._add_one_body_and_geom(
-                parent_body, joint_dof.child, my_rigging_config
+                parent_body, jointdof.child, my_rigging_config
             )
-            body_lookup[joint_dof.child] = body
-            geom_lookup[joint_dof.child] = geom
-
-        return body_lookup, geom_lookup
+            self.bodyseg_to_mjcfbody[jointdof.child] = body
+            self.bodyseg_to_mjcfgeom[jointdof.child] = geom
 
     def _add_one_body_and_geom(
         self,
         parent_body: mjcf.Element,
-        segment: anatomy.BodySegment,
-        my_rigging_config: dict[str, ...],
+        segment: BodySegment,
+        my_rigging_config: dict[str, any],
     ) -> tuple[mjcf.Element, mjcf.Element]:
         body_element = parent_body.add(
             "body",
@@ -143,8 +153,6 @@ class Fly(BaseFly):
         geom_element = body_element.add(
             "geom",
             name=segment.name,
-            dclass=self.default_class,
-            group=self.group,
             type="mesh",
             mesh=segment.name,
             mass=my_rigging_config["mass"],
@@ -156,41 +164,39 @@ class Fly(BaseFly):
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
     ) -> None:
-        if not hasattr(self, "geoms"):
+        if len(self.bodyseg_to_mjcfgeom) == 0:
             raise ValueError("Must first add geoms via `_add_bodies_and_geoms`.")
 
         vis_sets_all, lookup = self._parse_visuals_config(visuals_config_path)
 
         for vis_set_name, params in vis_sets_all.items():
-            material = self.mjcf_model.asset.add(
+            material = self.mjcf_root.asset.add(
                 "material", name=vis_set_name, **params["material"]
             )
             if texture_params := params.get("texture"):
-                texture = self.mjcf_model.asset.add(
+                texture = self.mjcf_root.asset.add(
                     "texture", name=vis_set_name, **texture_params
                 )
                 material.texture = texture
 
-        for segment, geom in self.geoms.items():
+        for segment, geom in self.bodyseg_to_mjcfgeom.items():
             vis_set_name = lookup[segment]
             geom.set_attributes(material=vis_set_name)
 
     def add_joints(
         self,
-        skeleton: anatomy.Skeleton,
-        axis_order: anatomy.AxisOrderLike,
+        skeleton: Skeleton,
         stiffness: float = 10.0,
         damping: float = 0.5,
         **kwargs,
     ) -> None:
-        for joint_dof in skeleton.iter_joint_dofs(axis_order, self.root_segment):
-            child_body = self.bodies[joint_dof.child]
-            self.joints[joint_dof] = child_body.add(
+        for jointdof in skeleton.iter_jointdofs(self.root_segment):
+            child_body = self.bodyseg_to_mjcfbody[jointdof.child]
+            self.jointdof_to_mjcfjoint[jointdof] = child_body.add(
                 "joint",
-                name=joint_dof.name,
-                dclass=self.default_class,
+                name=jointdof.name,
                 type="hinge",
-                axis=joint_dof.axis.to_vector(),
+                axis=jointdof.axis.to_vector(),
                 stiffness=stiffness,
                 damping=damping,
                 **kwargs,
@@ -199,11 +205,11 @@ class Fly(BaseFly):
     @staticmethod
     def _parse_visuals_config(
         visuals_config_path: PathLike,
-    ) -> tuple[dict[str, dict], dict[anatomy.BodySegment, dict]]:
+    ) -> tuple[dict[str, dict], dict[BodySegment, dict]]:
         # Load visuals config and assign vis sets to body segments
         with open(visuals_config_path) as f:
             vis_set_params_all = yaml.safe_load(f)
-        all_matches_by_segname = {k: [] for k in anatomy.ALL_SEGMENT_NAMES}
+        all_matches_by_segname = {k: [] for k in ALL_SEGMENT_NAMES}
         for vis_set_name, vis_set_params in vis_set_params_all.items():
             apply_to = vis_set_params.get("apply_to")
             material = vis_set_params.get("material")
@@ -220,9 +226,7 @@ class Fly(BaseFly):
                 )
             target_segnames = set()
             for pattern in [apply_to] if isinstance(apply_to, str) else apply_to:
-                target_segnames |= set(
-                    filter_with_wildcard(anatomy.ALL_SEGMENT_NAMES, pattern)
-                )
+                target_segnames |= set(filter_with_wildcard(ALL_SEGMENT_NAMES, pattern))
             for segname in target_segnames:
                 all_matches_by_segname[segname].append(vis_set_name)
         for segname, vis_set_names in all_matches_by_segname.items():
@@ -232,33 +236,31 @@ class Fly(BaseFly):
                     f"{vis_set_names}. Only one should apply."
                 )
         lookup_by_segname = {
-            anatomy.BodySegment(segname): matches[0]
+            BodySegment(segname): matches[0]
             for segname, matches in all_matches_by_segname.items()
         }
         return vis_set_params_all, lookup_by_segname
 
     def add_actuators(
         self,
-        joint_dofs: Iterable[anatomy.JointDOF],
+        jointdofs: Iterable[JointDOF],
         actuator_type: ActuatorType | str,
-        dclass: str = "neuromechfly",
-        group: int = 1,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-50.0, 50.0),
         **kwargs,
     ) -> None:
         actuator_type = ActuatorType(actuator_type)
-        for joint_dof in joint_dofs:
-            actuator_name = f"{joint_dof.name}-{actuator_type.value}"
-            self.actuators[(joint_dof, actuator_type)] = self.mjcf_model.actuator.add(
-                actuator_type.value,
-                name=actuator_name,
-                joint=joint_dof.name,
-                dclass=dclass,
-                group=group,
-                forcelimited=forcelimited,
-                forcerange=forcerange,
-                **kwargs,
+        for jointdof in jointdofs:
+            actuator_name = f"{jointdof.name}-{actuator_type.value}"
+            self.jointdof_to_mjcfactuator_by_type[jointdof][actuator_type] = (
+                self.mjcf_root.actuator.add(
+                    actuator_type.value,
+                    name=actuator_name,
+                    joint=jointdof.name,
+                    forcelimited=forcelimited,
+                    forcerange=forcerange,
+                    **kwargs,
+                )
             )
 
     def add_tracking_camera(
@@ -270,7 +272,7 @@ class Fly(BaseFly):
         fovy: float = 30.0,
         **kwargs,
     ) -> None:
-        self.mjcf_model.worldbody.add(
+        self.mjcf_root.worldbody.add(
             "camera",
             name=name,
             mode=mode,
@@ -282,4 +284,4 @@ class Fly(BaseFly):
         )
 
     def get_mjcf_root(self) -> mjcf.RootElement:
-        return self.mjcf_model
+        return self.mjcf_root

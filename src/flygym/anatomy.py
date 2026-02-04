@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TypeAlias, Iterator, Iterable
 from collections.abc import Sequence
-from unittest import case
 
 from flygym.utils.math import orderedset, Tree
 
@@ -69,18 +68,19 @@ class AxisOrder(Enum):
     YPR = YAW_PITCH_ROLL
     YAW_ROLL_PITCH = (RotationAxis.YAW, RotationAxis.ROLL, RotationAxis.PITCH)
     YRP = YAW_ROLL_PITCH
+    
+    DONTCARE = PITCH_ROLL_YAW
 
     @classmethod
     def _missing_(cls, value):
+        if isinstance(value, str) and len((split_values := value.split("_"))) == 3:
+            value = split_values
         if isinstance(value, Sequence) and len(value) == 3:
             try:
                 return cls(tuple(RotationAxis(x) for x in value))
             except Exception as e:
                 raise e
         return super()._missing_(value)
-
-
-AxisOrderLike: TypeAlias = AxisOrder | Sequence[RotationAxisLike]
 
 
 def _chain2joints(*args: str) -> list[tuple[str, str]]:
@@ -198,6 +198,7 @@ class Skeleton:
     def __init__(
         self,
         *,
+        axis_order: AxisOrder | Sequence[RotationAxis | str],
         joint_preset: "JointPreset | str | None" = None,
         anatomical_joints: list[AnatomicalJoint] | None = None,
     ) -> None:
@@ -214,6 +215,7 @@ class Skeleton:
         self.body_segments = orderedset(
             [seg for nodes in self.joint_lookup.keys() for seg in nodes]
         )
+        self.axis_order = AxisOrder(axis_order)
 
     def get_tree(self) -> Tree:
         try:
@@ -222,9 +224,8 @@ class Skeleton:
             raise ValueError("Skeleton is invalid - must be a tree.") from e
         return tree
 
-    def iter_joint_dofs(
+    def iter_jointdofs(
         self,
-        axis_order: AxisOrder,
         root: BodySegment | str = "c_thorax",
     ) -> Iterator[JointDOF]:
         if isinstance(root, str):
@@ -232,8 +233,8 @@ class Skeleton:
         tree = self.get_tree()
         for parent, child in tree.dfs_edges(root):
             anatomical_joint = self.joint_lookup[(parent, child)]
-            for joint_dof in anatomical_joint.iter_dofs(axis_order):
-                yield joint_dof
+            for jointdof in anatomical_joint.iter_dofs(self.axis_order):
+                yield jointdof
 
 
 class JointPreset(Enum):
@@ -293,9 +294,36 @@ class JointPreset(Enum):
         ]
 
 
+class ActuatedDOFPreset(Enum):
+    ALL = "all"
+    LEGS_ONLY = "legs_only"
+    LEGS_ACTIVE_ONLY = "legs_active_only"
+
+    def find_actuated_dofs_in(self, skeleton: Skeleton) -> list[JointDOF]:
+        match self:
+            case ActuatedDOFPreset.ALL:
+                return self._get_all_jointdofs(skeleton)
+            case ActuatedDOFPreset.LEGS_ONLY:
+                return self._get_leg_jointdofs(skeleton)
+            case ActuatedDOFPreset.LEGS_ACTIVE_ONLY:
+                return self._get_leg_active_jointdofs(skeleton)
+
+    def _get_all_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
+        return list(skeleton.iter_jointdofs())
+
+    def _get_leg_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
+        return [dof for dof in self._get_all_jointdofs(skeleton) if dof.child.is_leg()]
+
+    def _get_leg_active_jointdofs(self, skeleton: Skeleton) -> list[JointDOF]:
+        return [
+            dof
+            for dof in self._get_leg_jointdofs(skeleton)
+            if dof.child.link not in PASSIVE_TARSAL_LINKS
+        ]
+
+
 class ContactBodiesPreset(Enum):
     ALL = "all"
-    NONE = "none"
     LEGS_THORAX_ABDOMEN_HEAD = "legs_thorax_abdomen_head"
     LEGS_ONLY = "legs_only"
     TIBIA_TARSUS_ONLY = "tibia_tarsus_only"
@@ -304,8 +332,6 @@ class ContactBodiesPreset(Enum):
         match self:
             case ContactBodiesPreset.ALL:
                 return ContactBodiesPreset._get_all_segments()
-            case ContactBodiesPreset.NONE:
-                return []
             case ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD:
                 return ContactBodiesPreset._get_legs_thorax_abdomen_segments()
             case ContactBodiesPreset.LEGS_ONLY:

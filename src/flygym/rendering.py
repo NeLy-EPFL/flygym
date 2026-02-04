@@ -10,7 +10,7 @@ import imageio.v3 as iio
 import numpy as np
 
 
-class FlyGymRenderer:
+class Renderer:
     def __init__(
         self,
         mj_model: mujoco.MjModel,
@@ -86,9 +86,9 @@ class FlyGymRenderer:
 
 
 def launch_interactive_viewer(
-    mj_model: mujoco.MjModel, mj_data: mujoco.MjData, from_notebook: bool = False
-) -> None | FlyGymRenderer:
-    if from_notebook:
+    mj_model: mujoco.MjModel, mj_data: mujoco.MjData, run_async: bool = False
+) -> None | Renderer:
+    if run_async:
         # Run MuJoCo's built-in interactive viewer asynchronously.
         # This bypasses synchronization issues when launched from jupyter.
         # The solution shipped by MuJoCo is to use mujoco.viewer.launch_passive, but
