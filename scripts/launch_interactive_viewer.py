@@ -2,7 +2,6 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from jaxtyping import Float, NDArray
 
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -29,7 +28,7 @@ run_async = False
 
 def get_actuator_input_to_maintain_pose(
     fly: Fly, mj_model: mujoco.MjModel, target_pose: PoseDict
-) -> Float[NDArray, "n_actuated_jointdofs"]:
+) -> np.ndarray:
     actuator_lookup = fly.jointdof_to_mjcfactuator_by_type[ActuatorType.POSITION]
     ctrl_input = np.zeros(mj_model.nu)
     for jointdof, actuator in actuator_lookup.items():
