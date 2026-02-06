@@ -2,9 +2,10 @@ from pathlib import Path
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
-from collections import defaultdict
 from typing import Iterable
 
+import mujoco
+import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
 
@@ -12,11 +13,11 @@ from flygym import assets_dir
 from flygym.anatomy import BodySegment, JointDOF, Skeleton  # anatomical features
 from flygym.anatomy import RotationAxis, AxisOrder  # rotation representations
 from flygym.anatomy import JointPreset, ALL_SEGMENT_NAMES  # presets and constants
-from flygym.compose._base import BaseCompositionElement
+from flygym.compose.base import BaseCompositionElement
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 
-__all__ = ["Fly", "ActuatorType"]
+__all__ = ["Fly", "ActuatorType", "PoseDict"]
 
 
 DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
@@ -25,21 +26,10 @@ DEFAULT_MESH_DIR = assets_dir / "model/meshes"
 DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
 
 
-class ActuatorType(Enum):
-    MOTOR = "motor"
-    POSITION = "position"
-    VELOCITY = "velocity"
-    INTVELOCITY = "intvelocity"
-    DAMPER = "damper"
-    CYLINDER = "cylinder"
-    MUSCLE = "muscle"
-    ADHESION = "adhesion"
-
-
 class Fly(BaseCompositionElement):
     def __init__(
         self,
-        name: str = "neuromechfly",
+        name: str = "nmf",
         *,
         rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
         mesh_dir: PathLike = DEFAULT_MESH_DIR,
@@ -55,13 +45,18 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfbody = {}
         self.bodyseg_to_mjcfgeom = {}
         self.jointdof_to_mjcfjoint = {}
-        self.jointdof_to_mjcfactuator_by_type = defaultdict(dict)
+        self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
+        self.jointdof_to_neutralangle = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
         if isinstance(root_segment, str):
             root_segment = BodySegment(root_segment)
         self.root_segment = root_segment
+
+        self._neutral_keyframe = self.mjcf_root.keyframe.add(
+            "key", name="neutral", time=0.0
+        )
 
         self._add_mesh_assets(mesh_dir, mirror_left2right)
         self._add_bodies_and_geoms(rigging_config_path)
@@ -73,6 +68,18 @@ class Fly(BaseCompositionElement):
     @property
     def mjcf_root(self) -> mjcf.RootElement:
         return self._mjcf_root
+
+    def get_bodysegs_order(self) -> Iterable[BodySegment]:
+        return self.bodyseg_to_mjcfbody.keys()
+
+    def get_jointdofs_order(self) -> Iterable[JointDOF]:
+        return self.jointdof_to_mjcfjoint.keys()
+
+    def get_actuated_jointdofs_order(
+        self, actuator_type: "ActuatorType | str"
+    ) -> Iterable[JointDOF]:
+        actuator_type = ActuatorType(actuator_type)
+        return self.jointdof_to_mjcfactuator_by_type[actuator_type].keys()
 
     def _add_mesh_assets(self, mesh_dir: PathLike, mirror_left2right: bool) -> None:
         # For numerical reasons, we simulate length in mm, not m. This changes the units
@@ -176,24 +183,49 @@ class Fly(BaseCompositionElement):
     def add_joints(
         self,
         skeleton: Skeleton,
+        neutral_pose: "PoseDict | None" = None,
+        *,
         stiffness: float = 10.0,
         damping: float = 0.5,
         **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
+        if neutral_pose is None:
+            neutral_pose = PoseDict()
+
         return_dict = {}
         for jointdof in skeleton.iter_jointdofs(self.root_segment):
             child_body = self.bodyseg_to_mjcfbody[jointdof.child]
+            mirror_axis = jointdof.child.name[0] == "r" and (
+                jointdof.axis in (RotationAxis.ROLL, RotationAxis.YAW)
+            )
+            neutral_angle = neutral_pose.get(jointdof.name, 0.0)
+            self.jointdof_to_neutralangle[jointdof] = neutral_angle
             return_dict[jointdof] = child_body.add(
                 "joint",
                 name=jointdof.name,
                 type="hinge",
-                axis=jointdof.axis.to_vector(),
+                axis=jointdof.axis.to_vector(mirror=mirror_axis),
                 stiffness=stiffness,
                 damping=damping,
+                springref=neutral_angle,
                 **kwargs,
             )
+
         self.jointdof_to_mjcfjoint.update(return_dict)
+        self._rebuild_neutral_keyframe()
         return return_dict
+
+    def _rebuild_neutral_keyframe(self):
+        mj_model, _ = self.compile()
+        neutral_qpos = np.zeros(mj_model.nq)
+        for jointdof, angle in self.jointdof_to_neutralangle.items():
+            joint_element = self.jointdof_to_mjcfjoint[jointdof]
+            internal_jointid = mujoco.mj_name2id(
+                mj_model, mujoco.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+            )
+            qposadr = mj_model.jnt_qposadr[internal_jointid]
+            neutral_qpos[qposadr] = angle
+        self._neutral_keyframe.qpos = neutral_qpos
 
     @staticmethod
     def _parse_visuals_config(
@@ -237,7 +269,8 @@ class Fly(BaseCompositionElement):
     def add_actuators(
         self,
         jointdofs: Iterable[JointDOF],
-        actuator_type: ActuatorType | str,
+        actuator_type: "ActuatorType | str",
+        *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-50.0, 50.0),
         **kwargs,
@@ -251,10 +284,11 @@ class Fly(BaseCompositionElement):
                 joint=jointdof.name,
                 forcelimited=forcelimited,
                 forcerange=forcerange,
+                ctrlrange=(-3, 3),
                 **kwargs,
             )
             return_dict[jointdof] = actuator
-            self.jointdof_to_mjcfactuator_by_type[jointdof][actuator_type] = actuator
+        self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         return return_dict
 
     def add_tracking_camera(
@@ -278,3 +312,77 @@ class Fly(BaseCompositionElement):
         )
         self.cameraname_to_mjcfcamera[name] = camera
         return camera
+
+
+class ActuatorType(Enum):
+    MOTOR = "motor"
+    POSITION = "position"
+    VELOCITY = "velocity"
+    INTVELOCITY = "intvelocity"
+    DAMPER = "damper"
+    CYLINDER = "cylinder"
+    MUSCLE = "muscle"
+    ADHESION = "adhesion"
+
+
+class PoseDict(dict[str, float]):
+    def __init__(
+        self,
+        *,
+        joint_angles_dict: dict[str, float] | None = None,
+        file_path: PathLike | None = None,
+        mirror_left2right: bool = True,
+    ) -> None:
+        if (joint_angles_dict is not None) + (file_path is not None) != 1:
+            raise ValueError(
+                "Either joint_angles_dict or file_path must be provided, but not both."
+            )
+        if file_path is not None:
+            joint_angles_dict = self._load_yaml(file_path)
+        if mirror_left2right:
+            joint_angles_dict = self._apply_mirroring(joint_angles_dict)
+        super().__init__(joint_angles_dict)
+
+    @staticmethod
+    def _load_yaml(file_path: PathLike) -> dict[str, float]:
+        with open(file_path, "r") as f:
+            pose_data = yaml.safe_load(f)
+
+        if "angle_unit" not in pose_data:
+            raise ValueError("YAML file must contain 'angle_unit' key.")
+        if pose_data["angle_unit"] not in ["degree", "radian"]:
+            raise ValueError("angle_unit must be either 'degree' or 'radian'.")
+
+        if "joint_angles" not in pose_data:
+            raise ValueError("YAML file must contain 'joint_angles' key.")
+        for k, v in pose_data["joint_angles"].items():
+            if not isinstance(v, (int, float)):
+                raise ValueError(f"Joint angle for '{k}' must be a number.")
+
+        joint_angles = pose_data["joint_angles"]
+        if pose_data["angle_unit"] == "degree":
+            joint_angles = {k: np.deg2rad(v) for k, v in joint_angles.items()}
+
+        return joint_angles
+
+    @staticmethod
+    def _apply_mirroring(joint_angles_in: dict[str, float]) -> dict[str, float]:
+        joint_angles_out = {}
+        for joint_name, angle in joint_angles_in.items():
+            joint_angles_out[joint_name] = angle
+
+            jointdof = JointDOF.from_name(joint_name)
+
+            if jointdof.child.name[0] == "l":
+                mirror_parent = BodySegment(
+                    "r" + jointdof.parent.name[1:]
+                    if jointdof.parent.name[0] == "l"
+                    else jointdof.parent.name
+                )
+                mirror_child = BodySegment("r" + jointdof.child.name[1:])
+                mirror_jointdof = JointDOF(mirror_parent, mirror_child, jointdof.axis)
+                if mirror_jointdof.name not in joint_angles_in:
+                    # Skip if right-side joint angle explicitly provided in input
+                    joint_angles_out[mirror_jointdof.name] = angle
+
+        return joint_angles_out

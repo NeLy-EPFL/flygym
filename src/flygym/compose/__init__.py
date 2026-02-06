@@ -1,2 +1,2 @@
-from .fly import Fly, ActuatorType
-from .world import BaseWorld, FlatGroundWorld
+from .fly import Fly, ActuatorType, PoseDict
+from .world import BaseWorld, FlatGroundWorld, TetheredWorld

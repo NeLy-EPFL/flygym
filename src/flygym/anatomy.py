@@ -25,14 +25,15 @@ class RotationAxis(Enum):
                 return cls.YAW
         return super()._missing_(value)
 
-    def to_vector(self) -> tuple[float, float, float]:
+    def to_vector(self, mirror: bool = False) -> tuple[float, float, float]:
+        one = -1 if mirror else 1
         match self:
             case RotationAxis.PITCH:
-                return (0, 1, 0)
+                return (0, one, 0)
             case RotationAxis.ROLL:
-                return (0, 0, 1)
+                return (0, 0, one)
             case RotationAxis.YAW:
-                return (1, 0, 0)
+                return (one, 0, 0)
 
 
 RotationAxisLike: TypeAlias = RotationAxis | str
@@ -176,6 +177,18 @@ class JointDOF:
     @property
     def name(self):
         return f"{self.parent.name}-{self.child.name}-{self.axis.value}"
+
+    @classmethod
+    def from_name(cls, name: str) -> "JointDOF":
+        try:
+            parent_name, child_name, axis_name = name.split("-")
+            return cls(
+                BodySegment(parent_name),
+                BodySegment(child_name),
+                RotationAxis(axis_name),
+            )
+        except Exception as e:
+            raise ValueError(f"Invalid JointDOF name: {name}") from e
 
 
 @dataclass

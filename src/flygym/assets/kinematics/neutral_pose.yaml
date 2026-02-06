@@ -1,0 +1,38 @@
+angle_unit: degree
+
+joint_angles:
+  c_thorax-lf_coxa-roll : 20
+  c_thorax-lf_coxa-yaw : 0
+  c_thorax-lf_coxa-pitch : 10
+  lf_coxa-lf_trochanterfemur-pitch : -120
+  lf_coxa-lf_trochanterfemur-roll : 30
+  lf_trochanterfemur-lf_tibia-pitch : 40
+  lf_tibia-lf_tarsus1-pitch : -10
+  lf_tarsus1-lf_tarsus2-pitch : -5
+  lf_tarsus2-lf_tarsus3-pitch : -5
+  lf_tarsus3-lf_tarsus4-pitch : -5
+  lf_tarsus4-lf_tarsus5-pitch : -5
+
+  c_thorax-lm_coxa-pitch : 0
+  c_thorax-lm_coxa-yaw : 10
+  c_thorax-lm_coxa-roll : 100
+  lm_coxa-lm_trochanterfemur-pitch : -95
+  lm_coxa-lm_trochanterfemur-roll : 0
+  lm_trochanterfemur-lm_tibia-pitch : 65
+  lm_tibia-lm_tarsus1-pitch : -10
+  lm_tarsus1-lm_tarsus2-pitch : -5
+  lm_tarsus2-lm_tarsus3-pitch : -5
+  lm_tarsus3-lm_tarsus4-pitch : -5
+  lm_tarsus4-lm_tarsus5-pitch : -5
+  
+  c_thorax-lh_coxa-pitch : 0
+  c_thorax-lh_coxa-yaw : 10
+  c_thorax-lh_coxa-roll : 140
+  lh_coxa-lh_trochanterfemur-pitch : -90
+  lh_coxa-lh_trochanterfemur-roll : -10
+  lh_trochanterfemur-lh_tibia-pitch : 65
+  lh_tibia-lh_tarsus1-pitch : -5
+  lh_tarsus1-lh_tarsus2-pitch : -5
+  lh_tarsus2-lh_tarsus3-pitch : -5
+  lh_tarsus3-lh_tarsus4-pitch : -5
+  lh_tarsus4-lh_tarsus5-pitch : -5

@@ -1,79 +1,90 @@
-from os import PathLike
-from abc import ABC
-from time import time_ns
-from typing import Callable, TypeVar, Generic, TypedDict
+from collections import defaultdict
+from typing import Literal
 
 import mujoco
+import dm_control.mjcf as mjcf
 import numpy as np
-import yaml
-from jaxtyping import Float
 from numpy.typing import NDArray
+from jaxtyping import Float
+from time import perf_counter_ns
 
-from flygym.compose.fly.anatomy import JointDOF
-from flygym.utils.viewer import FlyGymRenderer
+from flygym.anatomy import JointDOF
+from flygym.compose.fly import Fly, ActuatorType, PoseDict
+from flygym.compose.world import BaseWorld
+from flygym.rendering import Renderer
 from flygym.utils.profiling import print_perf_report
 
-ObservationType = TypeVar("ObservationType")
+StaticPoseType = dict[str | JointDOF, float] | Float[NDArray, "n_jointdofs"]
 
 
-class BaseSimulation(ABC, Generic[ObservationType]):
-    def __init__(
-        self,
-        mj_model: mujoco.MjModel,
-        mj_data: mujoco.MjData,
-        *args,
-        **kwargs,
-    ) -> None:
-        self.mj_model: mujoco.MjModel = mj_model
-        self.mj_data: mujoco.MjData = mj_data
-        self.renderers: dict[str, FlyGymRenderer] = {}
-        self.curr_step: int = 0
+class Simulation:
+    def __init__(self, world: BaseWorld) -> None:
+        if len(world.fly_lookup) == 0:
+            raise ValueError("The world must contain at least one fly.")
+        self.renderers: dict[str, Renderer] = {}
+        self.world = world
+        self.mj_model, self.mj_data = world.compile()
 
-        # Profiling counters
-        self._total_physics_ns: int = 0
-        self._total_poststep_ns: int = 0
-        self._total_prestep_ns: int = 0
-        self._total_render_ns: int = 0
-        self._frames_rendered: int = 0
+        # Map internal IDs in compiled MuJoCo model. This allows user to read to/write
+        # from body/joint/actuator in orders defined by Fly objects.
+        self._map_internal_bodyids()
+        self._map_internal_qposqveladrs()
+        self._map_internal_actuator_ids()
 
-    def _compute_control_input_pre_step(self) -> Float[NDArray, "nu"]:
-        """Compute control inputs for the current simulation step.
+        # Reset everything (physics, renderers, and profiling stats)
+        self.reset()
 
-        Returns:
-            A numpy array of shape (nu,) containing the control inputs to
-            be applied at the next physics step.
-        """
-        pass
+    def reset(self) -> None:
+        # Reset physics
+        mujoco.mj_resetData(self.mj_model, self.mj_data)
 
-    def _process_updated_state_post_step(self) -> ObservationType:
-        pass
+        # Reset renderers
+        for renderer in self.renderers.values():
+            renderer.reset()
 
-    def step(
-        self, *control_input_compute_args, **control_input_compute_kwargs
-    ) -> ObservationType:
-        prestep_start = time_ns()
-        control_input = self._compute_control_input_pre_step(
-            *control_input_compute_args, **control_input_compute_kwargs
-        )
-        physics_start = time_ns()
-        self.mj_data.ctrl[:] = control_input
+        # Stuff for performance profiling
+        self._curr_step = 0
+        self._frames_rendered = 0
+        self._total_prestep_time_ns = 0
+        self._total_physics_time_ns = 0
+        self._total_poststep_time_ns = 0
+        self._total_render_time_ns = 0
+
+    def _set_actuator_input_prestep(self, *args, **kwargs) -> None:
+        return
+
+    def _process_updated_state_poststep(self) -> any:
+        return
+
+    def step(self, *actuator_input_args, **actuator_input_kwargs) -> any:
+        # Prestep: set control input
+        prestep_start_ns = perf_counter_ns()
+        self._set_actuator_input_prestep(*actuator_input_args, **actuator_input_kwargs)
+
+        # Step physics forward
+        physics_start_ns = perf_counter_ns()
         mujoco.mj_step(self.mj_model, self.mj_data)
-        poststep_start = time_ns()
-        observation = self._process_updated_state_post_step()
 
-        render_start = time_ns()
-        for _, renderer in self.renderers.items():
-            renderer_output = renderer.render_as_needed(self.mj_data)
-            if renderer_output is not None:
-                self._frames_rendered += 1
-        render_end = time_ns()
+        # Poststep: process updated state
+        poststep_start_ns = perf_counter_ns()
+        observation = self._process_updated_state_poststep()
 
-        self.curr_step += 1
+        # Render image (optional)
+        render_start_ns = perf_counter_ns()
+        is_rendered = False
+        for renderer in self.renderers.values():
+            image = renderer.render_as_needed(self.mj_data)
+            is_rendered |= image is not None
+        render_finish_ns = perf_counter_ns()
 
-        self._total_prestep_ns += physics_start - prestep_start
-        self._total_physics_ns += poststep_start - physics_start
-        self._total_poststep_ns += render_start - poststep_start
-        self._total_render_ns += render_end - render_start
+        # Update profiling stats
+        self._total_prestep_time_ns += physics_start_ns - prestep_start_ns
+        self._total_physics_time_ns += poststep_start_ns - physics_start_ns
+        self._total_poststep_time_ns += render_start_ns - poststep_start_ns
+        self._total_render_time_ns += render_finish_ns - render_start_ns
+        self._curr_step += 1
+        if is_rendered:
+            self._frames_rendered += 1
 
         return observation
 
@@ -85,247 +96,192 @@ class BaseSimulation(ABC, Generic[ObservationType]):
         width: int = 320,
         play_speed: float = 0.2,
         out_fps: int = 25,
-        camera: str | int | mujoco.MjvCamera = -1,
-        frame_capture_callback: Callable[[np.ndarray], None] | None = None,
-        buffer_frames: bool = True,
+        camera: mjcf.Element | str | int | mujoco.MjvCamera = -1,
         **kwargs,
     ) -> None:
-        renderer = FlyGymRenderer(
+        if isinstance(camera, mjcf.Element) and camera.tag == "camera":
+            camera = camera.full_identifier
+
+        renderer = Renderer(
             self.mj_model,
             height=height,
             width=width,
             play_speed=play_speed,
             out_fps=out_fps,
             camera=camera,
-            frame_capture_callback=frame_capture_callback,
-            buffer_frames=buffer_frames,
             **kwargs,
         )
         name = f"renderer{len(self.renderers) + 1}" if name is None else name
         self.renderers[name] = renderer
 
-    def reset(self) -> None:
-        mujoco.mj_resetData(self.mj_model, self.mj_data)
-        self.curr_step = 0
-        self._total_physics_ns = 0
-        self._total_poststep_ns = 0
-        self._total_prestep_ns = 0
-        self._total_render_ns = 0
-        self._frames_rendered = 0
+    def get_joint_angles(
+        self, fly: Fly | str | None = None
+    ) -> Float[NDArray, "n_jointdofs"]:
+        fly_name = self._get_fly_name(self, fly)
+        internal_ids = self._intern_qposadrs_by_fly[fly_name]
+        return self.mj_data.qpos[internal_ids]
 
-        # Reset renderers' internal timers and clear buffered frames too
-        for _, renderer in self.renderers.items():
-            renderer.last_render_time_sec = -np.inf
-            if renderer.frames is not None:
-                renderer.frames.clear()
+    def get_joint_velocities(
+        self, fly: Fly | str | None = None
+    ) -> Float[NDArray, "n_jointdofs"]:
+        fly_name = self._get_fly_name(self, fly)
+        internal_ids = self._intern_qveladrs_by_fly[fly_name]
+        return self.mj_data.qvel[internal_ids]
 
-    def print_perf_report(self):
-        print_perf_report(
-            self._total_prestep_ns,
-            self._total_physics_ns,
-            self._total_poststep_ns,
-            self._total_render_ns,
-            self.curr_step,
-            self._frames_rendered,
-        )
+    def get_body_positions(
+        self, fly: Fly | str | None = None
+    ) -> Float[NDArray, "n_bodies 3"]:
+        fly_name = self._get_fly_name(self, fly)
+        internal_ids = self._internal_bodyids_by_fly[fly_name]
+        return self.mj_data.xpos[internal_ids, :]
+
+    def get_body_rotations(
+        self, fly: Fly | str | None = None
+    ) -> Float[NDArray, "n_bodies 4"]:
+        fly_name = self._get_fly_name(self, fly)
+        internal_ids = self._internal_bodyids_by_fly[fly_name]
+        return self.mj_data.xquat[internal_ids, :]
+
+    def set_actuator_inputs(
+        self,
+        actuator_type: ActuatorType,
+        inputs: Float[NDArray, "n_actuators"],
+        fly: Fly | str | None = None,
+    ):
+        fly_name = self._get_fly_name(self, fly)
+        internal_ids = self._intern_actuatorids_by_type_by_fly[fly_name][actuator_type]
+        if len(inputs) != len(internal_ids):
+            raise ValueError(
+                f"Expected {len(internal_ids)} inputs for actuator type "
+                f"'{actuator_type.name}', but got {len(inputs)}"
+            )
+        self.mj_data.ctrl[internal_ids] = inputs
+
+    def set_state(
+        self, pose_dicts: dict[Fly | str, PoseDict] | PoseDict, as_default: bool = False
+    ) -> None:
+        if isinstance(pose_dicts, PoseDict):
+            pose_dicts = {self.fly: pose_dicts}
+
+        # mujoco.mj_resetData(self.mj_model, self.mj_data)
+        # qpos = self.mj_data.qpos
+        qpos0 = self.mj_model.qpos0.copy()
+        for fly, pose_dict in pose_dicts.items():
+            fly = fly if isinstance(fly, Fly) else self.world.fly_lookup[fly]
+            for jointdof_name, angle in pose_dict.items():
+                jointdof = JointDOF.from_name(jointdof_name)
+                internal_jointid = mujoco.mj_name2id(
+                    self.mj_model,
+                    mujoco.mjtObj.mjOBJ_JOINT,
+                    fly.jointdof_to_mjcfjoint[jointdof].full_identifier,
+                )
+                qposadr = self.mj_model.jnt_qposadr[internal_jointid]
+                qveladr = self.mj_model.jnt_dofadr[internal_jointid]
+                self.mj_data.qpos[qposadr] = angle
+                self.mj_data.qvel[qveladr] = 0.0
+        # mujoco.mj_forward(self.mj_model, self.mj_data)
+
+        if as_default:
+            print(self.mj_model.qpos0)
+            self.mj_model.qpos0[:] = qpos0
+            # self.mj_model.qpos_spring[:] = self.mj_data.qpos[:]
+            # Reinitialize MjData using the updated MjModel and reset derived constants
+            self.mj_data = mujoco.MjData(self.mj_model)
+            mujoco.mj_setConst(self.mj_model, self.mj_data)
+            # Reset compiled model and data to apply the new qpos0
+            mujoco.mj_resetData(self.mj_model, self.mj_data)
+            mujoco.mj_forward(self.mj_model, self.mj_data)
+
+    def _map_internal_bodyids(self) -> None:
+        internal_bodyids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for bodyseg, mjcf_body_element in fly.bodyseg_to_mjcfbody.items():
+                internal_body_id = mujoco.mj_name2id(
+                    self.mj_model,
+                    mujoco.mjtObj.mjOBJ_BODY,
+                    mjcf_body_element.full_identifier,
+                )
+                internal_bodyids_by_fly[fly_name].append(internal_body_id)
+
+        self._internal_bodyids_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
+        }
+
+    def _map_internal_qposqveladrs(self) -> None:
+        internal_qposadrs_by_fly = defaultdict(list)
+        internal_qveladrs_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for jointdof, mjcf_joint_element in fly.jointdof_to_mjcfjoint.items():
+                internal_joint_id = mujoco.mj_name2id(
+                    self.mj_model,
+                    mujoco.mjtObj.mjOBJ_JOINT,
+                    mjcf_joint_element.full_identifier,
+                )
+                qposadr = self.mj_model.jnt_qposadr[internal_joint_id]
+                qveladr = self.mj_model.jnt_dofadr[internal_joint_id]
+                internal_qposadrs_by_fly[fly_name].append(qposadr)
+                internal_qveladrs_by_fly[fly_name].append(qveladr)
+
+        self._intern_qposadrs_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_qposadrs_by_fly.items()
+        }
+        self._intern_qveladrs_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_qveladrs_by_fly.items()
+        }
+
+    def _map_internal_actuator_ids(self) -> None:
+        self._intern_actuatorids_by_type_by_fly = {}
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            ids_thisfly = defaultdict(list)
+            for actuator_ty, actuators in fly.jointdof_to_mjcfactuator_by_type.items():
+                for jointdof, actuator_element in actuators.items():
+                    internal_actuator_id = mujoco.mj_name2id(
+                        self.mj_model,
+                        mujoco.mjtObj.mjOBJ_ACTUATOR,
+                        actuator_element.full_identifier,
+                    )
+                    ids_thisfly[actuator_ty].append(internal_actuator_id)
+
+            ids_thisfly = {
+                ty: np.array(ids, dtype=np.int32) for ty, ids in ids_thisfly.items()
+            }
+            self._intern_actuatorids_by_type_by_fly[fly_name] = ids_thisfly
 
     @property
     def time(self) -> float:
         return self.mj_data.time
 
-
-class SingleFlyObservation(TypedDict):
-    joint_angles: Float[NDArray, "n_flydofs_readout"]
-    joint_velocities: Float[NDArray, "n_flydofs_readout"]
-
-
-class SingleFlySimulation(BaseSimulation[SingleFlyObservation]):
-    def __init__(
-        self,
-        mj_model: mujoco.MjModel,
-        mj_data: mujoco.MjData,
-        joint_readout_order: list[JointDOF | str],
-        joint_actuator_order: list[JointDOF | str],
-    ) -> None:
-        super().__init__(mj_model, mj_data)
-
-        self.joint_readout_order = [
-            j.name if isinstance(j, JointDOF) else j for j in joint_readout_order
-        ]
-        self.joint_actuator_order = [
-            j.name if isinstance(j, JointDOF) else j for j in joint_actuator_order
-        ]
-        self._map_internal_and_exposed_ids()
-
-    def _compute_control_input_pre_step(
-        self, actuator_ctrl_input: Float[NDArray, "nu"]
-    ) -> Float[NDArray, "nu"]:
-        return actuator_ctrl_input[self._actuator_write_indexer]
-
-    def _process_updated_state_post_step(self) -> SingleFlyObservation:
-        return {
-            "joint_angles": self.joint_angles,
-            "joint_velocities": self.joint_velocities,
-        }
+    def print_performance_report(self) -> None:
+        print_perf_report(
+            n_steps=self._curr_step,
+            n_frames_rendered=self._frames_rendered,
+            total_prestep_time_ns=self._total_prestep_time_ns,
+            total_physics_time_ns=self._total_physics_time_ns,
+            total_poststep_time_ns=self._total_poststep_time_ns,
+            total_render_time_ns=self._total_render_time_ns,
+        )
 
     @property
-    def joint_angles(self) -> Float[NDArray, "n_flydofs_readout"]:
-        return self.mj_data.qpos[self._joint_qpos_read_indexer]
-
-    @property
-    def joint_velocities(self) -> Float[NDArray, "n_flydofs_readout"]:
-        return self.mj_data.qvel[self._joint_qvel_read_indexer]
-
-    def set_pose(
-        self,
-        *,
-        fly_dof_angles_rad: dict[str, float] | None = None,
-        fly_dof_angles_deg: dict[str, float] | None = None,
-        pose_file: PathLike | None = None,
-    ) -> None:
-        if (
-            int(fly_dof_angles_rad is None)
-            + int(fly_dof_angles_deg is None)
-            + int(pose_file is None)
-            != 1
-        ):
-            raise ValueError(
-                "Exactly one of fly_dof_angles_rad, fly_dof_angles_deg, or pose_file "
-                "must be provided."
-            )
-
-        if pose_file:
-            fly_dof_angles_rad = self._parse_pose_file(pose_file)
-        if fly_dof_angles_deg:
-            fly_dof_angles_rad = {
-                k: np.deg2rad(v) for k, v in fly_dof_angles_deg.items()
-            }
-
-        internal_flydofname2qposadr_noprefix = self._strip_name_prefix(
-            self._internal_flydofname2qposadr
+    def fly(self) -> Fly | None:
+        """Shortcut to access the fly if there is only one fly. Raises
+        ValueError if there are multiple flies."""
+        if len(self.world.fly_lookup) == 1:
+            return next(iter(self.world.fly_lookup.values()))
+        raise ValueError(
+            "World contains more than one fly. Fly must be specified explicitly."
         )
-        for dof_name, angle_rad in fly_dof_angles_rad.items():
-            qposadr = internal_flydofname2qposadr_noprefix.get(dof_name, None)
-            if qposadr is None:
-                raise ValueError(f"Unknown fly DoF name '{dof_name}'.")
-            self.mj_data.qpos[qposadr] = angle_rad
 
-    def _map_internal_and_exposed_ids(self):
-        self._map_internal_joint_ids()
-        self._map_internal_actuator_ids()
-        self._map_internal_flydof2qposqvel_adrs()
-
-        # When we return qpos to the user, how do we sort internal qpos for it to match
-        # the fly DoF order specified upon init?
-        # I.e., build an numpy fancy indexer (list of indices) so that we can do:
-        #   retval_to_user = mj_data.qpos[indexer]
-        internal_flydofname2qposadr_noprefix = self._strip_name_prefix(
-            self._internal_flydofname2qposadr
-        )
-        self._joint_qpos_read_indexer = [
-            internal_flydofname2qposadr_noprefix[joint]
-            for joint in self.joint_readout_order
-        ]
-
-        # Do the same for qvel
-        internal_flydofname2qveladr_noprefix = self._strip_name_prefix(
-            self._internal_flydofname2qveladr
-        )
-        self._joint_qvel_read_indexer = [
-            internal_flydofname2qveladr_noprefix[joint]
-            for joint in self.joint_readout_order
-        ]
-
-        # When we write actuator commands from the user, how do we sort external
-        # actuator commands to match internal actuator order? (This is the opposite.)
-        # I.e., build an indexer so we can do:
-        #   mj_data.ctrl[:] = user_specified_command_inputs[indexer]
-        internal_id2actuatorname_noprefix = self._strip_name_prefix(
-            self._internal_id2actuatorname
-        )
-        if not (
-            set(self.joint_actuator_order)
-            == set(internal_id2actuatorname_noprefix.values())
-        ):
-            print("joint_actuator_order:", self.joint_actuator_order)
-            print("internal_id2actuatorname_noprefix:", set(internal_id2actuatorname_noprefix.values()))
-            raise ValueError(
-                "joint_actuator_order does not match the set of actuator names in the "
-                "MuJoCo model."
-            )
-        self._actuator_write_indexer = [
-            self.joint_actuator_order.index(internal_id2actuatorname_noprefix[aid])
-            for aid in range(self.mj_model.nu)
-        ]
-
-    def _map_internal_joint_ids(self):
-        self._internal_jointname2id = {
-            mujoco.mj_id2name(self.mj_model, mujoco.mjtObj.mjOBJ_JOINT, jid): jid
-            for jid in range(self.mj_model.njnt)
-        }
-        self._internal_id2jointname = {
-            v: k for k, v in self._internal_jointname2id.items()
-        }
-
-    def _map_internal_actuator_ids(self):
-        self._internal_actuatorname2id = {
-            mujoco.mj_id2name(self.mj_model, mujoco.mjtObj.mjOBJ_ACTUATOR, aid): aid
-            for aid in range(self.mj_model.nu)
-        }
-        self._internal_id2actuatorname = {
-            v: k for k, v in self._internal_actuatorname2id.items()
-        }
-
-    def _map_internal_flydof2qposqvel_adrs(self):
-        """Note that mj_data.qpos and mj_data.qvel may have different sizes
-        because rotational DoFs are represented as quaternions in qpos
-        (4 values) but angular velocities in qvel (3 values)."""
-        self._internal_flydofname2qposadr = {}
-        self._internal_qposadr2flydofname = {}
-        self._internal_flydofname2qveladr = {}
-        self._internal_qveladr2flydofname = {}
-
-        for name, jid in self._internal_jointname2id.items():
-            if self._strip_name_prefix(name).startswith("joint-"):
-                qposadr = self.mj_model.jnt_qposadr[jid]
-
-                self._internal_flydofname2qposadr[name] = qposadr
-                self._internal_qposadr2flydofname[qposadr] = name
-
-                qveladr = self.mj_model.jnt_dofadr[jid]
-                self._internal_flydofname2qveladr[name] = qveladr
-                self._internal_qveladr2flydofname[qveladr] = name
-
-    @staticmethod
-    def _strip_name_prefix(x, /):
-        if isinstance(x, str):
-            return x.split("/")[-1]
-        elif isinstance(x, list | tuple):
-            return [name.split("/")[-1] for name in x]
-        elif isinstance(x, dict):
-            new_dict = {}
-            for k, v in x.items():
-                new_k = k.split("/")[-1] if isinstance(k, str) else k
-                new_v = v.split("/")[-1] if isinstance(v, str) else v
-                new_dict[new_k] = new_v
-            return new_dict
-
-    @staticmethod
-    def _parse_pose_file(pose_file: PathLike) -> dict[str, float]:
-        with open(pose_file, "r") as f:
-            pose_data = yaml.safe_load(f)
-        if "joint_angles" not in pose_data:
-            raise ValueError(f"Pose file {pose_file} missing 'joint_angles' key.")
-        if "angle_unit" not in pose_data:
-            raise ValueError(f"Pose file {pose_file} missing 'angle_unit' key.")
-        angle_unit = pose_data["angle_unit"].lower()
-        if angle_unit in ("radians", "rads", "radian", "rad"):
-            joint_angles_rad = pose_data["joint_angles"]
-        elif angle_unit in ("degrees", "deg", "degree", "degs"):
-            joint_angles_rad = {
-                k: np.deg2rad(v) for k, v in pose_data["joint_angles"].items()
-            }
+    def _get_fly_name(self, fly: Fly | str | None) -> str:
+        if isinstance(fly, str):
+            return fly
+        elif isinstance(fly, Fly):
+            return fly.name
+        elif fly is None:
+            return self.fly.name
         else:
-            raise ValueError(f"Unknown angle unit '{angle_unit}' in pose file.")
-
-        return joint_angles_rad
+            raise ValueError(
+                "fly must be of type Fly, str, or None (if only one fly exists)."
+            )
