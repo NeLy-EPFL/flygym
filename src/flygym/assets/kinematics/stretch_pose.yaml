@@ -1,20 +1,20 @@
 angle_unit: degree
 
 joint_angles:
-  joint-rfcoxa-pitch = 20
-  joint-rffemur-pitch = -130
+  c_thorax-rf_coxa-pitch: 20
+  rf_coxa-rf_trochanterfemur-pitch: -130
 
-  joint-lfcoxa-pitch = 20
-  joint-lffemur-pitch = -130
+  c_thorax-lf_coxa-pitch: 20
+  lf_coxa-lf_trochanterfemur-pitch: -130
 
-  joint-rmcoxa-roll = 90
-  joint-rmfemur-pitch = -100
+  c_thorax-rm_coxa-roll: 90
+  rm_coxa-rm_trochanterfemur-pitch: -100
 
-  joint-lmcoxa-roll = -90
-  joint-lmfemur-pitch = -100
+  c_thorax-lm_coxa-roll: 90
+  lm_coxa-lm_trochanterfemur-pitch: -100
 
-  joint-rhcoxa-roll = 150
-  joint-rhfemur-pitch = -100
+  c_thorax-rh_coxa-roll: 150
+  rh_coxa-rh_trochanterfemur-pitch: -100
 
-  joint-lhcoxa-roll = -150
-  joint-lhfemur-pitch = -100
+  c_thorax-lh_coxa-roll: 150
+  lh_coxa-lh_trochanterfemur-pitch: -100

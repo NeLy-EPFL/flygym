@@ -4,6 +4,7 @@ from typing import TypeAlias, Iterator, Iterable
 from collections.abc import Sequence, Collection
 
 from flygym.utils.math import orderedset, Tree
+from flygym.utils.exceptions import FlyGymInternalError
 
 
 class RotationAxis(Enum):
@@ -306,9 +307,9 @@ class ContactBodiesPreset(Enum):
             case ContactBodiesPreset.TIBIA_TARSUS_ONLY:
                 return ContactBodiesPreset._get_tibia_tarsus_segments()
             case _:
-                assert (
-                    False
-                ), f"FlyGym internal error: unhandled ContactBodiesPreset {self}"
+                raise FlyGymInternalError(
+                    f"FlyGym internal error: unhandled ContactBodiesPreset {self}"
+                )
 
     @staticmethod
     def _get_all_segments() -> list[BodySegment]:

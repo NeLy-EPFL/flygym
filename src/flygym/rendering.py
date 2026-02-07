@@ -69,7 +69,7 @@ class Renderer:
         iio.imwrite(
             output_path, self.frames, fps=self.out_fps, codec="libx264", **kwargs
         )
-    
+
     def reset(self):
         self.frames = []
 

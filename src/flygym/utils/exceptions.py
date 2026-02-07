@@ -1,0 +1,2 @@
+class FlyGymInternalError(RuntimeError):
+    pass

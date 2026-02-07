@@ -16,6 +16,7 @@ from flygym.anatomy import JointPreset, ALL_SEGMENT_NAMES  # presets and constan
 from flygym.compose.base import BaseCompositionElement
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
+from flygym.utils.exceptions import FlyGymInternalError
 
 __all__ = ["Fly", "ActuatorType", "PoseDict"]
 
@@ -46,16 +47,18 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfgeom = {}
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
-        self.jointdof_to_neutralangle = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
+
+        self.jointdof_to_neutralangle = {}
+        self.jointdof_to_neutralaction_by_type = {ty: {} for ty in ActuatorType}
 
         if isinstance(root_segment, str):
             root_segment = BodySegment(root_segment)
         self.root_segment = root_segment
 
         self._neutral_keyframe = self.mjcf_root.keyframe.add(
-            "key", name="neutral", time=0.0
+            "key", name="neutral", time=0
         )
 
         self._add_mesh_assets(mesh_dir, mirror_left2right)
@@ -126,9 +129,13 @@ class Fly(BaseCompositionElement):
                 # Look at only 1 DoF per joint as we're still just adding bodies/geoms
                 continue
             parent_body = self.bodyseg_to_mjcfbody.get(jointdof.parent)
-            assert parent_body is not None, "Kinematic tree DFS error"
+            if parent_body is None:
+                raise FlyGymInternalError("Parent not found during kinematic tree DFS")
             my_rigging_config = rigging_config.get(jointdof.child.name)
-            assert my_rigging_config is not None, "Missing rigging config for body"
+            if my_rigging_config is None:
+                raise FlyGymInternalError(
+                    f"Missing rigging config for body segment {jointdof.child.name}"
+                )
             body, geom = self._add_one_body_and_geom(
                 parent_body, jointdof.child, my_rigging_config
             )
@@ -217,6 +224,10 @@ class Fly(BaseCompositionElement):
 
     def _rebuild_neutral_keyframe(self):
         mj_model, _ = self.compile()
+        self._neutral_keyframe.qpos = self._get_neutral_qpos(mj_model)
+        self._neutral_keyframe.ctrl = self._get_neutral_ctrl(mj_model)
+
+    def _get_neutral_qpos(self, mj_model: mujoco.MjModel) -> np.ndarray:
         neutral_qpos = np.zeros(mj_model.nq)
         for jointdof, angle in self.jointdof_to_neutralangle.items():
             joint_element = self.jointdof_to_mjcfjoint[jointdof]
@@ -225,7 +236,18 @@ class Fly(BaseCompositionElement):
             )
             qposadr = mj_model.jnt_qposadr[internal_jointid]
             neutral_qpos[qposadr] = angle
-        self._neutral_keyframe.qpos = neutral_qpos
+        return neutral_qpos
+
+    def _get_neutral_ctrl(self, mj_model: mujoco.MjModel) -> np.ndarray:
+        neutral_ctrl = np.zeros(mj_model.nu)
+        for ty, jointdof_to_actuator in self.jointdof_to_mjcfactuator_by_type.items():
+            for jointdof, actuator in jointdof_to_actuator.items():
+                internal_actuatorid = mujoco.mj_name2id(
+                    mj_model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator.full_identifier
+                )
+                neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
+                neutral_ctrl[internal_actuatorid] = neutral_input
+        return neutral_ctrl
 
     @staticmethod
     def _parse_visuals_config(
@@ -270,14 +292,21 @@ class Fly(BaseCompositionElement):
         self,
         jointdofs: Iterable[JointDOF],
         actuator_type: "ActuatorType | str",
+        neutral_input: dict[str, float] | None = None,
         *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-50.0, 50.0),
         **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
+        if neutral_input is None:
+            neutral_input = {}
+
         actuator_type = ActuatorType(actuator_type)
         return_dict = {}
         for jointdof in jointdofs:
+            self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = (
+                neutral_input.get(jointdof.name, 0.0)
+            )
             actuator = self.mjcf_root.actuator.add(
                 actuator_type.value,
                 name=f"{jointdof.name}-{actuator_type.value}",
@@ -289,6 +318,7 @@ class Fly(BaseCompositionElement):
             )
             return_dict[jointdof] = actuator
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
+        self._rebuild_neutral_keyframe()
         return return_dict
 
     def add_tracking_camera(
