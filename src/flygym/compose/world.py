@@ -275,7 +275,7 @@ class FlatGroundWorld(BaseWorld):
                     friction=ground_contact_params.get_friction_tuple(),
                     solref=ground_contact_params.get_solref_tuple(),
                     solimp=ground_contact_params.get_solimp_tuple(),
-                    margin=0.05,
+                    margin=ground_contact_params.margin,
                 )
 
 

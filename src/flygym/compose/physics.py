@@ -49,6 +49,10 @@ class ContactParams:
         solver_impedance_transitionsharpness:
             Controls transition curve shape (>=1). 1 is linear, higher values reflect
             sharper min-to-max. Default: 3.0 (MuJoCo default: 2.0).
+        margin:
+            Contact force starts to be generated from this distance before actual
+            contact. This is helpful for preventing tiny leg tips from penetrating the
+            ground. Default: 0.05 (MuJoCo default: 0.01).
     """
 
     # ===== Contact friction =====
@@ -66,6 +70,9 @@ class ContactParams:
     solver_impedance_min2max_width: float = 1e-5
     solver_impedance_transitionmidpoint: float = 0.5
     solver_impedance_transitionsharpness: float = 3.0
+    
+    # ===== Geometric margin =====
+    margin: float = 3e-2
 
     def get_friction_tuple(self):
         """Return the MuJoCo `friction` parameter for contact pairs. Note that MuJoCo

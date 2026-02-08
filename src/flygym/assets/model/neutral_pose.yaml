@@ -28,7 +28,7 @@ joint_angles:
   lf_tarsus3-lf_tarsus4-pitch : -5
   lf_tarsus4-lf_tarsus5-pitch : -5
 
-  c_thorax-lm_coxa-pitch : 0
+  c_thorax-lm_coxa-pitch : 10
   c_thorax-lm_coxa-roll : 95
   c_thorax-lm_coxa-yaw : 0
   lm_coxa-lm_trochanterfemur-pitch : -135

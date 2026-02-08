@@ -426,9 +426,6 @@ class Fly(BaseCompositionElement):
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
         )
-        # if segment.link == "tarsus5":
-            # geom_element.type = "capsule"
-            # geom_element.mass *= 10
         return body_element, geom_element
 
     @staticmethod
