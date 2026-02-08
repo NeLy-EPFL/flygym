@@ -1,10 +1,11 @@
 from os import PathLike
+from typing import Any
 
 import dm_control.mjcf as mjcf
 import yaml
 
 
-def set_params_recursive(root: mjcf.Element, params_dict: dict[str, any]) -> None:
+def set_params_recursive(root: mjcf.Element, params_dict: dict[str, Any]) -> None:
     """Recursively set attributes and children on an MJCF model (in place)."""
     params_to_set = [(root, key, value) for key, value in params_dict.items()]
     while params_to_set:

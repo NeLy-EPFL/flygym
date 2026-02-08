@@ -1,10 +1,12 @@
+from abc import ABC, abstractmethod
 from collections.abc import Collection
+from typing import override
 
 import mujoco
 import dm_control.mjcf as mjcf
 import numpy as np
 
-from flygym.anatomy import ContactBodiesPreset, BodySegment, JointDOF
+from flygym.anatomy import ContactBodiesPreset, BodySegment
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
@@ -17,8 +19,37 @@ __all__ = ["BaseWorld", "FlatGroundWorld", "TetheredWorld"]
 _STATE_DIM_BY_JOINT_TYPE = {"free": 7, "ball": 4, "hinge": 1, "slide": 1}
 
 
-class BaseWorld(BaseCompositionElement):
+class BaseWorld(BaseCompositionElement, ABC):
+    """Base class for worlds that contain environmental features that the fly can
+    interact with (e.g., ground) and define how flies are attached to the world (e.g.,
+    free-floating or tethered). A world can contain multiple flies that can interact
+    with one another.
+
+    Concrete subclasses typically override `__init__` to set up environmental features
+    (e.g., ground plane) and `_attach_fly_mjcf` to define how flies are attached. See
+    method documentation below for details.
+
+    Attributes:
+        name:
+            Name of the world.
+        fly_lookup:
+            A dictionary mapping fly names to `Fly` objects in the world.
+        mjcf_root:
+            The root element of the world's MJCF model (fly MJCF models are attached to
+            this root).
+        world_dof_neutral_states:
+            A dictionary mapping names of DoFs managed by the world (e.g., free joints
+            by which flies are attached to the world) to their neutral state values.
+            The neutral state is 1D for slide and hinge joints, 4D for ball joints
+            (quaternion), and 7D for free joints (position + orientation).
+    """
+
     def __init__(self, name: str) -> None:
+        """Initialize the world and its underlying MJCF model.
+
+        Concrete subclasses should call this first (i.e., `super().__init__(name)`) as
+        it sets up a few essential attributes.
+        """
         self._mjcf_root = mjcf.RootElement(model=name)
         self._fly_lookup: dict[str, Fly] = {}
         self.world_dof_neutral_states = {}
@@ -26,13 +57,40 @@ class BaseWorld(BaseCompositionElement):
             "key", name="neutral", time=0
         )
 
-    @property
-    def fly_lookup(self) -> dict[str, Fly]:
-        return self._fly_lookup
-
+    @override
     @property
     def mjcf_root(self) -> mjcf.RootElement:
         return self._mjcf_root
+
+    @property
+    def fly_lookup(self) -> dict[str, Fly]:
+        """Lookup for `Fly` objects in the world, keyed by fly name."""
+        return self._fly_lookup
+
+    @abstractmethod
+    def _attach_fly_mjcf(
+        self,
+        fly: Fly,
+        spawn_position: Vec3,
+        spawn_rotation: Rotation3D,
+        *args,
+        **kwargs,
+    ) -> mjcf.Element:
+        """Attach the fly's MJCF root to the world MJCF model.
+
+        Concrete subclasses should implement this method instead of overriding
+        `add_fly()` directly. The `add_fly()` method handles registering the fly under
+        `fly_lookup` and updating neutral states; this method is responsible only for
+        connecting the fly's MJCF model to the world's MJCF model.
+
+        Use `dm_control.mjcf`'s `attach()` method to attach the fly's MJCF model. See
+        `FlatGroundWorld` for an example. More details can be found in the
+        ``dm_control.mjcf` documentation <https://github.com/google-deepmind/dm_control/tree/main/dm_control/mjcf#attaching-models>`_.
+
+        Returns:
+            The free joint element created by the attachment.
+        """
+        pass
 
     def add_fly(
         self,
@@ -41,7 +99,8 @@ class BaseWorld(BaseCompositionElement):
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
-    ) -> any:
+    ) -> None:
+        """Add a fly to the world at specified position and rotation."""
         # Register fly in the fly lookup
         if fly.name in self._fly_lookup:
             raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
@@ -132,6 +191,9 @@ class BaseWorld(BaseCompositionElement):
 
 
 class FlatGroundWorld(BaseWorld):
+    """A basic world with a flat ground plane. The fly is untethered."""
+
+    @override
     def __init__(
         self, name: str = "flat_ground_world", *, half_size: float = 1000
     ) -> None:
@@ -166,6 +228,7 @@ class FlatGroundWorld(BaseWorld):
         )
         self.ground_contact_geoms = [ground_geom]
 
+    @override
     def _attach_fly_mjcf(
         self,
         fly: Fly,
@@ -216,26 +279,25 @@ class FlatGroundWorld(BaseWorld):
 
 
 class TetheredWorld(BaseWorld):
+    """Flies can move their appendages in this world, but the body is fixed in space.
+    Useful for testing."""
+
+    @override
     def __init__(self, name: str = "tethered_world") -> None:
         super().__init__(name=name)
         # don't add ground plane
 
-    def add_fly(
+    @override
+    def _attach_fly_mjcf(
         self,
         fly,
         spawn_position: Vec3 = (0, 0, 0),
         spawn_rotation: Rotation3D = Rotation3D("quat", (1, 0, 0, 0)),
-    ):
-        if spawn_rotation.format != "quat":
-            raise ValueError("TetheredWorld only supports quaternion rotation format.")
-
-        super().add_fly(fly)
-
+    ) -> None:
         spawn_site = self.mjcf_root.worldbody.add(
             "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
-        attachment_frame = spawn_site.attach(fly.mjcf_root)
-        attachment_frame.add("freejoint", name=f"{fly.name}")
+        spawn_site.attach(fly.mjcf_root).add("freejoint", name=f"{fly.name}")
         self.mjcf_root.equality.add(
             "weld",
             body2="world",  # worldbody is called "world" in equality constraints

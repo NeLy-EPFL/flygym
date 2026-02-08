@@ -1,4 +1,19 @@
+# This file defines a roughly standing pose for the fly.
+#
+# Instead of loading the YAML file directly, one should use:
+#
+#     flygym.fly.PoseDict(file_path: PathLike, mirror_left2right: bool)
+#
+# which returns a dict-like object after performing the following steps:
+#
+#     1. Converts the degrees to radians if necessary.
+#     2. Mirrors left-sided joint angles to automatically fill right-sided
+#        joint angles if `mirror_left2right` is True.
+#     3. Set default angle to 0 for any DoF not explicitly specified here.
+
 angle_unit: degree
+
+axis_order: [roll, yaw, pitch]
 
 joint_angles:
   c_thorax-lf_coxa-pitch : 25
@@ -14,11 +29,11 @@ joint_angles:
   lf_tarsus4-lf_tarsus5-pitch : -5
 
   c_thorax-lm_coxa-pitch : 0
-  c_thorax-lm_coxa-yaw : -25
   c_thorax-lm_coxa-roll : 95
-  lm_coxa-lm_trochanterfemur-pitch : -110
+  c_thorax-lm_coxa-yaw : 0
+  lm_coxa-lm_trochanterfemur-pitch : -135
   lm_coxa-lm_trochanterfemur-roll : -20
-  lm_trochanterfemur-lm_tibia-pitch : 85
+  lm_trochanterfemur-lm_tibia-pitch : 100
   lm_tibia-lm_tarsus1-pitch : -20
   lm_tarsus1-lm_tarsus2-pitch : -5
   lm_tarsus2-lm_tarsus3-pitch : -5
@@ -26,8 +41,8 @@ joint_angles:
   lm_tarsus4-lm_tarsus5-pitch : -5
   
   c_thorax-lh_coxa-pitch : -20
-  c_thorax-lh_coxa-yaw : 10
   c_thorax-lh_coxa-roll : 140
+  c_thorax-lh_coxa-yaw : 10
   lh_coxa-lh_trochanterfemur-pitch : -110
   lh_coxa-lh_trochanterfemur-roll : -10
   lh_trochanterfemur-lh_tibia-pitch : 100

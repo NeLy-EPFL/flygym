@@ -17,7 +17,19 @@ Vec7 = Annotated[npt.NDArray[np.float64], Literal[7]]
 
 class Tree(Generic[T]):
     """Minimal implementation of a tree data structure, made to parse and verify
-    body skeletons without requiring extra dependency."""
+    body skeletons without requiring extra dependency.
+
+    Args:
+        nodes:
+            Collection of unique body segment identifiers.
+        edges:
+            Collection of (parent, child) tuples defining connections.
+
+    Raises:
+        ValueError:
+            If graph is not a valid tree (has cycles, disconnected, duplicate nodes,
+            self-loops, or parallel edges).
+    """
 
     def __init__(self, nodes: Collection[T], edges: Collection[tuple[T, T]]) -> None:
         # Check for edges involving nonexistent nodes and self-loops
@@ -65,7 +77,7 @@ class Tree(Generic[T]):
         return len(visited) == len(self.graph)
 
     def dfs_edges(self, root: T) -> Iterator[tuple[T, T]]:
-        """Yield edges in DFS order starting from the root."""
+        """Yield edges in depth-first search order from root."""
         if root not in self.graph:
             raise ValueError(f"Root '{root}' not in tree")
 
@@ -88,6 +100,11 @@ def orderedset(li: list) -> list:
 
 @dataclass(frozen=True)
 class Rotation3D:
+    """3D rotation representation in quaternion, axis-angle, xy-axes, z-axis, or Euler
+    angles as allowed by MuJoCo. For details, see
+    `MuJoCo documentation <https://mujoco.readthedocs.io/en/stable/modeling.html#frame-orientations>`_.
+    """
+
     format: Literal["quat", "axisangle", "xyaxes", "zaxis", "euler"]
     values: Sequence[Number]
 
@@ -116,4 +133,20 @@ class Rotation3D:
             )
 
     def as_kwargs(self):
+        """Convert to keyword arguments for MuJoCo MJCF elements as a dict.
+
+        One should typically use `**` to expand the returned dict when passing to an
+        MJCF element constructor. For example::
+
+            rotation = Rotation3D("quat", (1, 0, 0, 0))
+            camera = self.mjcf_root.worldbody.add(
+                "camera", pos=pos_offset, **rotation.as_kwargs()
+            )
+
+        which expands to::
+
+            camera = self.mjcf_root.worldbody.add(
+                "camera", pos=pos_offset, quat=(1, 0, 0, 0)
+            )
+        """
         return {self.format: self.values}

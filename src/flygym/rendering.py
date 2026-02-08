@@ -10,6 +10,31 @@ import numpy as np
 
 
 class Renderer:
+    """Manages rendering of MuJoCo simulations to video frames.
+
+    Automatically determines when to capture frames based on the specified output FPS
+    and playback speed, so that the user can call `render_as_needed` inside their
+    simulation loop without worrying about timing.
+
+    Args:
+        mj_model:
+            Compiled MuJoCo model to render.
+        height:
+            Frame height in pixels.
+        width:
+            Frame width in pixels.
+        play_speed:
+            Playback speed multiplier (1.0 = real-time).
+        out_fps:
+            FPS of the output video. This takes the playback speed into account: for
+            example, if we want a 25-FPS video at 0.5x speed, frames will be rendered 50
+            times per simulated second (managed internally by this class).
+        camera:
+            Camera specification (name, ID, or MjvCamera object).
+        **kwargs:
+            Additional arguments passed to mujoco.Renderer.
+    """
+
     def __init__(
         self,
         mj_model: mujoco.MjModel,
@@ -34,6 +59,9 @@ class Renderer:
         mj_data,
         scene_option: mujoco.MjvOption | None = None,
     ) -> np.ndarray | None:
+        """Render frame if enough time has elapsed since last render. Returns the
+        rendered frame as a numpy array, or None if no frame was rendered. The
+        `scene_option` argument is forwarded to `mujoco.Renderer.update_scene()`."""
         curr_time = mj_data.time
         if curr_time >= self.last_render_time_sec + self.frame_capture_interval_sec:
             self.last_render_time_sec = curr_time
@@ -75,13 +103,20 @@ class Renderer:
 
 
 def launch_interactive_viewer(
-    mj_model: mujoco.MjModel, mj_data: mujoco.MjData, run_async: bool = False
+    mj_model: mujoco.MjModel,
+    mj_data: mujoco.MjData,
+    run_async: bool = False,
+    init_keyframe: str | None = "neutral",
 ) -> None | Renderer:
+    """Launch MuJoCo's built-in interactive viewer. If `run_async` is True, the viewer
+    will be launched in a separate process and this function will return immediately.
+    It should be set to True when launching from a Jupyter notebook."""
+
+    if init_keyframe is not None:
+        key_id = mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_KEY, init_keyframe)
+        mujoco.mj_resetDataKeyframe(mj_model, mj_data, key_id)
+
     if run_async:
-        # Run MuJoCo's built-in interactive viewer asynchronously.
-        # This bypasses synchronization issues when launched from jupyter.
-        # The solution shipped by MuJoCo is to use mujoco.viewer.launch_passive, but
-        # this only works with a special Python interpreter `mjpython` on macOS.
         p = Process(target=mujoco.viewer.launch, args=(mj_model, mj_data))
         p.start()
         # Don't join!
