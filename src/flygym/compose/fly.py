@@ -159,6 +159,7 @@ class Fly(BaseCompositionElement):
         *,
         stiffness: float = 10.0,
         damping: float = 0.5,
+        armature: float = 1e-6,
         **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add joints to the fly model based on a skeleton definition.
@@ -177,6 +178,9 @@ class Fly(BaseCompositionElement):
                 Joint stiffness (spring constant).
             damping:
                 Joint damping coefficient.
+            armature:
+                Additional inertia added to the joint for numerical stability. Should be
+                small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
                 `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
@@ -214,6 +218,7 @@ class Fly(BaseCompositionElement):
                 axis=jointdof.axis.to_vector(mirror=mirror_axis),
                 stiffness=stiffness,
                 damping=damping,
+                armature=armature,
                 springref=neutral_angle,
                 **kwargs,
             )
@@ -421,6 +426,9 @@ class Fly(BaseCompositionElement):
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
         )
+        # if segment.link == "tarsus5":
+            # geom_element.type = "capsule"
+            # geom_element.mass *= 10
         return body_element, geom_element
 
     @staticmethod
