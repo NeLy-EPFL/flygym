@@ -37,6 +37,7 @@ def main():
         actuator_type,
         neutral_input=neutral_pose,
         kp=actuator_position_gain,
+        ctrlrange=(-3.14, 3.14),
     )
 
     fly.colorize()

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from os import PathLike
-from copy import deepcopy
 
 import mujoco
 import dm_control.mjcf as mjcf
