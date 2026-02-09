@@ -20,5 +20,5 @@ option:
 
 visual:
   headlight:
-    ambient: [0.3, 0.3, 0.3]
+    ambient: [0.5, 0.5, 0.5]
     specular: [0.3, 0.3, 0.3]

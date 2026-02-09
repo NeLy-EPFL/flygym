@@ -290,15 +290,12 @@ class TetheredWorld(BaseWorld):
 
     @override
     def _attach_fly_mjcf(
-        self,
-        fly,
-        spawn_position: Vec3 = (0, 0, 0),
-        spawn_rotation: Rotation3D = Rotation3D("quat", (1, 0, 0, 0)),
-    ) -> None:
+        self, fly, spawn_position: Vec3, spawn_rotation: Rotation3D
+    ) -> mjcf.Element:
         spawn_site = self.mjcf_root.worldbody.add(
             "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
-        spawn_site.attach(fly.mjcf_root).add("freejoint", name=f"{fly.name}")
+        freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
         self.mjcf_root.equality.add(
             "weld",
             body2="world",  # worldbody is called "world" in equality constraints
@@ -307,3 +304,4 @@ class TetheredWorld(BaseWorld):
             solref=(2e-4, 1.0),
             solimp=(0.98, 0.99, 1e-5, 0.5, 3),
         )
+        return freejoint

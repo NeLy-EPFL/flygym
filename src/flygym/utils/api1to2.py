@@ -1,5 +1,7 @@
 import re
 
+__all__ = ["BODY_NAMES_OLD2NEW", "BODY_NAMES_NEW2OLD"]
+
 
 def _body_name_old2new(old_name: str) -> str:
     # Case 1: center-line segments

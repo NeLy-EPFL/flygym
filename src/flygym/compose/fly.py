@@ -3,7 +3,6 @@ from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
 from typing import Iterable, Any, override
-from collections.abc import Sequence
 
 import mujoco
 import numpy as np
@@ -21,11 +20,12 @@ from flygym.anatomy import (
     ALL_SEGMENT_NAMES,
 )
 from flygym.compose.base import BaseCompositionElement
+from flygym.compose.pose import KinematicPose
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
 
-__all__ = ["Fly", "ActuatorType", "PoseDict"]
+__all__ = ["Fly", "ActuatorType"]
 
 
 DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
@@ -137,11 +137,11 @@ class Fly(BaseCompositionElement):
         but it should be respected consistently throughout. For example, during
         simulation, the fly body state returned by the simulator will be in this order.
         """
-        return self.bodyseg_to_mjcfbody.keys()
+        return list(self.bodyseg_to_mjcfbody.keys())
 
     def get_jointdofs_order(self) -> Iterable[JointDOF]:
         """Same as `get_bodysegs_order()`, but for joint DoFs instead of body segments."""
-        return self.jointdof_to_mjcfjoint.keys()
+        return list(self.jointdof_to_mjcfjoint.keys())
 
     def get_actuated_jointdofs_order(
         self, actuator_type: "ActuatorType | str"
@@ -150,12 +150,12 @@ class Fly(BaseCompositionElement):
         are actuated by the specified actuator type. During simulation, the user should
         provide control input in this order."""
         actuator_type = ActuatorType(actuator_type)
-        return self.jointdof_to_mjcfactuator_by_type[actuator_type].keys()
+        return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
 
     def add_joints(
         self,
         skeleton: Skeleton,
-        neutral_pose: "PoseDict | None" = None,
+        neutral_pose: KinematicPose | None = None,
         *,
         stiffness: float = 10.0,
         damping: float = 0.5,
@@ -190,32 +190,33 @@ class Fly(BaseCompositionElement):
             Dictionary mapping JointDOF to created MJCF joint elements.
         """
         if neutral_pose is None:
-            neutral_pose = PoseDict()
+            neutral_angle_lookup = {}
         else:
-            if not isinstance(neutral_pose, PoseDict):
-                raise ValueError("When specified, `neutral_pose` must be a PoseDict.")
-            if neutral_pose.axis_order != skeleton.axis_order:
+            if not isinstance(neutral_pose, KinematicPose):
                 raise ValueError(
-                    "`neutral_pose` is specified with axis order "
-                    f"{neutral_pose.axis_order.value} but skeleton is specified with "
-                    f"{skeleton.axis_order.value}."
+                    "When specified, `neutral_pose` must be a `KinematicPose`."
                 )
+            neutral_angle_lookup = neutral_pose.get_angles_lookup(skeleton.axis_order)
 
         self.skeleton = skeleton
 
         return_dict = {}
         for jointdof in skeleton.iter_jointdofs(self.root_segment):
             child_body = self.bodyseg_to_mjcfbody[jointdof.child]
-            mirror_axis = jointdof.child.name[0] == "r" and (
-                jointdof.axis in (RotationAxis.ROLL, RotationAxis.YAW)
-            )
-            neutral_angle = neutral_pose.get(jointdof.name, 0.0)
+            neutral_angle = neutral_angle_lookup.get(jointdof.name, 0.0)
             self.jointdof_to_neutralangle[jointdof] = neutral_angle
+
+            # Flip axis direction for right side's roll and yaw so that axes are defined
+            # symmetrically (e.g., positive roll is always "outward").
+            vec = np.array(jointdof.axis.to_vector())
+            if jointdof.child.pos[0] == "r" and jointdof.axis != RotationAxis.PITCH:
+                vec = -vec
+
             return_dict[jointdof] = child_body.add(
                 "joint",
                 name=jointdof.name,
                 type="hinge",
-                axis=jointdof.axis.to_vector(mirror=mirror_axis),
+                axis=vec,
                 stiffness=stiffness,
                 damping=damping,
                 armature=armature,
@@ -266,17 +267,10 @@ class Fly(BaseCompositionElement):
         """
         if neutral_input is None:
             neutral_input = {}
-        if (
-            isinstance(neutral_input, PoseDict)
-            and (actuator_type == ActuatorType.POSITION)
-            and (neutral_input.axis_order != self.skeleton.axis_order)
+        if isinstance(neutral_input, KinematicPose) and (
+            actuator_type == ActuatorType.POSITION
         ):
-            raise ValueError(
-                "Neutral input of position actuators are joint angles, which depend on "
-                "the order of rotational axes at multi-DoF joints. Here, "
-                f"`neutral_input` is specified in {neutral_input.axis_order.value} "
-                f"order, but skeleton is specified in {self.skeleton.axis_order.value}."
-            )
+            neutral_input = neutral_input.get_angles_lookup(self.skeleton.axis_order)
 
         actuator_type = ActuatorType(actuator_type)
         return_dict = {}
@@ -322,7 +316,7 @@ class Fly(BaseCompositionElement):
 
     def add_tracking_camera(
         self,
-        name: str,
+        name: str = "trackcam",
         mode: str = "track",
         pos_offset: Vec3 = (0, -7.5, 6),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
@@ -508,102 +502,3 @@ class ActuatorType(Enum):
     CYLINDER = "cylinder"
     MUSCLE = "muscle"
     ADHESION = "adhesion"
-
-
-class PoseDict(dict[str, float]):
-    """A dict-like object for specifying fly poses in terms of joint angles.
-
-    Can be initialized from a dict of joint angles or from a YAML file. See
-    `src/flygym/assets/model/neutral_pose.yaml` for expected YAML format.
-
-    **Important**: 3D rotations are not commutative, so joint angles are meaningless
-    without knowing the axis order. When initializing from a dict, `axis_order` must be
-    provided. When loading from file, `axis_order` must *not* be provided as it is read
-    from the file.
-
-    Attributes:
-        axis_order:
-            The order of rotation axes for interpreting joint angles.
-    """
-
-    def __init__(
-        self,
-        *,
-        joint_angles_dict: dict[str, float] | None = None,
-        file_path: PathLike | None = None,
-        mirror_left2right: bool = True,
-        axis_order: AxisOrder | str | Sequence[RotationAxis | str] | None = None,
-    ) -> None:
-        if joint_angles_dict is not None and file_path is None:
-            if axis_order is None:
-                raise ValueError(
-                    "When initializing from `joint_angles_dict`, axis_order must also be "
-                    "provided."
-                )
-            self.axis_order = AxisOrder(axis_order)
-        elif file_path is not None and joint_angles_dict is None:
-            if axis_order is not None:
-                raise ValueError(
-                    "When initializing from `file_path`, `axis_order` should not be "
-                    "provided because it will be loaded from the pose file."
-                )
-            joint_angles_dict, self.axis_order = self._load_yaml(file_path)
-        else:
-            raise ValueError(
-                "Either joint_angles_dict or file_path must be provided, but not both."
-            )
-
-        if mirror_left2right:
-            joint_angles_dict = self._apply_mirroring(joint_angles_dict)
-
-        super().__init__(joint_angles_dict)
-
-    @staticmethod
-    def _load_yaml(file_path: PathLike) -> tuple[dict[str, float], AxisOrder]:
-        with open(file_path, "r") as f:
-            pose_data = yaml.safe_load(f)
-
-        if "angle_unit" not in pose_data:
-            raise ValueError("YAML file must contain 'angle_unit' key.")
-        if pose_data["angle_unit"] not in ["degree", "radian"]:
-            raise ValueError("angle_unit must be either 'degree' or 'radian'.")
-
-        if "joint_angles" not in pose_data:
-            raise ValueError("YAML file must contain 'joint_angles' key.")
-        for k, v in pose_data["joint_angles"].items():
-            if not isinstance(v, (int, float)):
-                raise ValueError(f"Joint angle for '{k}' must be a number.")
-
-        joint_angles = pose_data["joint_angles"]
-        if pose_data["angle_unit"] == "degree":
-            joint_angles = {k: np.deg2rad(v) for k, v in joint_angles.items()}
-
-        axis_order_str = pose_data.get("axis_order")
-        try:
-            axis_order = AxisOrder(axis_order_str)
-        except ValueError | TypeError:
-            raise ValueError(f"Invalid or missing axis_order: {axis_order_str}")
-
-        return joint_angles, axis_order
-
-    @staticmethod
-    def _apply_mirroring(joint_angles_in: dict[str, float]) -> dict[str, float]:
-        joint_angles_out = {}
-        for joint_name, angle in joint_angles_in.items():
-            joint_angles_out[joint_name] = angle
-
-            jointdof = JointDOF.from_name(joint_name)
-
-            if jointdof.child.name[0] == "l":
-                mirror_parent = BodySegment(
-                    "r" + jointdof.parent.name[1:]
-                    if jointdof.parent.name[0] == "l"
-                    else jointdof.parent.name
-                )
-                mirror_child = BodySegment("r" + jointdof.child.name[1:])
-                mirror_jointdof = JointDOF(mirror_parent, mirror_child, jointdof.axis)
-                if mirror_jointdof.name not in joint_angles_in:
-                    # Skip if right-side joint angle explicitly provided in input
-                    joint_angles_out[mirror_jointdof.name] = angle
-
-        return joint_angles_out

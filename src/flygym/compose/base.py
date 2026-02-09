@@ -5,6 +5,8 @@ from os import PathLike
 import mujoco
 import dm_control.mjcf as mjcf
 
+__all__ = ["BaseCompositionElement"]
+
 
 class BaseCompositionElement(ABC):
     """Base class for composable elements in the MuJoCo model, providing common

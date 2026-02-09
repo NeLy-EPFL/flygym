@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+__all__ = ["ContactParams"]
+
 
 @dataclass(kw_only=True)
 class ContactParams:
@@ -52,11 +54,11 @@ class ContactParams:
         margin:
             Contact force starts to be generated from this distance before actual
             contact. This is helpful for preventing tiny leg tips from penetrating the
-            ground. Default: 0.05 (MuJoCo default: 0.01).
+            ground. Default: 1e-3 (MuJoCo default: 0).
     """
 
     # ===== Contact friction =====
-    sliding_friction: float = 5.0
+    sliding_friction: float = 1.0
     torsional_friction: float = 2e-2
     rolling_friction: float = 1e-4
 
@@ -70,9 +72,9 @@ class ContactParams:
     solver_impedance_min2max_width: float = 1e-5
     solver_impedance_transitionmidpoint: float = 0.5
     solver_impedance_transitionsharpness: float = 3.0
-    
+
     # ===== Geometric margin =====
-    margin: float = 3e-2
+    margin: float = 1e-3
 
     def get_friction_tuple(self):
         """Return the MuJoCo `friction` parameter for contact pairs. Note that MuJoCo
@@ -116,8 +118,7 @@ class ContactParams:
             return True
         except ValueError as e:
             if raise_on_invalid:
-                raise e
-            print(f"Invalid contact parameters: {e}.")
+                raise ValueError(f"Invalid ContactParams: {e}") from e
             return False
 
     def _raise_on_invalid_friction(self):

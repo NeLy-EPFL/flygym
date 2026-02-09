@@ -4,6 +4,8 @@ from typing import Any
 import dm_control.mjcf as mjcf
 import yaml
 
+__all__ = ["set_params_recursive", "set_mujoco_globals"]
+
 
 def set_params_recursive(root: mjcf.Element, params_dict: dict[str, Any]) -> None:
     """Recursively set attributes and children on an MJCF model (in place)."""

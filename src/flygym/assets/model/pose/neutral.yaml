@@ -2,20 +2,14 @@
 #
 # Instead of loading the YAML file directly, one should use:
 #
-#     pose = flygym.compose.KinematicPose(path: PathLike, mirror_left2right: bool)
+#     flygym.fly.PoseDict(file_path: PathLike, mirror_left2right: bool)
 #
-# The user can then obtain a lookup table of joint angles in any desired axis order via:
-#
-#     joint_angles = pose.get_angles_lookup(axis_order: AxisOrder)
-#
-# which performs the following steps:
+# which returns a dict-like object after performing the following steps:
 #
 #     1. Converts the degrees to radians if necessary.
-#     2. Mirrors left-sided joint angles to fill right-sided if applicable.
-#     3. Transform joint angles to match the user-specified axis order.
-#
-# Important: the axis order conversion is inexact because 3D rotations are not
-# commutative. See documentation on `KinematicPose` for details.
+#     2. Mirrors left-sided joint angles to automatically fill right-sided
+#        joint angles if `mirror_left2right` is True.
+#     3. Set default angle to 0 for any DoF not explicitly specified here.
 
 angle_unit: degree
 

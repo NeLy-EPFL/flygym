@@ -38,6 +38,29 @@ from collections.abc import Sequence, Collection
 from flygym.utils.math import orderedset, Tree
 from flygym.utils.exceptions import FlyGymInternalError
 
+__all__ = [
+    "RotationAxis",
+    "AxesSet",
+    "AxisOrder",
+    "JointPreset",
+    "ActuatedDOFPreset",
+    "ContactBodiesPreset",
+    "BodySegment",
+    "JointDOF",
+    "AnatomicalJoint",
+    "Skeleton",
+    "SIDES",
+    "LEGS",
+    "BODY_POSITIONS",
+    "LEG_LINKS",
+    "ANTENNA_LINKS",
+    "PROBOSCIS_LINKS",
+    "ABDOMEN_LINKS",
+    "PASSIVE_TARSAL_LINKS",
+    "ALL_CONNECTED_SEGMENT_PAIRS",
+    "ALL_SEGMENT_NAMES",
+]
+
 
 class RotationAxis(Enum):
     """Enumeration of rotation axes for joints.
@@ -64,17 +87,25 @@ class RotationAxis(Enum):
                 return cls.YAW
         return super()._missing_(value)
 
-    def to_vector(self, mirror: bool = False) -> tuple[float, float, float]:
-        """Convert rotation axis to 3D unit vector in XYZ order. If `mirror` is True,
-        flip the axis direction for mirrored limbs."""
-        one = -1 if mirror else 1
+    def to_vector(self) -> tuple[float, float, float]:
+        """Convert rotation axis to 3D unit vector in XYZ order."""
         match self:
             case RotationAxis.PITCH:
-                return (0, one, 0)
+                return (0, 1, 0)
             case RotationAxis.ROLL:
-                return (0, 0, one)
+                return (0, 0, 1)
             case RotationAxis.YAW:
-                return (one, 0, 0)
+                return (1, 0, 0)
+
+    def to_letter_xyz(self) -> str:
+        """Convert rotation axis to its corresponding letter ('x', 'y', or 'z')."""
+        match self:
+            case RotationAxis.PITCH:
+                return "y"
+            case RotationAxis.ROLL:
+                return "z"
+            case RotationAxis.YAW:
+                return "x"
 
 
 RotationAxisLike: TypeAlias = RotationAxis | str
@@ -139,6 +170,10 @@ class AxisOrder(Enum):
             except Exception as e:
                 raise e
         return super()._missing_(value)
+
+    def to_letters_xyz(self) -> str:
+        """Convert axis order to a permutation of 'x', 'y', and 'z' (as one string)."""
+        return "".join(axis.to_letter_xyz() for axis in self.value)
 
 
 def _chain2joints(*args: str) -> list[tuple[str, str]]:

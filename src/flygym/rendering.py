@@ -8,6 +8,8 @@ import mediapy
 import imageio.v3 as iio
 import numpy as np
 
+__all__ = ["Renderer", "launch_interactive_viewer"]
+
 
 class Renderer:
     """Manages rendering of MuJoCo simulations to video frames.
@@ -107,7 +109,7 @@ def launch_interactive_viewer(
     mj_data: mujoco.MjData,
     run_async: bool = False,
     init_keyframe: str | None = "neutral",
-) -> None | Renderer:
+) -> None:
     """Launch MuJoCo's built-in interactive viewer. If `run_async` is True, the viewer
     will be launched in a separate process and this function will return immediately.
     It should be set to True when launching from a Jupyter notebook."""

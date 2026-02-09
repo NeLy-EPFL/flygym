@@ -4,6 +4,16 @@ from pathlib import Path as _Path
 assets_dir = _Path(str(_importlib_resources_files("flygym") / "assets"))
 
 
-# from . import legacy
-# from . import warp
+from . import anatomy
 from . import compose
+from .simulation import Simulation
+from .rendering import Renderer, launch_interactive_viewer
+
+__all__ = [
+    "assets_dir",
+    "anatomy",
+    "compose",
+    "Simulation",
+    "Renderer",
+    "launch_interactive_viewer",
+]
