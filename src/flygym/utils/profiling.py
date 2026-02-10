@@ -9,6 +9,7 @@ def print_perf_report(
     total_render_time_ns: int,
     n_steps: int,
     n_frames_rendered: int,
+    timestep: float,
 ):
     total_walltime_ns = total_physics_time_ns + total_render_time_ns
     total_per_iter_us = 1e-3 * total_walltime_ns / n_steps
@@ -23,30 +24,43 @@ def print_perf_report(
     render_throughput = 1e9 * n_steps / total_render_time_ns
     total_throughput = 1e9 * n_steps / total_walltime_ns
 
+    physics_realtime_x = physics_throughput * timestep
+    render_realtime_x = render_throughput * timestep
+    total_realtime_x = total_throughput * timestep
+
     table = [
         [
             "Physics simulation advancement",
             physics_time_per_iter_us,
             physics_percent,
             physics_throughput,
+            physics_realtime_x,
         ],
         [
             "Rendering*",
             render_time_per_iter_us,
             render_percent,
             render_throughput,
+            render_realtime_x,
         ],
         [
             "TOTAL",
             total_per_iter_us,
             100,
             total_throughput,
+            total_realtime_x,
         ],
     ]
     tab_str = tabulate(
         table,
-        headers=["\nStage", "Time/step\n(us)", "Percent\n(%)", "Throughput\n(iters/s)"],
-        floatfmt=("s", ".0f", ".0f", ".0f"),
+        headers=[
+            "\nStage",
+            "Time/step\n(us)",
+            "Percent\n(%)",
+            "Throughput\n(iters/s)",
+            "Throughput\nx realtime",
+        ],
+        floatfmt=("s", ".0f", ".0f", ".0f", ".2f"),
         tablefmt="simple_grid",
     )
     tab_width = max(len(line) for line in tab_str.splitlines())

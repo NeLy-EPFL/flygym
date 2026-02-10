@@ -77,11 +77,11 @@ class Simulation:
         *,
         height: int = 240,
         width: int = 320,
-        play_speed: float = 0.2,
-        out_fps: int = 25,
+        playback_speed: float = 0.2,
+        output_fps: int = 25,
         camera: mjcf.Element | str | int | mujoco.MjvCamera = -1,
         **kwargs,
-    ) -> None:
+    ) -> str:
         if isinstance(camera, mjcf.Element) and camera.tag == "camera":
             camera = camera.full_identifier
 
@@ -89,13 +89,14 @@ class Simulation:
             self.mj_model,
             height=height,
             width=width,
-            play_speed=play_speed,
-            out_fps=out_fps,
+            playback_speed=playback_speed,
+            output_fps=output_fps,
             camera=camera,
             **kwargs,
         )
         name = f"renderer{len(self.renderers) + 1}" if name is None else name
         self.renderers[name] = renderer
+        return name
 
     def get_joint_angles(self, fly_name: str) -> Float[NDArray, "n_jointdofs"]:
         internal_ids = self._intern_qposadrs_by_fly[fly_name]
@@ -195,4 +196,5 @@ class Simulation:
             n_frames_rendered=self._frames_rendered,
             total_physics_time_ns=self._total_physics_time_ns,
             total_render_time_ns=self._total_render_time_ns,
+            timestep=self.mj_model.opt.timestep,
         )

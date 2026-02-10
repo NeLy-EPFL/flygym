@@ -42,7 +42,6 @@ dev = [
     "sphinxcontrib-googleanalytics==0.5",
     "furo==2025.12.19",
     "pytest>=9.0,<10.0",
-    "black[jupyter]>=26.1.0,<27.0",
     "nbstripout==0.9.0",  # git pre-commit filter: strips output from ipynb notebooks
 ]
 examples = [

@@ -1,8 +1,10 @@
 # This file is converted from a .gitignore file using
 # https://codesandbox.io/p/sandbox/transform-gitignore-to-dockerignore-online-7e9ox7?file=%2Fsrc%2Findex.tsx
 
-.idea/
 MUJOCO_LOG.TXT
+demo_output/
+
+.idea/
 
 # .gitignore created by https://www.toptal.com/developers/gitignore/api/vim,emacs,macos,linux,windows,visualstudiocode,git,python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,emacs,macos,linux,windows,visualstudiocode,git,python,jupyternotebooks

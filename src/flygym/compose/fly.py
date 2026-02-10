@@ -268,7 +268,7 @@ class Fly(BaseCompositionElement):
         if neutral_input is None:
             neutral_input = {}
         if isinstance(neutral_input, KinematicPose) and (
-            actuator_type == ActuatorType.POSITION
+            ActuatorType(actuator_type) == ActuatorType.POSITION
         ):
             neutral_input = neutral_input.get_angles_lookup(self.skeleton.axis_order)
 
