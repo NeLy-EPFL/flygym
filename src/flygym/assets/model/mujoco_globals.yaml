@@ -22,3 +22,8 @@ visual:
   headlight:
     ambient: [0.5, 0.5, 0.5]
     specular: [0.3, 0.3, 0.3]
+  map:
+    stiffness: 1e6
+    stiffnessrot: 5e6
+    force: 1e-5
+    torque: 2e-4
