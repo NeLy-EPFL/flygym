@@ -85,7 +85,7 @@ class BaseWorld(BaseCompositionElement, ABC):
 
         Use `dm_control.mjcf`'s `attach()` method to attach the fly's MJCF model. See
         `FlatGroundWorld` for an example. More details can be found in the
-        ``dm_control.mjcf` documentation <https://github.com/google-deepmind/dm_control/tree/main/dm_control/mjcf#attaching-models>`_.
+        [`dm_control.mjcf` documentation](https://github.com/google-deepmind/dm_control/tree/main/dm_control/mjcf#attaching-models).
 
         Returns:
             The free joint element created by the attachment.

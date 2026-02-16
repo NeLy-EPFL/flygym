@@ -182,17 +182,22 @@ def _chain2joints(*args: str) -> list[tuple[str, str]]:
     return [(args[i], args[i + 1]) for i in range(len(args) - 1)]
 
 
-SIDES = ["l", "r"]
-LEGS = [f"{side}{pos}" for side in SIDES for pos in "fmh"]
-BODY_POSITIONS = ["c", *SIDES, *LEGS]
+SIDES: list[str] = ["l", "r"]
+LEGS: list[str] = [f"{side}{pos}" for side in SIDES for pos in "fmh"]
+BODY_POSITIONS: list[str] = ["c", *SIDES, *LEGS]
 
-LEG_LINKS = ["coxa", "trochanterfemur", "tibia", *(f"tarsus{seg}" for seg in "12345")]
-ANTENNA_LINKS = ["pedicel", "funiculus", "arista"]
-PROBOSCIS_LINKS = ["rostrum", "haustellum"]
-ABDOMEN_LINKS = ["abdomen12", *(f"abdomen{seg}" for seg in "3456")]
-PASSIVE_TARSAL_LINKS = [f"tarsus{seg}" for seg in "2345"]
+LEG_LINKS: list[str] = [
+    "coxa",
+    "trochanterfemur",
+    "tibia",
+    *(f"tarsus{seg}" for seg in "12345"),
+]
+ANTENNA_LINKS: list[str] = ["pedicel", "funiculus", "arista"]
+PROBOSCIS_LINKS: list[str] = ["rostrum", "haustellum"]
+ABDOMEN_LINKS: list[str] = ["abdomen12", *(f"abdomen{seg}" for seg in "3456")]
+PASSIVE_TARSAL_LINKS: list[str] = [f"tarsus{seg}" for seg in "2345"]
 
-ALL_CONNECTED_SEGMENT_PAIRS = [
+ALL_CONNECTED_SEGMENT_PAIRS: list[tuple[str, str]] = [
     ("c_thorax", "c_head"),
     *(_chain2joints("c_head", *(f"c_{lk}" for lk in PROBOSCIS_LINKS))),
     *(_chain2joints("c_thorax", *(f"c_{lk}" for lk in ABDOMEN_LINKS))),
@@ -210,7 +215,7 @@ ALL_CONNECTED_SEGMENT_PAIRS = [
         for edge in _chain2joints("c_thorax", *(f"{leg}_{lk}" for lk in LEG_LINKS))
     ),
 ]
-ALL_SEGMENT_NAMES = orderedset(
+ALL_SEGMENT_NAMES: list[str] = orderedset(
     [seg for joint in ALL_CONNECTED_SEGMENT_PAIRS for seg in joint]
 )
 

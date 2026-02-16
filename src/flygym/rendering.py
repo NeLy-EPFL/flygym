@@ -1,6 +1,7 @@
 from multiprocessing import Process
 from pathlib import Path
 from os import PathLike
+from typing import Any
 
 import mujoco
 import mujoco.viewer
@@ -47,7 +48,7 @@ class Renderer:
         playback_speed: float = 0.2,
         output_fps: int = 25,
         camera: str | int | mujoco.MjvCamera | mjcf.Element = -1,
-        **kwargs,
+        **kwargs: Any,
     ):
         self.mj_renderer = mujoco.Renderer(mj_model, height, width, **kwargs)
         self.playback_speed = playback_speed

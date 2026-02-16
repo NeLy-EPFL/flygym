@@ -160,7 +160,7 @@ class Fly(BaseCompositionElement):
         stiffness: float = 10.0,
         damping: float = 0.5,
         armature: float = 1e-6,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add joints to the fly model based on a skeleton definition.
 
@@ -183,7 +183,7 @@ class Fly(BaseCompositionElement):
                 small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
                 for details on supported attributes.
 
         Returns:
@@ -236,7 +236,7 @@ class Fly(BaseCompositionElement):
         *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-50.0, 50.0),
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.
 
@@ -259,7 +259,7 @@ class Fly(BaseCompositionElement):
             **kwargs:
                 Additional arguments passed to MJCF actuator creation (e.g., kp for
                 position actuators, kv for velocity actuators). See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
                 for details on supported attributes.
 
         Returns:
@@ -321,11 +321,11 @@ class Fly(BaseCompositionElement):
         pos_offset: Vec3 = (0, -7.5, 6),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
-        **kwargs,
+        **kwargs: Any,
     ) -> mjcf.Element:
         """Add a camera that tracks the fly's root body.
 
-        See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_
+        See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera)
         for details on supported attributes.
         """
         camera = self.mjcf_root.worldbody.add(
@@ -491,7 +491,7 @@ class Fly(BaseCompositionElement):
 
 class ActuatorType(Enum):
     """Actuator types supported by MuJoCo.
-    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
     for details on each type."""
 
     MOTOR = "motor"

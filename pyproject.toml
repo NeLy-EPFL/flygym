@@ -38,9 +38,11 @@ warp = [
     "mujoco_warp==0.0.2",
 ]
 dev = [
-    "sphinx>=9.1,<10.0",
-    "sphinxcontrib-googleanalytics==0.5",
-    "furo==2025.12.19",
+    "mkdocs-material>=9.7,<10.0",
+    "mkdocstrings[python]>=1.0.0,<2",
+    "mkdocs-gen-files==0.6.0",
+    "mkdocs-literate-nav==0.6.2",
+    "mkdocs-section-index==0.3.0",
     "pytest>=9.0,<10.0",
     "nbstripout==0.9.0",  # git pre-commit filter: strips output from ipynb notebooks
 ]
