@@ -115,7 +115,7 @@ def orderedset(li: list) -> list:
 class Rotation3D:
     """3D rotation representation in quaternion, axis-angle, xy-axes, z-axis, or Euler
     angles as allowed by MuJoCo. For details, see
-    `MuJoCo documentation <https://mujoco.readthedocs.io/en/stable/modeling.html#frame-orientations>`_.
+    [MuJoCo documentation](https://mujoco.readthedocs.io/en/stable/modeling.html#frame-orientations).
     """
 
     format: Literal["quat", "axisangle", "xyaxes", "zaxis", "euler"]
