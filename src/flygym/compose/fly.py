@@ -235,7 +235,7 @@ class Fly(BaseCompositionElement):
         neutral_input: dict[str, float] | None = None,
         *,
         forcelimited: bool = True,
-        forcerange: tuple[float, float] = (-50.0, 50.0),
+        forcerange: tuple[float, float] = (-30.0, 30.0),
         **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.

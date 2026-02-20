@@ -296,11 +296,11 @@ name = "flygym"
 version = "2.0.0rc0"
 source = { editable = "." }
 dependencies = [
-    { name = "black" },
     { name = "dm-control" },
     { name = "imageio" },
     { name = "imageio-ffmpeg" },
     { name = "jaxtyping" },
+    { name = "loguru" },
     { name = "mediapy" },
     { name = "mujoco" },
     { name = "numpy" },
@@ -310,6 +310,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "black" },
     { name = "nbstripout" },
     { name = "pytest" },
 ]
@@ -326,17 +327,18 @@ warp = [
 
 [package.metadata]
 requires-dist = [
-    { name = "black", specifier = ">=26.1,<27.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=26.1,<27.0" },
     { name = "dm-control", git = "https://github.com/google-deepmind/dm_control.git?rev=53c54d83ce634efb41836f1b504c76eeb0796d62" },
     { name = "imageio", specifier = ">=2.37,<3.0" },
     { name = "imageio-ffmpeg", specifier = "==0.6.0" },
     { name = "ipykernel", marker = "extra == 'examples'", specifier = ">=7.1.0" },
     { name = "ipython", marker = "extra == 'examples'", specifier = ">=9.10,<10.0" },
     { name = "jaxtyping", specifier = "==0.3.7" },
+    { name = "loguru", specifier = "==0.7.3" },
     { name = "matplotlib", marker = "extra == 'examples'", specifier = ">=3.10,<4.0" },
     { name = "mediapy", specifier = ">=1.2,<3.0" },
     { name = "mujoco", specifier = ">=3.4" },
-    { name = "mujoco-warp", marker = "extra == 'warp'", git = "https://github.com/google-deepmind/mujoco_warp.git?rev=63fdd4745f541f76d4d8e72f52d11cbebb6fa7a5" },
+    { name = "mujoco-warp", marker = "extra == 'warp'", git = "https://github.com/google-deepmind/mujoco_warp.git?rev=642405e56860e2d634c8b478dcf3857853277eea" },
     { name = "nbstripout", marker = "extra == 'dev'", specifier = "==0.9.0" },
     { name = "numpy", specifier = ">=2.0,<3.0" },
     { name = "pandas", marker = "extra == 'examples'", specifier = ">=3.0,<4.0" },
@@ -628,6 +630,19 @@ wheels = [
 ]
 
 [[package]]
+name = "loguru"
+version = "0.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
+]
+
+[[package]]
 name = "lxml"
 version = "6.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -726,7 +741,7 @@ wheels = [
 [[package]]
 name = "mujoco-warp"
 version = "0.0.2"
-source = { git = "https://github.com/google-deepmind/mujoco_warp.git?rev=63fdd4745f541f76d4d8e72f52d11cbebb6fa7a5#63fdd4745f541f76d4d8e72f52d11cbebb6fa7a5" }
+source = { git = "https://github.com/google-deepmind/mujoco_warp.git?rev=642405e56860e2d634c8b478dcf3857853277eea#642405e56860e2d634c8b478dcf3857853277eea" }
 dependencies = [
     { name = "absl-py" },
     { name = "etils", extra = ["epath"] },
@@ -1284,6 +1299,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5f/3e/3d456efe55d2d5e7938b5f9abd68333dd8dceb14e829f51f9a8deed2217e/wcwidth-0.5.2.tar.gz", hash = "sha256:c022c39a02a0134d1e10810da36d1f984c79648181efcc70a389f4569695f5ae", size = 152817, upload-time = "2026-01-29T19:32:52.22Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/72/da5a6f511a8267f962a08637464a70409736ac72f9f75b069e0e96d69b64/wcwidth-0.5.2-py3-none-any.whl", hash = "sha256:46912178a64217749bf3426b21e36e849fbc46e05c949407b3e364d9f7ffcadf", size = 90088, upload-time = "2026-01-29T19:32:50.592Z" },
+]
+
+[[package]]
+name = "win32-setctime"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]

@@ -11,16 +11,14 @@ import mediapy
 import imageio.v3 as iio
 import numpy as np
 
-__all__ = ["Renderer", "CameraSpec", "launch_interactive_viewer", "preview_model"]
-
-CameraSpec = str | int | mj.MjvCamera | mjcf.Element
+__all__ = ["Renderer", "launch_interactive_viewer", "preview_model"]
 
 
 class Renderer:
     def __init__(
         self,
         mj_model: mj.MjModel,
-        camera: CameraSpec | Sequence[CameraSpec],
+        camera: str | mjcf.Element | Sequence[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -28,66 +26,42 @@ class Renderer:
         **kwargs: Any,
     ):
         self.mj_model = mj_model
-        self._cameras_intern_id_lookup = self._resolve_camera_spec(camera)
         self.camera_res = camera_res
-
         nrows, ncols = camera_res
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+
+        self._cameras_names2id = {}
+        for spec in camera if isinstance(camera, Sequence) else [camera]:
+            cam_id, cam_name = self._resolve_camera_id_and_name(spec)
+            if cam_id == -1:
+                raise ValueError(f"Camera {spec} not found in the model.")
+            if cam_name in self._cameras_names2id:
+                raise ValueError(f"Duplicate camera name detected: {cam_name}.")
+            self._cameras_names2id[cam_name] = cam_id
+        if len(self._cameras_names2id) == 0:
+            raise ValueError("At least one valid camera must be specified.")
 
         self.playback_speed = playback_speed
         self.output_fps = output_fps
         self._secs_between_renders = 1 / (output_fps / playback_speed)
 
         self._last_render_time_sec = -np.inf
-        self.frames = {cam_name: [] for cam_name in self._cameras_intern_id_lookup}
-
-    def _resolve_camera_spec(
-        self, spec: CameraSpec | Sequence[CameraSpec]
-    ) -> dict[str, mj.MjvCamera]:
-
-        def resolve_single_spec(s: CameraSpec) -> tuple[str, mj.MjvCamera]:
-            if isinstance(s, mj.MjvCamera):
-                internal_cam_id = s.fixedcamid
-                full_id = mj.mj_id2name(
-                    self.mj_model, mj.mjtObj.mjOBJ_CAMERA, internal_cam_id
-                )
-                return internal_cam_id, full_id
-            elif isinstance(s, str):
-                internal_cam_id = mj.mj_name2id(
-                    self.mj_model, mj.mjtObj.mjOBJ_CAMERA, s
-                )
-                return internal_cam_id, s
-            elif isinstance(s, mjcf.Element):
-                full_id = s.full_identifier
-                internal_cam_id = mj.mj_name2id(
-                    self.mj_model, mj.mjtObj.mjOBJ_CAMERA, full_id
-                )
-                return internal_cam_id, full_id
-            elif isinstance(s, int):
-                full_id = mj.mj_id2name(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, s)
-                return s, full_id
-            else:
-                raise ValueError(
-                    f"Invalid camera spec: {s}. Must be one of str, int, "
-                    "mujoco.MjvCamera, or mjcf.Element."
-                )
-
-        resolved = {}
-        for s in spec if isinstance(spec, Sequence) else [spec]:
-            internal_cam_id, full_id = resolve_single_spec(s)
-            resolved[full_id] = internal_cam_id
-        return resolved
+        self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
 
     def render_as_needed(self, mj_data: mj.MjData) -> bool:
         if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
             self._last_render_time_sec = mj_data.time
-            for cam_name, internal_cam_id in self._cameras_intern_id_lookup.items():
+            for cam_name, internal_cam_id in self._cameras_names2id.items():
                 self.mj_renderer.update_scene(mj_data, internal_cam_id)
                 frame = self.mj_renderer.render()
                 self.frames[cam_name].append(frame)
             return True
         else:
             return False
+
+    def reset(self):
+        self._last_render_time_sec = -np.inf
+        self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
 
     def close(self):
         self.mj_renderer.close()
@@ -100,65 +74,142 @@ class Renderer:
         return False  # don't suppress exceptions
 
     def show_in_notebook(
-        self, camera: CameraSpec | Sequence[CameraSpec] | None = None, **kwargs
+        self,
+        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None = None,
+        **kwargs,
     ) -> None:
-        if camera is None:
-            camera_names = list(self._cameras_intern_id_lookup.keys())
-        else:
-            camera_names = list(self._resolve_camera_spec(camera).keys())
+        """Display recorded frames in a Jupyter notebook.
+
+        Args:
+            camera: Camera(s) to display. If None, displays all cameras.
+            **kwargs: Additional arguments passed to mediapy.show_video
+        """
+        camera_names = self._normalize_camera_spec(camera)
 
         for cam_name in camera_names:
             frames = self.frames[cam_name]
             if len(frames) == 0:
-                raise RuntimeError(f"No frame recorded yet for camera {cam_name}.")
+                raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
             mediapy.show_video(frames, fps=self.output_fps, title=cam_name, **kwargs)
 
     def save_video(
         self,
-        output_path: dict[CameraSpec, PathLike] | PathLike,
+        output_path: dict[str | mjcf.Element, PathLike] | PathLike,
         **kwargs,
     ) -> None:
-        if isinstance(output_path, str | Path):
-            output_path = Path(output_path)
-            if len(self._cameras_intern_id_lookup) == 1:
-                cam_name = list(self._cameras_intern_id_lookup.keys())[0]
-                path_by_camera = {cam_name: output_path}
-            else:
-                if not output_path.exists():
-                    output_path.mkdir(parents=True)
-                elif not output_path.is_dir():
-                    raise ValueError(
-                        "There are >1 cameras and `output_path` is given as a single "
-                        "path. In this case, `output_path` is treated as a directory "
-                        "and videos from all cameras will be saved under it. However, "
-                        f"the provided path {output_path} already exists and is not a "
-                        "directory."
-                    )
-                path_by_camera = {
-                    cam_name: output_path / f"{cam_name.replace('/', '-')}.mp4"
-                    for cam_name in self._cameras_intern_id_lookup
-                }
-        elif isinstance(output_path, dict):
-            camera_names = list(self._resolve_camera_spec(list(output_path)))
-            path_by_camera = {
-                cam_name: path
-                for cam_name, path in zip(camera_names, output_path.values())
-            }
-        else:
-            raise ValueError(
-                f"Invalid type of `output_path`: {type(output_path)}. Must be one of "
-                f"{str(Path)}, {dict}, or {str(Path)}."
-            )
+        """Save recorded frames as video files.
+
+        Args:
+            output_path: Either a dict mapping camera specs to file paths, or:
+                - If single camera: a file path to save to
+                - If multiple cameras: a directory path to save all videos to
+            **kwargs: Additional arguments passed to imageio.imwrite
+        """
+        path_by_camera = self._resolve_output_paths(output_path)
 
         for cam_name, path in path_by_camera.items():
             frames = self.frames[cam_name]
             if len(frames) == 0:
-                raise RuntimeError(f"No frame recorded yet for camera {cam_name}.")
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+                raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
+
+            path.parent.mkdir(parents=True, exist_ok=True)
             iio.imwrite(path, frames, fps=self.output_fps, codec="libx264", **kwargs)
 
-    def reset(self):
-        self.frames = {cam_name: [] for cam_name in self._cameras_intern_id_lookup}
+    def _normalize_camera_spec(
+        self,
+        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None,
+    ) -> list[str]:
+        """Convert various camera specifications to a list of camera names.
+
+        Args:
+            camera: Camera specification (single, sequence, or None for all)
+
+        Returns:
+            List of camera names
+
+        Raises:
+            ValueError: If camera spec is invalid or refers to unavailable cameras
+        """
+        if camera is None:
+            return list(self._cameras_names2id.keys())
+        elif isinstance(camera, (str, mjcf.Element)):
+            _, cam_name = self._resolve_camera_id_and_name(camera)
+            camera_names = [cam_name]
+        elif isinstance(camera, Sequence):
+            camera_names = [self._resolve_camera_id_and_name(c)[1] for c in camera]
+        else:
+            raise ValueError(
+                f"Invalid camera spec type: {type(camera)}. Must be str, "
+                "mjcf.Element, Sequence of these, or None."
+            )
+
+        # Validate all cameras are available
+        for cam_name in camera_names:
+            if cam_name not in self._cameras_names2id:
+                raise ValueError(
+                    f"Camera '{cam_name}' is not available in this renderer. "
+                    f"Available cameras: {list(self._cameras_names2id.keys())}"
+                )
+
+        return camera_names
+
+    def _resolve_output_paths(
+        self,
+        output_path: dict[str | mjcf.Element, PathLike] | PathLike,
+    ) -> dict[str, Path]:
+        """Convert output_path specification to dict mapping camera names to Paths.
+
+        Args:
+            output_path: Either a dict mapping cameras to paths, or a single path
+
+        Returns:
+            Dict mapping camera name to output Path
+
+        Raises:
+            ValueError: If output_path format is invalid
+        """
+        if isinstance(output_path, dict):
+            # Explicit mapping provided
+            result = {}
+            for cam_spec, path in output_path.items():
+                _, cam_name = self._resolve_camera_id_and_name(cam_spec)
+                if cam_name not in self._cameras_names2id:
+                    raise ValueError(
+                        f"Camera '{cam_name}' in output_path is not available. "
+                        f"Available cameras: {list(self._cameras_names2id.keys())}"
+                    )
+                result[cam_name] = Path(path)
+            return result
+
+        # Single path provided - interpret based on number of cameras
+        path = Path(output_path)
+        available_cameras = list(self._cameras_names2id.keys())
+
+        if len(available_cameras) == 1:
+            # Single camera: interpret path as file
+            return {available_cameras[0]: path}
+        else:
+            # Multiple cameras: interpret path as directory
+            return {
+                cam_name: path / f"{cam_name.replace('/', '_')}.mp4"
+                for cam_name in available_cameras
+            }
+
+    def _resolve_camera_id_and_name(
+        self, camera: str | mjcf.Element, /
+    ) -> tuple[int, str]:
+        """Convert a camera specification to (internal_id, camera_name)."""
+        if isinstance(camera, str):
+            cam_id = mj.mj_name2id(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, camera)
+            return cam_id, camera
+        elif isinstance(camera, mjcf.Element):
+            cam_name = camera.full_identifier
+            cam_id = mj.mj_name2id(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_name)
+            return cam_id, cam_name
+        else:
+            raise ValueError(
+                f"Invalid camera spec: {camera}. Must be one of str or mjcf.Element."
+            )
 
 
 def launch_interactive_viewer(

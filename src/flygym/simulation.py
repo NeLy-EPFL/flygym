@@ -1,16 +1,16 @@
 from collections import defaultdict
+from time import perf_counter_ns
+from collections.abc import Sequence
 from typing import Any
 
 import mujoco
 import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
-from time import perf_counter_ns
-from collections.abc import Sequence
 
 from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
-from flygym.rendering import Renderer, CameraSpec
+from flygym.rendering import Renderer
 from flygym.utils.profiling import print_perf_report
 
 
@@ -18,15 +18,22 @@ class Simulation:
     def __init__(self, world: BaseWorld) -> None:
         if len(world.fly_lookup) == 0:
             raise ValueError("The world must contain at least one fly.")
-        self.renderer: Renderer | None = None
+        self.renderer = None
         self.world = world
         self.mj_model, self.mj_data = world.compile()
+        self._neutral_keyframe_id = mujoco.mj_name2id(
+            self.mj_model, mujoco.mjtObj.mjOBJ_KEY, "neutral"
+        )
+        mujoco.mj_resetDataKeyframe(
+            self.mj_model, self.mj_data, self._neutral_keyframe_id
+        )
 
         # Map internal IDs in the compiled MuJoCo model. This allows users to read from
         # or write to body/joint/actuator in orders defined by Fly objects.
         self._map_internal_bodyids()
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
+        self._map_internal_jointids()
 
         # For performance profiling
         self._curr_step = 0
@@ -34,15 +41,11 @@ class Simulation:
         self._total_physics_time_ns = 0
         self._total_render_time_ns = 0
 
-        # Reset everything (physics, renderers, and profiling stats)
-        self.reset()
-
     def reset(self) -> None:
         # Reset physics
-        neutral_keyframe_id = mujoco.mj_name2id(
-            self.mj_model, mujoco.mjtObj.mjOBJ_KEY, "neutral"
+        mujoco.mj_resetDataKeyframe(
+            self.mj_model, self.mj_data, self._neutral_keyframe_id
         )
-        mujoco.mj_resetDataKeyframe(self.mj_model, self.mj_data, neutral_keyframe_id)
 
         # Reset renderers
         if self.renderer is not None:
@@ -63,7 +66,7 @@ class Simulation:
 
     def set_renderer(
         self,
-        camera: CameraSpec | Sequence[CameraSpec],
+        camera: str | mjcf.Element | Sequence[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -105,6 +108,12 @@ class Simulation:
         internal_ids = self._internal_bodyids_by_fly[fly_name]
         return self.mj_data.xquat[internal_ids, :]
 
+    def get_actuator_forces(
+        self, fly_name: str, actuator_type: ActuatorType
+    ) -> Float[np.ndarray, "n_actuators"]:
+        internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
+        return self.mj_data.actuator_force[internal_ids]
+
     def set_actuator_inputs(
         self,
         fly_name: str,
@@ -118,6 +127,20 @@ class Simulation:
                 f"'{actuator_type.name}', but got {len(inputs)}"
             )
         self.mj_data.ctrl[internal_ids] = inputs
+
+    def warmup(self, duration_s: float = 0.05) -> None:
+        """Warmup the simulation by stepping and rendering for a short period of time.
+
+        This helps get rid of intialization transients (e.g., the fly "landing" on the
+        ground). Call this method after reset() and before the actual simulation loop.
+
+        Args:
+            duration_s:
+                Duration of the warmup period in seconds.
+        """
+        n_steps = int(duration_s / self.mj_model.opt.timestep)
+        for _ in range(n_steps):
+            self.step()
 
     def _map_internal_bodyids(self) -> None:
         internal_bodyids_by_fly = defaultdict(list)
@@ -133,6 +156,22 @@ class Simulation:
 
         self._internal_bodyids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
+        }
+
+    def _map_internal_jointids(self) -> None:
+        internal_jointids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for jointdof, mjcf_joint_element in fly.jointdof_to_mjcfjoint.items():
+                internal_joint_id = mujoco.mj_name2id(
+                    self.mj_model,
+                    mujoco.mjtObj.mjOBJ_JOINT,
+                    mjcf_joint_element.full_identifier,
+                )
+                internal_jointids_by_fly[fly_name].append(internal_joint_id)
+
+        self._internal_jointids_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_jointids_by_fly.items()
         }
 
     def _map_internal_qposqveladrs(self) -> None:

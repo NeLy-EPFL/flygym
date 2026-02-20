@@ -21,6 +21,7 @@ option:
 visual:
   headlight:
     ambient: [0.5, 0.5, 0.5]
+    diffuse: [0.6, 0.6, 0.6]
     specular: [0.3, 0.3, 0.3]
   map:
     stiffness: 1e6
