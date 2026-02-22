@@ -18,6 +18,7 @@ from flygym.anatomy import (
     AxisOrder,
     JointPreset,
     ALL_SEGMENT_NAMES,
+    LEGS,
 )
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.pose import KinematicPose
@@ -94,6 +95,7 @@ class Fly(BaseCompositionElement):
         mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
         root_segment: BodySegment | str = "c_thorax",
         mirror_left2right: bool = True,
+        simplify_claw: bool = False,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -121,7 +123,7 @@ class Fly(BaseCompositionElement):
         )
 
         self._add_mesh_assets(mesh_dir, mirror_left2right)
-        self._add_bodies_and_geoms(rigging_config_path)
+        self._add_bodies_and_geoms(rigging_config_path, simplify_claw)
 
     @override
     @property
@@ -151,6 +153,9 @@ class Fly(BaseCompositionElement):
         provide control input in this order."""
         actuator_type = ActuatorType(actuator_type)
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
+
+    def get_legs_order(self) -> list[str]:
+        return LEGS
 
     def add_joints(
         self,
@@ -364,7 +369,9 @@ class Fly(BaseCompositionElement):
                 scale=(SCALE, y_sign * SCALE, SCALE),
             )
 
-    def _add_bodies_and_geoms(self, rigging_config_path: PathLike) -> None:
+    def _add_bodies_and_geoms(
+        self, rigging_config_path: PathLike, simplify_claw: bool
+    ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
@@ -398,6 +405,11 @@ class Fly(BaseCompositionElement):
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
+        
+        if simplify_claw:
+            for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
+                if bodyseg.is_leg() and bodyseg.link == "tarsus5":
+                    mjcf_element.type = "capsule"
 
     def _add_one_body_and_geom(
         self,

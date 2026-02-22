@@ -34,6 +34,8 @@ class Simulation:
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
         self._map_internal_jointids()
+        self._map_internal_groundcontactsensor_ids()
+        self._map_internal_groundcontactsensor_ids()
 
         # For performance profiling
         self._curr_step = 0
@@ -113,6 +115,26 @@ class Simulation:
     ) -> Float[np.ndarray, "n_actuators"]:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         return self.mj_data.actuator_force[internal_ids]
+
+    def get_ground_contact_info(self, fly_name: str) -> tuple[
+        Float[np.ndarray, "6"],  # contact/no contact flag
+        Float[np.ndarray, "6 3"],  # force (in contact frame)
+        Float[np.ndarray, "6 3"],  # torque (in contact frame)
+        Float[np.ndarray, "6 3"],  # pos (in global frame)
+        Float[np.ndarray, "6 3"],  # normal (in global frame)
+        Float[np.ndarray, "6 3"],  # tangent (in global frame)
+    ]:
+        internal_ids = self._intern_groundcontactsensorids_by_fly[fly_name]
+        sensor_data = self.mj_data.sensordata[internal_ids]
+        # Reshape (6 legs * 16 dims per sensor,) to (6 legs, 16 dim per sensor)
+        sensor_data = sensor_data.reshape(6, 16)
+        contact_active = sensor_data[:, 0]
+        forces = sensor_data[:, 1:4]
+        torques = sensor_data[:, 4:7]
+        positions = sensor_data[:, 7:10]
+        normals = sensor_data[:, 10:13]
+        tangents = sensor_data[:, 13:]
+        return contact_active, forces, torques, positions, normals, tangents
 
     def set_actuator_inputs(
         self,
@@ -219,6 +241,28 @@ class Simulation:
             }
             for actuator_ty, ids_by_fly in internal_actuatorids_by_fly_by_type.items()
         }
+
+    def _map_internal_groundcontactsensor_ids(self) -> None:
+        if self.world.legpos_to_groundcontactsensors_by_fly is None:
+            self._intern_groundcontactsensorids_by_fly = None
+        else:
+            self._intern_groundcontactsensorids_by_fly = {}
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            indices_thisfly = []
+            for leg in fly.get_legs_order():
+                sensor = self.world.legpos_to_groundcontactsensors_by_fly[fly_name][leg]
+                internal_id = mujoco.mj_name2id(
+                    self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
+                )
+                start_idx = self.mj_model.sensor_adr[internal_id]
+                sensor_dim = self.mj_model.sensor_dim[internal_id]
+                # Sensor should be 16-dim: found (1), force (3), torque (3), pos (3),
+                # normal (3), tangent (3)
+                assert sensor_dim == 16, "unexpected ground contact sensor dimension"
+                indices_thisfly.extend(list(range(start_idx, start_idx + sensor_dim)))
+            indices_arr = np.array(indices_thisfly, dtype=np.int32)
+            self._intern_groundcontactsensorids_by_fly[fly_name] = indices_arr
 
     @property
     def time(self) -> float:
