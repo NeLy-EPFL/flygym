@@ -8,7 +8,7 @@ compiler:
 
 option:
   gravity: [0, 0, -9810]  # in mm/s^2
-  timestep: 0.0001
+  timestep: 1e-4
   integrator: Euler
   solver: Newton
   iterations: 100

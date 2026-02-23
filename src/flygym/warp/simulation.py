@@ -198,7 +198,7 @@ def strip_unsupported_options_for_mjwarp(mjcf_root: mjcf.RootElement) -> None:
 
     # Add light above each fly explicitly
     for body in mjcf_root.find_all("body"):
-        if hasattr(body, "name") and body.name == "rootbody":
+        if hasattr(body, "name") and body.name == "c_thorax":
             warnings.warn(f"Adding overhead light for body {body.full_identifier}")
             body.add(
                 "light",
