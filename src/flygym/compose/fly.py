@@ -337,7 +337,7 @@ class Fly(BaseCompositionElement):
             "camera",
             name=name,
             mode=mode,
-            target="rootbody",
+            target=self.root_segment.name,
             pos=pos_offset,
             fovy=fovy,
             **rotation.as_kwargs(),
@@ -377,9 +377,10 @@ class Fly(BaseCompositionElement):
             rigging_config = yaml.safe_load(f)
 
         # Add root body and geom
-        virtual_root = self.mjcf_root.worldbody.add("body", name="rootbody")
         body, geom = self._add_one_body_and_geom(
-            virtual_root, self.root_segment, rigging_config[self.root_segment.name]
+            self.mjcf_root.worldbody,
+            self.root_segment,
+            rigging_config[self.root_segment.name],
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
@@ -405,7 +406,7 @@ class Fly(BaseCompositionElement):
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
-        
+
         if simplify_claw:
             for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
                 if bodyseg.is_leg() and bodyseg.link == "tarsus5":

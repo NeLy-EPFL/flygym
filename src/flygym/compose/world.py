@@ -320,7 +320,7 @@ class TetheredWorld(BaseWorld):
         self.mjcf_root.equality.add(
             "weld",
             body2="world",  # worldbody is called "world" in equality constraints
-            body1=fly.mjcf_root.find("body", "rootbody").full_identifier,
+            body1=fly.mjcf_root.find("body", fly.root_segment.name).full_identifier,
             relpose=(*spawn_position, *spawn_rotation.values),
             solref=(2e-4, 1.0),
             solimp=(0.98, 0.99, 1e-5, 0.5, 3),
