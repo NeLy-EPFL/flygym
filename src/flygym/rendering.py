@@ -113,7 +113,14 @@ class Renderer:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
 
             path.parent.mkdir(parents=True, exist_ok=True)
-            iio.imwrite(path, frames, fps=self.output_fps, codec="libx264", **kwargs)
+            iio.imwrite(
+                path,
+                frames,
+                fps=self.output_fps,
+                codec="libx264",
+                quality=8,
+                **kwargs,
+            )
 
     def _normalize_camera_spec(
         self,
