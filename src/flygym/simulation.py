@@ -33,8 +33,8 @@ class Simulation:
         self._map_internal_bodyids()
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
+        self._map_internal_adhesionactuator_ids()
         self._map_internal_jointids()
-        self._map_internal_groundcontactsensor_ids()
         self._map_internal_groundcontactsensor_ids()
 
         # For performance profiling
@@ -141,7 +141,7 @@ class Simulation:
         fly_name: str,
         actuator_type: ActuatorType,
         inputs: Float[np.ndarray, "n_actuators"],
-    ):
+    ) -> None:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         if len(inputs) != len(internal_ids):
             raise ValueError(
@@ -149,6 +149,17 @@ class Simulation:
                 f"'{actuator_type.name}', but got {len(inputs)}"
             )
         self.mj_data.ctrl[internal_ids] = inputs
+
+    def set_leg_adhesion_states(
+        self, fly_name: str, leg_to_adhesion_state: Float[np.ndarray, "6"]
+    ) -> None:
+        internal_ids = self._intern_adhesionactuatorids_by_fly[fly_name]
+        if len(leg_to_adhesion_state) != len(internal_ids):
+            raise ValueError(
+                "Unexpected number of adhesion states: "
+                f"expected {len(internal_ids)}, got {len(leg_to_adhesion_state)}"
+            )
+        self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Warmup the simulation by stepping and rendering for a short period of time.
@@ -240,6 +251,26 @@ class Simulation:
                 for fly_name, ids in ids_by_fly.items()
             }
             for actuator_ty, ids_by_fly in internal_actuatorids_by_fly_by_type.items()
+        }
+
+    def _map_internal_adhesionactuator_ids(self) -> None:
+        internal_adhesionactuatorids_by_fly = defaultdict(list)
+        for fly_name, fly in self.world.fly_lookup.items():
+            if len(fly.leg_to_adhesionactuator) == 0:
+                continue  # This fly doesn't have leg adhesion actuators
+            for leg in fly.get_legs_order():
+                actuator_element = fly.leg_to_adhesionactuator[leg]
+                internal_actuator_id = mujoco.mj_name2id(
+                    self.mj_model,
+                    mujoco.mjtObj.mjOBJ_ACTUATOR,
+                    actuator_element.full_identifier,
+                )
+                internal_adhesionactuatorids_by_fly[fly_name].append(
+                    internal_actuator_id
+                )
+        self._intern_adhesionactuatorids_by_fly = {
+            fly_name: np.array(ids, dtype=np.int32)
+            for fly_name, ids in internal_adhesionactuatorids_by_fly.items()
         }
 
     def _map_internal_groundcontactsensor_ids(self) -> None:
