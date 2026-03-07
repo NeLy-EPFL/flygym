@@ -30,6 +30,20 @@ class Renderer:
         nrows, ncols = camera_res
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
 
+        # ---- ADD THIS: visualization options for scene update ----
+        self.scene_option = mj.MjvOption()
+        mj.mjv_defaultOption(self.scene_option)
+        # self.scene_option.flags[mj.mjtVisFlag.mjVIS_CONTACTPOINT] = 1
+        # self.scene_option.flags[mj.mjtVisFlag.mjVIS_CONTACTFORCE] = 1
+
+        # Optional but usually helpful: tune arrow sizes/scales
+        # (these live on the model's visual settings)
+        # mj_model.vis.scale.contactwidth = 0.1
+        # mj_model.vis.scale.contactheight = 0.03
+        # mj_model.vis.scale.forcewidth = 0.05
+        # mj_model.vis.map.force = 0.3
+        # ---------------------------------------------
+
         self._cameras_names2id = {}
         for spec in camera if isinstance(camera, Sequence) else [camera]:
             cam_id, cam_name = self._resolve_camera_id_and_name(spec)
@@ -52,7 +66,7 @@ class Renderer:
         if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
             self._last_render_time_sec = mj_data.time
             for cam_name, internal_cam_id in self._cameras_names2id.items():
-                self.mj_renderer.update_scene(mj_data, internal_cam_id)
+                self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
                 frame = self.mj_renderer.render()
                 self.frames[cam_name].append(frame)
             return True
