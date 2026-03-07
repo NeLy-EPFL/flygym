@@ -21,11 +21,9 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-#    "mujoco>=3.4.1,<3.5",
-    "mujoco>=3.4",
+    "mujoco>=3.5,<3.6",
     "numpy>=2.0,<3.0",
-#    "dm_control>=1.0.27,<1.1",
-    "dm_control @ git+https://github.com/google-deepmind/dm_control.git@53c54d83ce634efb41836f1b504c76eeb0796d62",
+    "dm_control>=1.0.37,<1.0.38",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
     "imageio>=2.37,<3.0",
@@ -38,8 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 warp = [
     "warp-lang>=1.11,<1.12",
-#    "mujoco_warp==0.0.2",
-    "mujoco_warp @ git+https://github.com/google-deepmind/mujoco_warp.git@642405e56860e2d634c8b478dcf3857853277eea",
+    "mujoco_warp>=3.5,<3.6",
 ]
 dev = [
     "pytest>=9.0,<10.0",
