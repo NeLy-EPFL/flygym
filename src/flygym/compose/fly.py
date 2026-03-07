@@ -108,6 +108,7 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfgeom = {}
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
+        self.leg_to_adhesionactuator = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
@@ -295,6 +296,24 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
         return return_dict
+
+    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> None:
+        if len(self.leg_to_adhesionactuator) > 0:
+            raise ValueError("Leg adhesion actuators have already been added.")
+        for leg in LEGS:
+            tarsus5 = BodySegment(f"{leg}_tarsus5")
+            if isinstance(gain, dict):
+                gain_this_leg = gain[leg]
+            else:
+                gain_this_leg = gain
+            self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
+                "adhesion",
+                name=f"{tarsus5.name}-adhesion",
+                body=self.bodyseg_to_mjcfbody[tarsus5],
+                gain=gain_this_leg,
+                ctrlrange=(1, 100),
+            )
+        return self.leg_to_adhesionactuator
 
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
