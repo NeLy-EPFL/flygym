@@ -97,7 +97,7 @@ FlyGym supports Linux, macOS, and Windows. The codebase is continuously and auto
 Specifically, FlyGym is automatically tested in the following setups:
 
 - Linux: latest version of Ubuntu, with Python 3.10, 3.11, and 3.12.
-- macOS: latest version of macOS (Apple silicon) and macOS 13 Ventura (pre Apple silicon), with Python 3.12, without rendering. We do not support the examples provided in the paper on macOS 13 Ventura. This is because Macs with Intel chips are not supported by the latest version of PyTorch.
+- macOS: latest version of macOS (Apple silicon), with Python 3.12, without rendering.
 - Windows: latest version of Windows, with Python 3.12, without rendering.
 
 Exact configurations of the CI/CD tests can be found in the `GitHub Actions workflows <https://github.com/NeLy-EPFL/flygym/tree/main/.github/workflows>`_.

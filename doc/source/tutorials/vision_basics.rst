@@ -50,7 +50,7 @@ Users can substitute the green and blue channel values with the desired
 light intensities sensed by yellow- and pale-type ommatidia to achieve
 more biorealistic chromatic vision.
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/vision_basics/vision.png
 
 
 In NeuroMechFly, the main interface to interact with the fly is the
@@ -147,7 +147,7 @@ on the floor in a stable manner:
     fig.savefig(output_dir / "vision_sim_env.png")
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim_env.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/vision_basics/vision_sim_env.png
 
 
 We can access the intensities sensed by the fly’s ommatidia from the
@@ -236,7 +236,7 @@ color channels.
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/vision_basics/vision_sim.png
 
 
 Since ``render_raw_vision`` is set to True in the parameters, we can
@@ -256,7 +256,7 @@ are binned into ommatidia:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/vision_basics/vision_sim_raw.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/vision_basics/vision_sim_raw.png
 
 
 We observe that the ommatidia covering the blue and the green pillars
@@ -435,7 +435,7 @@ Recall that in the ``HybridTurningController``, we implemented the
 purple arrow in the following figure, encapsulating the CPG network and
 the sensory feedback-based correction rules:
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/mdp.png
 
 
 Here, we will build yet another layer on top of

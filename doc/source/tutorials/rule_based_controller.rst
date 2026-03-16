@@ -44,7 +44,7 @@ three rules of Walknet, namely:
 
 These rules are be summarized in this figure:
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/rule_based_controller/rule_based.png
     :width: 400
 
 
@@ -124,7 +124,7 @@ the CPGs tutorial:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/preprogrammed_steps_class.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/rule_based_controller/preprogrammed_steps_class.png
 
 
 Implementing the rules
@@ -224,7 +224,7 @@ so let’s visualize them separately:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rules_graph.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/rule_based_controller/rules_graph.png
 
 
 Using this rules graph, we will proceed to implement the rule-based leg
@@ -530,7 +530,7 @@ phases and stepping likelihood scores over time:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/rule_based_controller/rule_based_control_signals.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/rule_based_controller/rule_based_control_signals.png
 
 
 Plugging the controller into the simulation

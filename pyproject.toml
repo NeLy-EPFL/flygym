@@ -67,6 +67,7 @@ examples = [
     "phiml>=1.12.0,<2.0", # need this until https://github.com/tum-pbs/PhiFlow/issues/192 is fixed
     "h5py>=3.0,<4.0",
     "flyvis==1.1.2",
+    "cachetools>=7,<8",
 ]
 
 [project.urls]

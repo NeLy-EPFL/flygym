@@ -90,7 +90,7 @@ The following is a complete list of joint DoFs (subject to update to enable more
     'joint_RMTarsus2', 'joint_RMTarsus3', 'joint_RMTarsus4', 
     'joint_RMTarsus5']
 
-.. figure:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/biomechanics.png?raw=true
+.. figure:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/biomechanics.png
    :width: 600
    :alt: NeuroMechFly's leg DoFs
 

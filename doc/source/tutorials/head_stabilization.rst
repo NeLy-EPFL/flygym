@@ -44,7 +44,7 @@ visual rotations caused by the animal’s own body movements during
 walking. We will use these signals to actuate the neck joint and aim to
 dampen head rotation. This approach is illustrated as follows:
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_schematic.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_schematic.png
 
 
 Collecting training data
@@ -254,7 +254,7 @@ As a sanity check, we can plot the trajectory of the fly:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_trajectory_sample.png
 
 
 We can also plot the time series of the variables that we are interested
@@ -415,7 +415,7 @@ side:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_flat_terrain_ts_sample.png
 
 
 We observe that, after about 0.1 seconds of transient response, we can
@@ -457,7 +457,7 @@ appear more dramatic:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_blocks_terrain_ts_sample.png
 
 
 Training an internal model to control neck actuation
@@ -744,7 +744,7 @@ dataset as an iterator instead of the output returned by
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_joint_angles_scaled.png
 
 
 We observe that the joint angles now share a mean of 0 (black line) and
@@ -1131,7 +1131,7 @@ sets changed over time. On the validation set, we will plot the loss and
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_training_metrics.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_training_metrics.png
 
 
 Satisfied with the performance, we now proceed to evaluate the model on
@@ -1482,7 +1482,7 @@ signals:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_neck_actuation_sample.png
 
 
 Similarly, we can plot the roll and pitch of the head compared to the
@@ -1525,7 +1525,7 @@ thorax over time:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/head_stabilization/head_stabilization_head_vs_thorax.png
 
 
 As expected, the rotation of the head has a lower magnitude than that of

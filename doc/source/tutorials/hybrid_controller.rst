@@ -128,7 +128,7 @@ fly looks while walking over these different terrain types:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/complex_terrain_overview.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/hybrid_controller/complex_terrain_overview.png
 
 
 Basic CPG- and rule-based controllers
@@ -260,7 +260,7 @@ fact, if we run 20 initial conditions for 1 second each, we get a result
 like the one reported in the NeuroMechFly v2 paper (Wang-Chen et al.,
 2024):
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_comparison.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/hybrid_controller/cpg_rule_based_comparison.png
 
 
 We can look more closely at some examples of failed locomotion:
@@ -468,7 +468,7 @@ behavior.
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/step_phase_dependent_gain.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/hybrid_controller/step_phase_dependent_gain.png
 
 
 … and the NeuroMechFly simulation over mixed terrain. We will enable
@@ -810,7 +810,7 @@ each terrain type starting with different initial conditions. These show
 that a hybrid controller outperforms the other two controllers (see the
 NeuroMechFly v2 paper for details):
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/hybrid_controller/cpg_rule_based_hybrid_comparison.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/hybrid_controller/cpg_rule_based_hybrid_comparison.png
 
 
 These results demonstrate how rugged terrain can expose failure modes

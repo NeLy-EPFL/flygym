@@ -90,7 +90,7 @@ Note that the action can be selected by any means defined by the user
 (e.g. preprogrammed rules, algorithmic models, artificial neural
 networks).
 
-.. |image1| image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. |image1| image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/mdp.png
 
 MDP specifications
 ~~~~~~~~~~~~~~~~~~
@@ -190,7 +190,7 @@ We can visualize the time series of DoF angles:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/gym_basics/kin_replay_joint_dof_time_series.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/gym_basics/kin_replay_joint_dof_time_series.png
 
 
 Now we can create a NeuroMechFly simulation instance and play out the

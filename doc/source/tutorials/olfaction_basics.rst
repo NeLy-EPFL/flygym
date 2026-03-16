@@ -38,7 +38,7 @@ monomolecular chemicals sensed by OSNs in the antennae, or the
 intensities of composite odors co-activating numerous projection neurons
 in the antennal lobe.
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/olfaction.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/olfaction_basics/olfaction.png
 
 
 Odor arena
@@ -145,7 +145,7 @@ iterations to allow it to stand on the ground in a stable manner.
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/olfaction_env.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/olfaction_basics/olfaction_env.png
 
 
 Controller for odor taxis
@@ -302,7 +302,7 @@ We can visualize the fly trajectory:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/olfaction_basics/odor_taxis_trajectory.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/olfaction_basics/odor_taxis_trajectory.png
 
 
 We can also generate the video:

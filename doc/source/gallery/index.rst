@@ -45,55 +45,55 @@ NeuroMechFly can be used to emulate a wide range of behaviours and scenarios. He
    <div class="gallery-grid">
         <div class="gallery-item">
            <a href="video_3_forces.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_3_force_visualization_v7_TL_thumbnail.jpeg/?raw=true" alt="Force readout">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_3_force_visualization_v7_TL_thumbnail.jpeg" alt="Force readout">
                <p>Replay walking behaviour and estimate contact forces</p>
            </a>
        </div>
        <div class="gallery-item">
            <a href="video_4_climbing.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_4_climbing_v8_TL_thumbnail.jpeg/?raw=true" alt="Climbing">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_4_climbing_v8_TL_thumbnail.jpeg" alt="Climbing">
                <p>Walking on inclined terrain</p>
            </a>
        </div>
        <div class="gallery-item">
            <a href="video_8_controller_comparison.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_8_controller_comparison_v10_TL_small_thumbnail.jpeg/?raw=true" alt="Controller comparison">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_8_controller_comparison_v10_TL_small_thumbnail.jpeg" alt="Controller comparison">
                <p>Benchmarking various controllers on different terrains</p>
            </a>
        </div>
        <div class="gallery-item">
            <a href="video_9_visual_taxis.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_9_visual_taxis_no_stable_v14_TL_thumbnail.jpeg/?raw=true" alt="Visual taxis">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_9_visual_taxis_no_stable_v14_TL_thumbnail.jpeg" alt="Visual taxis">
                <p>Emulating vision and abstract visual processing</p>
            </a>
        </div>
        <div class="gallery-item">
            <a href="video_10_odour_taxis.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_10_odor_taxis_v8_TL_thumbnail.jpeg/?raw=true" alt="Odour taxis">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_10_odor_taxis_v8_TL_thumbnail.jpeg" alt="Odour taxis">
                <p>Emulating simple olfaction and abstract olfactory processing</p>
            </a>
         </div>
        <div class="gallery-item">
            <a href="video_11_head_stabilization.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_11_head_stabilization_thumbnail.jpeg/?raw=true" alt="Head stabilization">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_11_head_stabilization_thumbnail.jpeg" alt="Head stabilization">
                <p>Using ascending sensory information to stabilize the head on complex terrain</p>
            </a>
        </div>
        <div class="gallery-item">
            <a href="video_12_multimodal_navigation.html">
-               <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_12_multimodal_navigation_example_v3_TL_thumbnail.jpeg/?raw=true" alt="Multimodal navigation">
+               <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_12_multimodal_navigation_example_v3_TL_thumbnail.jpeg" alt="Multimodal navigation">
                <p>Building reinforcement learning trained controllers to solve multimodal tasks.</p>
            </a>
        </div>
         <div class="gallery-item">
             <a href="video_13_plume_navigation.html">
-                <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_13_plume_navigation_v2_SWC_thumbnail.jpeg/?raw=true" alt="Plume navigation">
+                <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_13_plume_navigation_v2_SWC_thumbnail.jpeg" alt="Plume navigation">
                 <p>Navigating dynamic olfactive environments</p>
             </a>
         </div>
         <div class="gallery-item">
             <a href="video_14_fly_follow_fly.html">
-                <img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_14_fly_follow_fly_v6_SWC_thumbnail.jpeg?raw=true" alt="Fly follow fly">
+                <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_14_fly_follow_fly_v6_SWC_thumbnail.jpeg" alt="Fly follow fly">
                 <p>Building complex social scenarios relying on complete sensory-motor loops with biorealistic sensing. </p>
             </a>
         </div>

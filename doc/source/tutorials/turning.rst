@@ -59,7 +59,7 @@ their own Gym environments with different action and observation spaces
 and implement different logics (e.g. preprogrammed premotor computation
 and sensory processing). This is illustrated in the figure below:
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/mdp.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/mdp.png
 
 
 In the hybrid controller that `we have
@@ -678,7 +678,7 @@ smaller one.
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/turning_controller/turning_cpg_magnitude.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/turning_controller/turning_cpg_magnitude.png
 
 
 Finally, let’s take a look at the video:
