@@ -36,7 +36,7 @@ Finally, we will design a very simple controller that can successfully
 navigate a complex plume based on the algorithm proposed in `Demir et
 al, 2020 <https://doi.org/10.7554/eLife.57524>`__.
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/demir_et_al_real_odour_plume.jpg?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/demir_et_al_real_odour_plume.jpg
    :width: 500
 
 *Image from Demir et al, 2020.*
@@ -196,15 +196,15 @@ the beginning of the simulation:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_t0.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/wind_velocity_t0.png
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_t0.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/smoke_density_t0.png
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_t0.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/inflow_t0.png
 
 
 Now we are ready to simulate the plume. For that we use the following
@@ -311,15 +311,15 @@ at the end of the simulation:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/wind_velocity_tf.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/wind_velocity_tf.png
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/smoke_density_tf.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/smoke_density_tf.png
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/inflow_tf.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/inflow_tf.png
 
 
 Let’s save this plume dataset in the HDF5 format. HDF5 is an efficient
@@ -639,7 +639,7 @@ olfactory sensory organs:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/plume_tracking/odor_intensity_ts.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/plume_tracking/odor_intensity_ts.png
 
 
 We can also generate a video of the simulation:

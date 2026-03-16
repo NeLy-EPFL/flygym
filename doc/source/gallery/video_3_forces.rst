@@ -6,6 +6,6 @@ Here NeuroMechFly is traversing a flat terrain using a CPG based controller. Dur
 .. raw:: html
 
    <video controls style="width:100%; height:100%;">
-       <source src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/videos/video_3_force_visualization_v7_TL.mp4?raw=true" type="video/mp4">
+       <source src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/videos/video_3_force_visualization_v7_TL.mp4" type="video/mp4">
        Your browser does not support the video tag.
    </video>

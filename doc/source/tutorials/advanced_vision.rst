@@ -167,7 +167,7 @@ figure below). The connectivity in this network is informed by the
 connectome and, unlike typical ANNs, models biologically meaningful
 variables such as voltage.
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/advanced_vision/lappalainen_model_schematic.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/advanced_vision/lappalainen_model_schematic.png
    :width: 400
 
 *Image from Lappalainen et al., 2024.*
@@ -302,7 +302,7 @@ which are known for encoding optical flow:
 
 
 
-.. image:: https://github.com/NeLy-EPFL/_media/blob/main/flygym/advanced_vision/retina_activities.png?raw=true
+.. image:: https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/advanced_vision/retina_activities.png
 
 
 We can also extract the whole time series of cell activities:
