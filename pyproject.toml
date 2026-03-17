@@ -67,7 +67,6 @@ addopts = "--cov=flygym --cov=flygym_examples --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["flygym", "flygym_examples"]
-omit = ["*/flygym/warp/*"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

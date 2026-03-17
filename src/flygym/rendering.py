@@ -23,6 +23,7 @@ class Renderer:
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
         output_fps: int = 25,
+        scene_option: mj.MjvOption | None = None,
         **kwargs: Any,
     ):
         self.mj_model = mj_model
@@ -30,19 +31,11 @@ class Renderer:
         nrows, ncols = camera_res
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
 
-        # ---- ADD THIS: visualization options for scene update ----
-        self.scene_option = mj.MjvOption()
-        mj.mjv_defaultOption(self.scene_option)
-        # self.scene_option.flags[mj.mjtVisFlag.mjVIS_CONTACTPOINT] = 1
-        # self.scene_option.flags[mj.mjtVisFlag.mjVIS_CONTACTFORCE] = 1
-
-        # Optional but usually helpful: tune arrow sizes/scales
-        # (these live on the model's visual settings)
-        # mj_model.vis.scale.contactwidth = 0.1
-        # mj_model.vis.scale.contactheight = 0.03
-        # mj_model.vis.scale.forcewidth = 0.05
-        # mj_model.vis.map.force = 0.3
-        # ---------------------------------------------
+        if scene_option is None:
+            self.scene_option = mj.MjvOption()
+        else:
+            self.scene_option = scene_option
+        mj.mjv_defaultOption(self.scene_option)  # this sets default scene options
 
         self._cameras_names2id = {}
         for spec in camera if isinstance(camera, Sequence) else [camera]:
@@ -66,7 +59,9 @@ class Renderer:
         if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
             self._last_render_time_sec = mj_data.time
             for cam_name, internal_cam_id in self._cameras_names2id.items():
-                self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
+                self.mj_renderer.update_scene(
+                    mj_data, internal_cam_id, self.scene_option
+                )
                 frame = self.mj_renderer.render()
                 self.frames[cam_name].append(frame)
             return True
