@@ -207,7 +207,7 @@ wheels = [
 
 [[package]]
 name = "dm-control"
-version = "1.0.37"
+version = "1.0.38"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
@@ -226,9 +226,9 @@ dependencies = [
     { name = "setuptools" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/50/61/ec736b3d40134d4cf4e635b539b9967ad5c8c92b60f0da1b6eb83dffba1b/dm_control-1.0.37.tar.gz", hash = "sha256:3327e64538c230b8b95db5ed38e630236b81ae1775463eec27932aa22f730f44", size = 56273956, upload-time = "2026-02-13T10:51:24.157Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/d7/ff2c4703c43c3cf14aa092bfb9a5eb740849eee61c25c0d5aed6a57985a1/dm_control-1.0.38.tar.gz", hash = "sha256:f5966799662d8914bb4f181d2be939da2079f0e08e198f901bb54e61d46c0b90", size = 56274133, upload-time = "2026-03-11T08:31:50.853Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/59/0977297d708173b0527cc3b4c4b84222c3c3bfa6a644113d2ef2163ff710/dm_control-1.0.37-py3-none-any.whl", hash = "sha256:d30573dec834201ec7fa15117df32f52012448e1b035258c69150e6dbab9b4a9", size = 56446231, upload-time = "2026-02-13T10:51:20.39Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/0e/2bed3a6d225921e31bf9200a9c4470f7bc3a12b940bfbca22fa7aa9dfa0e/dm_control-1.0.38-py3-none-any.whl", hash = "sha256:ddb71c4b360a503eabf3c62ba151a0d9404cbe22b23561202b90310558690371", size = 56446251, upload-time = "2026-03-11T08:31:45.102Z" },
 ]
 
 [[package]]
@@ -332,7 +332,7 @@ warp = [
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=26.1,<27.0" },
-    { name = "dm-control", specifier = ">=1.0.37,<1.0.38" },
+    { name = "dm-control", specifier = ">=1.0.38,<1.0.39" },
     { name = "imageio", specifier = ">=2.37,<3.0" },
     { name = "imageio-ffmpeg", specifier = "==0.6.0" },
     { name = "ipykernel", marker = "extra == 'examples'", specifier = ">=7.1.0" },
