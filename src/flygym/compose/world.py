@@ -308,6 +308,7 @@ class TetheredWorld(BaseWorld):
     def __init__(self, name: str = "tethered_world") -> None:
         super().__init__(name=name)
         # don't add ground plane
+        self.legpos_to_groundcontactsensors_by_fly = None
 
     @override
     def _attach_fly_mjcf(

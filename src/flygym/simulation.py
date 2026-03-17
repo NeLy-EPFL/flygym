@@ -276,6 +276,7 @@ class Simulation:
     def _map_internal_groundcontactsensor_ids(self) -> None:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:
             self._intern_groundcontactsensorids_by_fly = None
+            return
         else:
             self._intern_groundcontactsensorids_by_fly = {}
 
