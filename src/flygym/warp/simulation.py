@@ -1,6 +1,5 @@
 import warnings
 from typing import Any, override
-from time import perf_counter_ns
 
 import warp as wp
 import mujoco as mj
@@ -146,15 +145,12 @@ class GPUSimulation(Simulation):
             dim=(self.n_worlds, indices.size),
             inputs=[inputs, self.mjw_data.ctrl, indices],
         )
-
+    
     @override
     def step(self):
-        physics_start_ns = perf_counter_ns()
         mjw.step(self.mjw_model, self.mjw_data)
-        poststep_start_ns = perf_counter_ns()
-        self._total_physics_time_ns += poststep_start_ns - physics_start_ns
-        self._curr_step += 1
 
+    @override
     def set_renderer(
         self,
         cameras: str | mjcf.Element | list[str | mjcf.Element],
@@ -206,15 +202,9 @@ class GPUSimulation(Simulation):
 
         return self.renderer
 
+    @override
     def render_as_needed(self) -> dict[str, Float[np.ndarray, "height width 3"]]:
-        render_start_ns = perf_counter_ns()
-        render_done = self.renderer.render_as_needed(self.mjw_data)
-        render_finish_ns = perf_counter_ns()
-
-        self._total_render_time_ns += render_finish_ns - render_start_ns
-        if render_done:
-            self._frames_rendered += 1
-        return render_done
+        return self.renderer.render_as_needed(self.mjw_data)
 
     @override
     def print_performance_report(self) -> None:

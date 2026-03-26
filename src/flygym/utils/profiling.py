@@ -11,6 +11,9 @@ def print_perf_report(
     n_frames_rendered: int,
     timestep: float,
 ):
+    if n_steps == 0:
+        raise ValueError("n_steps must be > 0 to print performance report.")
+    
     total_walltime_ns = total_physics_time_ns + total_render_time_ns
     total_per_iter_us = 1e-3 * total_walltime_ns / n_steps
     physics_time_per_iter_us = 1e-3 * total_physics_time_ns / n_steps
@@ -93,6 +96,14 @@ def print_perf_report_parallel(
     timestep: float,
     n_worlds: int,
 ):
+    if n_steps == 0:
+        raise ValueError(
+            "n_steps must be > 0 to print performance report. "
+            "Hint: Did you place `sim.step()` inside a captured graph? If so, "
+            "If so, profiling cannot be meaningfully done due to GPU-CPU synch "
+            "constraints."
+        )
+    
     total_walltime_ns = total_physics_time_ns + total_render_time_ns
     total_per_iter_us = 1e-3 * total_walltime_ns / n_steps
     physics_time_per_iter_us = 1e-3 * total_physics_time_ns / n_steps
