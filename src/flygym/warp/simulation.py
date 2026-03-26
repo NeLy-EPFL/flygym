@@ -26,7 +26,7 @@ from flygym.warp.utils import (
 
 class GPUSimulation(Simulation):
     @override
-    def __init__(self, world, n_worlds, max_constraints=100, max_contacts=100):
+    def __init__(self, world, n_worlds, max_constraints=500, max_contacts=500):
         self._strip_unsupported_options_for_mjwarp(world)
         super().__init__(world)
         self.n_worlds = n_worlds
@@ -145,7 +145,7 @@ class GPUSimulation(Simulation):
             dim=(self.n_worlds, indices.size),
             inputs=[inputs, self.mjw_data.ctrl, indices],
         )
-    
+
     @override
     def step(self):
         mjw.step(self.mjw_model, self.mjw_data)
@@ -215,6 +215,7 @@ class GPUSimulation(Simulation):
             total_render_time_ns=self._total_render_time_ns,
             timestep=self.mj_model.opt.timestep,
             n_worlds=self.n_worlds,
+            n_worlds_rendered=len(self.renderer.world_ids),
         )
 
     @override
