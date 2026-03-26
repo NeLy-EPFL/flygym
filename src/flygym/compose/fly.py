@@ -1,4 +1,3 @@
-from pathlib import Path
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
@@ -26,13 +25,39 @@ from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
 
-__all__ = ["Fly", "ActuatorType"]
+__all__ = ["Fly", "ActuatorType", "MeshType", "GeomFittingOption"]
 
 
 DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
 DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
-DEFAULT_MESH_DIR = assets_dir / "model/meshes"
+DEFAULT_MESH_DIR = assets_dir / "model/meshes/"
 DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
+
+
+class MeshType(Enum):
+    FULLSIZE = "fullsize"
+    SIMPLIFIED_MAX2000FACES = "simplified_max2000faces"
+
+
+class GeomFittingOption(Enum):
+    UNMODIFIED = "unmodified"
+    ALL_TO_CAPSULES = "all_to_capsules"
+    CLAWS_TO_CAPSULES = "claws_to_capsules"
+
+
+class ActuatorType(Enum):
+    """Actuator types supported by MuJoCo.
+    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    for details on each type."""
+
+    MOTOR = "motor"
+    POSITION = "position"
+    VELOCITY = "velocity"
+    INTVELOCITY = "intvelocity"
+    DAMPER = "damper"
+    CYLINDER = "cylinder"
+    MUSCLE = "muscle"
+    ADHESION = "adhesion"
 
 
 class Fly(BaseCompositionElement):
@@ -91,11 +116,12 @@ class Fly(BaseCompositionElement):
         name: str = "nmf",
         *,
         rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
-        mesh_dir: PathLike = DEFAULT_MESH_DIR,
+        mesh_basedir: PathLike = DEFAULT_MESH_DIR,
         mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
         root_segment: BodySegment | str = "c_thorax",
         mirror_left2right: bool = True,
-        simplify_claw: bool = False,
+        mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
+        geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -123,8 +149,8 @@ class Fly(BaseCompositionElement):
             "key", name="neutral", time=0
         )
 
-        self._add_mesh_assets(mesh_dir, mirror_left2right)
-        self._add_bodies_and_geoms(rigging_config_path, simplify_claw)
+        self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
+        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option)
 
     @override
     @property
@@ -365,12 +391,20 @@ class Fly(BaseCompositionElement):
         self.cameraname_to_mjcfcamera[name] = camera
         return camera
 
-    def _add_mesh_assets(self, mesh_dir: PathLike, mirror_left2right: bool) -> None:
+    def _add_mesh_assets(
+        self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
+    ) -> None:
         # For numerical reasons, we simulate length in mm, not m. This changes the units
         # of other quantities as well, for example acceleration is now in mm/s^2.
         SCALE = 1000
 
-        mesh_dir = Path(mesh_dir)
+        # Decide which folder to load mesh files from
+        mesh_dir = mesh_basedir / mesh_type.value
+        mesh_fallback_dir = mesh_basedir / MeshType.FULLSIZE.value
+        for d in [mesh_dir, mesh_fallback_dir]:
+            if not d.exists():
+                raise FileNotFoundError(f"Mesh directory not found: {d}")
+
         for segment_name in ALL_SEGMENT_NAMES:
             if mirror_left2right and segment_name[0] == "r":
                 mesh_to_use = f"l{segment_name[1:]}"
@@ -378,9 +412,16 @@ class Fly(BaseCompositionElement):
             else:
                 mesh_to_use = segment_name
                 y_sign = 1
+
             mesh_path = (mesh_dir / f"{mesh_to_use}.stl").resolve()
             if not mesh_path.exists():
-                raise FileNotFoundError(f"Mesh file not found: {mesh_path}")
+                mesh_path = (mesh_fallback_dir / f"{mesh_to_use}.stl").resolve()
+                if not mesh_path.exists():
+                    raise FileNotFoundError(
+                        f"Mesh file not found for segment {segment_name}: "
+                        f"tried {mesh_dir} and {mesh_fallback_dir}."
+                    )
+
             self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.asset.add(
                 "mesh",
                 name=segment_name,
@@ -389,7 +430,7 @@ class Fly(BaseCompositionElement):
             )
 
     def _add_bodies_and_geoms(
-        self, rigging_config_path: PathLike, simplify_claw: bool
+        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption
     ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
@@ -404,10 +445,11 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
 
+        # Add remaining bodies and geoms by traversing the kinematic tree defined by
+        # the skeleton
         full_skeleton = Skeleton(
             joint_preset=JointPreset.ALL_POSSIBLE, axis_order=AxisOrder.DONTCARE
         )
-
         for jointdof in full_skeleton.iter_jointdofs(self.root_segment):
             if jointdof.axis != RotationAxis.PITCH:
                 # Look at only 1 DoF per joint as we're still just adding bodies/geoms
@@ -426,10 +468,12 @@ class Fly(BaseCompositionElement):
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
 
-        if simplify_claw:
-            for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
-                if bodyseg.is_leg() and bodyseg.link == "tarsus5":
-                    mjcf_element.type = "capsule"
+        # Optionally fit certain geoms to capsule shapes for simpler physics
+        for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
+            if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
+                bodyseg.is_leg() and bodyseg.link == "tarsus5"
+            ):
+                mjcf_element.type = "capsule"
 
     def _add_one_body_and_geom(
         self,
@@ -519,18 +563,3 @@ class Fly(BaseCompositionElement):
                 neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
                 neutral_ctrl[internal_actuatorid] = neutral_input
         return neutral_ctrl
-
-
-class ActuatorType(Enum):
-    """Actuator types supported by MuJoCo.
-    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
-    for details on each type."""
-
-    MOTOR = "motor"
-    POSITION = "position"
-    VELOCITY = "velocity"
-    INTVELOCITY = "intvelocity"
-    DAMPER = "damper"
-    CYLINDER = "cylinder"
-    MUSCLE = "muscle"
-    ADHESION = "adhesion"
