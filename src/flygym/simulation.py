@@ -90,7 +90,7 @@ class Simulation:
 
     def render_as_needed(self) -> bool:
         return self.renderer.render_as_needed(self.mj_data)
-    
+
     def render_as_needed_with_profile(self) -> bool:
         render_start_ns = perf_counter_ns()
         render_done = self.render_as_needed()
