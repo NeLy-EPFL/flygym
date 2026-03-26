@@ -23,12 +23,14 @@ class Renderer:
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
         output_fps: int = 25,
+        buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
         **kwargs: Any,
     ):
         self.mj_model = mj_model
         self.camera_res = camera_res
         nrows, ncols = camera_res
+        self.buffer_frames = buffer_frames
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
 
         if scene_option is None:
@@ -53,7 +55,10 @@ class Renderer:
         self._secs_between_renders = 1 / (output_fps / playback_speed)
 
         self._last_render_time_sec = -np.inf
-        self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
+        if self.buffer_frames:
+            self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
+        else:
+            self.frames = None
 
     def render_as_needed(self, mj_data: mj.MjData) -> bool:
         if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
@@ -63,14 +68,16 @@ class Renderer:
                     mj_data, internal_cam_id, self.scene_option
                 )
                 frame = self.mj_renderer.render()
-                self.frames[cam_name].append(frame)
+                if self.buffer_frames:
+                    self.frames[cam_name].append(frame)
             return True
         else:
             return False
 
     def reset(self):
         self._last_render_time_sec = -np.inf
-        self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
+        if self.buffer_frames:
+            self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
 
     def close(self):
         self.mj_renderer.close()

@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Any, override
-from collections.abc import Sequence
 from os import PathLike
 
 import mediapy
@@ -13,69 +12,85 @@ import imageio.v3 as iio
 from jaxtyping import Float
 
 from flygym.rendering import Renderer
+from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
 
 
 class GPURenderer(Renderer):
     """GPU-side renderer using mujoco_warp.
 
-    See https://github.com/google-deepmind/mujoco_warp/pull/1113.
-
     Args:
-        todo
+        TODO
     """
 
     @override
     def __init__(
         self,
-        mjw_model: mjw.Model,
-        mjw_data: mjw.Data,
         mj_model: mj.MjModel,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element],
-        *,
-        camera_res: tuple[int, int] = (240, 320),
-        playback_speed: float = 0.2,
-        output_fps: int = 25,
+        n_worlds: int,
+        cameras: str | mjcf.Element | list[str | mjcf.Element],
+        worlds: list[int] | None,
+        camera_res: tuple[int, int],
+        playback_speed: float,
+        output_fps: int,
+        buffer_frames: bool,
         **kwargs: Any,
     ):
-        self.mjw_model = mjw_model
         self.mj_model = mj_model
         self.camera_res = camera_res
+        self.buffer_frames = buffer_frames
 
-        enabled_cam_ids = (
-            [self._resolve_camera_id_and_name(spec)[0] for spec in camera]
-            if isinstance(camera, Sequence)
-            else [self._resolve_camera_id_and_name(camera)[0]]
+        # Figure out which worlds should be rendered
+        self.world_ids, self._world_mask, self._world_ids_gpu, self._world_mask_gpu = (
+            self._get_world_ids_and_mask(worlds, n_worlds)
         )
-        if not enabled_cam_ids:
+        if len(self.world_ids) == 0:
+            raise ValueError("At least one valid world must be specified.")
+
+        # Figure out which cameras should be rendered
+        self.cam_ids, self._cam_mask, self._cam_ids_gpu, self._cam_mask_gpu = (
+            self._get_camera_ids_and_mask(cameras)
+        )
+        if len(self.cam_ids) == 0:
             raise ValueError("At least one valid camera must be specified.")
-        self._cam_enable_mask = [
-            intid in enabled_cam_ids for intid in range(mj_model.ncam)
-        ]
+
+        # Create batch rendering context
         self._rendering_context = mjw.create_render_context(
             mjm=mj_model,
-            nworld=mjw_data.nworld,
-            cam_res=camera_res[::-1],  # mjw render context expects (W, H)!
-            cam_active=self._cam_enable_mask,
+            nworld=n_worlds,
+            cam_active=self._cam_mask.tolist(),
+            cam_res=camera_res[::-1],  # MJWarp expects (W, H); we use (H, W)
             **kwargs,
         )
 
+        # Set up parameters for automatically determining when to render frames
         self.playback_speed = playback_speed
         self.output_fps = output_fps
         self._secs_between_renders = 1 / (output_fps / playback_speed)
-
         self._last_render_time_sec = -np.inf
-        self._rgb_data_and_adr: list[tuple[wp.Array, wp.Array]] = []
+
+        # Buffer to store rendered images
+        self._buf_dim_per_frame = (len(self.world_ids), len(self.cam_ids), *camera_res)
+        if buffer_frames:
+            self._frames: list[wp.Array] = []
+        else:
+            self._frames = None
 
     @override
-    def render_as_needed(self, mjw_data: mjw.Data) -> bool:
+    def render_as_needed(self, mjw_model: mjw.Model, mjw_data: mjw.Data) -> bool:
         curr_time = mjw_data.time.numpy()[0]  # assume all worlds have the same time
         if curr_time >= self._last_render_time_sec + self._secs_between_renders:
             self._last_render_time_sec = curr_time
-            mjw.refit_bvh(self.mjw_model, mjw_data, self._rendering_context)
-            mjw.render(self.mjw_model, mjw_data, self._rendering_context)
-            rgb_data = wp.clone(self._rendering_context.rgb_data)
-            rgb_adr = wp.clone(self._rendering_context.rgb_adr)
-            self._rgb_data_and_adr.append((rgb_data, rgb_adr))
+            mjw.refit_bvh(mjw_model, mjw_data, self._rendering_context)
+            mjw.render(mjw_model, mjw_data, self._rendering_context)
+            rgb_out = wp.zeros(self._buf_dim_per_frame, dtype=wp.vec3f)
+            get_rgb_selected_worlds_and_cameras(
+                self._rendering_context,
+                self._world_ids_gpu,
+                self._cam_ids_gpu,
+                rgb_out,
+            )
+            if self.buffer_frames:
+                self._frames.append(rgb_out)
             return True
         else:
             return False
@@ -83,7 +98,8 @@ class GPURenderer(Renderer):
     @override
     def reset(self):
         self._last_render_time_sec = -np.inf
-        self._rgb_data_and_adr.clear()
+        if self.buffer_frames:
+            self._frames = []
 
     @override
     def close(self):
@@ -93,7 +109,7 @@ class GPURenderer(Renderer):
     def show_in_notebook(
         self,
         world_id: int,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None = None,
+        camera: str | mjcf.Element | list[str | mjcf.Element] | None = None,
         **kwargs,
     ):
         """Display recorded frames in a Jupyter notebook.
@@ -107,12 +123,7 @@ class GPURenderer(Renderer):
 
         for cam_name in camera_names:
             cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-            cam_id_among_enabled = sum(self._cam_enable_mask[:cam_id])
-            frames = self._decode_frames(world_id, cam_id_among_enabled)
-
-            if len(frames) == 0:
-                raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-
+            frames = self._fetch_frames_to_cpu(world_id, cam_id)
             title = f"world {world_id}, camera {cam_name}"
             mediapy.show_video(frames, fps=self.output_fps, title=title, **kwargs)
 
@@ -136,46 +147,50 @@ class GPURenderer(Renderer):
 
         for cam_name, path in path_by_camera.items():
             cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-            cam_id_among_enabled = sum(self._cam_enable_mask[:cam_id])
-            frames = self._decode_frames(world_id, cam_id_among_enabled)
-
-            if len(frames) == 0:
-                raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-
+            frames = self._fetch_frames_to_cpu(world_id, cam_id)
             path.parent.mkdir(parents=True, exist_ok=True)
             iio.imwrite(path, frames, fps=self.output_fps, codec="libx264", **kwargs)
-    
-    def _decode_frames(
-        self, world_id: int, cam_id_among_enabled: int
-    ) -> Float[np.ndarray, "nframes nrows ncols 3"]:
-        n_pxs = self.camera_res[0] * self.camera_res[1]
-        frames = []
-        for rgb_data_arr, rgb_adr_arr in self._rgb_data_and_adr:
-            my_rgb_adr = rgb_adr_arr.numpy()[cam_id_among_enabled]
-            # RGB images are packed as 0xAARRGGBB in uint32 during rendering,
-            # so we need to unpack them
-            rgb_packed = rgb_data_arr.numpy()[world_id, my_rgb_adr : my_rgb_adr + n_pxs]
-            rgb_packed = rgb_packed.reshape(self.camera_res)
-            rgb_image = np.dstack(
-                [
-                    ((rgb_packed >> 16) & 0xFF).astype(np.uint8),  # R
-                    ((rgb_packed >> 8) & 0xFF).astype(np.uint8),  # G
-                    (rgb_packed & 0xFF).astype(np.uint8),  # B
-                ]
-            )
-            frames.append(rgb_image)
 
-        return np.stack(frames, axis=0)
+    def _fetch_frames_to_cpu(self, world_id: int, cam_id: int) -> list[np.ndarray]:
+        if not self.buffer_frames:
+            raise RuntimeError(
+                "Frame buffering was disabled for this renderer, so recorded frames "
+                "are not available for saving or display."
+            )
+
+        if len(self._frames) == 0:
+            raise RuntimeError("No frames have been recorded yet.")
+
+        if world_id not in self.world_ids:
+            raise ValueError(
+                f"world_id {world_id} was not among the rendered worlds: "
+                f"{self.world_ids}"
+            )
+        world_id_among_rendered = self.world_ids.index(world_id)
+
+        if cam_id not in self.cam_ids:
+            raise ValueError(
+                f"cam_id '{cam_id}' was not among the rendered cameras: "
+                f"{self.cam_ids}"
+            )
+        cam_id_among_rendered = self.cam_ids.index(cam_id)
+
+        frames = []
+        for frame_buffer in self._frames:
+            frame = frame_buffer[world_id_among_rendered, cam_id_among_rendered, :, :]
+            frame = (frame * 255.0).numpy().astype(np.uint8)
+            frames.append(frame)
+        return frames
 
     @override
     def _normalize_camera_spec(
         self,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None,
+        camera: str | mjcf.Element | list[str | mjcf.Element] | None,
     ) -> list[str]:
         """Convert various camera specifications to a list of camera names.
 
         Args:
-            camera: Camera specification (single, sequence, or None for all enabled)
+            camera: Camera specification (single, list, or None for all enabled)
 
         Returns:
             List of camera names
@@ -186,8 +201,8 @@ class GPURenderer(Renderer):
         if camera is None:
             # Return all enabled cameras
             camera_names = []
-            for cam_id, enabled in enumerate(self._cam_enable_mask):
-                if enabled:
+            for cam_id, is_enabled in enumerate(self._cam_mask):
+                if is_enabled:
                     cam_name = mj.mj_id2name(
                         self.mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_id
                     )
@@ -196,18 +211,18 @@ class GPURenderer(Renderer):
         elif isinstance(camera, (str, mjcf.Element)):
             _, cam_name = self._resolve_camera_id_and_name(camera)
             camera_names = [cam_name]
-        elif isinstance(camera, Sequence):
+        elif isinstance(camera, list):
             camera_names = [self._resolve_camera_id_and_name(c)[1] for c in camera]
         else:
             raise ValueError(
                 f"Invalid camera spec type: {type(camera)}. Must be str, "
-                "mjcf.Element, Sequence of these, or None."
+                "mjcf.Element, list of these, or None."
             )
 
         # Validate all cameras are enabled
         for cam_name in camera_names:
             cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-            if not self._cam_enable_mask[cam_id]:
+            if not self._cam_mask[cam_id]:
                 raise ValueError(
                     f"Camera '{cam_name}' (id {cam_id}) was not enabled when "
                     f"the renderer was created."
@@ -237,7 +252,7 @@ class GPURenderer(Renderer):
             for cam_spec, path in output_path.items():
                 _, cam_name = self._resolve_camera_id_and_name(cam_spec)
                 cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-                if not self._cam_enable_mask[cam_id]:
+                if not self._cam_mask[cam_id]:
                     raise ValueError(
                         f"Camera '{cam_name}' (id {cam_id}) in output_path was not "
                         f"enabled when the renderer was created."
@@ -250,8 +265,8 @@ class GPURenderer(Renderer):
 
         # Get list of enabled camera names
         enabled_cameras = []
-        for cam_id, enabled in enumerate(self._cam_enable_mask):
-            if enabled:
+        for cam_id, is_enabled in enumerate(self._cam_mask):
+            if is_enabled:
                 cam_name = mj.mj_id2name(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_id)
                 enabled_cameras.append(cam_name)
 
@@ -264,3 +279,31 @@ class GPURenderer(Renderer):
                 cam_name: path / f"{cam_name.replace('/', '_')}.mp4"
                 for cam_name in enabled_cameras
             }
+
+    @staticmethod
+    def _get_world_ids_and_mask(worlds: list[int] | None, n_worlds: int) -> list[int]:
+        if worlds is not None:
+            world_indices_cpu = list(worlds)
+        else:
+            world_indices_cpu = list(range(n_worlds))
+
+        worlds_mask_cpu = np.array(
+            [w in world_indices_cpu for w in range(n_worlds)], dtype=np.int32
+        )
+
+        worlds_indices_gpu = wp.array(world_indices_cpu, dtype=wp.int32)
+        worlds_mask_gpu = wp.array(worlds_mask_cpu, dtype=wp.int32)
+
+        return world_indices_cpu, worlds_mask_cpu, worlds_indices_gpu, worlds_mask_gpu
+
+    def _get_camera_ids_and_mask(self, camera):
+        if not isinstance(camera, list):
+            camera = [camera]
+        cams_indices_cpu = [self._resolve_camera_id_and_name(c)[0] for c in camera]
+        cams_mask_cpu = np.array(
+            [c in cams_indices_cpu for c in range(self.mj_model.ncam)],
+            dtype=np.int32,
+        )
+        cams_indices_gpu = wp.array(cams_indices_cpu, dtype=wp.int32)
+        cams_mask_gpu = wp.array(cams_mask_cpu, dtype=wp.int32)
+        return cams_indices_cpu, cams_mask_cpu, cams_indices_gpu, cams_mask_gpu
