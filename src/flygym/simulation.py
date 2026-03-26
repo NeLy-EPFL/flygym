@@ -56,8 +56,11 @@ class Simulation:
         self._total_render_time_ns = 0
 
     def step(self) -> None:
-        physics_start_ns = perf_counter_ns()
         mj.mj_step(self.mj_model, self.mj_data)
+
+    def step_with_profile(self) -> None:
+        physics_start_ns = perf_counter_ns()
+        self.step()
         physics_finish_ns = perf_counter_ns()
         self._total_physics_time_ns += physics_finish_ns - physics_start_ns
         self._curr_step += 1
@@ -86,8 +89,11 @@ class Simulation:
         return self.renderer
 
     def render_as_needed(self) -> bool:
+        return self.renderer.render_as_needed(self.mj_data)
+    
+    def render_as_needed_with_profile(self) -> bool:
         render_start_ns = perf_counter_ns()
-        render_done = self.renderer.render_as_needed(self.mj_data)
+        render_done = self.render_as_needed()
         render_finish_ns = perf_counter_ns()
         self._total_render_time_ns += render_finish_ns - render_start_ns
         if render_done:
