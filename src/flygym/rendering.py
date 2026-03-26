@@ -18,7 +18,7 @@ class Renderer:
     def __init__(
         self,
         mj_model: mj.MjModel,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element],
+        cameras: str | mjcf.Element | Sequence[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -40,7 +40,7 @@ class Renderer:
         mj.mjv_defaultOption(self.scene_option)  # this sets default scene options
 
         self._cameras_names2id = {}
-        for spec in camera if isinstance(camera, Sequence) else [camera]:
+        for spec in cameras if isinstance(cameras, Sequence) else [cameras]:
             cam_id, cam_name = self._resolve_camera_id_and_name(spec)
             if cam_id == -1:
                 raise ValueError(f"Camera {spec} not found in the model.")
@@ -49,6 +49,7 @@ class Renderer:
             self._cameras_names2id[cam_name] = cam_id
         if len(self._cameras_names2id) == 0:
             raise ValueError("At least one valid camera must be specified.")
+        self._cameras_id2name = {v: k for k, v in self._cameras_names2id.items()}
 
         self.playback_speed = playback_speed
         self.output_fps = output_fps

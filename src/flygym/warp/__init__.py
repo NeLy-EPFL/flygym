@@ -1,4 +1,4 @@
 from .simulation import GPUSimulation
-from .rendering import GPURenderer
+from .rendering import WarpGPUBatchRenderer, WarpCPURenderer
 
-__all__ = ["GPUSimulation", "GPURenderer"]
+__all__ = ["GPUSimulation", "WarpGPUBatchRenderer", "WarpCPURenderer"]
