@@ -13,7 +13,7 @@ def print_perf_report(
 ):
     if n_steps == 0:
         raise ValueError("n_steps must be > 0 to print performance report.")
-    
+
     total_walltime_ns = total_physics_time_ns + total_render_time_ns
     total_per_iter_us = 1e-3 * total_walltime_ns / n_steps
     physics_time_per_iter_us = 1e-3 * total_physics_time_ns / n_steps
@@ -95,6 +95,7 @@ def print_perf_report_parallel(
     n_frames_rendered: int,
     timestep: float,
     n_worlds: int,
+    n_worlds_rendered: int,
 ):
     if n_steps == 0:
         raise ValueError(
@@ -103,7 +104,7 @@ def print_perf_report_parallel(
             "If so, profiling cannot be meaningfully done due to GPU-CPU synch "
             "constraints."
         )
-    
+
     total_walltime_ns = total_physics_time_ns + total_render_time_ns
     total_per_iter_us = 1e-3 * total_walltime_ns / n_steps
     physics_time_per_iter_us = 1e-3 * total_physics_time_ns / n_steps
@@ -142,8 +143,8 @@ def print_perf_report_parallel(
             render_percent,
             render_throughput,
             render_realtime_x,
-            render_throughput * n_worlds,
-            render_realtime_x * n_worlds,
+            render_throughput * n_worlds_rendered,
+            render_realtime_x * n_worlds_rendered,
         ],
         [
             "TOTAL",
