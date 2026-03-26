@@ -18,6 +18,7 @@ from flygym.anatomy import (
     AxisOrder,
     JointPreset,
     ALL_SEGMENT_NAMES,
+    LEGS,
 )
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.pose import KinematicPose
@@ -94,6 +95,7 @@ class Fly(BaseCompositionElement):
         mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
         root_segment: BodySegment | str = "c_thorax",
         mirror_left2right: bool = True,
+        simplify_claw: bool = False,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -106,6 +108,7 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfgeom = {}
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
+        self.leg_to_adhesionactuator = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
@@ -121,7 +124,7 @@ class Fly(BaseCompositionElement):
         )
 
         self._add_mesh_assets(mesh_dir, mirror_left2right)
-        self._add_bodies_and_geoms(rigging_config_path)
+        self._add_bodies_and_geoms(rigging_config_path, simplify_claw)
 
     @override
     @property
@@ -151,6 +154,9 @@ class Fly(BaseCompositionElement):
         provide control input in this order."""
         actuator_type = ActuatorType(actuator_type)
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
+
+    def get_legs_order(self) -> list[str]:
+        return LEGS
 
     def add_joints(
         self,
@@ -235,7 +241,7 @@ class Fly(BaseCompositionElement):
         neutral_input: dict[str, float] | None = None,
         *,
         forcelimited: bool = True,
-        forcerange: tuple[float, float] = (-50.0, 50.0),
+        forcerange: tuple[float, float] = (-30.0, 30.0),
         **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.
@@ -291,6 +297,24 @@ class Fly(BaseCompositionElement):
         self._rebuild_neutral_keyframe()
         return return_dict
 
+    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> None:
+        if len(self.leg_to_adhesionactuator) > 0:
+            raise ValueError("Leg adhesion actuators have already been added.")
+        for leg in LEGS:
+            tarsus5 = BodySegment(f"{leg}_tarsus5")
+            if isinstance(gain, dict):
+                gain_this_leg = gain[leg]
+            else:
+                gain_this_leg = gain
+            self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
+                "adhesion",
+                name=f"{tarsus5.name}-adhesion",
+                body=self.bodyseg_to_mjcfbody[tarsus5],
+                gain=gain_this_leg,
+                ctrlrange=(1, 100),
+            )
+        return self.leg_to_adhesionactuator
+
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
     ) -> None:
@@ -332,7 +356,7 @@ class Fly(BaseCompositionElement):
             "camera",
             name=name,
             mode=mode,
-            target="rootbody",
+            target=self.root_segment.name,
             pos=pos_offset,
             fovy=fovy,
             **rotation.as_kwargs(),
@@ -364,15 +388,18 @@ class Fly(BaseCompositionElement):
                 scale=(SCALE, y_sign * SCALE, SCALE),
             )
 
-    def _add_bodies_and_geoms(self, rigging_config_path: PathLike) -> None:
+    def _add_bodies_and_geoms(
+        self, rigging_config_path: PathLike, simplify_claw: bool
+    ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
 
         # Add root body and geom
-        virtual_root = self.mjcf_root.worldbody.add("body", name="rootbody")
         body, geom = self._add_one_body_and_geom(
-            virtual_root, self.root_segment, rigging_config[self.root_segment.name]
+            self.mjcf_root.worldbody,
+            self.root_segment,
+            rigging_config[self.root_segment.name],
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
@@ -398,6 +425,11 @@ class Fly(BaseCompositionElement):
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
+
+        if simplify_claw:
+            for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
+                if bodyseg.is_leg() and bodyseg.link == "tarsus5":
+                    mjcf_element.type = "capsule"
 
     def _add_one_body_and_geom(
         self,
