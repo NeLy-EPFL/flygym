@@ -65,7 +65,7 @@ mj_model, mj_data = world.compile()
 
 from flygym.warp import GPUSimulation
 
-n_worlds = 3000
+n_worlds = 10
 
 sim = GPUSimulation(world, n_worlds)
 
@@ -106,11 +106,12 @@ from tqdm import trange  # for progress bar
 
 
 def run_simulation(
-    sim,
+    sim: GPUSimulation,
     dof_angles_all_worlds,
     warmup_steps=500,
     fly_name=fly.name,
     actuator_type=actuator_type,
+    use_gpu_batch_rendering=True,
 ):
     n_worlds, sim_steps, n_dofs = dof_angles_all_worlds.shape
     sim.reset()
@@ -118,7 +119,8 @@ def run_simulation(
         cam,
         playback_speed=playback_speed,
         output_fps=output_fps,
-        worlds=[0],
+        worlds=None,
+        use_gpu_batch_rendering=use_gpu_batch_rendering,
     )
     # Turn adhesion on for all 6 legs across all worlds
     sim.set_leg_adhesion_states(fly_name, np.ones((n_worlds, 6), dtype=np.float32))
@@ -129,8 +131,9 @@ def run_simulation(
         sim.step()
         sim.render_as_needed()
 
-    sim.renderer.save_video(world_id=0, output_path="test_out.mp4")
+    sim.renderer.save_video(world_id=list(range(9)), output_path="test_out.mp4", scale=1)
 
 dof_angles_all_worlds = dof_angles_all_worlds[:, :1000, :]
 dof_angles_all_worlds_gpu = wp.array(dof_angles_all_worlds)
-run_simulation(sim, dof_angles_all_worlds_gpu)
+run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=True)
+# run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=False)
