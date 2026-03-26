@@ -2,31 +2,49 @@
 #
 # Instead of loading the YAML file directly, one should use:
 #
-#     flygym.fly.PoseDict(file_path: PathLike, mirror_left2right: bool)
+#     pose = flygym.compose.KinematicPose(path: PathLike, mirror_left2right: bool)
 #
-# which returns a dict-like object after performing the following steps:
+# The user can then obtain a lookup table of joint angles in any desired axis order via:
+#
+#     joint_angles = pose.get_angles_lookup(axis_order: AxisOrder)
+#
+# which performs the following steps:
 #
 #     1. Converts the degrees to radians if necessary.
-#     2. Mirrors left-sided joint angles to automatically fill right-sided
-#        joint angles if `mirror_left2right` is True.
-#     3. Set default angle to 0 for any DoF not explicitly specified here.
+#     2. Mirrors left-sided joint angles to fill right-sided if applicable.
+#     3. Transform joint angles to match the user-specified axis order.
+#
+# Important: the axis order conversion is inexact because 3D rotations are not
+# commutative. See documentation on `KinematicPose` for details.
 
 angle_unit: degree
 
-axis_order: [roll, yaw, pitch]
+axis_order: [yaw, pitch, roll]
 
 joint_angles:
+  c_thorax-lf_coxa-yaw : 4
   c_thorax-lf_coxa-pitch : 25
-  c_thorax-lf_coxa-roll : 20
-  c_thorax-lf_coxa-yaw : 0
-  lf_coxa-lf_trochanterfemur-pitch : -135
-  lf_coxa-lf_trochanterfemur-roll : 20
-  lf_trochanterfemur-lf_tibia-pitch : 75
-  lf_tibia-lf_tarsus1-pitch : -10
-  lf_tarsus1-lf_tarsus2-pitch : -5
-  lf_tarsus2-lf_tarsus3-pitch : -5
-  lf_tarsus3-lf_tarsus4-pitch : -5
-  lf_tarsus4-lf_tarsus5-pitch : -5
+  c_thorax-lf_coxa-roll : 31
+  lf_coxa-lf_trochanterfemur-pitch : -116
+  lf_coxa-lf_trochanterfemur-roll : 5
+  lf_trochanterfemur-lf_tibia-pitch : 84
+  lf_tibia-lf_tarsus1-pitch : -39
+
+  c_thorax-lm_coxa-yaw : 5
+  c_thorax-lm_coxa-pitch : 5
+  c_thorax-lm_coxa-roll : 103
+  lm_coxa-lm_trochanterfemur-pitch : -108
+  lm_coxa-lm_trochanterfemur-roll : 16
+  lm_trochanterfemur-lm_tibia-pitch : 108
+  lm_tibia-lm_tarsus1-pitch : -42
+
+  c_thorax-lh_coxa-yaw : -4
+  c_thorax-lh_coxa-pitch : 24
+  c_thorax-lh_coxa-roll : 149
+  lh_coxa-lh_trochanterfemur-pitch : -104
+  lh_coxa-lh_trochanterfemur-roll : 9
+  lh_trochanterfemur-lh_tibia-pitch : 106
+  lh_tibia-lh_tarsus1-pitch : -30
 
   c_thorax-lm_coxa-pitch : 10
   c_thorax-lm_coxa-roll : 95
