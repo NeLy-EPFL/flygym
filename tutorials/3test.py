@@ -128,12 +128,86 @@ def run_simulation(
     for step in trange(warmup_steps + sim_steps):
         control_inputs = dof_angles_all_worlds[:, step - warmup_steps, :]
         sim.set_actuator_inputs(fly_name, actuator_type, control_inputs)
-        sim.step()
-        sim.render_as_needed()
+        sim.step_with_profile()
+        sim.render_as_needed_with_profile()
 
-    sim.renderer.save_video(world_id=list(range(9)), output_path="test_out.mp4", scale=1)
+    sim.print_performance_report()
+
+    sim.renderer.save_video(
+        world_id=list(range(9)), output_path="test_out.mp4", scale=1
+    )
+
+
+def run_simulation_precopy(
+    sim: GPUSimulation,
+    dof_angles_all_worlds,
+    warmup_steps=500,
+    fly_name=fly.name,
+    actuator_type=actuator_type,
+    use_gpu_batch_rendering=True,
+):
+    n_worlds, sim_steps, n_dofs = dof_angles_all_worlds.shape
+
+    sim.reset()
+    sim.set_renderer(
+        cam,
+        playback_speed=playback_speed,
+        output_fps=output_fps,
+        worlds=None,
+        use_gpu_batch_rendering=use_gpu_batch_rendering,
+    )
+
+    # Turn adhesion on for all 6 legs across all worlds
+    sim.set_leg_adhesion_states(fly_name, np.ones((n_worlds, 6), dtype=np.float32))
+    sim.warmup()
+
+    dof_angles_all_worlds_gpu = wp.array(dof_angles_all_worlds)
+    curr_target_angles_gpu = wp.zeros((n_worlds, n_dofs), dtype=wp.float32)
+    step_counter = wp.array([0], dtype=wp.int32)
+
+    @wp.kernel
+    def update_target_angles_kernel(
+        dof_angles_all_worlds_gpu: wp.array3d(dtype=wp.float32),  # type: ignore
+        step_counter_gpu: wp.array(dtype=wp.int32),  # type: ignore
+        curr_target_angles_gpu: wp.array2d(dtype=wp.float32),  # type: ignore
+    ):
+        world_id, actuator_id = wp.tid()
+        step = step_counter_gpu[0]
+        my_target = dof_angles_all_worlds_gpu[world_id, step, actuator_id]
+        curr_target_angles_gpu[world_id, actuator_id] = my_target
+
+    @wp.kernel
+    def increment_counter_kernel(
+        step_counter_gpu: wp.array(dtype=wp.int32),  # type: ignore
+    ):
+        step_counter_gpu[0] = step_counter_gpu[0] + 1
+
+    with wp.ScopedCapture() as advance_sim_capture:
+        wp.launch(
+            update_target_angles_kernel,
+            dim=(n_worlds, n_dofs),
+            inputs=[dof_angles_all_worlds_gpu, step_counter],
+            outputs=[curr_target_angles_gpu],
+        )
+        sim.set_actuator_inputs(fly_name, actuator_type, curr_target_angles_gpu)
+        sim.step()
+        wp.launch(increment_counter_kernel, dim=1, outputs=[step_counter])
+
+
+    for step in trange(warmup_steps + sim_steps):
+        wp.capture_launch(advance_sim_capture.graph)
+        sim.render_as_needed()
+    
+    sim.renderer.save_video(
+        world_id=list(range(9)), output_path="test_out.mp4", scale=1
+    )
+
 
 dof_angles_all_worlds = dof_angles_all_worlds[:, :1000, :]
 dof_angles_all_worlds_gpu = wp.array(dof_angles_all_worlds)
-run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=True)
+
+# run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=True)
+# run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=False)
+
+run_simulation_precopy(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=True)
 # run_simulation(sim, dof_angles_all_worlds_gpu, use_gpu_batch_rendering=False)
