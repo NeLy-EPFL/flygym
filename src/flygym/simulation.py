@@ -3,7 +3,7 @@ from time import perf_counter_ns
 from collections.abc import Sequence
 from typing import Any
 
-import mujoco
+import mujoco as mj
 import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
@@ -21,12 +21,10 @@ class Simulation:
         self.renderer = None
         self.world = world
         self.mj_model, self.mj_data = world.compile()
-        self._neutral_keyframe_id = mujoco.mj_name2id(
-            self.mj_model, mujoco.mjtObj.mjOBJ_KEY, "neutral"
+        self._neutral_keyframe_id = mj.mj_name2id(
+            self.mj_model, mj.mjtObj.mjOBJ_KEY, "neutral"
         )
-        mujoco.mj_resetDataKeyframe(
-            self.mj_model, self.mj_data, self._neutral_keyframe_id
-        )
+        mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
 
         # Map internal IDs in the compiled MuJoCo model. This allows users to read from
         # or write to body/joint/actuator in orders defined by Fly objects.
@@ -45,9 +43,7 @@ class Simulation:
 
     def reset(self) -> None:
         # Reset physics
-        mujoco.mj_resetDataKeyframe(
-            self.mj_model, self.mj_data, self._neutral_keyframe_id
-        )
+        mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
 
         # Reset renderers
         if self.renderer is not None:
@@ -61,26 +57,30 @@ class Simulation:
 
     def step(self) -> None:
         physics_start_ns = perf_counter_ns()
-        mujoco.mj_step(self.mj_model, self.mj_data)
+        mj.mj_step(self.mj_model, self.mj_data)
         physics_finish_ns = perf_counter_ns()
         self._total_physics_time_ns += physics_finish_ns - physics_start_ns
         self._curr_step += 1
 
     def set_renderer(
         self,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element],
+        cameras: str | mjcf.Element | Sequence[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
         output_fps: int = 25,
+        buffer_frames: bool = True,
+        scene_option: mj.MjvOption | None = None,
         **kwargs: Any,
     ) -> Renderer:
         self.renderer = Renderer(
             self.mj_model,
-            camera,
+            cameras,
             camera_res=camera_res,
             playback_speed=playback_speed,
             output_fps=output_fps,
+            buffer_frames=buffer_frames,
+            scene_option=scene_option,
             **kwargs,
         )
         return self.renderer
@@ -180,9 +180,9 @@ class Simulation:
 
         for fly_name, fly in self.world.fly_lookup.items():
             for bodyseg, mjcf_body_element in fly.bodyseg_to_mjcfbody.items():
-                internal_body_id = mujoco.mj_name2id(
+                internal_body_id = mj.mj_name2id(
                     self.mj_model,
-                    mujoco.mjtObj.mjOBJ_BODY,
+                    mj.mjtObj.mjOBJ_BODY,
                     mjcf_body_element.full_identifier,
                 )
                 internal_bodyids_by_fly[fly_name].append(internal_body_id)
@@ -196,9 +196,9 @@ class Simulation:
 
         for fly_name, fly in self.world.fly_lookup.items():
             for jointdof, mjcf_joint_element in fly.jointdof_to_mjcfjoint.items():
-                internal_joint_id = mujoco.mj_name2id(
+                internal_joint_id = mj.mj_name2id(
                     self.mj_model,
-                    mujoco.mjtObj.mjOBJ_JOINT,
+                    mj.mjtObj.mjOBJ_JOINT,
                     mjcf_joint_element.full_identifier,
                 )
                 internal_jointids_by_fly[fly_name].append(internal_joint_id)
@@ -213,9 +213,9 @@ class Simulation:
 
         for fly_name, fly in self.world.fly_lookup.items():
             for jointdof, mjcf_joint_element in fly.jointdof_to_mjcfjoint.items():
-                internal_joint_id = mujoco.mj_name2id(
+                internal_joint_id = mj.mj_name2id(
                     self.mj_model,
-                    mujoco.mjtObj.mjOBJ_JOINT,
+                    mj.mjtObj.mjOBJ_JOINT,
                     mjcf_joint_element.full_identifier,
                 )
                 qposadr = self.mj_model.jnt_qposadr[internal_joint_id]
@@ -236,9 +236,9 @@ class Simulation:
         for fly_name, fly in self.world.fly_lookup.items():
             for actuator_ty, actuators in fly.jointdof_to_mjcfactuator_by_type.items():
                 for jointdof, actuator_element in actuators.items():
-                    internal_actuator_id = mujoco.mj_name2id(
+                    internal_actuator_id = mj.mj_name2id(
                         self.mj_model,
-                        mujoco.mjtObj.mjOBJ_ACTUATOR,
+                        mj.mjtObj.mjOBJ_ACTUATOR,
                         actuator_element.full_identifier,
                     )
                     internal_actuatorids_by_fly_by_type[actuator_ty][fly_name].append(
@@ -260,9 +260,9 @@ class Simulation:
                 continue  # This fly doesn't have leg adhesion actuators
             for leg in fly.get_legs_order():
                 actuator_element = fly.leg_to_adhesionactuator[leg]
-                internal_actuator_id = mujoco.mj_name2id(
+                internal_actuator_id = mj.mj_name2id(
                     self.mj_model,
-                    mujoco.mjtObj.mjOBJ_ACTUATOR,
+                    mj.mjtObj.mjOBJ_ACTUATOR,
                     actuator_element.full_identifier,
                 )
                 internal_adhesionactuatorids_by_fly[fly_name].append(
@@ -284,8 +284,8 @@ class Simulation:
             indices_thisfly = []
             for leg in fly.get_legs_order():
                 sensor = self.world.legpos_to_groundcontactsensors_by_fly[fly_name][leg]
-                internal_id = mujoco.mj_name2id(
-                    self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
+                internal_id = mj.mj_name2id(
+                    self.mj_model, mj.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
                 )
                 start_idx = self.mj_model.sensor_adr[internal_id]
                 sensor_dim = self.mj_model.sensor_dim[internal_id]

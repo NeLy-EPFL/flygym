@@ -13,7 +13,7 @@ from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.simulation import Simulation
 from flygym.utils.profiling import print_perf_report_parallel
-from flygym.warp.rendering import GPURenderer
+from flygym.warp.rendering import WarpGPUBatchRenderer, WarpCPURenderer
 from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
@@ -158,31 +158,40 @@ class GPUSimulation(Simulation):
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
         output_fps: int = 25,
-        worlds: list[int] | None = None,
         buffer_frames: bool = True,
+        scene_option: mj.MjvOption | None = None,
+        worlds: list[int] | None = None,
+        use_gpu_batch_rendering: bool = False,
         **kwargs: Any,
-    ) -> GPURenderer:
+    ) -> WarpGPUBatchRenderer | WarpCPURenderer:
         if worlds is None:
             worlds = list(range(self.n_worlds))
+        self.use_gpu_batch_rendering = use_gpu_batch_rendering
 
-        self.renderer = GPURenderer(
-            mj_model=self.mj_model,
-            n_worlds=self.n_worlds,
-            cameras=cameras,
-            worlds=worlds,
-            camera_res=camera_res,
-            playback_speed=playback_speed,
-            output_fps=output_fps,
-            buffer_frames=buffer_frames,
+        renderer_kwargs = {
+            "mj_model": self.mj_model,
+            "n_worlds_total": self.n_worlds,
+            "cameras": cameras,
+            "camera_res": camera_res,
+            "playback_speed": playback_speed,
+            "output_fps": output_fps,
+            "buffer_frames": buffer_frames,
+            "scene_option": scene_option,
+            "worlds": worlds,
             **kwargs,
-        )
+        }
+        if use_gpu_batch_rendering:
+            self.renderer = WarpGPUBatchRenderer(**renderer_kwargs)
+        else:
+            self.renderer = WarpCPURenderer(**renderer_kwargs)
 
         return self.renderer
 
     def render_as_needed(self) -> dict[str, Float[np.ndarray, "height width 3"]]:
         render_start_ns = perf_counter_ns()
-        render_done = self.renderer.render_as_needed(self.mjw_model, self.mjw_data)
+        render_done = self.renderer.render_as_needed(self.mjw_data)
         render_finish_ns = perf_counter_ns()
+
         self._total_render_time_ns += render_finish_ns - render_start_ns
         if render_done:
             self._frames_rendered += 1
