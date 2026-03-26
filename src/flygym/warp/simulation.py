@@ -13,7 +13,11 @@ from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.simulation import Simulation
 from flygym.utils.profiling import print_perf_report_parallel
-from flygym.warp.rendering import WarpGPUBatchRenderer, WarpCPURenderer
+from flygym.warp.rendering import (
+    WarpGPUBatchRenderer,
+    WarpCPURenderer,
+    modify_world_for_batch_rendering,
+)
 from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
@@ -181,6 +185,21 @@ class GPUSimulation(Simulation):
             **kwargs,
         }
         if use_gpu_batch_rendering:
+            is_model_modified = modify_world_for_batch_rendering(self.world)
+            if is_model_modified:
+                warnings.warn(
+                    "The world was modified to be compatible with GPU batch rendering. "
+                    "Recompiling the model."
+                )
+                self.mj_model, self.mj_data = self.world.compile()
+                self._neutral_keyframe_id = mj.mj_name2id(
+                    self.mj_model, mj.mjtObj.mjOBJ_KEY, "neutral"
+                )
+                mj.mj_resetDataKeyframe(
+                    self.mj_model, self.mj_data, self._neutral_keyframe_id
+                )
+                self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
+                renderer_kwargs["mj_model"] = self.mj_model
             self.renderer = WarpGPUBatchRenderer(**renderer_kwargs)
         else:
             self.renderer = WarpCPURenderer(**renderer_kwargs)
@@ -259,11 +278,17 @@ class GPUSimulation(Simulation):
         return mjw_model, mjw_data
 
     @staticmethod
-    def _strip_unsupported_options_for_mjwarp(world: BaseWorld) -> None:
-        """Remove stuff from dm_control.mjcf.RootElement that are unsupported in MJWarp.
+    def _strip_unsupported_options_for_mjwarp(world: BaseWorld) -> bool:
+        """Remove specs in world MJCF model that are unsupported in MJWarp.
 
-        With every new release of MJWarp, check if anything here can be removed.
+        Modification happens in place. Returns True if any modifications were made,
+        False otherwise.
+
+        Note for developers: Check if anything here can be dropped upon new MJWarp
+        releases.
         """
+        is_modified = False
+
         # Noslip solver not supported
         if (noslip_iters := world.mjcf_root.option.noslip_iterations) > 0:
             warnings.warn(
@@ -271,40 +296,6 @@ class GPUSimulation(Simulation):
                 f"option/noslip_iterations from {noslip_iters} to 0."
             )
             world.mjcf_root.option.noslip_iterations = 0
+            is_modified = True
 
-        # Strip textures from fly body materials
-        # (rendering textures on complex meshes causes MJWarp memory corruption)
-        for material in world.mjcf_root.asset.find_all("material"):
-            if not material.full_identifier.split("/")[0] in world.fly_lookup:
-                continue  # not a fly body material - leave it alone
-            if material.texture is None:
-                continue  # material doesn't have texture - nothing to strip
-            texture_element = world.mjcf_root.asset.find(
-                "texture", material.texture.full_identifier
-            )
-            primary_color_rgb = texture_element.rgb1
-            material.texture = None
-            material.rgba[:3] = primary_color_rgb
-
-        # Adjust scale of checker materials (e.g., ground): texrepeat needs to be scaled
-        # down by 1000x to get the same pattern - unclear why
-        for material in world.mjcf_root.asset.find_all("material"):
-            if material.texrepeat is not None:
-                material.texrepeat = tuple(tr / 1000 for tr in material.texrepeat)
-
-        # Add light above each fly explicitly
-        for body in world.mjcf_root.find_all("body"):
-            if hasattr(body, "name") and body.name == "c_thorax":
-                warnings.warn(f"Adding overhead light for body {body.full_identifier}")
-                body.add(
-                    "light",
-                    name=body.full_identifier.replace("/", "-") + "-overheadlight",
-                    mode="track",
-                    target="c_thorax",
-                    pos=(0, 0, 30),
-                    dir=(0, 0, -1),
-                    directional=True,
-                    ambient=(10, 10, 10),
-                    diffuse=(10, 10, 10),
-                    specular=(0.3, 0.3, 0.3),
-                )
+        return is_modified

@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, override
 from os import PathLike
 from abc import ABC, abstractmethod
@@ -8,10 +9,13 @@ import mujoco_warp as mjw
 import dm_control.mjcf as mjcf
 import warp as wp
 import numpy as np
-import imageio.v3 as iio
+from PIL import Image, ImageDraw, ImageFont
 
+from flygym.compose import BaseWorld
 from flygym.rendering import Renderer
 from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
+from flygym.utils.video import write_video_from_frames
+from flygym.utils.plot import find_font_path
 
 
 class _BaseWarpRenderer(Renderer, ABC):
@@ -110,6 +114,7 @@ class _BaseWarpRenderer(Renderer, ABC):
         self,
         world_id: int,
         camera: str | mjcf.Element | list[str | mjcf.Element] | None = None,
+        scale: float | None = None,
         **kwargs,
     ):
         """Display recorded frames in a Jupyter notebook.
@@ -123,15 +128,21 @@ class _BaseWarpRenderer(Renderer, ABC):
 
         for cam_name in camera_names:
             cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-            frames = self._fetch_frames_to_cpu(world_id, cam_id)
+            if isinstance(world_id, int):
+                frames = self._fetch_frames_to_cpu_oneworld(world_id, cam_id, scale)
+            else:
+                frames = self._fetch_frames_to_cpu_multipleworlds(
+                    world_id, cam_id, scale
+                )
             title = f"world {world_id}, camera {cam_name}"
             mediapy.show_video(frames, fps=self.output_fps, title=title, **kwargs)
 
     @override
     def save_video(
         self,
-        world_id: int,
+        world_id: int | list[int],
         output_path: dict[str | mjcf.Element, PathLike] | PathLike,
+        scale: float | None = None,
         **kwargs,
     ) -> None:
         """Save recorded frames as video files.
@@ -147,11 +158,20 @@ class _BaseWarpRenderer(Renderer, ABC):
 
         for cam_name, path in path_by_camera.items():
             cam_id, _ = self._resolve_camera_id_and_name(cam_name)
-            frames = self._fetch_frames_to_cpu(world_id, cam_id)
+            if isinstance(world_id, int):
+                frames = self._fetch_frames_to_cpu_oneworld(world_id, cam_id, scale)
+            else:
+                frames = self._fetch_frames_to_cpu_multipleworlds(
+                    world_id, cam_id, scale
+                )
             path.parent.mkdir(parents=True, exist_ok=True)
-            iio.imwrite(path, frames, fps=self.output_fps, codec="libx264", **kwargs)
+            write_video_from_frames(
+                path, frames, fps=self.output_fps, codec="libx264", **kwargs
+            )
 
-    def _fetch_frames_to_cpu(self, world_id: int, cam_id: int) -> list[np.ndarray]:
+    def _fetch_frames_to_cpu_oneworld(
+        self, world_id: int, cam_id: int, scale: float | None = None
+    ) -> list[np.ndarray]:
         if not self.buffer_frames:
             raise RuntimeError(
                 "Frame buffering was disabled for this renderer, so recorded frames "
@@ -177,9 +197,69 @@ class _BaseWarpRenderer(Renderer, ABC):
             )
         cam_id_among_rendered = self.enabled_cam_names.index(cam_name)
 
-        return self._fetch_frames_to_cpu_impl(
+        frames = self._fetch_frames_to_cpu_impl(
             world_id_among_rendered, cam_id_among_rendered
         )
+        if scale is not None:
+            render_res = tuple(int(x * scale) for x in self.camera_res)
+            for i, frame in enumerate(frames):
+                pil_frame = Image.fromarray(frame)
+                pil_frame_resized = pil_frame.resize(
+                    render_res[::-1],  # PIL expects (W, H); we use (H, W)
+                    resample=Image.Resampling.LANCZOS,
+                )
+                frame_resized = np.array(pil_frame_resized)
+                frames[i] = frame_resized
+        return frames
+
+    def _fetch_frames_to_cpu_multipleworlds(
+        self, world_ids: list[int], cam_id: int, scale: float | None
+    ) -> dict[int, list[np.ndarray]]:
+        # Set up canvas for displaying frames from multiple worlds in a grid
+        n_worlds = len(world_ids)
+        n_rows = int(np.ceil(np.sqrt(n_worlds)))
+        n_cols = int(np.ceil(n_worlds / n_rows))
+        # If scale is unspecified, make the output resolution roughly matches the
+        # resolution of a single world/camera - this avoids creating an excessively
+        # large canvas when there are many worlds.
+        if scale is None:
+            scale = 1 / n_cols
+        render_res = tuple(int(x * scale) for x in self.camera_res)
+        canvas_shape = (render_res[0] * n_rows, render_res[1] * n_cols)
+        n_frames = len(self._frames)
+        merged_frames = [
+            np.zeros((*canvas_shape, 3), dtype=np.uint8) for _ in range(n_frames)
+        ]
+
+        # Set up font for overlaying world IDs
+        FONT_FAMILY = "Arial"
+        FONT_SIZE_RATIO_OF_HEIGHT = 0.07
+        MIN_FONT_SIZE = 7
+        font_path = find_font_path(FONT_FAMILY)
+        font_size = max(MIN_FONT_SIZE, int(render_res[0] * FONT_SIZE_RATIO_OF_HEIGHT))
+        font = ImageFont.truetype(font_path, font_size)
+
+        # Fetch frames for each world and paste them onto the canvas
+        for i, wid in enumerate(world_ids):
+            row = i // n_cols
+            col = i % n_cols
+            row_slice = slice(row * render_res[0], (row + 1) * render_res[0])
+            col_slice = slice(col * render_res[1], (col + 1) * render_res[1])
+
+            world_frames = self._fetch_frames_to_cpu_oneworld(wid, cam_id, scale)
+            assert len(world_frames) == n_frames, "inconsistent frame counts"
+            for j, world_frame in enumerate(world_frames):
+                # Overlay world ID text
+                pil_frame = Image.fromarray(world_frame)
+                draw = ImageDraw.Draw(pil_frame)
+                text = f"World {wid}"
+                text_pos = (0.03 * render_res[1], 0.02 * render_res[0])  # (x, y)
+                draw.text(text_pos, text, font=font, fill=(255, 255, 255))
+                world_frame = np.array(pil_frame)
+                # Paste onto canvas
+                merged_frames[j][row_slice, col_slice] = world_frame
+
+        return merged_frames
 
     @abstractmethod
     def _render_setup_impl(self, **kwargs: Any) -> None:
@@ -300,3 +380,58 @@ class WarpCPURenderer(_BaseWarpRenderer):
             frame = rendered_images[world_id_among_rendered, cam_id_among_rendered, ...]
             frames.append(frame)
         return frames
+
+
+def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
+    """Modify world MJCF model to make it compatible with MJWarp's GPU batch rendering.
+
+    This may reduce texture and lighting realism.
+
+    Modification happens in place. Returns True if any modifications were made, False
+    otherwise.
+
+    Note for developers: Check if anything here can be dropped upon new MJWarp releases.
+    """
+    is_modified = False
+
+    # Strip textures from fly body materials
+    # (rendering textures on complex meshes causes MJWarp memory corruption)
+    for material in world.mjcf_root.asset.find_all("material"):
+        if not material.full_identifier.split("/")[0] in world.fly_lookup:
+            continue  # not a fly body material - leave it alone
+        if material.texture is None:
+            continue  # material doesn't have texture - nothing to strip
+        texture_element = world.mjcf_root.asset.find(
+            "texture", material.texture.full_identifier
+        )
+        primary_color_rgb = texture_element.rgb1
+        material.texture = None
+        material.rgba[:3] = primary_color_rgb
+        is_modified = True
+
+    # Adjust scale of checker materials (e.g., ground): texrepeat needs to be scaled
+    # down by 1000x to get the same pattern - unclear why
+    for material in world.mjcf_root.asset.find_all("material"):
+        if material.texrepeat is not None:
+            material.texrepeat = tuple(tr / 1000 for tr in material.texrepeat)
+            is_modified = True
+
+    # Add light above each fly explicitly
+    for body in world.mjcf_root.find_all("body"):
+        if hasattr(body, "name") and body.name == "c_thorax":
+            warnings.warn(f"Adding overhead light for body {body.full_identifier}")
+            body.add(
+                "light",
+                name=body.full_identifier.replace("/", "-") + "-overheadlight",
+                mode="track",
+                target="c_thorax",
+                pos=(0, 0, 30),
+                dir=(0, 0, -1),
+                directional=True,
+                ambient=(10, 10, 10),
+                diffuse=(10, 10, 10),
+                specular=(0.3, 0.3, 0.3),
+            )
+            is_modified = True
+
+    return is_modified

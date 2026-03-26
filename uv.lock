@@ -329,9 +329,11 @@ dependencies = [
     { name = "imageio-ffmpeg" },
     { name = "jaxtyping" },
     { name = "loguru" },
+    { name = "matplotlib" },
     { name = "mediapy" },
     { name = "mujoco" },
     { name = "numpy" },
+    { name = "pillow" },
     { name = "pyyaml" },
     { name = "tabulate" },
 ]
@@ -346,7 +348,6 @@ dev = [
 examples = [
     { name = "ipykernel" },
     { name = "ipython" },
-    { name = "matplotlib" },
     { name = "pandas" },
 ]
 warp = [
@@ -364,13 +365,14 @@ requires-dist = [
     { name = "ipython", marker = "extra == 'examples'", specifier = ">=9.10,<10.0" },
     { name = "jaxtyping", specifier = "==0.3.7" },
     { name = "loguru", specifier = "==0.7.3" },
-    { name = "matplotlib", marker = "extra == 'examples'", specifier = ">=3.10,<4.0" },
+    { name = "matplotlib", specifier = ">=3.10,<4.0" },
     { name = "mediapy", specifier = ">=1.2,<3.0" },
     { name = "mujoco", specifier = ">=3.6,<3.7" },
     { name = "mujoco-warp", marker = "extra == 'warp'", specifier = ">=3.6,<3.7" },
     { name = "nbstripout", marker = "extra == 'dev'", specifier = "==0.9.0" },
     { name = "numpy", specifier = ">=2.0,<3.0" },
     { name = "pandas", marker = "extra == 'examples'", specifier = ">=3.0,<4.0" },
+    { name = "pillow", specifier = ">=11,<13" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<10.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0,<8.0" },
     { name = "pyyaml", specifier = ">=6.0,<7.0" },
