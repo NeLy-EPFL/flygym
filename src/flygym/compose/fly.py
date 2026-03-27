@@ -7,6 +7,7 @@ import mujoco
 import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
+from loguru import logger
 
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -20,7 +21,7 @@ from flygym.anatomy import (
     LEGS,
 )
 from flygym.compose.base import BaseCompositionElement
-from flygym.compose.pose import KinematicPose
+from flygym.compose.pose import KinematicPose, KinematicPosePreset
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
@@ -187,7 +188,7 @@ class Fly(BaseCompositionElement):
     def add_joints(
         self,
         skeleton: Skeleton,
-        neutral_pose: KinematicPose | None = None,
+        neutral_pose: KinematicPose | KinematicPosePreset | None = None,
         *,
         stiffness: float = 10.0,
         damping: float = 0.5,
@@ -223,12 +224,16 @@ class Fly(BaseCompositionElement):
         """
         if neutral_pose is None:
             neutral_angle_lookup = {}
+        elif isinstance(neutral_pose, KinematicPose):
+            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
+        elif isinstance(neutral_pose, KinematicPosePreset):
+            neutral_pose = neutral_pose.get_pose_by_axis_order(skeleton.axis_order)
+            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
         else:
-            if not isinstance(neutral_pose, KinematicPose):
-                raise ValueError(
-                    "When specified, `neutral_pose` must be a `KinematicPose`."
-                )
-            neutral_angle_lookup = neutral_pose.get_angles_lookup(skeleton.axis_order)
+            raise ValueError(
+                "When specified, `neutral_pose` must be a "
+                "`KinematicPose` or `KinematicPosePreset`."
+            )
 
         self.skeleton = skeleton
 
@@ -297,14 +302,20 @@ class Fly(BaseCompositionElement):
         Returns:
             Dictionary mapping JointDOF to created MJCF actuator elements.
         """
+        actuator_type = ActuatorType(actuator_type)
+
         if neutral_input is None:
             neutral_input = {}
-        if isinstance(neutral_input, KinematicPose) and (
-            ActuatorType(actuator_type) == ActuatorType.POSITION
-        ):
-            neutral_input = neutral_input.get_angles_lookup(self.skeleton.axis_order)
 
-        actuator_type = ActuatorType(actuator_type)
+        if actuator_type == ActuatorType.POSITION:
+            if isinstance(neutral_input, KinematicPose):
+                neutral_input = neutral_input.joint_angles_lookup_rad
+            elif isinstance(neutral_input, KinematicPosePreset):
+                neutral_pose = neutral_input.get_pose_by_axis_order(
+                    self.skeleton.axis_order
+                )
+                neutral_input = neutral_pose.joint_angles_lookup_rad
+
         return_dict = {}
         for jointdof in jointdofs:
             self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = (

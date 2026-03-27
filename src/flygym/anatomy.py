@@ -175,6 +175,12 @@ class AxisOrder(Enum):
         """Convert axis order to a permutation of 'x', 'y', and 'z' (as one string)."""
         return "".join(axis.to_letter_xyz() for axis in self.value)
 
+    def to_list_of_str(self) -> list[str]:
+        return [axis.value for axis in self.value]
+
+    def to_str(self) -> str:
+        return "_".join(self.to_list_of_str())
+
 
 def _chain2joints(*args: str) -> list[tuple[str, str]]:
     """Helper function to convert a sequence of segment names into a list of connected
@@ -545,6 +551,7 @@ class Skeleton:
 
         if joint_preset is not None:
             anatomical_joints = JointPreset(joint_preset).to_joint_list()
+        self.anatomical_joints = anatomical_joints
 
         self.joint_lookup = {(j.parent, j.child): j for j in anatomical_joints}
         self.body_segments = orderedset(
