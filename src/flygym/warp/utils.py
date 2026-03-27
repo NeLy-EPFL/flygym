@@ -132,3 +132,16 @@ def get_rgb_selected_worlds_and_cameras(
         inputs=[rc.rgb_data, rc.rgb_adr, worldids, camids],
         outputs=[rgb_out],
     )
+
+
+def check_gpu():
+    devices = wp.get_devices()
+    gpu_devices = [d for d in devices if d.is_cuda]
+    if len(gpu_devices) == 0:
+        raise ValueError("NVIDIA GPU required for the flygym.warp module; none found.")
+    if len(gpu_devices) > 1:
+        print(
+            "Multiple NVIDIA GPUs detected; we will only use one. "
+            "You can specify which GPU to use by setting the 'CUDA_VISIBLE_DEVICES' "
+            "environment variable."
+        )
