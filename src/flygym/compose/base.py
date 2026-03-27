@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from os import PathLike
 
-import mujoco
+import mujoco as mj
 import dm_control.mjcf as mjcf
 
 __all__ = ["BaseCompositionElement"]
@@ -17,7 +17,7 @@ class BaseCompositionElement(ABC):
     def mjcf_root(self) -> mjcf.RootElement:
         pass
 
-    def compile(self) -> tuple[mujoco.MjModel, mujoco.MjData]:
+    def compile(self) -> tuple[mj.MjModel, mj.MjData]:
         """Compile the MJCF model into MuJoCo MjModel and MjData objects. This is where
         `dm_control.mjcf` "hands off" the model that it composes to `mujoco` for
         simulation. Things like the ordering of generalized coordinates (qpos) are

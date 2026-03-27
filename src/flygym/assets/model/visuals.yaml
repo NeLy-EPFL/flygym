@@ -44,14 +44,14 @@ arista:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [0.26, 0.2, 0.16, 1.0]
+    rgba: [0.26, 0.2, 0.16, 1]
 
 haltere:
   apply_to: "*_haltere"
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [0.59, 0.43, 0.24, 0.6]
+    rgba: [0.59, 0.43, 0.24, 1]
 
 headthorax:
   apply_to: ["c_head", "c_thorax"]
@@ -74,7 +74,7 @@ antennaproboscis:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [1, 1, 1, 0.8]
+    rgba: [1, 1, 1, 1]
   texture:
     builtin: flat
     rgb1: [0.59, 0.39, 0.12]
@@ -122,7 +122,7 @@ coxa:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [1, 1, 1, 0.8]
+    rgba: [1, 1, 1, 1]
   texture:
     builtin: flat
     rgb1: [0.59, 0.39, 0.12]
@@ -138,7 +138,7 @@ trochanterfemur:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [1, 1, 1, 0.7]
+    rgba: [1, 1, 1, 1]
   texture:
     builtin: flat
     rgb1: [0.63, 0.43, 0.16]
@@ -154,7 +154,7 @@ tibia:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [1, 1, 1, 0.6]
+    rgba: [1, 1, 1, 1]
   texture:
     builtin: flat
     rgb1: [0.67, 0.47, 0.2]
@@ -170,7 +170,7 @@ tarsus:
   material:
     specular: 0.2
     shininess: 0.2
-    rgba: [1, 1, 1, 0.5]
+    rgba: [1, 1, 1, 1]
   texture:
     builtin: flat
     rgb1: [0.71, 0.51, 0.24]

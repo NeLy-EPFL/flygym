@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from collections.abc import Collection
 
 import numpy as np
-import numpy.typing as npt
+from jaxtyping import Float
 
 __all__ = [
     "Vec2",
@@ -18,14 +18,14 @@ __all__ = [
     "Rotation3D",
 ]
 
+Vec2 = Float[np.ndarray, "2"]
+Vec3 = Float[np.ndarray, "3"]
+Vec4 = Float[np.ndarray, "4"]
+Vec5 = Float[np.ndarray, "5"]
+Vec6 = Float[np.ndarray, "6"]
+Vec7 = Float[np.ndarray, "7"]
 
 T = TypeVar("T", bound=Hashable)
-Vec2 = Annotated[npt.NDArray[np.float64], Literal[2]]
-Vec3 = Annotated[npt.NDArray[np.float64], Literal[3]]
-Vec4 = Annotated[npt.NDArray[np.float64], Literal[4]]
-Vec5 = Annotated[npt.NDArray[np.float64], Literal[5]]
-Vec6 = Annotated[npt.NDArray[np.float64], Literal[6]]
-Vec7 = Annotated[npt.NDArray[np.float64], Literal[7]]
 
 
 class Tree(Generic[T]):
