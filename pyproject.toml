@@ -21,34 +21,43 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "mujoco>=3.2,<3.5",
+    "mujoco>=3.6,<3.7",
     "numpy>=2.0,<3.0",
-    "dm_control>=1.0.27,<1.1",
+    "dm_control>=1.0.38,<1.0.39",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
     "imageio>=2.37,<3.0",
     "imageio-ffmpeg==0.6.0",
     "jaxtyping==0.3.7",
     "tabulate==0.9.0",
+    "loguru==0.7.3",
+    "pillow>=11,<13",
+    "matplotlib>=3.10,<4.0",
 ]
 
 [project.optional-dependencies]
 warp = [
-    "warp-lang>=1.11,<1.12",
-    "mujoco_warp==0.0.2",
+    "warp-lang>=1.12,<1.13",
+    "mujoco_warp>=3.6,<3.7",
 ]
 dev = [
-    "sphinx>=9.1,<10.0",
-    "sphinxcontrib-googleanalytics==0.5",
-    "furo==2025.12.19",
     "pytest>=9.0,<10.0",
-    "nbstripout==0.9.0",  # git pre-commit filter: strips output from ipynb notebooks
+    "pytest-cov>=7.0,<8.0",
+    "black>=26.1,<27.0",
+    # For mesh simplification:
+    "trimesh>=4.0,<5.0",
+    "shapely>=2.0,<3.0",
+    "mapbox-earcut>=2.0,<3.0",
+    "fast-simplification==0.1.13",
+    "networkx>=3.0,<4.0",
+    "rtree>=1.0,<2.0",
+    # Git pre-commit filter: strips output from ipynb notebooks
+    "nbstripout==0.9.0",
 ]
 examples = [
     "ipykernel>=7.1.0",
     "ipython>=9.10,<10.0",
     "pandas>=3.0,<4.0",
-    "matplotlib>=3.10,<4.0",
 ]
 
 [project.urls]
@@ -60,6 +69,13 @@ documentation = "https://neuromechfly.org/"
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=flygym --cov=flygym_examples --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["flygym", "flygym_examples"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
