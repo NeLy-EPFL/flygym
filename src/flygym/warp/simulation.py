@@ -20,7 +20,8 @@ from flygym.warp.rendering import (
 from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
-    wp_gather_indexed_rows_3d,
+    wp_gather_indexed_rows_vec3f,
+    wp_gather_indexed_rows_quatf,
 )
 
 
@@ -127,11 +128,10 @@ class GPUSimulation(Simulation):
             ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        n_cols = 3
-        dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
+        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_3d,
-            dim=(self.n_worlds, indices.size, n_cols),
+            wp_gather_indexed_rows_vec3f,
+            dim=(self.n_worlds, indices.size),
             inputs=[self.mjw_data.xpos, dst, indices],
         )
         return dst
@@ -150,11 +150,10 @@ class GPUSimulation(Simulation):
             in ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        n_cols = 4
-        dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
+        dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_3d,
-            dim=(self.n_worlds, indices.size, n_cols),
+            wp_gather_indexed_rows_quatf,
+            dim=(self.n_worlds, indices.size),
             inputs=[self.mjw_data.xquat, dst, indices],
         )
         return dst
