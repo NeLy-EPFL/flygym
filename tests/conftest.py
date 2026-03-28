@@ -6,11 +6,10 @@ are scoped to the module level so the expensive setup is done only once per test
 
 import pytest
 
-import flygym
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
 from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
-from flygym.compose.pose import KinematicPose
+from flygym.compose.pose import KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
 
@@ -22,8 +21,8 @@ from flygym.simulation import Simulation
 
 @pytest.fixture(scope="module")
 def neutral_pose():
-    """Neutral standing pose loaded from the bundled YAML file."""
-    return KinematicPose(path=flygym.assets_dir / "model/pose/neutral.yaml")
+    """Neutral standing pose in YAW_PITCH_ROLL order."""
+    return KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
 
 
 @pytest.fixture(scope="module")
