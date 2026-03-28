@@ -78,7 +78,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=flygym --cov=flygym_examples --cov-report=term-missing"
+addopts = "--cov=flygym --cov=flygym_examples --cov-report=term-missing --import-mode=importlib"
 
 [tool.coverage.run]
 source = ["flygym", "flygym_examples"]

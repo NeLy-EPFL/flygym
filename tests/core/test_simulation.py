@@ -331,7 +331,6 @@ class TestProfilingMethods:
 
 class TestSetRenderer:
     def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
-        from unittest.mock import MagicMock, patch
         from flygym.rendering import Renderer
 
         # Build a world with a camera for this test
@@ -364,17 +363,13 @@ class TestSetRenderer:
         sim = Simulation(world)
         cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
 
-        mock_backend = MagicMock()
-        mock_backend.render.return_value = np.zeros((64, 64, 3), dtype=np.uint8)
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
+        renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
 
         assert renderer is not None
         assert isinstance(renderer, Renderer)
         assert sim.renderer is renderer
 
     def test_render_as_needed_with_profile_tracks_frames(self, simulation):
-        from unittest.mock import MagicMock, patch
         from flygym.compose.fly import Fly, ActuatorType
         from flygym.compose.world import TetheredWorld
         from flygym.compose.pose import KinematicPosePreset
@@ -403,10 +398,7 @@ class TestSetRenderer:
         sim = Simulation(world)
         cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
 
-        mock_backend = MagicMock()
-        mock_backend.render.return_value = np.zeros((64, 64, 3), dtype=np.uint8)
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            sim.set_renderer(cam_name, camera_res=(64, 64))
+        sim.set_renderer(cam_name, camera_res=(64, 64))
 
         sim.reset()
         assert sim._frames_rendered == 0

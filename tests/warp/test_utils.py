@@ -360,12 +360,13 @@ class TestWpGatherIndexedRowsQuatf:
 class TestGetRgbSelectedWorldsAndCamerasValidation:
     def test_worldids_size_mismatch_raises(self):
         """rgb_out world-dim must match len(worldids)."""
+        import types
         from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
-        from unittest.mock import MagicMock
 
-        rc = MagicMock()
-        rc.rgb_data = wp.zeros((4, 100), dtype=wp.uint32)
-        rc.rgb_adr = wp.zeros(2, dtype=int)
+        rc = types.SimpleNamespace(
+            rgb_data=wp.zeros((4, 100), dtype=wp.uint32),
+            rgb_adr=wp.zeros(2, dtype=int),
+        )
 
         worldids = wp.array([0, 1, 2], dtype=int)   # size 3
         camids = wp.array([0, 1], dtype=int)         # size 2
@@ -376,12 +377,13 @@ class TestGetRgbSelectedWorldsAndCamerasValidation:
 
     def test_camids_size_mismatch_raises(self):
         """rgb_out camera-dim must match len(camids)."""
+        import types
         from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
-        from unittest.mock import MagicMock
 
-        rc = MagicMock()
-        rc.rgb_data = wp.zeros((4, 100), dtype=wp.uint32)
-        rc.rgb_adr = wp.zeros(3, dtype=int)
+        rc = types.SimpleNamespace(
+            rgb_data=wp.zeros((4, 100), dtype=wp.uint32),
+            rgb_adr=wp.zeros(3, dtype=int),
+        )
 
         worldids = wp.array([0, 1], dtype=int)       # size 2
         camids = wp.array([0, 1, 2], dtype=int)      # size 3

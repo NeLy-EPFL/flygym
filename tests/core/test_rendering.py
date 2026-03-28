@@ -1,14 +1,6 @@
-"""Tests for flygym.rendering (Renderer class).
-
-MuJoCo's renderer requires an OpenGL context.  All tests that need an actual
-mujoco.Renderer are guarded by patching it with a lightweight mock so that
-the CI can run without a display.  Tests that only exercise pure-Python logic
-(path resolution, camera-spec normalisation) work without any mock.
-"""
+"""Tests for flygym.rendering (Renderer class)."""
 
 import pytest
-import numpy as np
-from unittest.mock import MagicMock, patch
 
 from flygym.anatomy import AxisOrder, JointPreset, Skeleton
 from flygym.compose.fly import Fly
@@ -45,26 +37,15 @@ def compiled_model_with_camera():
 def cam_name(compiled_model_with_camera):
     """Full identifier of the tracking camera after world attachment."""
     _, _, fly = compiled_model_with_camera
-    # dm_control prefixes names with the model name when attaching
     return fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
-
-
-def _make_mock_mj_renderer(frame_shape=(64, 64, 3)):
-    """Return a mock that mimics the mujoco.Renderer interface."""
-    mock = MagicMock()
-    mock.render.return_value = np.zeros(frame_shape, dtype=np.uint8)
-    return mock
 
 
 @pytest.fixture(scope="module")
 def renderer(compiled_model_with_camera, cam_name):
-    """A Renderer with a mocked mujoco.Renderer backend."""
+    """A real Renderer backed by EGL headless rendering."""
     mj_model, _, _ = compiled_model_with_camera
-    mock_backend = _make_mock_mj_renderer()
-    with patch("mujoco.Renderer", return_value=mock_backend):
-        r = Renderer(mj_model, cam_name, camera_res=(64, 64))
+    r = Renderer(mj_model, cam_name, camera_res=(64, 64))
     yield r
-    # close() calls self.mj_renderer.close(), which is a no-op on the mock
     r.close()
 
 
@@ -76,9 +57,7 @@ def renderer(compiled_model_with_camera, cam_name):
 class TestRendererConstruction:
     def test_constructs_with_valid_camera(self, compiled_model_with_camera, cam_name):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(mj_model, cam_name, camera_res=(64, 64))
+        r = Renderer(mj_model, cam_name, camera_res=(64, 64))
         r.close()
         assert r is not None
 
@@ -86,9 +65,7 @@ class TestRendererConstruction:
         self, compiled_model_with_camera, cam_name
     ):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(mj_model, cam_name, camera_res=(64, 64), buffer_frames=True)
+        r = Renderer(mj_model, cam_name, camera_res=(64, 64), buffer_frames=True)
         r.close()
         assert r.frames is not None
         assert cam_name in r.frames
@@ -98,41 +75,31 @@ class TestRendererConstruction:
         self, compiled_model_with_camera, cam_name
     ):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(mj_model, cam_name, camera_res=(64, 64), buffer_frames=False)
+        r = Renderer(mj_model, cam_name, camera_res=(64, 64), buffer_frames=False)
         r.close()
         assert r.frames is None
 
     def test_invalid_camera_raises(self, compiled_model_with_camera):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with pytest.raises(ValueError, match="not found"):
-                Renderer(mj_model, "nonexistent_cam", camera_res=(64, 64))
+        with pytest.raises(ValueError, match="not found"):
+            Renderer(mj_model, "nonexistent_cam", camera_res=(64, 64))
 
     def test_duplicate_camera_raises(self, compiled_model_with_camera, cam_name):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with pytest.raises(ValueError, match="Duplicate"):
-                Renderer(mj_model, [cam_name, cam_name], camera_res=(64, 64))
+        with pytest.raises(ValueError, match="Duplicate"):
+            Renderer(mj_model, [cam_name, cam_name], camera_res=(64, 64))
 
     def test_camera_res_stored(self, compiled_model_with_camera, cam_name):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(mj_model, cam_name, camera_res=(48, 96))
+        r = Renderer(mj_model, cam_name, camera_res=(48, 96))
         r.close()
         assert r.camera_res == (48, 96)
 
     def test_playback_speed_and_fps_stored(self, compiled_model_with_camera, cam_name):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(
-                mj_model, cam_name, camera_res=(64, 64), playback_speed=0.5, output_fps=30
-            )
+        r = Renderer(
+            mj_model, cam_name, camera_res=(64, 64), playback_speed=0.5, output_fps=30
+        )
         r.close()
         assert r.playback_speed == 0.5
         assert r.output_fps == 30
@@ -212,30 +179,23 @@ class TestRendererReset:
 class TestRendererContextManager:
     def test_context_manager_returns_self(self, compiled_model_with_camera, cam_name):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with Renderer(mj_model, cam_name, camera_res=(64, 64)) as r:
-                assert r is not None
+        with Renderer(mj_model, cam_name, camera_res=(64, 64)) as r:
+            assert r is not None
 
     def test_context_manager_calls_close_on_exit(
         self, compiled_model_with_camera, cam_name
     ):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with Renderer(mj_model, cam_name, camera_res=(64, 64)) as r:
-                pass
-        mock_backend.close.assert_called_once()
+        with Renderer(mj_model, cam_name, camera_res=(64, 64)):
+            pass  # __exit__ must call close() without raising
 
     def test_context_manager_does_not_suppress_exceptions(
         self, compiled_model_with_camera, cam_name
     ):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with pytest.raises(RuntimeError, match="intentional"):
-                with Renderer(mj_model, cam_name, camera_res=(64, 64)):
-                    raise RuntimeError("intentional")
+        with pytest.raises(RuntimeError, match="intentional"):
+            with Renderer(mj_model, cam_name, camera_res=(64, 64)):
+                raise RuntimeError("intentional")
 
 
 # ==============================================================================
@@ -314,9 +274,7 @@ class TestSaveVideo:
         self, compiled_model_with_camera, cam_name, tmp_path
     ):
         mj_model, _, _ = compiled_model_with_camera
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            r = Renderer(mj_model, cam_name, camera_res=(64, 64))
+        r = Renderer(mj_model, cam_name, camera_res=(64, 64))
         # Don't render anything; save_video should raise
         with pytest.raises(RuntimeError, match="No frames"):
             r.save_video(tmp_path / "out.mp4")
