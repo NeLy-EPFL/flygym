@@ -11,6 +11,7 @@ def print_perf_report(
     n_frames_rendered: int,
     timestep: float,
 ):
+    """Prints a performance report based on the provided timing info."""
     if n_steps == 0:
         raise ValueError("n_steps must be > 0 to print performance report.")
 
@@ -97,6 +98,8 @@ def print_perf_report_parallel(
     n_worlds: int,
     n_worlds_rendered: int,
 ):
+    """Prints a performance report based on the provided timing info, including
+    parallelized throughput (useful for Warp)."""
     if n_steps == 0:
         raise ValueError(
             "n_steps must be > 0 to print performance report. "
