@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import override
 
-import mujoco
+import mujoco as mj
 import dm_control.mjcf as mjcf
 import numpy as np
 
@@ -170,8 +170,8 @@ class BaseWorld(BaseCompositionElement, ABC):
             joint_type = (
                 "free" if joint_element.tag == "freejoint" else joint_element.type
             )
-            internal_jointid = mujoco.mj_name2id(
-                mj_model, mujoco.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+            internal_jointid = mj.mj_name2id(
+                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
             )
             dofadr_start = mj_model.jnt_dofadr[internal_jointid]
             dofadr_end = dofadr_start + _STATE_DIM_BY_JOINT_TYPE[joint_type]

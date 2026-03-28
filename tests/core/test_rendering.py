@@ -6,12 +6,9 @@ the CI can run without a display.  Tests that only exercise pure-Python logic
 (path resolution, camera-spec normalisation) work without any mock.
 """
 
-import pathlib
 import pytest
 import numpy as np
 from unittest.mock import MagicMock, patch
-
-import mujoco
 
 from flygym.anatomy import AxisOrder, JointPreset, Skeleton
 from flygym.compose.fly import Fly
