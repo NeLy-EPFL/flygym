@@ -15,6 +15,7 @@ class BaseCompositionElement(ABC):
     @property
     @abstractmethod
     def mjcf_root(self) -> mjcf.RootElement:
+        """The root MJCF element of this composition element."""
         pass
 
     def compile(self) -> tuple[mj.MjModel, mj.MjData]:

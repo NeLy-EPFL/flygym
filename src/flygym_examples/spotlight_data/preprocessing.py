@@ -9,6 +9,32 @@ from flygym.anatomy import JointDOF
 
 
 class MotionSnippet:
+    """A short clip of experimentally recorded fly kinematics.
+
+    Data comes from the Spotlight motion capture system and covers all six legs
+    with seven DOFs per leg.
+
+    Args:
+        data_path: Path to an NPZ file with the recording. If None, loads the
+            bundled example clip.
+        angles_global2anatomical: If True, flip right-leg roll and yaw angles to
+            convert from the global (SeqIKPy) convention to the anatomical
+            (NeuroMechFly) convention where left/right angles are symmetric.
+
+    Attributes:
+        joint_angles: Raw joint angles, shape ``(n_steps, 6, 7)`` in radians.
+        fwdkin_egoxyz: Forward-kinematics keypoint positions in ego-frame.
+        rawpred_egoxyz: Raw predicted keypoint positions in ego-frame.
+        keypoints: List of keypoint name tuples.
+        legs: List of leg position identifiers matching axis 1 of ``joint_angles``.
+        dofs_per_leg: List of ``(parent_link, child_link, axis)`` tuples matching
+            axis 2 of ``joint_angles``.
+        data_fps: Recording frame rate in Hz.
+        experiment_trial: Experiment/trial identifier from the recording metadata.
+        framerange_in_raw_recording: Start and end frame indices in the original
+            raw recording.
+    """
+
     def __init__(
         self,
         data_path: Path | None = None,
@@ -59,25 +85,19 @@ class MotionSnippet:
         sgfilter_window_sec: float = 0.03,
         sgfilter_polyorder: int = 3,
     ) -> np.ndarray:
-        """Return smoothed, interpolated joint angles reordered to match
-        ``output_dof_order``.
+        """Return smoothed, interpolated joint angles reordered for simulation.
 
-        Parameters
-        ----------
-        output_timestep:
-            Simulation timestep in seconds (e.g. 1e-4).
-        output_dof_order:
-            List of JointDOF objects in the order expected by the simulator
-            (i.e. from ``fly.get_actuated_jointdofs_order(actuator_type)``).
-        sgfilter_window_sec:
-            Savitzky-Golay filter window length in seconds.
-        sgfilter_polyorder:
-            Polynomial order for the Savitzky-Golay filter (also used as the
-            spline degree for subsequent cubic interpolation).
+        Args:
+            output_timestep: Simulation timestep in seconds (e.g. ``1e-4``).
+            output_dof_order: DOF order expected by the simulator, as returned by
+                ``fly.get_actuated_jointdofs_order(actuator_type)``.
+            sgfilter_window_sec: Savitzky-Golay filter window in seconds.
+            sgfilter_polyorder: Polynomial order for the Savitzky-Golay filter and
+                cubic interpolation.
 
-        Returns
-        -------
-        np.ndarray, shape (n_output_steps, len(output_dof_order))
+        Returns:
+            Smoothed and interpolated joint angles in radians, shape
+            ``(n_output_steps, len(output_dof_order))``.
         """
         # --- 1. Savitzky-Golay smoothing ---
         window_size = int(sgfilter_window_sec * self.data_fps)
