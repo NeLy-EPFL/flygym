@@ -255,37 +255,48 @@ class BodySegment:
 
     @property
     def pos(self) -> str:
+        """Body position prefix (e.g. ``'lf'``, ``'c'``)."""
         return self.name.split("_")[0]
 
     @property
     def link(self) -> str:
+        """Link name within the kinematic chain (e.g. ``'tibia'``)."""
         return self.name.split("_")[1]
 
-    def is_thorax(self):
+    def is_thorax(self) -> bool:
+        """Return True if this segment is the thorax."""
         return self.name == "c_thorax"
 
-    def is_head(self):
+    def is_head(self) -> bool:
+        """Return True if this segment is the head."""
         return self.name == "c_head"
 
-    def is_proboscis(self):
+    def is_proboscis(self) -> bool:
+        """Return True if this segment belongs to the proboscis."""
         return self.link in PROBOSCIS_LINKS
 
-    def is_eye(self):
+    def is_eye(self) -> bool:
+        """Return True if this segment is an eye."""
         return self.link == "eye"
 
-    def is_antenna(self):
+    def is_antenna(self) -> bool:
+        """Return True if this segment belongs to an antenna."""
         return self.link in ANTENNA_LINKS
 
-    def is_wing(self):
+    def is_wing(self) -> bool:
+        """Return True if this segment is a wing."""
         return self.link == "wing"
 
-    def is_haltere(self):
+    def is_haltere(self) -> bool:
+        """Return True if this segment is a haltere."""
         return self.link == "haltere"
 
-    def is_leg(self):
+    def is_leg(self) -> bool:
+        """Return True if this segment belongs to a leg."""
         return self.pos in LEGS
 
-    def is_abdomen(self):
+    def is_abdomen(self) -> bool:
+        """Return True if this segment belongs to the abdomen."""
         return self.link in ABDOMEN_LINKS
 
 
@@ -314,6 +325,7 @@ class JointDOF:
 
     @property
     def name(self) -> str:
+        """Unique name following the pattern ``{parent}-{child}-{axis}``."""
         return f"{self.parent.name}-{self.child.name}-{self.axis.value}"
 
     @classmethod
@@ -373,6 +385,7 @@ class JointPreset(Enum):
     LEGS_ACTIVE_ONLY = "legs_active_only"
 
     def to_joint_list(self) -> list[AnatomicalJoint]:
+        """Return the list of `AnatomicalJoint` objects defined by this preset."""
         match self:
             case JointPreset.ALL_POSSIBLE:
                 return self._get_all_possible_joints()
@@ -485,6 +498,7 @@ class ContactBodiesPreset(Enum):
     TIBIA_TARSUS_ONLY = "tibia_tarsus_only"
 
     def to_body_segments_list(self) -> list[BodySegment]:
+        """Return the list of `BodySegment` objects defined by this preset."""
         match self:
             case ContactBodiesPreset.ALL:
                 return ContactBodiesPreset._get_all_segments()

@@ -21,5 +21,9 @@
         * [pose_conversion](api_reference/flygym/utils/pose_conversion.md)
         * [profiling](api_reference/flygym/utils/profiling.md)
         * [video](api_reference/flygym/utils/video.md)
+    * warp
+        * [rendering](api_reference/flygym/warp/rendering.md)
+        * [simulation](api_reference/flygym/warp/simulation.md)
+        * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
 * [Citing NeuroMechFly](citation.md)

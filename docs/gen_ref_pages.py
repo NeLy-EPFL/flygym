@@ -14,10 +14,6 @@ for path in sorted(src_pkg.rglob("*.py")):
 
     module_path = path.relative_to(src_root).with_suffix("")
     parts = list(module_path.parts)
-    
-    if parts[1] == "warp":
-        # Don't build Warp refs on the Mac
-        continue
 
     if parts[-1] == "__init__":
         parts = parts[:-1]

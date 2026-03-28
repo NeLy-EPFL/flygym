@@ -10,8 +10,16 @@ def print_perf_report(
     n_steps: int,
     n_frames_rendered: int,
     timestep: float,
-):
-    """Prints a performance report based on the provided timing info."""
+) -> None:
+    """Print a single-world performance report.
+
+    Args:
+        total_physics_time_ns: Total wall-clock time spent in physics steps, in ns.
+        total_render_time_ns: Total wall-clock time spent rendering, in ns.
+        n_steps: Number of physics steps taken.
+        n_frames_rendered: Number of frames rendered.
+        timestep: Simulation timestep in seconds.
+    """
     if n_steps == 0:
         raise ValueError("n_steps must be > 0 to print performance report.")
 
@@ -97,9 +105,18 @@ def print_perf_report_parallel(
     timestep: float,
     n_worlds: int,
     n_worlds_rendered: int,
-):
-    """Prints a performance report based on the provided timing info, including
-    parallelized throughput (useful for Warp)."""
+) -> None:
+    """Print a multi-world performance report including parallelized throughput.
+
+    Args:
+        total_physics_time_ns: Total wall-clock time spent in physics steps, in ns.
+        total_render_time_ns: Total wall-clock time spent rendering, in ns.
+        n_steps: Number of physics steps taken.
+        n_frames_rendered: Number of frames rendered.
+        timestep: Simulation timestep in seconds.
+        n_worlds: Total number of parallel worlds.
+        n_worlds_rendered: Number of worlds that were rendered.
+    """
     if n_steps == 0:
         raise ValueError(
             "n_steps must be > 0 to print performance report. "
