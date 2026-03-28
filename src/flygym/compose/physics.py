@@ -19,7 +19,7 @@ class ContactParams:
     compliance. The impedance can vary with penetration depth to model contacts that
     become stiffer as penetration increases.
 
-    See `MuJoCo documentation <https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters>`_
+    See [MuJoCo documentation](https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters)
     for details.
 
     Attributes:
