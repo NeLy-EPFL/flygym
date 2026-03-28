@@ -2,7 +2,6 @@ from multiprocessing import Process
 from pathlib import Path
 from typing import Any
 from os import PathLike
-from collections.abc import Sequence
 
 import mujoco as mj
 import mujoco.viewer as mjviewer
@@ -36,7 +35,7 @@ class Renderer:
     def __init__(
         self,
         mj_model: mj.MjModel,
-        cameras: str | mjcf.Element | Sequence[str | mjcf.Element],
+        cameras: str | mjcf.Element | list[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -58,7 +57,7 @@ class Renderer:
         mj.mjv_defaultOption(self.scene_option)  # this sets default scene options
 
         self._cameras_names2id = {}
-        for spec in cameras if isinstance(cameras, Sequence) else [cameras]:
+        for spec in cameras if isinstance(cameras, list) else [cameras]:
             cam_id, cam_name = self._resolve_camera_id_and_name(spec)
             if cam_id == -1:
                 raise ValueError(f"Camera {spec} not found in the model.")
@@ -125,7 +124,7 @@ class Renderer:
 
     def show_in_notebook(
         self,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None = None,
+        camera: str | mjcf.Element | list[str | mjcf.Element] | None = None,
         **kwargs: Any,
     ) -> None:
         """Display recorded frames in a Jupyter notebook.
@@ -174,7 +173,7 @@ class Renderer:
 
     def _normalize_camera_spec(
         self,
-        camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None,
+        camera: str | mjcf.Element | list[str | mjcf.Element] | None,
     ) -> list[str]:
         """Convert various camera specifications to a list of camera names.
 
@@ -192,12 +191,12 @@ class Renderer:
         elif isinstance(camera, (str, mjcf.Element)):
             _, cam_name = self._resolve_camera_id_and_name(camera)
             camera_names = [cam_name]
-        elif isinstance(camera, Sequence):
+        elif isinstance(camera, list):
             camera_names = [self._resolve_camera_id_and_name(c)[1] for c in camera]
         else:
             raise ValueError(
                 f"Invalid camera spec type: {type(camera)}. Must be str, "
-                "mjcf.Element, Sequence of these, or None."
+                "mjcf.Element, list of these, or None."
             )
 
         # Validate all cameras are available
