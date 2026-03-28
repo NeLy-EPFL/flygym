@@ -1,33 +1,15 @@
 """Tests for flygym.warp.rendering (WarpCPURenderer, modify_world_for_batch_rendering).
-
-WarpCPURenderer wraps mujoco.Renderer internally, which requires an OpenGL
-context.  We mock mujoco.Renderer with a MagicMock throughout these tests so
-they run on headless CI machines.
 """
 
 import warnings
 import pytest
 import numpy as np
-import warp as wp
-from unittest.mock import patch, MagicMock
 
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
 from flygym.compose import Fly, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.warp import WarpCPURenderer
 from flygym.warp.rendering import modify_world_for_batch_rendering
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _make_mock_mj_renderer(res=(64, 64)):
-    """Return a MagicMock that mimics a mujoco.Renderer producing zero frames."""
-    mock = MagicMock()
-    mock.render.return_value = np.zeros((*res, 3), dtype=np.uint8)
-    return mock
 
 
 # ---------------------------------------------------------------------------
@@ -41,19 +23,17 @@ def render_bundle(gpu_sim_factory):
     sim, fly, cam = gpu_sim_factory(n_worlds=2, fly_name="render_fly")
     sim.reset()
 
-    mock_backend = _make_mock_mj_renderer(res=(64, 64))
-    with patch("mujoco.Renderer", return_value=mock_backend):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            renderer = sim.set_renderer(
-                cam,
-                camera_res=(64, 64),
-                playback_speed=0.001,  # tiny interval: 1/(10/0.001) = 0.0001 s ≈ 1 step
-                output_fps=10,
-                worlds=[0, 1],
-                use_gpu_batch_rendering=False,
-                buffer_frames=True,
-            )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        renderer = sim.set_renderer(
+            cam,
+            camera_res=(64, 64),
+            playback_speed=0.001,  # tiny interval: 1/(10/0.001) = 0.0001 s ≈ 1 step
+            output_fps=10,
+            worlds=[0, 1],
+            use_gpu_batch_rendering=False,
+            buffer_frames=True,
+        )
     yield sim, fly, cam, renderer
 
 
@@ -87,17 +67,15 @@ class TestWarpCPURendererConstruction:
     def test_empty_worlds_raises(self, gpu_sim_factory):
         """Providing an empty worlds list should raise ValueError."""
         sim, fly, cam = gpu_sim_factory(n_worlds=2, fly_name="err_render_fly")
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                with pytest.raises(ValueError, match="world"):
-                    sim.set_renderer(
-                        cam,
-                        camera_res=(64, 64),
-                        worlds=[],
-                        use_gpu_batch_rendering=False,
-                    )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with pytest.raises(ValueError, match="world"):
+                sim.set_renderer(
+                    cam,
+                    camera_res=(64, 64),
+                    worlds=[],
+                    use_gpu_batch_rendering=False,
+                )
 
 
 # ==============================================================================
@@ -232,31 +210,27 @@ class TestSubworldRendering:
     def test_only_specified_worlds_in_world_ids(self, gpu_sim_factory):
         """Renderer with worlds=[1] should only expose world 1 in world_ids."""
         sim, fly, cam = gpu_sim_factory(n_worlds=4, fly_name="sub_fly")
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                renderer = sim.set_renderer(
-                    cam,
-                    camera_res=(64, 64),
-                    worlds=[1],
-                    use_gpu_batch_rendering=False,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            renderer = sim.set_renderer(
+                cam,
+                camera_res=(64, 64),
+                worlds=[1],
+                use_gpu_batch_rendering=False,
+            )
         assert renderer.world_ids == [1]
 
     def test_default_worlds_is_all_worlds(self, gpu_sim_factory):
         """When worlds=None all n_worlds worlds should be rendered."""
         sim, fly, cam = gpu_sim_factory(n_worlds=3, fly_name="all_worlds_fly")
-        mock_backend = _make_mock_mj_renderer()
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                renderer = sim.set_renderer(
-                    cam,
-                    camera_res=(64, 64),
-                    worlds=None,
-                    use_gpu_batch_rendering=False,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            renderer = sim.set_renderer(
+                cam,
+                camera_res=(64, 64),
+                worlds=None,
+                use_gpu_batch_rendering=False,
+            )
         assert renderer.world_ids == [0, 1, 2]
 
 

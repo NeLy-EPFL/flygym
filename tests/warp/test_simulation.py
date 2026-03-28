@@ -4,7 +4,6 @@ import warnings
 import pytest
 import numpy as np
 import warp as wp
-from unittest.mock import patch, MagicMock
 
 from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder
 from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
@@ -291,32 +290,26 @@ class TestSetRenderer:
     def test_set_renderer_returns_warp_cpu_renderer(self, gpu_bundle):
         sim, fly, cam = gpu_bundle
         sim.reset()
-        mock_backend = MagicMock()
-        mock_backend.render.return_value = np.zeros((64, 64, 3), dtype=np.uint8)
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                renderer = sim.set_renderer(
-                    cam,
-                    camera_res=(64, 64),
-                    worlds=[0, 1],
-                    use_gpu_batch_rendering=False,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            renderer = sim.set_renderer(
+                cam,
+                camera_res=(64, 64),
+                worlds=[0, 1],
+                use_gpu_batch_rendering=False,
+            )
         assert isinstance(renderer, WarpCPURenderer)
 
     def test_set_renderer_world_ids(self, gpu_bundle):
         sim, fly, cam = gpu_bundle
-        mock_backend = MagicMock()
-        mock_backend.render.return_value = np.zeros((64, 64, 3), dtype=np.uint8)
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                renderer = sim.set_renderer(
-                    cam,
-                    camera_res=(64, 64),
-                    worlds=[0, 2],
-                    use_gpu_batch_rendering=False,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            renderer = sim.set_renderer(
+                cam,
+                camera_res=(64, 64),
+                worlds=[0, 2],
+                use_gpu_batch_rendering=False,
+            )
         assert renderer.world_ids == [0, 2]
 
     def test_print_performance_report(self, gpu_bundle, capsys):
@@ -326,17 +319,14 @@ class TestSetRenderer:
         for _ in range(10):
             sim.step_with_profile()
 
-        mock_backend = MagicMock()
-        mock_backend.render.return_value = np.zeros((64, 64, 3), dtype=np.uint8)
-        with patch("mujoco.Renderer", return_value=mock_backend):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                sim.set_renderer(
-                    cam,
-                    camera_res=(64, 64),
-                    worlds=[0],
-                    use_gpu_batch_rendering=False,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sim.set_renderer(
+                cam,
+                camera_res=(64, 64),
+                worlds=[0],
+                use_gpu_batch_rendering=False,
+            )
         sim.print_performance_report()
         captured = capsys.readouterr()
         assert "PERFORMANCE" in captured.out
