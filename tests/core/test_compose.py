@@ -13,9 +13,10 @@ from flygym.anatomy import (
     Skeleton,
     LEGS,
 )
-from flygym.compose.fly import Fly, ActuatorType
+from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
-from flygym.compose.pose import KinematicPose
+from flygym.compose.pose import KinematicPose, KinematicPosePreset
+from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
 
 
@@ -234,3 +235,240 @@ class TestTetheredWorld:
         mj_model, mj_data = tethered_world_with_fly.compile()
         assert isinstance(mj_model, mujoco.MjModel)
         assert isinstance(mj_data, mujoco.MjData)
+
+
+# ==============================================================================
+# Fly.add_tracking_camera
+# ==============================================================================
+
+
+class TestFlyAddTrackingCamera:
+    def test_camera_registered_in_lookup(self):
+        fly = Fly(name="cam_fly")
+        cam = fly.add_tracking_camera(name="trackcam")
+        assert "trackcam" in fly.cameraname_to_mjcfcamera
+
+    def test_returns_mjcf_element(self):
+        fly = Fly(name="cam_fly2")
+        cam = fly.add_tracking_camera()
+        assert cam is not None
+
+    def test_custom_name(self):
+        fly = Fly(name="cam_fly3")
+        fly.add_tracking_camera(name="sidecam")
+        assert "sidecam" in fly.cameraname_to_mjcfcamera
+        assert "trackcam" not in fly.cameraname_to_mjcfcamera
+
+    def test_multiple_cameras(self):
+        fly = Fly(name="cam_fly4")
+        fly.add_tracking_camera(name="front")
+        fly.add_tracking_camera(name="back")
+        assert "front" in fly.cameraname_to_mjcfcamera
+        assert "back" in fly.cameraname_to_mjcfcamera
+
+    def test_camera_compiles_in_model(self, skeleton_ypr, neutral_pose):
+        fly = Fly(name="cam_fly5")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="cam_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        assert mj_model.ncam == 1
+
+    def test_camera_full_identifier_after_world_attachment(self, skeleton_ypr, neutral_pose):
+        """After attaching to a world, the camera's full_identifier gets the fly's prefix."""
+        fly = Fly(name="cam_fly6")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="cam_world2")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mujoco.mj_name2id(
+            mj_model, mujoco.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
+        )
+        assert cam_id >= 0, "Camera should be findable in the compiled model"
+
+
+# ==============================================================================
+# Fly.colorize
+# ==============================================================================
+
+
+class TestFlyColorize:
+    def test_colorize_succeeds(self):
+        fly = Fly(name="color_fly")
+        fly.colorize()  # should not raise
+
+    def test_colorize_adds_materials(self):
+        fly = Fly(name="color_fly2")
+        fly.colorize()
+        # After colorize, there should be materials in the MJCF asset section
+        materials = fly.mjcf_root.find_all("material")
+        assert len(materials) > 0
+
+    def test_colorize_compiles(self):
+        fly = Fly(name="color_fly3")
+        fly.colorize()
+        mj_model, _ = fly.compile()
+        assert mj_model is not None
+
+
+# ==============================================================================
+# Fly.add_leg_adhesion with per-leg dict gain
+# ==============================================================================
+
+
+class TestFlyAddLegAdhesionDictGain:
+    def test_per_leg_gain_applied(self):
+        fly = Fly(name="dict_gain_fly")
+        gains = {leg: float(i + 1) for i, leg in enumerate(LEGS)}
+        fly.add_leg_adhesion(gain=gains)
+        assert len(fly.leg_to_adhesionactuator) == 6
+        for leg in LEGS:
+            assert leg in fly.leg_to_adhesionactuator
+
+    def test_per_leg_gain_compiles(self):
+        fly = Fly(name="dict_gain_fly2")
+        gains = {leg: 2.0 for leg in LEGS}
+        fly.add_leg_adhesion(gain=gains)
+        mj_model, _ = fly.compile()
+        assert mj_model.nu == 6  # 6 adhesion actuators
+
+
+# ==============================================================================
+# Fly.add_joints with KinematicPosePreset
+# ==============================================================================
+
+
+class TestFlyAddJointsWithPreset:
+    def test_add_joints_with_preset_neutral_pose(self, skeleton_ypr):
+        fly = Fly(name="preset_pose_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
+        assert fly.skeleton is not None
+        assert len(fly.jointdof_to_neutralangle) > 0
+
+    def test_preset_neutral_angles_nonzero(self, skeleton_ypr):
+        """Neutral angles loaded from preset should not all be zero."""
+        fly = Fly(name="preset_pose_fly2")
+        fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
+        angles = list(fly.jointdof_to_neutralangle.values())
+        assert any(a != 0.0 for a in angles)
+
+
+# ==============================================================================
+# Fly.add_actuators with KinematicPosePreset as neutral_input
+# ==============================================================================
+
+
+class TestFlyAddActuatorsWithPreset:
+    def test_neutral_input_from_preset(self, skeleton_ypr):
+        fly = Fly(name="preset_act_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
+        actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
+            ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+        )
+        fly.add_actuators(
+            actuated_dofs,
+            ActuatorType.POSITION,
+            neutral_input=KinematicPosePreset.NEUTRAL,
+            kp=50,
+        )
+        # Neutral actions should be non-trivial (from the actual neutral pose)
+        actions = list(
+            fly.jointdof_to_neutralaction_by_type[ActuatorType.POSITION].values()
+        )
+        assert any(a != 0.0 for a in actions)
+
+
+# ==============================================================================
+# FlatGroundWorld: custom contact params and body presets
+# ==============================================================================
+
+
+class TestFlatGroundWorldContactOptions:
+    def test_add_fly_with_custom_contact_params(self, skeleton_ypr, neutral_pose):
+        fly = Fly(name="custom_contact_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        world = FlatGroundWorld(name="custom_contact_world")
+        custom_params = ContactParams(sliding_friction=2.0)
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            ground_contact_params=custom_params,
+        )
+        mj_model, _ = world.compile()
+        assert mj_model is not None
+
+    def test_add_fly_legs_only_contact_preset(self, skeleton_ypr, neutral_pose):
+        fly = Fly(name="legs_only_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        world = FlatGroundWorld(name="legs_only_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            bodysegs_with_ground_contact=ContactBodiesPreset.LEGS_ONLY,
+        )
+        mj_model, _ = world.compile()
+        assert mj_model is not None
+
+    def test_add_fly_without_ground_contact_sensors(self, skeleton_ypr, neutral_pose):
+        fly = Fly(name="nosensor_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        world = FlatGroundWorld(name="nosensor_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            add_ground_contact_sensors=False,
+        )
+        assert world.legpos_to_groundcontactsensors_by_fly is None
+
+    def test_add_fly_tibia_tarsus_contact_preset(self, skeleton_ypr, neutral_pose):
+        fly = Fly(name="tt_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        world = FlatGroundWorld(name="tt_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            bodysegs_with_ground_contact=ContactBodiesPreset.TIBIA_TARSUS_ONLY,
+        )
+        mj_model, _ = world.compile()
+        assert mj_model is not None
+
+
+# ==============================================================================
+# Fly construction options
+# ==============================================================================
+
+
+class TestFlyConstructionOptions:
+    def test_fullsize_mesh_type(self):
+        from flygym.compose.fly import MeshType
+        fly = Fly(name="fullsize_fly", mesh_type=MeshType.FULLSIZE)
+        assert fly is not None
+        mj_model, _ = fly.compile()
+        assert mj_model is not None
+
+    def test_claws_to_capsules_fitting(self):
+        fly = Fly(name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES)
+        assert fly is not None
+        mj_model, _ = fly.compile()
+        assert mj_model is not None
+
+    def test_all_to_capsules_fitting(self):
+        fly = Fly(name="all_capsule_fly", geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES)
+        assert fly is not None
+        mj_model, _ = fly.compile()
+        assert mj_model is not None
