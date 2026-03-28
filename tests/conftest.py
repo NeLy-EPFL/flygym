@@ -4,6 +4,12 @@ Fixtures that require building the full MuJoCo fly model (which loads mesh files
 are scoped to the module level so the expensive setup is done only once per test file.
 """
 
+import os
+
+# Force EGL headless rendering so mujoco.Renderer works without a display.
+os.environ.setdefault("MUJOCO_GL", "egl")
+os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+
 import pytest
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
