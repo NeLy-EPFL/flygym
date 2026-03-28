@@ -8,7 +8,7 @@ compiler:
 
 option:
   gravity: [0, 0, -9810]  # in mm/s^2
-  timestep: 0.0001
+  timestep: 1e-4
   integrator: Euler
   solver: Newton
   iterations: 100
@@ -21,6 +21,7 @@ option:
 visual:
   headlight:
     ambient: [0.5, 0.5, 0.5]
+    diffuse: [0.6, 0.6, 0.6]
     specular: [0.3, 0.3, 0.3]
   map:
     stiffness: 1e6
