@@ -49,6 +49,7 @@ dev = [
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
     "black>=26.1,<27.0",
+    "ruff==0.15.8",
     # For mesh simplification:
     "trimesh>=4.0,<5.0",
     "shapely>=2.0,<3.0",

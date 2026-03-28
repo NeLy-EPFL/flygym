@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import Iterator, Hashable, TypeVar, Generic, Sequence, Literal, Annotated
+from typing import Iterator, Hashable, TypeVar, Generic, Sequence, Literal
 from dataclasses import dataclass
 
 import numpy as np
