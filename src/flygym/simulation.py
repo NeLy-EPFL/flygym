@@ -1,6 +1,5 @@
 from collections import defaultdict
 from time import perf_counter_ns
-from collections.abc import Sequence
 from typing import Any
 
 import mujoco as mj
@@ -85,7 +84,7 @@ class Simulation:
 
     def set_renderer(
         self,
-        cameras: str | mjcf.Element | Sequence[str | mjcf.Element],
+        cameras: str | mjcf.Element | list[str | mjcf.Element],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,

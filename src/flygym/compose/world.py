@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Collection
 from typing import override
 
 import mujoco
@@ -269,7 +268,7 @@ class FlatGroundWorld(BaseWorld):
         spawn_rotation: Rotation3D,
         *,
         bodysegs_with_ground_contact: (
-            Collection[BodySegment] | ContactBodiesPreset | str
+            list[BodySegment] | ContactBodiesPreset | str
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
@@ -293,7 +292,7 @@ class FlatGroundWorld(BaseWorld):
     def _set_ground_contact(
         self,
         fly: Fly,
-        bodysegs_with_ground_contact: Collection[BodySegment],
+        bodysegs_with_ground_contact: list[BodySegment],
         ground_contact_params: ContactParams,
     ) -> None:
         for body_segment in bodysegs_with_ground_contact:
@@ -310,7 +309,7 @@ class FlatGroundWorld(BaseWorld):
             )
 
     def _add_ground_contact_sensors(
-        self, fly: Fly, bodysegs_with_ground_contact: Collection[BodySegment]
+        self, fly: Fly, bodysegs_with_ground_contact: list[BodySegment]
     ) -> None:
         self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
         contact_geoms_by_leg = defaultdict(list)
@@ -367,7 +366,7 @@ class TetheredWorld(BaseWorld):
         return freejoint
 
 
-def _sort_legsegs_prox2dist(segments: Collection[BodySegment]) -> list[BodySegment]:
+def _sort_legsegs_prox2dist(segments: list[BodySegment]) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, LEG_LINKS.index(seg.link)) for seg in segments]
     bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
     return [t[0] for t in bodyseg_linkpos_tuples]

@@ -1,7 +1,6 @@
 from numbers import Number
 from typing import Iterator, Hashable, TypeVar, Generic, Sequence, Literal, Annotated
 from dataclasses import dataclass
-from collections.abc import Collection
 
 import numpy as np
 from jaxtyping import Float
@@ -34,9 +33,9 @@ class Tree(Generic[T]):
 
     Args:
         nodes:
-            Collection of unique body segment identifiers.
+            List of unique body segment identifiers.
         edges:
-            Collection of (parent, child) tuples defining connections.
+            List of (parent, child) tuples defining connections.
 
     Raises:
         ValueError:
@@ -44,7 +43,7 @@ class Tree(Generic[T]):
             self-loops, or parallel edges).
     """
 
-    def __init__(self, nodes: Collection[T], edges: Collection[tuple[T, T]]) -> None:
+    def __init__(self, nodes: list[T], edges: list[tuple[T, T]]) -> None:
         # Check for edges involving nonexistent nodes and self-loops
         nodes_set = set(nodes)
         if len(nodes_set) != len(nodes):
