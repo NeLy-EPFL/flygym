@@ -6,6 +6,12 @@ from PIL import Image
 
 
 def write_video_from_frames(path: str | Path, frames: list[np.ndarray], **kwargs):
+    """Writes a video to the given path from a list of frames (numpy arrays).
+
+    The image size is automatically scaled up to multiples of 16 to enhance
+    compatibility with most codecs and players. Additional keyword arguments are passed
+    to `imageio.v3.imwrite`.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Scale image size up to multiples of 16 to enhance compatibility with most codecs
