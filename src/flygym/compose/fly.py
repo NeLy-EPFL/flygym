@@ -36,11 +36,27 @@ DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
 
 
 class MeshType(Enum):
+    """Mesh resolution to use for fly body geometry.
+
+    Attributes:
+        FULLSIZE: Original high-resolution meshes.
+        SIMPLIFIED_MAX2000FACES: Simplified meshes with at most 2000 faces per
+            segment. Faster to render and simulate. Used by default.
+    """
+
     FULLSIZE = "fullsize"
     SIMPLIFIED_MAX2000FACES = "simplified_max2000faces"
 
 
 class GeomFittingOption(Enum):
+    """How to fit collision geometries to the mesh shapes.
+
+    Attributes:
+        UNMODIFIED: Keep the original mesh-based geometries.
+        ALL_TO_CAPSULES: Replace all geometries with capsule approximations.
+        CLAWS_TO_CAPSULES: Replace only tarsus5 (claw) geometries with capsules.
+    """
+
     UNMODIFIED = "unmodified"
     ALL_TO_CAPSULES = "all_to_capsules"
     CLAWS_TO_CAPSULES = "claws_to_capsules"
@@ -76,15 +92,19 @@ class Fly(BaseCompositionElement):
             Identifier for this fly instance.
         rigging_config_path:
             Path to YAML file defining body segment positions, orientations, and masses.
-        mesh_dir:
+        mesh_basedir:
             Directory containing STL mesh files for body segments.
         mujoco_globals_path:
             Path to YAML file with global MuJoCo parameters (timestep, gravity, etc.).
         root_segment:
-            Root body segment for the kinematic tree (e.g., `c_thorax`).
+            Root body segment for the kinematic tree (e.g., ``c_thorax``).
         mirror_left2right:
             If True, mirror left-side meshes for right side instead of loading separate
-            mesh files. This reduces asset size and ensures symmetry.
+            mesh files. Reduces asset size and ensures symmetry.
+        mesh_type:
+            Mesh resolution to use.
+        geom_fitting_option:
+            How to fit collision geometries.
 
     Attributes:
         skeleton:
@@ -160,22 +180,23 @@ class Fly(BaseCompositionElement):
 
     @property
     def name(self) -> str:
+        """Name of this fly instance."""
         return self._name
 
-    def get_bodysegs_order(self) -> Iterable[BodySegment]:
+    def get_bodysegs_order(self) -> list[BodySegment]:
         """Get the canonical order of body segments. The exact order is not important,
         but it should be respected consistently throughout. For example, during
         simulation, the fly body state returned by the simulator will be in this order.
         """
         return list(self.bodyseg_to_mjcfbody.keys())
 
-    def get_jointdofs_order(self) -> Iterable[JointDOF]:
+    def get_jointdofs_order(self) -> list[JointDOF]:
         """Same as `get_bodysegs_order()`, but for joint DoFs instead of body segments."""
         return list(self.jointdof_to_mjcfjoint.keys())
 
     def get_actuated_jointdofs_order(
         self, actuator_type: "ActuatorType | str"
-    ) -> Iterable[JointDOF]:
+    ) -> list[JointDOF]:
         """Same as `get_jointdofs_order()`, but only for the subset of joint DoFs that
         are actuated by the specified actuator type. During simulation, the user should
         provide control input in this order."""
@@ -183,6 +204,7 @@ class Fly(BaseCompositionElement):
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
 
     def get_legs_order(self) -> list[str]:
+        """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
 
     def add_joints(
@@ -269,7 +291,7 @@ class Fly(BaseCompositionElement):
         self,
         jointdofs: Iterable[JointDOF],
         actuator_type: "ActuatorType | str",
-        neutral_input: dict[str, float] | None = None,
+        neutral_input: "dict[str, float] | KinematicPose | KinematicPosePreset | None" = None,
         *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-30.0, 30.0),
@@ -286,9 +308,10 @@ class Fly(BaseCompositionElement):
             actuator_type:
                 Type of actuator (motor, position, velocity, etc.).
             neutral_input:
-                Default actuator inputs. If None, defaults to 0 for all actuators. For
-                position actuators, these are joint angles and therefore must match
-                skeleton axis order.
+                Default actuator inputs. Accepts a ``dict`` mapping DoF names to
+                values, a `KinematicPose`, or a `KinematicPosePreset`. If None,
+                defaults to 0 for all actuators. For position actuators the values
+                are joint angles and must match the skeleton axis order.
             forcelimited:
                 If True, actuators cannot exceed forcerange.
             forcerange:
@@ -334,7 +357,23 @@ class Fly(BaseCompositionElement):
         self._rebuild_neutral_keyframe()
         return return_dict
 
-    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> None:
+    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> dict[str, mjcf.Element]:
+        """Add adhesion actuators to the tarsus5 segments of all legs.
+
+        Adhesion actuators apply a normal attraction force, enabling the fly to grip
+        surfaces. The control input per leg ranges from 1 to 100.
+
+        Args:
+            gain: Adhesion actuator gain. Either a single float applied to all legs,
+                or a dict mapping leg position identifiers to per-leg gain values.
+
+        Returns:
+            Dict mapping leg position identifier to the created MJCF adhesion
+            actuator element (same as ``self.leg_to_adhesionactuator``).
+
+        Raises:
+            ValueError: If adhesion actuators have already been added.
+        """
         if len(self.leg_to_adhesionactuator) > 0:
             raise ValueError("Leg adhesion actuators have already been added.")
         for leg in LEGS:
@@ -355,7 +394,12 @@ class Fly(BaseCompositionElement):
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
     ) -> None:
-        """Apply colors and textures to fly model based on a YAML configuration file."""
+        """Apply colors and textures to the fly model.
+
+        Args:
+            visuals_config_path: Path to the YAML file defining per-segment material
+                and texture assignments.
+        """
         if len(self.bodyseg_to_mjcfgeom) == 0:
             raise ValueError("Must first add geoms via `_add_bodies_and_geoms`.")
 
@@ -382,12 +426,22 @@ class Fly(BaseCompositionElement):
         pos_offset: Vec3 = (0, -7.5, 6),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
-        **kwargs,
+        **kwargs: Any,
     ) -> mjcf.Element:
         """Add a camera that tracks the fly's root body.
 
-        See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_
-        for details on supported attributes.
+        Args:
+            name: Camera name.
+            mode: MuJoCo camera tracking mode (e.g. ``"track"``, ``"targetbody"``).
+            pos_offset: Camera position offset from the tracked body in mm.
+            rotation: Camera orientation as a `Rotation3D`.
+            fovy: Vertical field of view in degrees.
+            **kwargs: Additional attributes passed to the MJCF camera element. See
+                `MuJoCo XML reference
+                <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_.
+
+        Returns:
+            The created MJCF camera element.
         """
         camera = self.mjcf_root.worldbody.add(
             "camera",
