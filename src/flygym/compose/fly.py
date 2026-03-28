@@ -36,11 +36,27 @@ DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
 
 
 class MeshType(Enum):
+    """Mesh resolution to use for fly body geometry.
+
+    Attributes:
+        FULLSIZE: Original high-resolution meshes.
+        SIMPLIFIED_MAX2000FACES: Simplified meshes with at most 2000 faces per
+            segment. Faster to render and simulate. Used by default.
+    """
+
     FULLSIZE = "fullsize"
     SIMPLIFIED_MAX2000FACES = "simplified_max2000faces"
 
 
 class GeomFittingOption(Enum):
+    """How to fit collision geometries to the mesh shapes.
+
+    Attributes:
+        UNMODIFIED: Keep the original mesh-based geometries.
+        ALL_TO_CAPSULES: Replace all geometries with capsule approximations.
+        CLAWS_TO_CAPSULES: Replace only tarsus5 (claw) geometries with capsules.
+    """
+
     UNMODIFIED = "unmodified"
     ALL_TO_CAPSULES = "all_to_capsules"
     CLAWS_TO_CAPSULES = "claws_to_capsules"
@@ -76,15 +92,19 @@ class Fly(BaseCompositionElement):
             Identifier for this fly instance.
         rigging_config_path:
             Path to YAML file defining body segment positions, orientations, and masses.
-        mesh_dir:
+        mesh_basedir:
             Directory containing STL mesh files for body segments.
         mujoco_globals_path:
             Path to YAML file with global MuJoCo parameters (timestep, gravity, etc.).
         root_segment:
-            Root body segment for the kinematic tree (e.g., `c_thorax`).
+            Root body segment for the kinematic tree (e.g., ``c_thorax``).
         mirror_left2right:
             If True, mirror left-side meshes for right side instead of loading separate
-            mesh files. This reduces asset size and ensures symmetry.
+            mesh files. Reduces asset size and ensures symmetry.
+        mesh_type:
+            Mesh resolution to use.
+        geom_fitting_option:
+            How to fit collision geometries.
 
     Attributes:
         skeleton:
@@ -183,6 +203,7 @@ class Fly(BaseCompositionElement):
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
 
     def get_legs_order(self) -> list[str]:
+        """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
 
     def add_joints(
@@ -335,6 +356,18 @@ class Fly(BaseCompositionElement):
         return return_dict
 
     def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> None:
+        """Add adhesion actuators to the tarsus5 segments of all legs.
+
+        Adhesion actuators apply a normal attraction force, enabling the fly to grip
+        surfaces. The control input per leg ranges from 1 to 100.
+
+        Args:
+            gain: Adhesion actuator gain. Either a single float applied to all legs,
+                or a dict mapping leg position identifiers to per-leg gain values.
+
+        Raises:
+            ValueError: If adhesion actuators have already been added.
+        """
         if len(self.leg_to_adhesionactuator) > 0:
             raise ValueError("Leg adhesion actuators have already been added.")
         for leg in LEGS:

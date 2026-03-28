@@ -101,7 +101,24 @@ class BaseWorld(BaseCompositionElement, ABC):
         *args,
         **kwargs,
     ) -> None:
-        """Add a fly to the world at specified position and rotation."""
+        """Attach a fly to the world at the specified pose.
+
+        The fly's MJCF model is merged into the world and registered under
+        `fly_lookup`. Extra keyword arguments are forwarded to the subclass
+        `_attach_fly_mjcf` implementation (see the specific world subclass for
+        available options).
+
+        Args:
+            fly: The fly to add.
+            spawn_position: Initial ``(x, y, z)`` position in mm.
+            spawn_rotation: Initial orientation as a `Rotation3D` in quaternion format.
+            *args: Forwarded to `_attach_fly_mjcf`.
+            **kwargs: Forwarded to `_attach_fly_mjcf`.
+
+        Raises:
+            ValueError: If a fly with the same name already exists in the world.
+            ValueError: If ``spawn_rotation`` is not in quaternion format.
+        """
         # Register fly in the fly lookup
         if fly.name in self._fly_lookup:
             raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
@@ -192,7 +209,22 @@ class BaseWorld(BaseCompositionElement, ABC):
 
 
 class FlatGroundWorld(BaseWorld):
-    """A basic world with a flat ground plane. The fly is untethered."""
+    """World with a flat infinite ground plane. Flies are free to move.
+
+    When calling `add_fly`, the following extra keyword arguments are accepted:
+
+    - ``bodysegs_with_ground_contact``: Body segments that collide with the ground.
+      Accepts a `ContactBodiesPreset`, a preset string, or a collection of
+      `BodySegment` objects. Default: ``ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD``.
+    - ``ground_contact_params``: `ContactParams` for friction and contact physics.
+      Default: ``ContactParams()``.
+    - ``add_ground_contact_sensors``: If True, add contact force sensors for each leg.
+      Default: ``True``.
+
+    Args:
+        name: Name of the world.
+        half_size: Half-size of the ground plane in mm.
+    """
 
     @override
     def __init__(
@@ -301,8 +333,14 @@ class FlatGroundWorld(BaseWorld):
 
 
 class TetheredWorld(BaseWorld):
-    """Flies can move their appendages in this world, but the body is fixed in space.
-    Useful for testing."""
+    """World where the fly body is fixed in space via a weld constraint.
+
+    The fly's appendages (legs, wings, etc.) can still move. Useful for motor control
+    experiments without locomotion.
+
+    Args:
+        name: Name of the world.
+    """
 
     @override
     def __init__(self, name: str = "tethered_world") -> None:

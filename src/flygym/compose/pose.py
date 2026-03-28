@@ -69,6 +69,7 @@ class KinematicPose:
         self.joint_angles_lookup_rad = joint_angles_rad_dict
 
     def copy(self) -> "KinematicPose":
+        """Return a deep copy of this pose."""
         return KinematicPose(
             joint_angles_rad_dict=self.joint_angles_lookup_rad.copy(),
             axis_order=self.axis_order,
@@ -127,6 +128,12 @@ def _mirror_pose_left2right_in_place(joint_angles: dict[str, float]) -> None:
 
 
 class KinematicPosePreset(Enum):
+    """Presets for commonly used fly poses.
+
+    Attributes:
+        NEUTRAL: The neutral (resting) pose of the fly.
+    """
+
     NEUTRAL = "neutral"
 
     def get_dir(self) -> Path:
@@ -139,6 +146,15 @@ class KinematicPosePreset(Enum):
     def get_pose_by_axis_order(
         self, axis_order: AxisOrder, mirror_left2right: bool = True
     ) -> KinematicPose:
+        """Load the preset pose for a given axis order.
+
+        Args:
+            axis_order: The axis order to use.
+            mirror_left2right: If True, mirror left-side angles to the right side.
+
+        Returns:
+            The loaded `KinematicPose`.
+        """
         pose_dir = self.get_dir()
         pose_path = pose_dir / f"{axis_order.to_str()}.yaml"
         return KinematicPose(path=pose_path, mirror_left2right=mirror_left2right)

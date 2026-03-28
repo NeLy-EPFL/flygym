@@ -15,6 +15,24 @@ __all__ = ["Renderer", "launch_interactive_viewer", "preview_model"]
 
 
 class Renderer:
+    """Renders MuJoCo scenes to video frames.
+
+    Args:
+        mj_model: Compiled MuJoCo model.
+        cameras: Camera(s) to render. Can be a camera name, MJCF camera element,
+            or a sequence of either.
+        camera_res: ``(height, width)`` in pixels.
+        playback_speed: Video playback speed relative to real time.
+        output_fps: Output video frame rate.
+        buffer_frames: If True, store frames in ``self.frames``.
+        scene_option: MuJoCo scene options. Uses defaults if None.
+        **kwargs: Passed to ``mujoco.Renderer``.
+
+    Attributes:
+        frames: Dict mapping camera name to list of rendered frames.
+            Only populated when ``buffer_frames=True``.
+    """
+
     def __init__(
         self,
         mj_model: mj.MjModel,
@@ -62,6 +80,14 @@ class Renderer:
             self.frames = None
 
     def render_as_needed(self, mj_data: mj.MjData) -> bool:
+        """Render frames for all cameras if enough time has elapsed.
+
+        Args:
+            mj_data: Current MuJoCo data.
+
+        Returns:
+            True if frames were rendered, False otherwise.
+        """
         if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
             self._last_render_time_sec = mj_data.time
             for cam_name, internal_cam_id in self._cameras_names2id.items():
@@ -76,11 +102,13 @@ class Renderer:
             return False
 
     def reset(self):
+        """Clear buffered frames and reset the render timer."""
         self._last_render_time_sec = -np.inf
         if self.buffer_frames:
             self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
 
     def close(self):
+        """Release the underlying MuJoCo renderer resources."""
         self.mj_renderer.close()
 
     def __enter__(self):
@@ -272,6 +300,22 @@ def preview_model(
     output_path: PathLike | None = None,
     **kwargs,
 ):
+    """Run a short simulation and render a preview.
+
+    Args:
+        mj_model: Compiled MuJoCo model.
+        mj_data: MuJoCo data.
+        camera: Camera name or MJCF element to use for rendering.
+        init_keyframe: Keyframe name to reset to before rendering. Uses the current
+            state if None.
+        duration: Duration to simulate in seconds.
+        camera_res: ``(height, width)`` in pixels.
+        playback_speed: Video playback speed relative to real time.
+        output_fps: Output video frame rate.
+        show_in_notebook: If True, display the video in a Jupyter notebook.
+        output_path: Path to save the video. Not saved if None.
+        **kwargs: Passed to `Renderer`.
+    """
     if init_keyframe is not None:
         key_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_KEY, init_keyframe)
         mj.mj_resetDataKeyframe(mj_model, mj_data, key_id)

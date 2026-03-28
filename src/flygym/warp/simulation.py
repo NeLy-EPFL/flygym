@@ -25,6 +25,26 @@ from flygym.warp.utils import (
 
 
 class GPUSimulation(Simulation):
+    """GPU-accelerated parallel simulation using MuJoCo-Warp.
+
+    Runs ``n_worlds`` copies of the same simulation in parallel on the GPU.
+    State queries return Warp arrays of shape ``(n_worlds, ...)``, and control
+    inputs accept arrays of the same batch shape.
+
+    Requires an NVIDIA GPU with the ``[warp]`` extra installed.
+
+    Args:
+        world: A fully configured world with at least one fly attached.
+        n_worlds: Number of parallel simulation instances.
+        max_constraints: Maximum number of constraints per world.
+        max_contacts: Maximum number of contacts per world.
+
+    Attributes:
+        n_worlds: Number of parallel worlds.
+        mjw_model: GPU-side MuJoCo-Warp model.
+        mjw_data: GPU-side MuJoCo-Warp data, batched over ``n_worlds``.
+    """
+
     @override
     def __init__(self, world, n_worlds, max_constraints=500, max_contacts=500):
         self._strip_unsupported_options_for_mjwarp(world)
@@ -164,6 +184,23 @@ class GPUSimulation(Simulation):
         use_gpu_batch_rendering: bool = False,
         **kwargs: Any,
     ) -> WarpGPUBatchRenderer | WarpCPURenderer:
+        """Attach a renderer to this GPU simulation.
+
+        Args:
+            cameras: Camera(s) to render.
+            camera_res: ``(height, width)`` in pixels.
+            playback_speed: Video playback speed relative to real time.
+            output_fps: Output video frame rate.
+            buffer_frames: If True, store rendered frames in memory.
+            scene_option: MuJoCo scene options. Uses defaults if None.
+            worlds: Indices of worlds to render. Defaults to all worlds.
+            use_gpu_batch_rendering: If True, use `WarpGPUBatchRenderer`;
+                otherwise use `WarpCPURenderer`.
+            **kwargs: Passed to the renderer.
+
+        Returns:
+            The created renderer instance.
+        """
         if worlds is None:
             worlds = list(range(self.n_worlds))
         self.use_gpu_batch_rendering = use_gpu_batch_rendering
