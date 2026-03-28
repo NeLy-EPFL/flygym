@@ -1,4 +1,3 @@
-from pathlib import Path
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
@@ -8,6 +7,7 @@ import mujoco
 import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
+from loguru import logger
 
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -18,20 +18,63 @@ from flygym.anatomy import (
     AxisOrder,
     JointPreset,
     ALL_SEGMENT_NAMES,
+    LEGS,
 )
 from flygym.compose.base import BaseCompositionElement
-from flygym.compose.pose import KinematicPose
+from flygym.compose.pose import KinematicPose, KinematicPosePreset
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
 
-__all__ = ["Fly", "ActuatorType"]
+__all__ = ["Fly", "ActuatorType", "MeshType", "GeomFittingOption"]
 
 
 DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
 DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
-DEFAULT_MESH_DIR = assets_dir / "model/meshes"
+DEFAULT_MESH_DIR = assets_dir / "model/meshes/"
 DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
+
+
+class MeshType(Enum):
+    """Mesh resolution to use for fly body geometry.
+
+    Attributes:
+        FULLSIZE: Original high-resolution meshes.
+        SIMPLIFIED_MAX2000FACES: Simplified meshes with at most 2000 faces per
+            segment. Faster to render and simulate. Used by default.
+    """
+
+    FULLSIZE = "fullsize"
+    SIMPLIFIED_MAX2000FACES = "simplified_max2000faces"
+
+
+class GeomFittingOption(Enum):
+    """How to fit collision geometries to the mesh shapes.
+
+    Attributes:
+        UNMODIFIED: Keep the original mesh-based geometries.
+        ALL_TO_CAPSULES: Replace all geometries with capsule approximations.
+        CLAWS_TO_CAPSULES: Replace only tarsus5 (claw) geometries with capsules.
+    """
+
+    UNMODIFIED = "unmodified"
+    ALL_TO_CAPSULES = "all_to_capsules"
+    CLAWS_TO_CAPSULES = "claws_to_capsules"
+
+
+class ActuatorType(Enum):
+    """Actuator types supported by MuJoCo.
+    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    for details on each type."""
+
+    MOTOR = "motor"
+    POSITION = "position"
+    VELOCITY = "velocity"
+    INTVELOCITY = "intvelocity"
+    DAMPER = "damper"
+    CYLINDER = "cylinder"
+    MUSCLE = "muscle"
+    ADHESION = "adhesion"
 
 
 class Fly(BaseCompositionElement):
@@ -49,15 +92,19 @@ class Fly(BaseCompositionElement):
             Identifier for this fly instance.
         rigging_config_path:
             Path to YAML file defining body segment positions, orientations, and masses.
-        mesh_dir:
+        mesh_basedir:
             Directory containing STL mesh files for body segments.
         mujoco_globals_path:
             Path to YAML file with global MuJoCo parameters (timestep, gravity, etc.).
         root_segment:
-            Root body segment for the kinematic tree (e.g., `c_thorax`).
+            Root body segment for the kinematic tree (e.g., ``c_thorax``).
         mirror_left2right:
             If True, mirror left-side meshes for right side instead of loading separate
-            mesh files. This reduces asset size and ensures symmetry.
+            mesh files. Reduces asset size and ensures symmetry.
+        mesh_type:
+            Mesh resolution to use.
+        geom_fitting_option:
+            How to fit collision geometries.
 
     Attributes:
         skeleton:
@@ -90,10 +137,12 @@ class Fly(BaseCompositionElement):
         name: str = "nmf",
         *,
         rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
-        mesh_dir: PathLike = DEFAULT_MESH_DIR,
+        mesh_basedir: PathLike = DEFAULT_MESH_DIR,
         mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
         root_segment: BodySegment | str = "c_thorax",
         mirror_left2right: bool = True,
+        mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
+        geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -106,6 +155,7 @@ class Fly(BaseCompositionElement):
         self.bodyseg_to_mjcfgeom = {}
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
+        self.leg_to_adhesionactuator = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
@@ -120,8 +170,8 @@ class Fly(BaseCompositionElement):
             "key", name="neutral", time=0
         )
 
-        self._add_mesh_assets(mesh_dir, mirror_left2right)
-        self._add_bodies_and_geoms(rigging_config_path)
+        self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
+        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option)
 
     @override
     @property
@@ -152,15 +202,19 @@ class Fly(BaseCompositionElement):
         actuator_type = ActuatorType(actuator_type)
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
 
+    def get_legs_order(self) -> list[str]:
+        """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
+        return LEGS
+
     def add_joints(
         self,
         skeleton: Skeleton,
-        neutral_pose: KinematicPose | None = None,
+        neutral_pose: KinematicPose | KinematicPosePreset | None = None,
         *,
         stiffness: float = 10.0,
         damping: float = 0.5,
         armature: float = 1e-6,
-        **kwargs: Any,
+        **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add joints to the fly model based on a skeleton definition.
 
@@ -183,7 +237,7 @@ class Fly(BaseCompositionElement):
                 small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
-                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
+                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
                 for details on supported attributes.
 
         Returns:
@@ -191,12 +245,16 @@ class Fly(BaseCompositionElement):
         """
         if neutral_pose is None:
             neutral_angle_lookup = {}
+        elif isinstance(neutral_pose, KinematicPose):
+            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
+        elif isinstance(neutral_pose, KinematicPosePreset):
+            neutral_pose = neutral_pose.get_pose_by_axis_order(skeleton.axis_order)
+            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
         else:
-            if not isinstance(neutral_pose, KinematicPose):
-                raise ValueError(
-                    "When specified, `neutral_pose` must be a `KinematicPose`."
-                )
-            neutral_angle_lookup = neutral_pose.get_angles_lookup(skeleton.axis_order)
+            raise ValueError(
+                "When specified, `neutral_pose` must be a "
+                "`KinematicPose` or `KinematicPosePreset`."
+            )
 
         self.skeleton = skeleton
 
@@ -235,8 +293,8 @@ class Fly(BaseCompositionElement):
         neutral_input: dict[str, float] | None = None,
         *,
         forcelimited: bool = True,
-        forcerange: tuple[float, float] = (-50.0, 50.0),
-        **kwargs: Any,
+        forcerange: tuple[float, float] = (-30.0, 30.0),
+        **kwargs,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.
 
@@ -259,20 +317,26 @@ class Fly(BaseCompositionElement):
             **kwargs:
                 Additional arguments passed to MJCF actuator creation (e.g., kp for
                 position actuators, kv for velocity actuators). See
-                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
+                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
                 for details on supported attributes.
 
         Returns:
             Dictionary mapping JointDOF to created MJCF actuator elements.
         """
+        actuator_type = ActuatorType(actuator_type)
+
         if neutral_input is None:
             neutral_input = {}
-        if isinstance(neutral_input, KinematicPose) and (
-            ActuatorType(actuator_type) == ActuatorType.POSITION
-        ):
-            neutral_input = neutral_input.get_angles_lookup(self.skeleton.axis_order)
 
-        actuator_type = ActuatorType(actuator_type)
+        if actuator_type == ActuatorType.POSITION:
+            if isinstance(neutral_input, KinematicPose):
+                neutral_input = neutral_input.joint_angles_lookup_rad
+            elif isinstance(neutral_input, KinematicPosePreset):
+                neutral_pose = neutral_input.get_pose_by_axis_order(
+                    self.skeleton.axis_order
+                )
+                neutral_input = neutral_pose.joint_angles_lookup_rad
+
         return_dict = {}
         for jointdof in jointdofs:
             self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = (
@@ -290,6 +354,36 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
         return return_dict
+
+    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> None:
+        """Add adhesion actuators to the tarsus5 segments of all legs.
+
+        Adhesion actuators apply a normal attraction force, enabling the fly to grip
+        surfaces. The control input per leg ranges from 1 to 100.
+
+        Args:
+            gain: Adhesion actuator gain. Either a single float applied to all legs,
+                or a dict mapping leg position identifiers to per-leg gain values.
+
+        Raises:
+            ValueError: If adhesion actuators have already been added.
+        """
+        if len(self.leg_to_adhesionactuator) > 0:
+            raise ValueError("Leg adhesion actuators have already been added.")
+        for leg in LEGS:
+            tarsus5 = BodySegment(f"{leg}_tarsus5")
+            if isinstance(gain, dict):
+                gain_this_leg = gain[leg]
+            else:
+                gain_this_leg = gain
+            self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
+                "adhesion",
+                name=f"{tarsus5.name}-adhesion",
+                body=self.bodyseg_to_mjcfbody[tarsus5],
+                gain=gain_this_leg,
+                ctrlrange=(1, 100),
+            )
+        return self.leg_to_adhesionactuator
 
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
@@ -321,18 +415,18 @@ class Fly(BaseCompositionElement):
         pos_offset: Vec3 = (0, -7.5, 6),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
-        **kwargs: Any,
+        **kwargs,
     ) -> mjcf.Element:
         """Add a camera that tracks the fly's root body.
 
-        See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera)
+        See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_
         for details on supported attributes.
         """
         camera = self.mjcf_root.worldbody.add(
             "camera",
             name=name,
             mode=mode,
-            target="rootbody",
+            target=self.root_segment.name,
             pos=pos_offset,
             fovy=fovy,
             **rotation.as_kwargs(),
@@ -341,12 +435,20 @@ class Fly(BaseCompositionElement):
         self.cameraname_to_mjcfcamera[name] = camera
         return camera
 
-    def _add_mesh_assets(self, mesh_dir: PathLike, mirror_left2right: bool) -> None:
+    def _add_mesh_assets(
+        self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
+    ) -> None:
         # For numerical reasons, we simulate length in mm, not m. This changes the units
         # of other quantities as well, for example acceleration is now in mm/s^2.
         SCALE = 1000
 
-        mesh_dir = Path(mesh_dir)
+        # Decide which folder to load mesh files from
+        mesh_dir = mesh_basedir / mesh_type.value
+        mesh_fallback_dir = mesh_basedir / MeshType.FULLSIZE.value
+        for d in [mesh_dir, mesh_fallback_dir]:
+            if not d.exists():
+                raise FileNotFoundError(f"Mesh directory not found: {d}")
+
         for segment_name in ALL_SEGMENT_NAMES:
             if mirror_left2right and segment_name[0] == "r":
                 mesh_to_use = f"l{segment_name[1:]}"
@@ -354,9 +456,16 @@ class Fly(BaseCompositionElement):
             else:
                 mesh_to_use = segment_name
                 y_sign = 1
+
             mesh_path = (mesh_dir / f"{mesh_to_use}.stl").resolve()
             if not mesh_path.exists():
-                raise FileNotFoundError(f"Mesh file not found: {mesh_path}")
+                mesh_path = (mesh_fallback_dir / f"{mesh_to_use}.stl").resolve()
+                if not mesh_path.exists():
+                    raise FileNotFoundError(
+                        f"Mesh file not found for segment {segment_name}: "
+                        f"tried {mesh_dir} and {mesh_fallback_dir}."
+                    )
+
             self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.asset.add(
                 "mesh",
                 name=segment_name,
@@ -364,23 +473,27 @@ class Fly(BaseCompositionElement):
                 scale=(SCALE, y_sign * SCALE, SCALE),
             )
 
-    def _add_bodies_and_geoms(self, rigging_config_path: PathLike) -> None:
+    def _add_bodies_and_geoms(
+        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption
+    ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
 
         # Add root body and geom
-        virtual_root = self.mjcf_root.worldbody.add("body", name="rootbody")
         body, geom = self._add_one_body_and_geom(
-            virtual_root, self.root_segment, rigging_config[self.root_segment.name]
+            self.mjcf_root.worldbody,
+            self.root_segment,
+            rigging_config[self.root_segment.name],
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
 
+        # Add remaining bodies and geoms by traversing the kinematic tree defined by
+        # the skeleton
         full_skeleton = Skeleton(
             joint_preset=JointPreset.ALL_POSSIBLE, axis_order=AxisOrder.DONTCARE
         )
-
         for jointdof in full_skeleton.iter_jointdofs(self.root_segment):
             if jointdof.axis != RotationAxis.PITCH:
                 # Look at only 1 DoF per joint as we're still just adding bodies/geoms
@@ -398,6 +511,13 @@ class Fly(BaseCompositionElement):
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
+
+        # Optionally fit certain geoms to capsule shapes for simpler physics
+        for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
+            if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
+                bodyseg.is_leg() and bodyseg.link == "tarsus5"
+            ):
+                mjcf_element.type = "capsule"
 
     def _add_one_body_and_geom(
         self,
@@ -487,18 +607,3 @@ class Fly(BaseCompositionElement):
                 neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
                 neutral_ctrl[internal_actuatorid] = neutral_input
         return neutral_ctrl
-
-
-class ActuatorType(Enum):
-    """Actuator types supported by MuJoCo.
-    See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
-    for details on each type."""
-
-    MOTOR = "motor"
-    POSITION = "position"
-    VELOCITY = "velocity"
-    INTVELOCITY = "intvelocity"
-    DAMPER = "damper"
-    CYLINDER = "cylinder"
-    MUSCLE = "muscle"
-    ADHESION = "adhesion"
