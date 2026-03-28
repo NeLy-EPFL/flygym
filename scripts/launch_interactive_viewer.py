@@ -11,7 +11,6 @@ from flygym.utils.math import Rotation3D
 
 joint_preset = JointPreset.ALL_BIOLOGICAL
 axis_order = AxisOrder.YAW_PITCH_ROLL
-# axis_order = AxisOrder.ROLL_PITCH_YAW
 actuated_dofs = ActuatedDOFPreset.LEGS_ACTIVE_ONLY
 actuator_type = ActuatorType.POSITION
 actuator_position_gain = 50.0
