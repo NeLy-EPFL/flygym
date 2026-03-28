@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Collection
 from typing import override
 
@@ -6,7 +7,7 @@ import mujoco
 import dm_control.mjcf as mjcf
 import numpy as np
 
-from flygym.anatomy import ContactBodiesPreset, BodySegment
+from flygym.anatomy import ContactBodiesPreset, BodySegment, LEG_LINKS
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
@@ -100,7 +101,24 @@ class BaseWorld(BaseCompositionElement, ABC):
         *args,
         **kwargs,
     ) -> None:
-        """Add a fly to the world at specified position and rotation."""
+        """Attach a fly to the world at the specified pose.
+
+        The fly's MJCF model is merged into the world and registered under
+        `fly_lookup`. Extra keyword arguments are forwarded to the subclass
+        `_attach_fly_mjcf` implementation (see the specific world subclass for
+        available options).
+
+        Args:
+            fly: The fly to add.
+            spawn_position: Initial ``(x, y, z)`` position in mm.
+            spawn_rotation: Initial orientation as a `Rotation3D` in quaternion format.
+            *args: Forwarded to `_attach_fly_mjcf`.
+            **kwargs: Forwarded to `_attach_fly_mjcf`.
+
+        Raises:
+            ValueError: If a fly with the same name already exists in the world.
+            ValueError: If ``spawn_rotation`` is not in quaternion format.
+        """
         # Register fly in the fly lookup
         if fly.name in self._fly_lookup:
             raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
@@ -191,7 +209,22 @@ class BaseWorld(BaseCompositionElement, ABC):
 
 
 class FlatGroundWorld(BaseWorld):
-    """A basic world with a flat ground plane. The fly is untethered."""
+    """World with a flat infinite ground plane. Flies are free to move.
+
+    When calling `add_fly`, the following extra keyword arguments are accepted:
+
+    - ``bodysegs_with_ground_contact``: Body segments that collide with the ground.
+      Accepts a `ContactBodiesPreset`, a preset string, or a collection of
+      `BodySegment` objects. Default: ``ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD``.
+    - ``ground_contact_params``: `ContactParams` for friction and contact physics.
+      Default: ``ContactParams()``.
+    - ``add_ground_contact_sensors``: If True, add contact force sensors for each leg.
+      Default: ``True``.
+
+    Args:
+        name: Name of the world.
+        half_size: Half-size of the ground plane in mm.
+    """
 
     @override
     def __init__(
@@ -216,7 +249,7 @@ class FlatGroundWorld(BaseWorld):
             texrepeat=(250, 250),
             reflectance=0.2,
         )
-        ground_geom = self.mjcf_root.worldbody.add(
+        self.ground_geom = self.mjcf_root.worldbody.add(
             "geom",
             type="plane",
             name="ground_plane",
@@ -226,7 +259,7 @@ class FlatGroundWorld(BaseWorld):
             contype=0,
             conaffinity=0,
         )
-        self.ground_contact_geoms = [ground_geom]
+        self.legpos_to_groundcontactsensors_by_fly = None
 
     @override
     def _attach_fly_mjcf(
@@ -239,54 +272,81 @@ class FlatGroundWorld(BaseWorld):
             Collection[BodySegment] | ContactBodiesPreset | str
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
+        add_ground_contact_sensors: bool = True,
     ) -> mjcf.Element:
         spawn_site = self.mjcf_root.worldbody.add(
             "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
         freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
+
+        if isinstance(bodysegs_with_ground_contact, ContactBodiesPreset | str):
+            preset = ContactBodiesPreset(bodysegs_with_ground_contact)
+            bodysegs_with_ground_contact = preset.to_body_segments_list()
+
         self._set_ground_contact(
             fly, bodysegs_with_ground_contact, ground_contact_params
         )
+        if add_ground_contact_sensors:
+            self._add_ground_contact_sensors(fly, bodysegs_with_ground_contact)
         return freejoint
 
     def _set_ground_contact(
         self,
         fly: Fly,
-        bodysegs_with_ground_contact: (
-            Collection[BodySegment] | ContactBodiesPreset | str
-        ),
+        bodysegs_with_ground_contact: Collection[BodySegment],
         ground_contact_params: ContactParams,
     ) -> None:
-        if isinstance(bodysegs_with_ground_contact, ContactBodiesPreset | str):
-            preset = ContactBodiesPreset(bodysegs_with_ground_contact)
-            bodysegs_with_ground_contact = preset.to_body_segments_list()
+        for body_segment in bodysegs_with_ground_contact:
+            body_geom = fly.mjcf_root.find("geom", f"{body_segment.name}")
+            self.mjcf_root.contact.add(
+                "pair",
+                geom1=body_geom,
+                geom2=self.ground_geom,
+                name=f"{body_segment.name}-ground",
+                friction=ground_contact_params.get_friction_tuple(),
+                solref=ground_contact_params.get_solref_tuple(),
+                solimp=ground_contact_params.get_solimp_tuple(),
+                margin=ground_contact_params.margin,
+            )
 
-        for i, ground_geom in enumerate(self.ground_contact_geoms):
-            for body_segment in bodysegs_with_ground_contact:
-                body_geom = fly.mjcf_root.find("geom", f"{body_segment.name}")
-                ground_geom_name = (
-                    f"ground{i}" if ground_geom.name is None else ground_geom.name
-                )
-                self.mjcf_root.contact.add(
-                    "pair",
-                    geom1=ground_geom,
-                    geom2=body_geom,
-                    name=f"{body_segment.name}-{ground_geom_name}",
-                    friction=ground_contact_params.get_friction_tuple(),
-                    solref=ground_contact_params.get_solref_tuple(),
-                    solimp=ground_contact_params.get_solimp_tuple(),
-                    margin=ground_contact_params.margin,
-                )
+    def _add_ground_contact_sensors(
+        self, fly: Fly, bodysegs_with_ground_contact: Collection[BodySegment]
+    ) -> None:
+        self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
+        contact_geoms_by_leg = defaultdict(list)
+        for bodyseg in bodysegs_with_ground_contact:
+            if bodyseg.is_leg():
+                contact_geoms_by_leg[bodyseg.pos].append(bodyseg)
+        for leg, contact_geoms in contact_geoms_by_leg.items():
+            subtree_rootseg = _sort_legsegs_prox2dist(contact_geoms)[0]
+            subtree_rootseg_body = fly.bodyseg_to_mjcfbody[subtree_rootseg]
+            sensor = self.mjcf_root.sensor.add(
+                "contact",
+                subtree1=subtree_rootseg_body,
+                geom2=self.ground_geom,
+                num=1,
+                reduce="netforce",
+                data="found force torque pos normal tangent",
+                name=f"ground_contact_{leg}_leg",
+            )
+            self.legpos_to_groundcontactsensors_by_fly[fly.name][leg] = sensor
 
 
 class TetheredWorld(BaseWorld):
-    """Flies can move their appendages in this world, but the body is fixed in space.
-    Useful for testing."""
+    """World where the fly body is fixed in space via a weld constraint.
+
+    The fly's appendages (legs, wings, etc.) can still move. Useful for motor control
+    experiments without locomotion.
+
+    Args:
+        name: Name of the world.
+    """
 
     @override
     def __init__(self, name: str = "tethered_world") -> None:
         super().__init__(name=name)
         # don't add ground plane
+        self.legpos_to_groundcontactsensors_by_fly = None
 
     @override
     def _attach_fly_mjcf(
@@ -299,9 +359,15 @@ class TetheredWorld(BaseWorld):
         self.mjcf_root.equality.add(
             "weld",
             body2="world",  # worldbody is called "world" in equality constraints
-            body1=fly.mjcf_root.find("body", "rootbody").full_identifier,
+            body1=fly.mjcf_root.find("body", fly.root_segment.name).full_identifier,
             relpose=(*spawn_position, *spawn_rotation.values),
             solref=(2e-4, 1.0),
             solimp=(0.98, 0.99, 1e-5, 0.5, 3),
         )
         return freejoint
+
+
+def _sort_legsegs_prox2dist(segments: Collection[BodySegment]) -> list[BodySegment]:
+    bodyseg_linkpos_tuples = [(seg, LEG_LINKS.index(seg.link)) for seg in segments]
+    bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
+    return [t[0] for t in bodyseg_linkpos_tuples]
