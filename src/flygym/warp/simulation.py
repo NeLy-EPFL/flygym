@@ -46,7 +46,13 @@ class GPUSimulation(Simulation):
     """
 
     @override
-    def __init__(self, world, n_worlds, max_constraints=500, max_contacts=500):
+    def __init__(
+        self,
+        world: BaseWorld,
+        n_worlds: int,
+        max_constraints: int = 500,
+        max_contacts: int = 500,
+    ) -> None:
         self._strip_unsupported_options_for_mjwarp(world)
         super().__init__(world)
         self.n_worlds = n_worlds
@@ -55,7 +61,8 @@ class GPUSimulation(Simulation):
         self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
 
     @override
-    def reset(self):
+    def reset(self) -> None:
+        """Reset all parallel worlds to the neutral keyframe."""
         super().reset()
         # The superclass call resets CPU-side MuJoCo structs to the neutral keyframe,
         # so we need to recreate GPU-side structs to reflect that reset.
@@ -66,6 +73,15 @@ class GPUSimulation(Simulation):
     def get_joint_angles(
         self, fly_name: str
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
+        """Get joint angles for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_jointdofs)`` in radians, ordered as in
+            ``fly.get_jointdofs_order()``.
+        """
         indices = self._wp_intern_qposadrs_by_fly[fly_name]
         dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
@@ -79,6 +95,15 @@ class GPUSimulation(Simulation):
     def get_joint_velocities(
         self, fly_name: str
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
+        """Get joint velocities for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_jointdofs)`` in radians per second,
+            ordered as in ``fly.get_jointdofs_order()``.
+        """
         indices = self._wp_intern_qveladrs_by_fly[fly_name]
         dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
@@ -92,6 +117,15 @@ class GPUSimulation(Simulation):
     def get_body_positions(
         self, fly_name: str
     ) -> Float[wp.array, "n_worlds n_bodies 3"]:
+        """Get global body positions for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_bodies, 3)`` in mm, ordered as in
+            ``fly.get_bodysegs_order()``.
+        """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
         n_cols = 3
         dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
@@ -106,6 +140,15 @@ class GPUSimulation(Simulation):
     def get_body_rotations(
         self, fly_name: str
     ) -> Float[wp.array, "n_worlds n_bodies 4"]:
+        """Get global body orientations as quaternions for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_bodies, 4)`` (w, x, y, z), ordered as
+            in ``fly.get_bodysegs_order()``.
+        """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
         n_cols = 4
         dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
@@ -118,6 +161,7 @@ class GPUSimulation(Simulation):
 
     @property  # type: ignore[override]
     def time(self) -> float:
+        """Current simulation time in seconds (from world 0)."""
         return float(self.mjw_data.time.numpy()[0])
 
     @override
@@ -126,6 +170,16 @@ class GPUSimulation(Simulation):
         fly_name: str,
         actuator_type: ActuatorType,
     ) -> Float[wp.array, "n_worlds n_actuators"]:
+        """Get actuator forces for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+            actuator_type: Type of actuator to query.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_actuators)``, ordered as in
+            ``fly.get_actuated_jointdofs_order(actuator_type)``.
+        """
         indices = self._wp_intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
@@ -141,6 +195,13 @@ class GPUSimulation(Simulation):
         fly_name: str,
         leg_to_adhesion_state: Float[np.ndarray | wp.array, "n_worlds 6"],
     ) -> None:
+        """Set adhesion states for each leg across all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+            leg_to_adhesion_state: Adhesion gain array, shape ``(n_worlds, 6)``,
+                ordered as in ``fly.get_legs_order()``. Accepts numpy or Warp arrays.
+        """
         if not isinstance(leg_to_adhesion_state, wp.array):
             leg_to_adhesion_state = wp.array(leg_to_adhesion_state, dtype=wp.float32)
         indices = self._wp_intern_adhesionactuatorids_by_fly[fly_name]
@@ -156,7 +217,16 @@ class GPUSimulation(Simulation):
         fly_name: str,
         actuator_type: ActuatorType,
         inputs: Float[np.ndarray | wp.array, "n_worlds n_actuators"],
-    ):
+    ) -> None:
+        """Set control inputs for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+            actuator_type: Type of actuator to control.
+            inputs: Control inputs, shape ``(n_worlds, n_actuators)``, ordered as in
+                ``fly.get_actuated_jointdofs_order(actuator_type)``. Accepts numpy or
+                Warp arrays.
+        """
         if not isinstance(inputs, wp.array):
             inputs = wp.array(inputs, dtype=wp.float32)
         indices = self._wp_intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
@@ -167,7 +237,8 @@ class GPUSimulation(Simulation):
         )
 
     @override
-    def step(self):
+    def step(self) -> None:
+        """Advance all parallel worlds by one timestep on the GPU."""
         mjw.step(self.mjw_model, self.mjw_data)
 
     @override
@@ -241,10 +312,21 @@ class GPUSimulation(Simulation):
 
     @override
     def render_as_needed(self) -> dict[str, Float[np.ndarray, "height width 3"]]:
+        """Render frames for all configured cameras if enough time has elapsed.
+
+        Returns:
+            Dict mapping camera name to rendered frame array ``(height, width, 3)``,
+            or an empty dict if no render occurred.
+        """
         return self.renderer.render_as_needed(self.mjw_data)
 
     @override
     def print_performance_report(self) -> None:
+        """Print a parallel-simulation performance report.
+
+        Requires that `step_with_profile` and `render_as_needed_with_profile` were
+        used during the simulation loop.
+        """
         print_perf_report_parallel(
             n_steps=self._curr_step,
             n_frames_rendered=self._frames_rendered,

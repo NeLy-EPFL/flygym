@@ -101,27 +101,32 @@ class Renderer:
         else:
             return False
 
-    def reset(self):
+    def reset(self) -> None:
         """Clear buffered frames and reset the render timer."""
         self._last_render_time_sec = -np.inf
         if self.buffer_frames:
             self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
 
-    def close(self):
+    def close(self) -> None:
         """Release the underlying MuJoCo renderer resources."""
         self.mj_renderer.close()
 
-    def __enter__(self):
+    def __enter__(self) -> "Renderer":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> bool:
         self.close()
         return False  # don't suppress exceptions
 
     def show_in_notebook(
         self,
         camera: str | mjcf.Element | Sequence[str | mjcf.Element] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Display recorded frames in a Jupyter notebook.
 
@@ -140,7 +145,7 @@ class Renderer:
     def save_video(
         self,
         output_path: dict[str | mjcf.Element, PathLike] | PathLike,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Save recorded frames as video files.
 
@@ -270,9 +275,16 @@ def launch_interactive_viewer(
     run_async: bool = False,
     init_keyframe: str | None = "neutral",
 ) -> None:
-    """Launch MuJoCo's built-in interactive viewer. If `run_async` is True, the viewer
-    will be launched in a separate process and this function will return immediately.
-    It should be set to True when launching from a Jupyter notebook."""
+    """Launch MuJoCo's built-in interactive viewer.
+
+    Args:
+        mj_model: Compiled MuJoCo model.
+        mj_data: MuJoCo data.
+        run_async: If True, launch the viewer in a separate process and return
+            immediately. Use this when calling from a Jupyter notebook.
+        init_keyframe: Keyframe name to reset to before launching. Uses the current
+            state if None.
+    """
 
     if init_keyframe is not None:
         key_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_KEY, init_keyframe)
@@ -294,12 +306,12 @@ def preview_model(
     init_keyframe: str | None = "neutral",
     duration: float = 0.1,
     camera_res: tuple[int, int] = (240, 320),
-    playback_speed=0.1,
+    playback_speed: float = 0.1,
     output_fps: int = 25,
     show_in_notebook: bool = False,
     output_path: PathLike | None = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> None:
     """Run a short simulation and render a preview.
 
     Args:

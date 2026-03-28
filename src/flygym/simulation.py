@@ -283,14 +283,13 @@ class Simulation:
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
 
     def warmup(self, duration_s: float = 0.05) -> None:
-        """Warmup the simulation by stepping and rendering for a short period of time.
+        """Step the simulation for a short period to settle initialization transients.
 
-        This helps get rid of intialization transients (e.g., the fly "landing" on the
-        ground). Call this method after reset() and before the actual simulation loop.
+        Call after `reset` and before the main simulation loop to allow the fly to
+        settle onto the ground.
 
         Args:
-            duration_s:
-                Duration of the warmup period in seconds.
+            duration_s: Duration of the warmup period in seconds.
         """
         n_steps = int(duration_s / self.mj_model.opt.timestep)
         for _ in range(n_steps):
