@@ -8,6 +8,7 @@ from flygym.compose import Fly, KinematicPose
 
 
 def get_body_names(mj_model: mujoco.MjModel):
+    """Return a list of body names in the order they appear in the model."""
     return [
         mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_BODY, bid)
         for bid in range(mj_model.nbody)
@@ -15,6 +16,14 @@ def get_body_names(mj_model: mujoco.MjModel):
 
 
 def get_xpos0_xquat0(mj_model: mujoco.MjModel, mj_data: mujoco.MjData):
+    """Return body positions and quaternions at keyframe 0.
+
+    Resets to keyframe 0 and runs forward kinematics.
+
+    Returns:
+        Tuple of ``(xpos, xquat)`` arrays, each shape ``(n_bodies, 3)`` and
+        ``(n_bodies, 4)`` respectively.
+    """
     mujoco.mj_resetDataKeyframe(mj_model, mj_data, 0)
     mujoco.mj_kinematics(mj_model, mj_data)
     xpos = mj_data.xpos.copy()
@@ -31,6 +40,23 @@ def fit_qpos_to_xpos_xquat(
     fitting_rot_weight: float = 1.0,
     max_iters: int = 100,
 ) -> np.ndarray:
+    """Fit joint angles (qpos) to match target body positions and orientations.
+
+    Uses L-BFGS-B optimization to minimize a weighted sum of position and rotation
+    errors across all bodies.
+
+    Args:
+        mj_model: Compiled MuJoCo model.
+        mj_data: Associated MuJoCo data (modified in place during optimization).
+        target_xpos: Target global body positions, shape ``(n_bodies, 3)``.
+        target_xquat: Target global body quaternions, shape ``(n_bodies, 4)``.
+        fitting_pos_weight: Weight applied to positional error.
+        fitting_rot_weight: Weight applied to rotational error.
+        max_iters: Maximum number of optimizer iterations.
+
+    Returns:
+        Optimized qpos array, shape ``(nq,)``.
+    """
     _cost_hist = []
 
     def objective(qpos0):
@@ -88,6 +114,18 @@ def fit_qpos_to_xpos_xquat(
 def qpos_to_kinematic_pose(
     mj_model: mujoco.MjModel, qpos: np.ndarray, axis_order: AxisOrder
 ) -> KinematicPose:
+    """Convert a qpos array to a `KinematicPose` using left-side joints only.
+
+    Right-side angles are populated by mirroring.
+
+    Args:
+        mj_model: Compiled MuJoCo model.
+        qpos: Joint position vector, shape ``(nq,)``.
+        axis_order: The axis order used for the model's joints.
+
+    Returns:
+        A `KinematicPose` with left-side angles and mirroring enabled.
+    """
     fitted_joint_angles_rad_dict = {}
     for internal_jointid in range(mj_model.njnt):
         qposadr = mj_model.jnt_qposadr[internal_jointid]
@@ -113,6 +151,22 @@ def convert_pose_axis_order(
     ref_fly_kwargs: dict = dict(),
     fitted_fly_kwargs: dict = dict(),
 ):
+    """Convert a `KinematicPose` to a different joint axis order.
+
+    Builds two fly models (one per axis order), fits the target-order model's joint
+    angles to match the reference model's body poses using IK, and returns the
+    converted pose.
+
+    Args:
+        pose: Input pose to convert.
+        target_axis_order: Axis order for the output pose.
+        joint_preset: Joint preset to use for both models.
+        ref_fly_kwargs: Extra kwargs passed to the reference `Fly`.
+        fitted_fly_kwargs: Extra kwargs passed to the target `Fly`.
+
+    Returns:
+        A `KinematicPose` in the target axis order.
+    """
     ref_fly = Fly(**ref_fly_kwargs)
     ref_skeleton = Skeleton(axis_order=pose.axis_order, joint_preset=joint_preset)
     ref_fly.add_joints(ref_skeleton, neutral_pose=pose)
