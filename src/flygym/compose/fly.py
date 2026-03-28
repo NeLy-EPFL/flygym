@@ -357,7 +357,9 @@ class Fly(BaseCompositionElement):
         self._rebuild_neutral_keyframe()
         return return_dict
 
-    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> dict[str, mjcf.Element]:
+    def add_leg_adhesion(
+        self, gain: float | dict[str, float] = 1.0
+    ) -> dict[str, mjcf.Element]:
         """Add adhesion actuators to the tarsus5 segments of all legs.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
