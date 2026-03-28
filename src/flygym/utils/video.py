@@ -1,11 +1,23 @@
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import imageio.v3 as iio
 from PIL import Image
 
 
-def write_video_from_frames(path: str | Path, frames: list[np.ndarray], **kwargs):
+def write_video_from_frames(
+    path: str | Path, frames: list[np.ndarray], **kwargs: Any
+) -> None:
+    """Write a list of frames to a video file.
+
+    The image size is scaled up to the nearest multiple of 16 for codec compatibility.
+
+    Args:
+        path: Output file path.
+        frames: List of ``(H, W, 3)`` uint8 numpy arrays.
+        **kwargs: Passed to ``imageio.v3.imwrite``.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Scale image size up to multiples of 16 to enhance compatibility with most codecs

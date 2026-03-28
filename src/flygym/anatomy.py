@@ -176,9 +176,11 @@ class AxisOrder(Enum):
         return "".join(axis.to_letter_xyz() for axis in self.value)
 
     def to_list_of_str(self) -> list[str]:
+        """Convert to a list of axis name strings (e.g. ``['pitch', 'roll', 'yaw']``)."""
         return [axis.value for axis in self.value]
 
     def to_str(self) -> str:
+        """Convert to an underscore-joined axis string (e.g. ``'pitch_roll_yaw'``)."""
         return "_".join(self.to_list_of_str())
 
 
@@ -188,17 +190,22 @@ def _chain2joints(*args: str) -> list[tuple[str, str]]:
     return [(args[i], args[i + 1]) for i in range(len(args) - 1)]
 
 
-SIDES = ["l", "r"]
-LEGS = [f"{side}{pos}" for side in SIDES for pos in "fmh"]
-BODY_POSITIONS = ["c", *SIDES, *LEGS]
+SIDES: list[str] = ["l", "r"]
+LEGS: list[str] = [f"{side}{pos}" for side in SIDES for pos in "fmh"]
+BODY_POSITIONS: list[str] = ["c", *SIDES, *LEGS]
 
-LEG_LINKS = ["coxa", "trochanterfemur", "tibia", *(f"tarsus{seg}" for seg in "12345")]
-ANTENNA_LINKS = ["pedicel", "funiculus", "arista"]
-PROBOSCIS_LINKS = ["rostrum", "haustellum"]
-ABDOMEN_LINKS = ["abdomen12", *(f"abdomen{seg}" for seg in "3456")]
-PASSIVE_TARSAL_LINKS = [f"tarsus{seg}" for seg in "2345"]
+LEG_LINKS: list[str] = [
+    "coxa",
+    "trochanterfemur",
+    "tibia",
+    *(f"tarsus{seg}" for seg in "12345"),
+]
+ANTENNA_LINKS: list[str] = ["pedicel", "funiculus", "arista"]
+PROBOSCIS_LINKS: list[str] = ["rostrum", "haustellum"]
+ABDOMEN_LINKS: list[str] = ["abdomen12", *(f"abdomen{seg}" for seg in "3456")]
+PASSIVE_TARSAL_LINKS: list[str] = [f"tarsus{seg}" for seg in "2345"]
 
-ALL_CONNECTED_SEGMENT_PAIRS = [
+ALL_CONNECTED_SEGMENT_PAIRS: list[tuple[str, str]] = [
     ("c_thorax", "c_head"),
     *(_chain2joints("c_head", *(f"c_{lk}" for lk in PROBOSCIS_LINKS))),
     *(_chain2joints("c_thorax", *(f"c_{lk}" for lk in ABDOMEN_LINKS))),
@@ -216,7 +223,7 @@ ALL_CONNECTED_SEGMENT_PAIRS = [
         for edge in _chain2joints("c_thorax", *(f"{leg}_{lk}" for lk in LEG_LINKS))
     ),
 ]
-ALL_SEGMENT_NAMES = orderedset(
+ALL_SEGMENT_NAMES: list[str] = orderedset(
     [seg for joint in ALL_CONNECTED_SEGMENT_PAIRS for seg in joint]
 )
 
@@ -248,37 +255,48 @@ class BodySegment:
 
     @property
     def pos(self) -> str:
+        """Body position prefix (e.g. ``'lf'``, ``'c'``)."""
         return self.name.split("_")[0]
 
     @property
     def link(self) -> str:
+        """Link name within the kinematic chain (e.g. ``'tibia'``)."""
         return self.name.split("_")[1]
 
-    def is_thorax(self):
+    def is_thorax(self) -> bool:
+        """Return True if this segment is the thorax."""
         return self.name == "c_thorax"
 
-    def is_head(self):
+    def is_head(self) -> bool:
+        """Return True if this segment is the head."""
         return self.name == "c_head"
 
-    def is_proboscis(self):
+    def is_proboscis(self) -> bool:
+        """Return True if this segment belongs to the proboscis."""
         return self.link in PROBOSCIS_LINKS
 
-    def is_eye(self):
+    def is_eye(self) -> bool:
+        """Return True if this segment is an eye."""
         return self.link == "eye"
 
-    def is_antenna(self):
+    def is_antenna(self) -> bool:
+        """Return True if this segment belongs to an antenna."""
         return self.link in ANTENNA_LINKS
 
-    def is_wing(self):
+    def is_wing(self) -> bool:
+        """Return True if this segment is a wing."""
         return self.link == "wing"
 
-    def is_haltere(self):
+    def is_haltere(self) -> bool:
+        """Return True if this segment is a haltere."""
         return self.link == "haltere"
 
-    def is_leg(self):
+    def is_leg(self) -> bool:
+        """Return True if this segment belongs to a leg."""
         return self.pos in LEGS
 
-    def is_abdomen(self):
+    def is_abdomen(self) -> bool:
+        """Return True if this segment belongs to the abdomen."""
         return self.link in ABDOMEN_LINKS
 
 
@@ -307,6 +325,7 @@ class JointDOF:
 
     @property
     def name(self) -> str:
+        """Unique name following the pattern ``{parent}-{child}-{axis}``."""
         return f"{self.parent.name}-{self.child.name}-{self.axis.value}"
 
     @classmethod
@@ -366,6 +385,7 @@ class JointPreset(Enum):
     LEGS_ACTIVE_ONLY = "legs_active_only"
 
     def to_joint_list(self) -> list[AnatomicalJoint]:
+        """Return the list of `AnatomicalJoint` objects defined by this preset."""
         match self:
             case JointPreset.ALL_POSSIBLE:
                 return self._get_all_possible_joints()
@@ -478,6 +498,7 @@ class ContactBodiesPreset(Enum):
     TIBIA_TARSUS_ONLY = "tibia_tarsus_only"
 
     def to_body_segments_list(self) -> list[BodySegment]:
+        """Return the list of `BodySegment` objects defined by this preset."""
         match self:
             case ContactBodiesPreset.ALL:
                 return ContactBodiesPreset._get_all_segments()

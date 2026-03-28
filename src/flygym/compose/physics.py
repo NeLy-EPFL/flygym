@@ -19,7 +19,7 @@ class ContactParams:
     compliance. The impedance can vary with penetration depth to model contacts that
     become stiffer as penetration increases.
 
-    See `MuJoCo documentation <https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters>`_
+    See [MuJoCo documentation](https://mujoco.readthedocs.io/en/stable/modeling.html#contact-parameters)
     for details.
 
     Attributes:
@@ -111,6 +111,15 @@ class ContactParams:
         )
 
     def is_valid(self, raise_on_invalid=True):
+        """Check if all parameters are within valid ranges.
+
+        Args:
+            raise_on_invalid: If True, raise ``ValueError`` on invalid parameters
+                instead of returning False.
+
+        Returns:
+            True if valid, False otherwise (only when ``raise_on_invalid=False``).
+        """
         try:
             self._raise_on_invalid_friction()
             self._raise_on_invalid_solver_refaccl()
