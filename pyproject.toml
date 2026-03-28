@@ -41,6 +41,11 @@ warp = [
     "mujoco_warp>=3.6,<3.7",
 ]
 dev = [
+    "mkdocs-material>=9.7,<10.0",
+    "mkdocstrings[python]>=1.0.0,<2",
+    "mkdocs-gen-files==0.6.0",
+    "mkdocs-literate-nav==0.6.2",
+    "mkdocs-section-index==0.3.0",
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
     "black>=26.1,<27.0",
