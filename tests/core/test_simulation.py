@@ -32,12 +32,12 @@ class TestSimulationConstruction:
         assert simulation.time == pytest.approx(0.0)
 
     def test_mj_model_accessible(self, simulation):
-        import mujoco
-        assert isinstance(simulation.mj_model, mujoco.MjModel)
+        import mujoco as mj
+        assert isinstance(simulation.mj_model, mj.MjModel)
 
     def test_mj_data_accessible(self, simulation):
-        import mujoco
-        assert isinstance(simulation.mj_data, mujoco.MjData)
+        import mujoco as mj
+        assert isinstance(simulation.mj_data, mj.MjData)
 
 
 # ==============================================================================

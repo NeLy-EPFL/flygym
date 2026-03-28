@@ -1,18 +1,10 @@
 """Integration tests for flygym.compose (Fly, World)."""
 
 import pytest
-import mujoco
-import numpy as np
+import mujoco as mj
 
 import flygym
-from flygym.anatomy import (
-    AxisOrder,
-    JointPreset,
-    ActuatedDOFPreset,
-    ContactBodiesPreset,
-    Skeleton,
-    LEGS,
-)
+from flygym.anatomy import ActuatedDOFPreset, ContactBodiesPreset, LEGS
 from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
@@ -136,8 +128,8 @@ class TestFlyAddLegAdhesion:
 class TestFlyCompile:
     def test_compile_produces_mujoco_model(self, fly_with_joints):
         mj_model, mj_data = fly_with_joints.compile()
-        assert isinstance(mj_model, mujoco.MjModel)
-        assert isinstance(mj_data, mujoco.MjData)
+        assert isinstance(mj_model, mj.MjModel)
+        assert isinstance(mj_data, mj.MjData)
 
     def test_compiled_model_has_correct_n_joints(self, fly_with_joints, skeleton_ypr):
         mj_model, _ = fly_with_joints.compile()
@@ -203,8 +195,8 @@ class TestFlatGroundWorld:
 
     def test_compile_returns_mujoco_model(self, flat_world_with_fly):
         mj_model, mj_data = flat_world_with_fly.compile()
-        assert isinstance(mj_model, mujoco.MjModel)
-        assert isinstance(mj_data, mujoco.MjData)
+        assert isinstance(mj_model, mj.MjModel)
+        assert isinstance(mj_data, mj.MjData)
 
     def test_compiled_model_has_freejoint(self, flat_world_with_fly):
         """Fly should be attached with a 6-DoF free joint (7 qpos, 6 qvel)."""
@@ -233,8 +225,8 @@ class TestTetheredWorld:
 
     def test_compile_returns_mujoco_model(self, tethered_world_with_fly):
         mj_model, mj_data = tethered_world_with_fly.compile()
-        assert isinstance(mj_model, mujoco.MjModel)
-        assert isinstance(mj_data, mujoco.MjData)
+        assert isinstance(mj_model, mj.MjModel)
+        assert isinstance(mj_data, mj.MjData)
 
 
 # ==============================================================================
@@ -292,8 +284,8 @@ class TestFlyAddTrackingCamera:
         )
         mj_model, _ = world.compile()
         cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
-        cam_id = mujoco.mj_name2id(
-            mj_model, mujoco.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
+        cam_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
         )
         assert cam_id >= 0, "Camera should be findable in the compiled model"
 
