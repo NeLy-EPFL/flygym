@@ -1,6 +1,6 @@
 from collections import defaultdict
 from time import perf_counter_ns
-from typing import Any
+from typing import Any, Literal
 
 import mujoco as mj
 import dm_control.mjcf as mjcf
@@ -420,11 +420,18 @@ class Simulation:
         """Current simulation time in seconds."""
         return self.mj_data.time
 
-    def print_performance_report(self) -> None:
+    def print_performance_report(
+        self, show_in_notebook: bool | Literal["auto"] = "auto"
+    ) -> None:
         """Print a summary of physics and rendering performance.
 
         Requires that `step_with_profile` and `render_as_needed_with_profile` were
         used during the simulation loop.
+
+        Args:
+            show_in_notebook: If True, render the report as an HTML table suitable for
+                display in a Jupyter notebook. If "auto", will attempt to detect if
+                we're in a notebook environment and choose accordingly.
         """
         print_perf_report(
             n_steps=self._curr_step,
@@ -432,4 +439,5 @@ class Simulation:
             total_physics_time_ns=self._total_physics_time_ns,
             total_render_time_ns=self._total_render_time_ns,
             timestep=self.mj_model.opt.timestep,
+            show_in_notebook=show_in_notebook,
         )

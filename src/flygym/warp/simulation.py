@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, override
+from typing import Any, Literal, override
 
 import warp as wp
 import mujoco as mj
@@ -320,11 +320,18 @@ class GPUSimulation(Simulation):
         return self.renderer.render_as_needed(self.mjw_data)
 
     @override
-    def print_performance_report(self) -> None:
+    def print_performance_report(
+        self, show_in_notebook: bool | Literal["auto"] = "auto"
+    ) -> None:
         """Print a parallel-simulation performance report.
 
         Requires that `step_with_profile` and `render_as_needed_with_profile` were
         used during the simulation loop.
+        
+        Args:
+            show_in_notebook: If True, render the report as an HTML table suitable for
+                display in a Jupyter notebook. If "auto", will attempt to detect if
+                we're in a notebook environment and choose accordingly.
         """
         print_perf_report_parallel(
             n_steps=self._curr_step,
@@ -334,6 +341,7 @@ class GPUSimulation(Simulation):
             timestep=self.mj_model.opt.timestep,
             n_worlds=self.n_worlds,
             n_worlds_rendered=len(self.renderer.world_ids),
+            show_in_notebook=show_in_notebook,
         )
 
     @override
