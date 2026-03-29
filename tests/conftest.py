@@ -5,12 +5,18 @@ are scoped to the module level so the expensive setup is done only once per test
 """
 
 import os
+import platform
 
-# Force EGL headless rendering so mujoco.Renderer works without a display.
-os.environ.setdefault("MUJOCO_GL", "egl")
-os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+# On Linux, force EGL headless rendering (Mesa, no display server required).
+# On macOS and Windows, mujoco ignores MUJOCO_GL entirely (it hardcodes CGL
+# and GLFW respectively), so we leave the variable unset there to avoid
+# confusing dm_control's validation logic.
+if platform.system() == "Linux":
+    os.environ.setdefault("MUJOCO_GL", "egl")
+    os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 
 import pytest
+
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
 from flygym.compose.fly import Fly, ActuatorType
