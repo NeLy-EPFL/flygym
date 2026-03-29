@@ -44,7 +44,7 @@ plugins:
           paths: ["src"]
   - mkdocs-jupyter:
       execute: false
-      include_source: true
+      include_source: false
       ignore_h1_titles: True
 
 markdown_extensions:
