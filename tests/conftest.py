@@ -7,20 +7,12 @@ are scoped to the module level so the expensive setup is done only once per test
 import os
 import platform
 
-# Select the headless rendering backend that both mujoco and dm_control accept:
-#   Linux   → egl   (hardware-accelerated via Mesa; dm_control and mujoco both support it)
-#   macOS   → glfw  (bundled in mujoco's wheel; dm_control accepts it; GLFW renders
-#                    offscreen with GLFW_VISIBLE=false so no display server is needed)
-#   Windows → glfw  (same reasoning as macOS)
-#
-# osmesa is rejected by mujoco on macOS/Windows (not compiled into those wheels).
-# cgl/wgl are rejected by dm_control (not in its allowed-values list).
-# glfw is the only value accepted by both libraries on all three platforms.
-_MUJOCO_GL_BY_PLATFORM = {"Linux": "egl", "Darwin": "glfw", "Windows": "glfw"}
-_gl = _MUJOCO_GL_BY_PLATFORM.get(platform.system())
-if _gl:
-    os.environ.setdefault("MUJOCO_GL", _gl)
+# On Linux, force EGL headless rendering (Mesa, no display server required).
+# On macOS and Windows, mujoco ignores MUJOCO_GL entirely (it hardcodes CGL
+# and GLFW respectively), so we leave the variable unset there to avoid
+# confusing dm_control's validation logic.
 if platform.system() == "Linux":
+    os.environ.setdefault("MUJOCO_GL", "egl")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 
 import pytest

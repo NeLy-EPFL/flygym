@@ -1,6 +1,19 @@
 """Tests for flygym.rendering (Renderer class)."""
 
+import platform
+
 import pytest
+
+# mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create a
+# headless OpenGL context without a physical GPU.  Skip the whole module on
+# those platforms so CI doesn't fail on macOS/Windows GitHub-hosted runners.
+pytestmark = pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason=(
+        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
+        "neither works headlessly in CI without a GPU"
+    ),
+)
 
 from flygym.anatomy import AxisOrder, JointPreset, Skeleton
 from flygym.compose.fly import Fly
