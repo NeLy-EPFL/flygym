@@ -42,6 +42,10 @@ plugins:
       handlers:
         python:
           paths: ["src"]
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+      ignore_h1_titles: True
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -59,6 +63,3 @@ markdown_extensions:
   - toc:
       permalink: true
 
-nav:
-  - Home: index.md
-  - API Reference: reference/

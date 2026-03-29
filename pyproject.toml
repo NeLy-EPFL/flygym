@@ -41,16 +41,21 @@ warp = [
     "mujoco_warp>=3.6,<3.7",
 ]
 dev = [
+    # Testing
+    "pytest>=9.0,<10.0",
+    "pytest-cov>=7.0,<8.0",
+    # Formatting and linting
+    "black>=26.1,<27.0",
+    "ruff==0.15.8",
+    # Documentation site
     "mkdocs-material>=9.7,<10.0",
     "mkdocstrings[python]>=1.0.0,<2",
     "mkdocs-gen-files==0.6.0",
     "mkdocs-literate-nav==0.6.2",
     "mkdocs-section-index==0.3.0",
-    "pytest>=9.0,<10.0",
-    "pytest-cov>=7.0,<8.0",
-    "black>=26.1,<27.0",
-    "ruff==0.15.8",
-    # For mesh simplification:
+    "mkdocs-jupyter==0.26.1",
+    "mkdocs-ipynb==0.1.1",
+    # Mesh simplification
     "trimesh>=4.0,<5.0",
     "shapely>=2.0,<3.0",
     "mapbox-earcut>=2.0,<3.0",
