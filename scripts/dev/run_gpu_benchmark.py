@@ -18,7 +18,7 @@ if __name__ == "__main__":
         df = run_benchmark(
             enable_rendering=False,
             min_worlds=2**4,  # 16
-            max_worlds=2**6,  # 16384
+            max_worlds=2**14,  # 16384
             factor=2,
             sim_timestep=SIM_TIMESTEP,
             sim_steps=1000,
