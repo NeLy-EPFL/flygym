@@ -13,22 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            mujoco_gl: egl
-            pyopengl_platform: egl
-          - os: macos-latest
-            mujoco_gl: osmesa
-            pyopengl_platform: osmesa
-          - os: windows-latest
-            mujoco_gl: osmesa
-            pyopengl_platform: osmesa
-
-    # Set GL env vars before Python/pytest runs so they take precedence over
-    # the os.environ.setdefault("MUJOCO_GL", "egl") in tests/conftest.py.
-    env:
-      MUJOCO_GL: ${{ matrix.mujoco_gl }}
-      PYOPENGL_PLATFORM: ${{ matrix.pyopengl_platform }}
 
     steps:
       - uses: actions/checkout@v4
