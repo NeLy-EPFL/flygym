@@ -32,12 +32,12 @@ class TestSimulationConstruction:
         assert simulation.time == pytest.approx(0.0)
 
     def test_mj_model_accessible(self, simulation):
-        import mujoco
-        assert isinstance(simulation.mj_model, mujoco.MjModel)
+        import mujoco as mj
+        assert isinstance(simulation.mj_model, mj.MjModel)
 
     def test_mj_data_accessible(self, simulation):
-        import mujoco
-        assert isinstance(simulation.mj_data, mujoco.MjData)
+        import mujoco as mj
+        assert isinstance(simulation.mj_data, mj.MjData)
 
 
 # ==============================================================================
@@ -91,7 +91,7 @@ class TestGetJointAngles:
         """After reset the joint angles should roughly match the neutral pose."""
         simulation.reset()
         angles = simulation.get_joint_angles(fly_with_adhesion.name)
-        neutral_lookup = neutral_pose.get_angles_lookup(AxisOrder.YAW_PITCH_ROLL)
+        neutral_lookup = neutral_pose.joint_angles_lookup_rad
         dof_order = list(skeleton_ypr.iter_jointdofs())
         for i, dof in enumerate(dof_order):
             if dof.name in neutral_lookup:
@@ -274,3 +274,136 @@ class TestWarmup:
         simulation.reset()
         simulation.warmup(duration_s=0.0)
         assert simulation.time == pytest.approx(0.0)
+
+
+# ==============================================================================
+# step_with_profile / render_as_needed_with_profile / print_performance_report
+# ==============================================================================
+
+
+class TestProfilingMethods:
+    def test_step_with_profile_advances_time(self, simulation):
+        simulation.reset()
+        dt = simulation.mj_model.opt.timestep
+        simulation.step_with_profile()
+        assert simulation.time == pytest.approx(dt, rel=1e-6)
+
+    def test_step_with_profile_increments_step_counter(self, simulation):
+        simulation.reset()
+        assert simulation._curr_step == 0
+        simulation.step_with_profile()
+        assert simulation._curr_step == 1
+        simulation.step_with_profile()
+        assert simulation._curr_step == 2
+
+    def test_step_with_profile_accumulates_physics_time(self, simulation):
+        simulation.reset()
+        assert simulation._total_physics_time_ns == 0
+        simulation.step_with_profile()
+        assert simulation._total_physics_time_ns > 0
+
+    def test_reset_clears_profiling_counters(self, simulation):
+        simulation.reset()
+        for _ in range(5):
+            simulation.step_with_profile()
+        assert simulation._curr_step == 5
+        assert simulation._total_physics_time_ns > 0
+        simulation.reset()
+        assert simulation._curr_step == 0
+        assert simulation._total_physics_time_ns == 0
+        assert simulation._total_render_time_ns == 0
+        assert simulation._frames_rendered == 0
+
+    def test_print_performance_report_outputs_table(self, simulation, capsys):
+        simulation.reset()
+        for _ in range(10):
+            simulation.step_with_profile()
+        simulation.print_performance_report()
+        captured = capsys.readouterr()
+        assert "PERFORMANCE" in captured.out
+        assert "Physics" in captured.out
+
+
+# ==============================================================================
+# set_renderer
+# ==============================================================================
+
+
+class TestSetRenderer:
+    def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
+        from flygym.rendering import Renderer
+
+        # Build a world with a camera for this test
+        from flygym.compose.fly import Fly, ActuatorType
+        from flygym.compose.world import TetheredWorld
+        from flygym.compose.pose import KinematicPosePreset
+        from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
+
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        skeleton = Skeleton(
+            axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
+        )
+        fly = Fly(name="renderer_test_fly")
+        fly.add_joints(skeleton, neutral_pose=pose)
+        actuated_dofs = skeleton.get_actuated_dofs_from_preset(
+            ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+        )
+        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_leg_adhesion()
+        fly.add_tracking_camera(name="trackcam")
+
+        world = TetheredWorld(name="renderer_test_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        from flygym.simulation import Simulation
+
+        sim = Simulation(world)
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+
+        renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
+
+        assert renderer is not None
+        assert isinstance(renderer, Renderer)
+        assert sim.renderer is renderer
+
+    def test_render_as_needed_with_profile_tracks_frames(self, simulation):
+        from flygym.compose.fly import Fly, ActuatorType
+        from flygym.compose.world import TetheredWorld
+        from flygym.compose.pose import KinematicPosePreset
+        from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
+        from flygym.simulation import Simulation
+
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        skeleton = Skeleton(
+            axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
+        )
+        fly = Fly(name="profrender_fly")
+        fly.add_joints(skeleton, neutral_pose=pose)
+        actuated_dofs = skeleton.get_actuated_dofs_from_preset(
+            ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+        )
+        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_leg_adhesion()
+        fly.add_tracking_camera(name="trackcam")
+
+        world = TetheredWorld(name="profrender_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        sim = Simulation(world)
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+
+        sim.set_renderer(cam_name, camera_res=(64, 64))
+
+        sim.reset()
+        assert sim._frames_rendered == 0
+        # First call at time=0 should render (time >= last_render + interval)
+        rendered = sim.render_as_needed_with_profile()
+        assert rendered is True
+        assert sim._frames_rendered == 1
+        assert sim._total_render_time_ns > 0

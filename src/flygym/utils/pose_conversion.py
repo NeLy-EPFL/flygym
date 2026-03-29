@@ -1,4 +1,4 @@
-import mujoco
+import mujoco as mj
 import numpy as np
 import scipy.optimize
 from loguru import logger
@@ -7,15 +7,17 @@ from flygym.anatomy import Skeleton, JointPreset, JointDOF, AxisOrder
 from flygym.compose import Fly, KinematicPose
 
 
-def get_body_names(mj_model: mujoco.MjModel):
+def get_body_names(mj_model: mj.MjModel):
     """Return a list of body names in the order they appear in the model."""
     return [
-        mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_BODY, bid)
+        mj.mj_id2name(mj_model, mj.mjtObj.mjOBJ_BODY, bid)
         for bid in range(mj_model.nbody)
     ]
 
 
-def get_xpos0_xquat0(mj_model: mujoco.MjModel, mj_data: mujoco.MjData):
+def get_xpos0_xquat0(
+    mj_model: mj.MjModel, mj_data: mj.MjData
+) -> tuple[np.ndarray, np.ndarray]:
     """Return body positions and quaternions at keyframe 0.
 
     Resets to keyframe 0 and runs forward kinematics.
@@ -24,16 +26,16 @@ def get_xpos0_xquat0(mj_model: mujoco.MjModel, mj_data: mujoco.MjData):
         Tuple of ``(xpos, xquat)`` arrays, each shape ``(n_bodies, 3)`` and
         ``(n_bodies, 4)`` respectively.
     """
-    mujoco.mj_resetDataKeyframe(mj_model, mj_data, 0)
-    mujoco.mj_kinematics(mj_model, mj_data)
+    mj.mj_resetDataKeyframe(mj_model, mj_data, 0)
+    mj.mj_kinematics(mj_model, mj_data)
     xpos = mj_data.xpos.copy()
     xquat = mj_data.xquat.copy()
     return xpos, xquat
 
 
 def fit_qpos_to_xpos_xquat(
-    mj_model: mujoco.MjModel,
-    mj_data: mujoco.MjData,
+    mj_model: mj.MjModel,
+    mj_data: mj.MjData,
     target_xpos: np.ndarray,
     target_xquat: np.ndarray,
     fitting_pos_weight: float = 1.0,
@@ -61,7 +63,7 @@ def fit_qpos_to_xpos_xquat(
 
     def objective(qpos0):
         mj_data.qpos[:] = qpos0
-        mujoco.mj_kinematics(mj_model, mj_data)
+        mj.mj_kinematics(mj_model, mj_data)
         fitted_xpos = mj_data.xpos.copy()
         fitted_xquat = mj_data.xquat.copy()
 
@@ -112,7 +114,7 @@ def fit_qpos_to_xpos_xquat(
 
 
 def qpos_to_kinematic_pose(
-    mj_model: mujoco.MjModel, qpos: np.ndarray, axis_order: AxisOrder
+    mj_model: mj.MjModel, qpos: np.ndarray, axis_order: AxisOrder
 ) -> KinematicPose:
     """Convert a qpos array to a `KinematicPose` using left-side joints only.
 
@@ -130,9 +132,7 @@ def qpos_to_kinematic_pose(
     for internal_jointid in range(mj_model.njnt):
         qposadr = mj_model.jnt_qposadr[internal_jointid]
         solved_angle = qpos[qposadr]
-        joint_name = mujoco.mj_id2name(
-            mj_model, mujoco.mjtObj.mjOBJ_JOINT, internal_jointid
-        )
+        joint_name = mj.mj_id2name(mj_model, mj.mjtObj.mjOBJ_JOINT, internal_jointid)
         jointdof = JointDOF.from_name(joint_name)
         if jointdof.child.pos[0] != "r":
             fitted_joint_angles_rad_dict[joint_name] = solved_angle
@@ -150,7 +150,7 @@ def convert_pose_axis_order(
     joint_preset: JointPreset = JointPreset.ALL_BIOLOGICAL,
     ref_fly_kwargs: dict = dict(),
     fitted_fly_kwargs: dict = dict(),
-):
+) -> KinematicPose:
     """Convert a `KinematicPose` to a different joint axis order.
 
     Builds two fly models (one per axis order), fits the target-order model's joint

@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Collection
-from typing import override
+from typing import Any, override
 
-import mujoco
+import mujoco as mj
 import dm_control.mjcf as mjcf
 import numpy as np
 
@@ -98,8 +97,8 @@ class BaseWorld(BaseCompositionElement, ABC):
         fly: Fly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Attach a fly to the world at the specified pose.
 
@@ -171,8 +170,8 @@ class BaseWorld(BaseCompositionElement, ABC):
             joint_type = (
                 "free" if joint_element.tag == "freejoint" else joint_element.type
             )
-            internal_jointid = mujoco.mj_name2id(
-                mj_model, mujoco.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+            internal_jointid = mj.mj_name2id(
+                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
             )
             dofadr_start = mj_model.jnt_dofadr[internal_jointid]
             dofadr_end = dofadr_start + _STATE_DIM_BY_JOINT_TYPE[joint_type]
@@ -269,7 +268,7 @@ class FlatGroundWorld(BaseWorld):
         spawn_rotation: Rotation3D,
         *,
         bodysegs_with_ground_contact: (
-            Collection[BodySegment] | ContactBodiesPreset | str
+            list[BodySegment] | ContactBodiesPreset | str
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
@@ -293,7 +292,7 @@ class FlatGroundWorld(BaseWorld):
     def _set_ground_contact(
         self,
         fly: Fly,
-        bodysegs_with_ground_contact: Collection[BodySegment],
+        bodysegs_with_ground_contact: list[BodySegment],
         ground_contact_params: ContactParams,
     ) -> None:
         for body_segment in bodysegs_with_ground_contact:
@@ -310,7 +309,7 @@ class FlatGroundWorld(BaseWorld):
             )
 
     def _add_ground_contact_sensors(
-        self, fly: Fly, bodysegs_with_ground_contact: Collection[BodySegment]
+        self, fly: Fly, bodysegs_with_ground_contact: list[BodySegment]
     ) -> None:
         self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
         contact_geoms_by_leg = defaultdict(list)
@@ -367,7 +366,7 @@ class TetheredWorld(BaseWorld):
         return freejoint
 
 
-def _sort_legsegs_prox2dist(segments: Collection[BodySegment]) -> list[BodySegment]:
+def _sort_legsegs_prox2dist(segments: list[BodySegment]) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, LEG_LINKS.index(seg.link)) for seg in segments]
     bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
     return [t[0] for t in bodyseg_linkpos_tuples]

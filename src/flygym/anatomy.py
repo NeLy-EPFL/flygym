@@ -33,7 +33,6 @@ Attributes:
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TypeAlias, Iterator, Iterable
-from collections.abc import Sequence, Collection
 
 from flygym.utils.math import orderedset, Tree
 from flygym.utils.exceptions import FlyGymInternalError
@@ -164,7 +163,7 @@ class AxisOrder(Enum):
     def _missing_(cls, value):
         if isinstance(value, str) and len((split_values := value.split("_"))) == 3:
             value = split_values
-        if isinstance(value, Sequence) and len(value) == 3:
+        if isinstance(value, list) and len(value) == 3:
             try:
                 return cls(tuple(RotationAxis(x) for x in value))
             except Exception as e:
@@ -453,7 +452,7 @@ class ActuatedDOFPreset(Enum):
     LEGS_ONLY = "legs_only"
     LEGS_ACTIVE_ONLY = "legs_active_only"
 
-    def filter(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
+    def filter(self, jointdofs: list[JointDOF]) -> list[JointDOF]:
         """Filter given joint DoFs according to the preset."""
         match self:
             case ActuatedDOFPreset.ALL:
@@ -463,10 +462,10 @@ class ActuatedDOFPreset(Enum):
             case ActuatedDOFPreset.LEGS_ACTIVE_ONLY:
                 return self._get_leg_active_only(jointdofs)
 
-    def _get_leg_only(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
+    def _get_leg_only(self, jointdofs: list[JointDOF]) -> list[JointDOF]:
         return [dof for dof in jointdofs if dof.child.is_leg()]
 
-    def _get_leg_active_only(self, jointdofs: Collection[JointDOF]) -> list[JointDOF]:
+    def _get_leg_active_only(self, jointdofs: list[JointDOF]) -> list[JointDOF]:
         return [
             dof
             for dof in self._get_leg_only(jointdofs)
@@ -546,7 +545,7 @@ class Skeleton:
 
     Args:
         axis_order:
-            Order of rotation axes (e.g., `AxisOrder.ROLL_YAW_PITCH`). Sequences of
+            Order of rotation axes (e.g., `AxisOrder.ROLL_YAW_PITCH`). lists of
             `RotationAxis` objects or strings are also accepted (e.g.,
             `["roll", "yaw", "pitch"]`).
         joint_preset:
@@ -560,7 +559,7 @@ class Skeleton:
     def __init__(
         self,
         *,
-        axis_order: AxisOrder | Sequence[RotationAxis | str],
+        axis_order: AxisOrder | list[RotationAxis | str],
         joint_preset: "JointPreset | str | None" = None,
         anatomical_joints: list[AnatomicalJoint] | None = None,
     ) -> None:

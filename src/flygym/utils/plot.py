@@ -1,4 +1,6 @@
-def find_font_path(family, weight="normal", style="normal"):
+def find_font_path(
+    family: str, weight: str = "normal", style: str = "normal"
+) -> str | None:
     """
     Find the file path of a font given its family, weight, and style.
 
