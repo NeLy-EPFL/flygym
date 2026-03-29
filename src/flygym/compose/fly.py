@@ -3,11 +3,10 @@ from enum import Enum
 from fnmatch import filter as filter_with_wildcard
 from typing import Iterable, Any, override
 
-import mujoco
+import mujoco as mj
 import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
-from loguru import logger
 
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -215,7 +214,7 @@ class Fly(BaseCompositionElement):
         stiffness: float = 10.0,
         damping: float = 0.5,
         armature: float = 1e-6,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add joints to the fly model based on a skeleton definition.
 
@@ -295,7 +294,7 @@ class Fly(BaseCompositionElement):
         *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-30.0, 30.0),
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.
 
@@ -357,7 +356,9 @@ class Fly(BaseCompositionElement):
         self._rebuild_neutral_keyframe()
         return return_dict
 
-    def add_leg_adhesion(self, gain: float | dict[str, float] = 1.0) -> dict[str, mjcf.Element]:
+    def add_leg_adhesion(
+        self, gain: float | dict[str, float] = 1.0
+    ) -> dict[str, mjcf.Element]:
         """Add adhesion actuators to the tarsus5 segments of all legs.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
@@ -607,23 +608,23 @@ class Fly(BaseCompositionElement):
         self._neutral_keyframe.qpos = self._get_neutral_qpos(mj_model)
         self._neutral_keyframe.ctrl = self._get_neutral_ctrl(mj_model)
 
-    def _get_neutral_qpos(self, mj_model: mujoco.MjModel) -> np.ndarray:
+    def _get_neutral_qpos(self, mj_model: mj.MjModel) -> np.ndarray:
         neutral_qpos = np.zeros(mj_model.nq)
         for jointdof, angle in self.jointdof_to_neutralangle.items():
             joint_element = self.jointdof_to_mjcfjoint[jointdof]
-            internal_jointid = mujoco.mj_name2id(
-                mj_model, mujoco.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+            internal_jointid = mj.mj_name2id(
+                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
             )
             qposadr = mj_model.jnt_qposadr[internal_jointid]
             neutral_qpos[qposadr] = angle
         return neutral_qpos
 
-    def _get_neutral_ctrl(self, mj_model: mujoco.MjModel) -> np.ndarray:
+    def _get_neutral_ctrl(self, mj_model: mj.MjModel) -> np.ndarray:
         neutral_ctrl = np.zeros(mj_model.nu)
         for ty, jointdof_to_actuator in self.jointdof_to_mjcfactuator_by_type.items():
             for jointdof, actuator in jointdof_to_actuator.items():
-                internal_actuatorid = mujoco.mj_name2id(
-                    mj_model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator.full_identifier
+                internal_actuatorid = mj.mj_name2id(
+                    mj_model, mj.mjtObj.mjOBJ_ACTUATOR, actuator.full_identifier
                 )
                 neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
                 neutral_ctrl[internal_actuatorid] = neutral_input

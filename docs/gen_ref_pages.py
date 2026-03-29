@@ -35,3 +35,15 @@ for path in sorted(src_pkg.rglob("*.py")):
 # # Optional: only keep this if you actually use literate-nav (see below)
 # with mkdocs_gen_files.open("SUMMARY.md", "w") as nav_file:
 #     nav_file.writelines(nav.build_literate_nav())
+
+# ---------------------------------------------------------------------------
+# Expose tutorial notebooks to the docs build.
+# The notebooks live in tutorials/ at the project root (outside docs/), so we
+# copy them into the virtual filesystem as docs/tutorials/*.ipynb so that
+# mkdocs-jupyter can process them like any other docs file.
+# ---------------------------------------------------------------------------
+tutorials_dir = root / "tutorials"
+for nb_path in sorted(tutorials_dir.glob("*.ipynb")):
+    dest = Path("tutorials") / nb_path.name
+    with mkdocs_gen_files.open(dest, "w") as f:
+        f.write(nb_path.read_text(encoding="utf-8"))

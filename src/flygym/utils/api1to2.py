@@ -49,6 +49,7 @@ def get_body_name_old2new_lookup():
     """Returns a dictionary mapping legacy body part names to new body part names."""
     return BODY_NAMES_OLD2NEW
 
+
 def get_body_name_new2old_lookup():
     """Returns a dictionary mapping new body part names to legacy body part names."""
     return BODY_NAMES_NEW2OLD

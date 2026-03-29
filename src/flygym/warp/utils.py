@@ -27,6 +27,61 @@ def wp_gather_indexed_rows_3d(
 
 
 @wp.kernel
+def wp_gather_indexed_rows_vec3f(
+    src: wp.array2d(dtype=wp.vec3f),  # type: ignore
+    dst: wp.array3d(dtype=wp.float32),  # type: ignore
+    rows: wp.array(dtype=wp.int32),  # type: ignore
+):
+    """Gather specific rows from a 2D ``vec3f`` array into a ``(n_worlds, n_rows_narrow, 3)``
+    ``float32`` destination.
+
+    This kernel is to be launched with a 2D launch configuration of
+    `(n_worlds, n_rows_narrow)`.
+
+    Args:
+        src (wp.array of shape (n_worlds, n_rows_wide), type vec3f):
+            Source array, e.g. ``mjw_data.xpos``.
+        dst (wp.array of shape (n_worlds, n_rows_narrow, 3), type float32):
+            Destination array.
+        rows (wp.array of shape (n_rows_narrow,), type int32):
+            Body indices to gather.
+    """
+    i, k = wp.tid()
+    v = src[i, rows[k]]
+    dst[i, k, 0] = v[0]
+    dst[i, k, 1] = v[1]
+    dst[i, k, 2] = v[2]
+
+
+@wp.kernel
+def wp_gather_indexed_rows_quatf(
+    src: wp.array2d(dtype=wp.quatf),  # type: ignore
+    dst: wp.array3d(dtype=wp.float32),  # type: ignore
+    rows: wp.array(dtype=wp.int32),  # type: ignore
+):
+    """Gather specific rows from a 2D ``quatf`` array into a ``(n_worlds, n_rows_narrow, 4)``
+    ``float32`` destination.
+
+    This kernel is to be launched with a 2D launch configuration of
+    `(n_worlds, n_rows_narrow)`.
+
+    Args:
+        src (wp.array of shape (n_worlds, n_rows_wide), type quatf):
+            Source array, e.g. ``mjw_data.xquat``.
+        dst (wp.array of shape (n_worlds, n_rows_narrow, 4), type float32):
+            Destination array.
+        rows (wp.array of shape (n_rows_narrow,), type int32):
+            Body indices to gather.
+    """
+    i, k = wp.tid()
+    q = src[i, rows[k]]
+    dst[i, k, 0] = q[0]
+    dst[i, k, 1] = q[1]
+    dst[i, k, 2] = q[2]
+    dst[i, k, 3] = q[3]
+
+
+@wp.kernel
 def wp_scatter_indexed_cols_2d(
     src: wp.array2d(dtype=wp.float32),  # type: ignore
     dst: wp.array2d(dtype=wp.float32),  # type: ignore

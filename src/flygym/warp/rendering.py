@@ -397,7 +397,7 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
     # Strip textures from fly body materials
     # (rendering textures on complex meshes causes MJWarp memory corruption)
     for material in world.mjcf_root.asset.find_all("material"):
-        if not material.full_identifier.split("/")[0] in world.fly_lookup:
+        if material.full_identifier.split("/")[0] not in world.fly_lookup:
             continue  # not a fly body material - leave it alone
         if material.texture is None:
             continue  # material doesn't have texture - nothing to strip
