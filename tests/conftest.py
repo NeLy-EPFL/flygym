@@ -7,44 +7,23 @@ are scoped to the module level so the expensive setup is done only once per test
 import os
 import platform
 
-# Force EGL headless rendering on Linux.
-# On macOS and Windows we leave MUJOCO_GL unset: the newer mujoco package and
-# dm_control have incompatible sets of accepted values (mujoco rejects "osmesa"
-# on macOS/Windows; dm_control rejects "cgl"/"wgl"), so the safest option is
-# to let each library pick its own platform default.
+# Select the headless rendering backend that both mujoco and dm_control accept:
+#   Linux   → egl   (hardware-accelerated via Mesa; dm_control and mujoco both support it)
+#   macOS   → glfw  (bundled in mujoco's wheel; dm_control accepts it; GLFW renders
+#                    offscreen with GLFW_VISIBLE=false so no display server is needed)
+#   Windows → glfw  (same reasoning as macOS)
+#
+# osmesa is rejected by mujoco on macOS/Windows (not compiled into those wheels).
+# cgl/wgl are rejected by dm_control (not in its allowed-values list).
+# glfw is the only value accepted by both libraries on all three platforms.
+_MUJOCO_GL_BY_PLATFORM = {"Linux": "egl", "Darwin": "glfw", "Windows": "glfw"}
+_gl = _MUJOCO_GL_BY_PLATFORM.get(platform.system())
+if _gl:
+    os.environ.setdefault("MUJOCO_GL", _gl)
 if platform.system() == "Linux":
-    os.environ.setdefault("MUJOCO_GL", "egl")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 
-import mujoco
 import pytest
-
-
-def _check_gl_available() -> bool:
-    """Return True if a MuJoCo OpenGL context can be created on this machine."""
-    try:
-        m = mujoco.MjModel.from_xml_string("<mujoco><worldbody/></mujoco>")
-        r = mujoco.Renderer(m, 16, 16)
-        r.close()
-        return True
-    except Exception:
-        return False
-
-
-_GL_AVAILABLE = _check_gl_available()
-
-
-def pytest_collection_modifyitems(config, items):
-    """Auto-skip tests that require an OpenGL context when one isn't available."""
-    if _GL_AVAILABLE:
-        return
-    skip = pytest.mark.skip(reason="OpenGL context not available on this platform")
-    for item in items:
-        if item.fspath.basename == "test_rendering.py" or (
-            item.fspath.basename == "test_simulation.py"
-            and "TestSetRenderer" in item.nodeid
-        ):
-            item.add_marker(skip)
 
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
