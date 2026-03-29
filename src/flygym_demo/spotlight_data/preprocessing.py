@@ -42,7 +42,7 @@ class MotionSnippet:
         angles_global2anatomical: bool = True,
     ) -> None:
         if data_path is None:
-            module_dir = Path(str(files("flygym_examples.spotlight_data")))
+            module_dir = Path(str(files("flygym_demo.spotlight_data")))
             data_path = module_dir / "assets/spotlight_behavior_clip.npz"
         data = np.load(data_path, allow_pickle=True)
         self.rawpred_egoxyz = data["rawpred_egoxyz"]

@@ -1,4 +1,4 @@
-"""Integration tests for flygym_examples.spotlight_data.MotionSnippet."""
+"""Integration tests for flygym_demo.spotlight_data.MotionSnippet."""
 
 import pytest
 import numpy as np
@@ -6,7 +6,7 @@ import numpy as np
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
 from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.pose import KinematicPosePreset
-from flygym_examples.spotlight_data.preprocessing import MotionSnippet
+from flygym_demo.spotlight_data.preprocessing import MotionSnippet
 
 
 @pytest.fixture(scope="module")
