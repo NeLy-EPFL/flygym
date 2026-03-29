@@ -7,18 +7,14 @@ are scoped to the module level so the expensive setup is done only once per test
 import os
 import platform
 
-# Set the headless rendering backend for mujoco.Renderer.
-# Each OS has its own native off-screen backend; EGL (Linux), CGL (macOS), WGL (Windows).
-# PYOPENGL_PLATFORM is only relevant on Linux.
-# Values set here are defaults; CI overrides them via workflow env vars.
-_system = platform.system()
-if _system == "Linux":
+# Force EGL headless rendering on Linux.
+# On macOS and Windows we leave MUJOCO_GL unset: the newer mujoco package and
+# dm_control have incompatible sets of accepted values (mujoco rejects "osmesa"
+# on macOS/Windows; dm_control rejects "cgl"/"wgl"), so the safest option is
+# to let each library pick its own platform default.
+if platform.system() == "Linux":
     os.environ.setdefault("MUJOCO_GL", "egl")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
-elif _system == "Darwin":
-    os.environ.setdefault("MUJOCO_GL", "cgl")
-elif _system == "Windows":
-    os.environ.setdefault("MUJOCO_GL", "wgl")
 
 import pytest
 
