@@ -110,7 +110,7 @@ class ContactParams:
             self.solver_impedance_transitionsharpness,
         )
 
-    def is_valid(self, raise_on_invalid=True):
+    def is_valid(self, raise_on_invalid: bool = True) -> bool:
         """Check if all parameters are within valid ranges.
 
         Args:

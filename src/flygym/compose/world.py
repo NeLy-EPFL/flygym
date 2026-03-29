@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import override
+from typing import Any, override
 
 import mujoco as mj
 import dm_control.mjcf as mjcf
@@ -97,8 +97,8 @@ class BaseWorld(BaseCompositionElement, ABC):
         fly: Fly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Attach a fly to the world at the specified pose.
 

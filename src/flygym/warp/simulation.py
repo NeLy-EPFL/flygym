@@ -327,7 +327,7 @@ class GPUSimulation(Simulation):
 
         Requires that `step_with_profile` and `render_as_needed_with_profile` were
         used during the simulation loop.
-        
+
         Args:
             show_in_notebook: If True, render the report as an HTML table suitable for
                 display in a Jupyter notebook. If "auto", will attempt to detect if

@@ -214,7 +214,7 @@ class Fly(BaseCompositionElement):
         stiffness: float = 10.0,
         damping: float = 0.5,
         armature: float = 1e-6,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add joints to the fly model based on a skeleton definition.
 
@@ -294,7 +294,7 @@ class Fly(BaseCompositionElement):
         *,
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-30.0, 30.0),
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[JointDOF, mjcf.Element]:
         """Add actuators to specified joints.
 
