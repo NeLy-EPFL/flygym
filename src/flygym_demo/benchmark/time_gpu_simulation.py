@@ -6,7 +6,13 @@ import pandas as pd
 from loguru import logger
 
 from flygym.warp import GPUSimulation
-from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
+from flygym.compose import (
+    Fly,
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+    GeomFittingOption,
+)
 from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder, JointDOF
 from flygym.utils.math import Rotation3D
 from flygym_demo.spotlight_data import MotionSnippet
@@ -20,9 +26,13 @@ def make_model(
     neutral_pose=KinematicPosePreset.NEUTRAL,
     spawn_position=(0, 0, 0.8),  # xyz in mm
     spawn_rotation=Rotation3D("quat", (1, 0, 0, 0)),
+    simplify_geom=False,
 ):
-
-    fly = Fly()
+    if simplify_geom:
+        geom_fitting_option = GeomFittingOption.ALL_TO_CAPSULES
+    else:
+        geom_fitting_option = GeomFittingOption.UNMODIFIED
+    fly = Fly(geom_fitting_option=geom_fitting_option)
     axis_order = AxisOrder.YAW_PITCH_ROLL
 
     # Add joints
@@ -95,10 +105,15 @@ def increment_counter_kernel(
     step_counter_gpu[0] = step_counter_gpu[0] + 1
 
 
-def run_simulation(replay_data: np.ndarray, enable_rendering: bool, timestep: float):
+def run_simulation(
+    replay_data: np.ndarray,
+    enable_rendering: bool,
+    timestep: float,
+    simplify_geom: bool,
+) -> float:
     n_worlds, n_steps, n_dofs = replay_data.shape
 
-    fly, world, cam = make_model()
+    fly, world, cam = make_model(simplify_geom=simplify_geom)
     fly_name = fly.name
     sim = GPUSimulation(world, n_worlds)
     assert sim.mj_model.opt.timestep == timestep
@@ -148,6 +163,7 @@ def run_benchmark(
     factor: int,
     sim_timestep: float,
     sim_steps: int,
+    simplify_geom: bool,
 ) -> pd.DataFrame:
     ref_fly, *_ = make_model()
     jointdofs_order = ref_fly.get_actuated_jointdofs_order(ActuatorType.POSITION)
@@ -159,7 +175,9 @@ def run_benchmark(
     while True:
         target_angles = replay_data.make_target_angles_all_worlds(n_worlds, sim_steps)
         try:
-            walltime = run_simulation(target_angles, enable_rendering, sim_timestep)
+            walltime = run_simulation(
+                target_angles, enable_rendering, sim_timestep, simplify_geom
+            )
             logger.info(
                 f"Simulated {sim_steps} steps * {n_worlds} worlds in {walltime:.2f}s"
             )
@@ -176,4 +194,5 @@ def run_benchmark(
     df = pd.DataFrame(res_li)
     df["steps_per_second"] = sim_steps * df["n_worlds"] / df["walltime_s"]
     df["realtime_factor"] = df["steps_per_second"] * sim_timestep
+    df["simplify_geom"] = simplify_geom
     return df
