@@ -15,7 +15,9 @@ def get_body_names(mj_model: mj.MjModel):
     ]
 
 
-def get_xpos0_xquat0(mj_model: mj.MjModel, mj_data: mj.MjData):
+def get_xpos0_xquat0(
+    mj_model: mj.MjModel, mj_data: mj.MjData
+) -> tuple[np.ndarray, np.ndarray]:
     """Return body positions and quaternions at keyframe 0.
 
     Resets to keyframe 0 and runs forward kinematics.
@@ -148,7 +150,7 @@ def convert_pose_axis_order(
     joint_preset: JointPreset = JointPreset.ALL_BIOLOGICAL,
     ref_fly_kwargs: dict = dict(),
     fitted_fly_kwargs: dict = dict(),
-):
+) -> KinematicPose:
     """Convert a `KinematicPose` to a different joint axis order.
 
     Builds two fly models (one per axis order), fits the target-order model's joint

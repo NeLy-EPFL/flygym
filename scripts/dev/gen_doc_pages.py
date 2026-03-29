@@ -20,7 +20,7 @@ def gen_apiref_pages():
     for path in sorted(src.rglob("*.py")):
         module_path = path.relative_to(src_root).with_suffix("")
         doc_path = path.relative_to(src).with_suffix(".md")
-        full_doc_path = Path("reference", doc_path)
+        full_doc_path = Path("api_reference", package, doc_path)
 
         parts = tuple(module_path.parts)
 
