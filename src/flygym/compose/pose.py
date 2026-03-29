@@ -62,6 +62,7 @@ class KinematicPose:
                 "Either joint_angles_rad_dict or path must be provided, but not both."
             )
 
+        joint_angles_rad_dict = dict(joint_angles_rad_dict)  # don't mutate caller dict
         if mirror_left2right:
             _mirror_pose_left2right_in_place(joint_angles_rad_dict)
 

@@ -1,7 +1,10 @@
 * [Home](index.md)
 * [Installation](installation.md)
 * [Interactive Viewer](interactive.md)
-* [Tutorials](tutorials.md)
+* Tutorials
+    * [1. Composing models and scenes](tutorials/1_composing_models_and_scenes.ipynb)
+    * [2. Replaying experimental recordings](tutorials/2_replaying_experimental_recordings.ipynb)
+    * [3. GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose

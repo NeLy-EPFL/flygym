@@ -1,13 +1,12 @@
-"""Integration tests for flygym_examples.spotlight_data.MotionSnippet."""
+"""Integration tests for flygym_demo.spotlight_data.MotionSnippet."""
 
 import pytest
 import numpy as np
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
 from flygym.compose.fly import Fly, ActuatorType
-from flygym.compose.pose import KinematicPose
-from flygym_examples.spotlight_data.preprocessing import MotionSnippet
-import flygym
+from flygym.compose.pose import KinematicPosePreset
+from flygym_demo.spotlight_data.preprocessing import MotionSnippet
 
 
 @pytest.fixture(scope="module")
@@ -17,7 +16,7 @@ def snippet():
 
 @pytest.fixture(scope="module")
 def fly_for_snippet():
-    neutral_pose = KinematicPose(path=flygym.assets_dir / "model/pose/neutral.yaml")
+    neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,

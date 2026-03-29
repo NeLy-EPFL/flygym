@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 import yaml
-import mujoco
+import mujoco as mj
 import numpy as np
 
 from flygym import assets_dir
@@ -63,7 +63,7 @@ def launch_viewer(neutral_pose: KinematicPose):
     # Get final joint angles after viewer is closed
     final_joint_angles_rad_dict = {}
     for jid in range(mj_model.njnt):
-        joint_name = mujoco.mj_id2name(mj_model, mujoco.mjtObj.mjOBJ_JOINT, jid)
+        joint_name = mj.mj_id2name(mj_model, mj.mjtObj.mjOBJ_JOINT, jid)
         qposadr = mj_model.jnt_qposadr[jid]
         final_joint_angles_rad_dict[joint_name] = mj_data.qpos[qposadr]
 

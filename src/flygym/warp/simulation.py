@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, override
+from typing import Any, Literal, override
 
 import warp as wp
 import mujoco as mj
@@ -20,7 +20,8 @@ from flygym.warp.rendering import (
 from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
-    wp_gather_indexed_rows_3d,
+    wp_gather_indexed_rows_vec3f,
+    wp_gather_indexed_rows_quatf,
 )
 
 
@@ -127,11 +128,10 @@ class GPUSimulation(Simulation):
             ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        n_cols = 3
-        dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
+        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_3d,
-            dim=(self.n_worlds, indices.size, n_cols),
+            wp_gather_indexed_rows_vec3f,
+            dim=(self.n_worlds, indices.size),
             inputs=[self.mjw_data.xpos, dst, indices],
         )
         return dst
@@ -150,11 +150,10 @@ class GPUSimulation(Simulation):
             in ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        n_cols = 4
-        dst = wp.zeros((self.n_worlds, indices.size, n_cols), dtype=wp.float32)
+        dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_3d,
-            dim=(self.n_worlds, indices.size, n_cols),
+            wp_gather_indexed_rows_quatf,
+            dim=(self.n_worlds, indices.size),
             inputs=[self.mjw_data.xquat, dst, indices],
         )
         return dst
@@ -321,11 +320,18 @@ class GPUSimulation(Simulation):
         return self.renderer.render_as_needed(self.mjw_data)
 
     @override
-    def print_performance_report(self) -> None:
+    def print_performance_report(
+        self, show_in_notebook: bool | Literal["auto"] = "auto"
+    ) -> None:
         """Print a parallel-simulation performance report.
 
         Requires that `step_with_profile` and `render_as_needed_with_profile` were
         used during the simulation loop.
+
+        Args:
+            show_in_notebook: If True, render the report as an HTML table suitable for
+                display in a Jupyter notebook. If "auto", will attempt to detect if
+                we're in a notebook environment and choose accordingly.
         """
         print_perf_report_parallel(
             n_steps=self._curr_step,
@@ -335,6 +341,7 @@ class GPUSimulation(Simulation):
             timestep=self.mj_model.opt.timestep,
             n_worlds=self.n_worlds,
             n_worlds_rendered=len(self.renderer.world_ids),
+            show_in_notebook=show_in_notebook,
         )
 
     @override
