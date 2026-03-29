@@ -34,7 +34,7 @@ plugins:
   - search
   - gen-files:
       scripts:
-        - docs/gen_ref_pages.py
+        - scripts/dev/gen_doc_pages.py
   - literate-nav:
       nav_file: SUMMARY.md
   - section-index
@@ -62,4 +62,3 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: true
-
