@@ -1,5 +1,7 @@
 """Integration tests for flygym.simulation (Simulation)."""
 
+import platform
+
 import pytest
 import numpy as np
 
@@ -329,6 +331,13 @@ class TestProfilingMethods:
 # ==============================================================================
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason=(
+        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
+        "neither works headlessly in CI without a GPU"
+    ),
+)
 class TestSetRenderer:
     def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
         from flygym.rendering import Renderer
