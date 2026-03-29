@@ -5,10 +5,20 @@ are scoped to the module level so the expensive setup is done only once per test
 """
 
 import os
+import platform
 
-# Force EGL headless rendering so mujoco.Renderer works without a display.
-os.environ.setdefault("MUJOCO_GL", "egl")
-os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+# Set the headless rendering backend for mujoco.Renderer.
+# Each OS has its own native off-screen backend; EGL (Linux), CGL (macOS), WGL (Windows).
+# PYOPENGL_PLATFORM is only relevant on Linux.
+# Values set here are defaults; CI overrides them via workflow env vars.
+_system = platform.system()
+if _system == "Linux":
+    os.environ.setdefault("MUJOCO_GL", "egl")
+    os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+elif _system == "Darwin":
+    os.environ.setdefault("MUJOCO_GL", "cgl")
+elif _system == "Windows":
+    os.environ.setdefault("MUJOCO_GL", "wgl")
 
 import pytest
 
