@@ -16,7 +16,36 @@ if platform.system() == "Linux":
     os.environ.setdefault("MUJOCO_GL", "egl")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 
+import mujoco
 import pytest
+
+
+def _check_gl_available() -> bool:
+    """Return True if a MuJoCo OpenGL context can be created on this machine."""
+    try:
+        m = mujoco.MjModel.from_xml_string("<mujoco><worldbody/></mujoco>")
+        r = mujoco.Renderer(m, 16, 16)
+        r.close()
+        return True
+    except Exception:
+        return False
+
+
+_GL_AVAILABLE = _check_gl_available()
+
+
+def pytest_collection_modifyitems(config, items):
+    """Auto-skip tests that require an OpenGL context when one isn't available."""
+    if _GL_AVAILABLE:
+        return
+    skip = pytest.mark.skip(reason="OpenGL context not available on this platform")
+    for item in items:
+        if item.fspath.basename == "test_rendering.py" or (
+            item.fspath.basename == "test_simulation.py"
+            and "TestSetRenderer" in item.nodeid
+        ):
+            item.add_marker(skip)
+
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
 from flygym.compose.fly import Fly, ActuatorType
