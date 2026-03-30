@@ -2,10 +2,10 @@
 
 !!! tip "March 2026 Update"
 
-    We released a new FlyGym v2.x.x API in February 2026, with significantly improved performance:
+    We released a new FlyGym 2.x.x API in February 2026, with significantly improved performance:
     
-    * ~10x speed-up for CPU-based simulations (~2x real-time throughput)
-    * ~300x speed-up for GPU-based simulation enabled by [MJWarp](https://mujoco.readthedocs.io/en/latest/mjwarp/) (~60x real-time throughput)
+    * **~10x speed-up** for CPU-based simulations (~2x real-time throughput)
+    * **~300x speed-up** for **GPU-based simulation** enabled by [MJWarp](https://mujoco.readthedocs.io/en/latest/mjwarp/) (~60x real-time throughput)
 
     Additional improvements include:
 
@@ -15,7 +15,9 @@
 
     Prefer the old API? See [information here](migration).
 
-![overview](https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/overview_video.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/overview_video.gif" alt="overview" />
+</p>
 
 FlyGym is the Python library for NeuroMechFly, a digital twin of the adult fruit fly Drosophila melanogaster that can see, smell, walk over challenging terrain, and interact with the environment.
 
