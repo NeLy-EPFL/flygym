@@ -2,7 +2,9 @@ import numpy as np
 import pickle
 from tempfile import TemporaryDirectory
 from pathlib import Path
-from flygym_gymnasium.examples.head_stabilization.collect_training_data import run_simulation
+from flygym_gymnasium.examples.head_stabilization.collect_training_data import (
+    run_simulation,
+)
 
 
 def test_simulation():

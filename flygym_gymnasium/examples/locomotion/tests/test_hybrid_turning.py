@@ -2,7 +2,10 @@ import numpy as np
 from gymnasium.utils.env_checker import check_env
 from flygym_gymnasium import Fly
 from flygym_gymnasium.arena import MixedTerrain
-from flygym_gymnasium.examples.locomotion import HybridTurningController, HybridTurningNMF
+from flygym_gymnasium.examples.locomotion import (
+    HybridTurningController,
+    HybridTurningNMF,
+)
 from flygym_gymnasium.preprogrammed import default_leg_sensor_placements
 
 

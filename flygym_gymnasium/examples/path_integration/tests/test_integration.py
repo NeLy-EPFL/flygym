@@ -5,9 +5,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from sklearn.metrics import r2_score
 from flygym_gymnasium import Fly
-from flygym_gymnasium.examples.path_integration.util import extract_variables, load_trial_data
+from flygym_gymnasium.examples.path_integration.util import (
+    extract_variables,
+    load_trial_data,
+)
 from flygym_gymnasium.examples.path_integration.exploration import run_simulation
-from flygym_gymnasium.examples.path_integration.controller import PathIntegrationController
+from flygym_gymnasium.examples.path_integration.controller import (
+    PathIntegrationController,
+)
 from flygym_gymnasium.examples.path_integration.arena import PathIntegrationArenaFlat
 from flygym_gymnasium.examples.path_integration.model import LinearModel, path_integrate
 from flygym_gymnasium.preprogrammed import get_cpg_biases

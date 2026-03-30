@@ -7,7 +7,9 @@ import cv2
 import matplotlib.pyplot as plt
 
 from flygym_gymnasium.examples.vision import MovingFlyArena
-from flygym_gymnasium.examples.head_stabilization import HeadStabilizationInferenceWrapper
+from flygym_gymnasium.examples.head_stabilization import (
+    HeadStabilizationInferenceWrapper,
+)
 from flygym_gymnasium.examples.vision.follow_fly_closed_loop import (
     leading_fly_speeds,
     leading_fly_radius,

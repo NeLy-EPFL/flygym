@@ -2,7 +2,13 @@ import gymnasium.spaces as spaces
 import gymnasium.utils.env_checker as env_checker
 import pytest
 
-from flygym_gymnasium import Camera, Fly, Simulation, SingleFlySimulation, is_rendering_skipped
+from flygym_gymnasium import (
+    Camera,
+    Fly,
+    Simulation,
+    SingleFlySimulation,
+    is_rendering_skipped,
+)
 from flygym_gymnasium.arena import OdorArena
 
 

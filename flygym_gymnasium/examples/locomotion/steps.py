@@ -52,7 +52,8 @@ class PreprogrammedSteps:
     ):
         if path is None:
             path = (
-                get_data_path("flygym_gymnasium", "data") / "behavior/single_steps_untethered.pkl"
+                get_data_path("flygym_gymnasium", "data")
+                / "behavior/single_steps_untethered.pkl"
             )
         with open(path, "rb") as f:
             single_steps_data = pickle.load(f)

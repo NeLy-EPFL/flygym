@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 from flygym_gymnasium import Fly, SingleFlySimulation
 from flygym_gymnasium.preprogrammed import all_leg_dofs
 from flygym_gymnasium.examples.locomotion import RuleBasedController, PreprogrammedSteps
-from flygym_gymnasium.examples.locomotion.rule_based_controller import construct_rules_graph
+from flygym_gymnasium.examples.locomotion.rule_based_controller import (
+    construct_rules_graph,
+)
 
 
 def test_rule_based_controller_nophysics():

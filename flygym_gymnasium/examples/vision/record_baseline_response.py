@@ -8,8 +8,12 @@ from typing import Optional
 from dm_control.rl.control import PhysicsError
 
 from flygym_gymnasium.examples.vision import RealisticVisionFly, viz
-from flygym_gymnasium.examples.head_stabilization import HeadStabilizationInferenceWrapper
-from flygym_gymnasium.examples.head_stabilization import get_head_stabilization_model_paths
+from flygym_gymnasium.examples.head_stabilization import (
+    HeadStabilizationInferenceWrapper,
+)
+from flygym_gymnasium.examples.head_stabilization import (
+    get_head_stabilization_model_paths,
+)
 
 
 contact_sensor_placements = [

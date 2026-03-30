@@ -6,8 +6,13 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from sklearn.metrics import r2_score
 from flygym_gymnasium.util import get_data_path
-from flygym_gymnasium.examples.head_stabilization.collect_training_data import run_simulation
-from flygym_gymnasium.examples.head_stabilization import JointAngleScaler, WalkingDataset
+from flygym_gymnasium.examples.head_stabilization.collect_training_data import (
+    run_simulation,
+)
+from flygym_gymnasium.examples.head_stabilization import (
+    JointAngleScaler,
+    WalkingDataset,
+)
 from flygym_gymnasium.examples.head_stabilization import (
     ThreeLayerMLP,
     HeadStabilizationInferenceWrapper,
@@ -93,7 +98,9 @@ def test_torch_model():
 
 def test_model_wrapper():
     # Load scaler
-    test_data_dir = get_data_path("flygym_gymnasium", "data/trained_models/head_stabilization")
+    test_data_dir = get_data_path(
+        "flygym_gymnasium", "data/trained_models/head_stabilization"
+    )
     with open(test_data_dir / "joint_angle_scaler_params.pkl", "rb") as f:
         params = pickle.load(f)
         scaler = JointAngleScaler.from_params(**params)

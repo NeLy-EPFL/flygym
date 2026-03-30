@@ -3,8 +3,13 @@ import pickle
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from torch.utils.data import Dataset
-from flygym_gymnasium.examples.head_stabilization.collect_training_data import run_simulation
-from flygym_gymnasium.examples.head_stabilization.data import JointAngleScaler, WalkingDataset
+from flygym_gymnasium.examples.head_stabilization.collect_training_data import (
+    run_simulation,
+)
+from flygym_gymnasium.examples.head_stabilization.data import (
+    JointAngleScaler,
+    WalkingDataset,
+)
 
 
 def test_scaler_from_data():

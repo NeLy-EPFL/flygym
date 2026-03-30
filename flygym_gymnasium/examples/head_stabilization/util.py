@@ -13,7 +13,9 @@ def get_head_stabilization_model_paths() -> tuple[Path, Path]:
     Path
         Path to the pickle file containing joint angle scaler parameters.
     """
-    model_dir = get_data_path("flygym_gymnasium", "data") / "trained_models/head_stabilization/"
+    model_dir = (
+        get_data_path("flygym_gymnasium", "data") / "trained_models/head_stabilization/"
+    )
     return (
         model_dir / "all_dofs_model.ckpt",
         model_dir / "joint_angle_scaler_params.pkl",

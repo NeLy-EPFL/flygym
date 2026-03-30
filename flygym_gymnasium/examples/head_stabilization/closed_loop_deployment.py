@@ -11,7 +11,9 @@ from dm_control.utils import transformations
 
 import flygym_gymnasium.examples.head_stabilization.viz as viz
 from flygym_gymnasium.examples.vision import RealisticVisionFly, RetinaMapper
-from flygym_gymnasium.examples.head_stabilization import HeadStabilizationInferenceWrapper
+from flygym_gymnasium.examples.head_stabilization import (
+    HeadStabilizationInferenceWrapper,
+)
 
 
 contact_sensor_placements = [

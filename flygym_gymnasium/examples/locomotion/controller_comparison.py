@@ -15,8 +15,17 @@ from scipy.stats import mannwhitneyu
 from tqdm import tqdm
 
 from flygym_gymnasium import YawOnlyCamera, SingleFlySimulation
-from flygym_gymnasium.arena import BlocksTerrain, FlatTerrain, GappedTerrain, MixedTerrain
-from flygym_gymnasium.examples.locomotion import CPGNetwork, PreprogrammedSteps, ColorableFly
+from flygym_gymnasium.arena import (
+    BlocksTerrain,
+    FlatTerrain,
+    GappedTerrain,
+    MixedTerrain,
+)
+from flygym_gymnasium.examples.locomotion import (
+    CPGNetwork,
+    PreprogrammedSteps,
+    ColorableFly,
+)
 from flygym_gymnasium.examples.locomotion.rule_based_controller import (
     RuleBasedController,
     construct_rules_graph,
