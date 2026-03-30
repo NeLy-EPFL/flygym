@@ -1,5 +1,21 @@
 # FlyGym v1 vs. v2 API
 
+!!! note "Summary"
+
+    The older FlyGym 1.x.x API is migrated to [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium).
+    
+    You can still install it with
+
+    ```sh
+    pip install flygym-gymnasium
+
+    # or, if you want optional dependencies:
+    pip install "flygym-gymnasium[examples,dev]"
+    ```
+    
+    The documentation is archived [here](https://gymnasium.neuromechfly.org/).
+
+
 Until March 2026, FlyGym followed the interface defined by [Gymnasium](https://gymnasium.farama.org/), a widely used standard API for reinforcement learning environments (and the namesake of Fly*Gym*). Gymnasium provides a clean and well-established abstraction, making it easy to integrate with existing RL libraries.
 
 However, strict compliance with the Gymnasium interface also introduces computational overhead and architectural constraints. For FlyGym 2.x.x, we therefore decided to move away from Gymnasium compliance. This redesign allows for a more direct and flexible interaction with the simulation (e.g. lazy-loading of simulated states instead of exposing all pre-configured states as "observation"). This design decision was one of the reasons why FlyGym 2.x.x achieves a ~10× speed-up on CPU-based simulations compared to FlyGym 1.x.x.
