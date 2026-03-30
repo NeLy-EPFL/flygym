@@ -8,7 +8,7 @@ Importantly, this change does not alter the underlying modeling assumptions: the
 
 For users who prefer the Gymnasium-style interface, it is straightforward to implement a lightweight wrapper around the new API. In most cases, such a wrapper can be written in ~10 minutes. We intentionally avoid maintaining an additional official compatibility layer, as doing so would introduce unnecessary backward-compatibility constraints for future development.
 
-At the same time, we recognize that some users may prefer the original 1.x.x API due to its intuitiveness and the extensive tutorials built around it. We have therefore migrated the Gymnasium-compliant version of FlyGym to a separate repository: [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium). We expect to occasionally make minor improvements to this API, but naturally the new 2.0.0 API will be our focus. You can install it via:
+At the same time, we recognize that some users may prefer the original 1.x.x API due to its intuitiveness and the extensive tutorials built around it. We have therefore migrated the Gymnasium-compliant version of FlyGym to a separate repository: [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium). We expect to occasionally make minor improvements to this API, but the new 2.x.x API will be our focus. You can install it via:
 
 ```sh
 pip install flygym-gymnasium

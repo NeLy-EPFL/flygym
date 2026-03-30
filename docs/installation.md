@@ -23,12 +23,6 @@
     ```sh
     pip install flygym[examples]
     ```
-    
-    Add the `guided` optional dependency if you want to use the older, "guided" FlyGym v1.x.x API that comes with extensive tutorials:
-
-    ```sh
-    pip install flygym[guided]
-    ```
 
     You can combine multiple optional dependencies in one command. For example:
 
