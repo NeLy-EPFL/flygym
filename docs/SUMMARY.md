@@ -1,5 +1,6 @@
 * [Home](index.md)
 * [Installation](installation.md)
+* [FlyGym v1 vs. v2 API](migration.md)
 * [Interactive Viewer](interactive.md)
 * Tutorials
     * [1. Composing models and scenes](tutorials/1_composing_models_and_scenes.ipynb)
