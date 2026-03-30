@@ -7,7 +7,7 @@ uv run python scripts/launch_interactive_viewer.py
 ```
 
 <p align="center">
-  <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/mujoco_interactive_viewer.mp4" controls>
+  <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/mujoco_interactive_viewer.mp4" controls autoplay muted playsinline>
     MuJoCo interactive viewer (video not supported by your browser).
   </video>
 </p>

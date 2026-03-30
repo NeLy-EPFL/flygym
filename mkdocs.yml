@@ -2,6 +2,9 @@ site_name: NeuroMechFly
 
 site_url: https://nely-epfl.github.io/flygym-v2/
 
+repo_url: https://github.com/NeLy-EPFL/flygym/
+repo_name: NeLy-EPFL/flygym
+
 theme:
   name: material
   features:
@@ -29,6 +32,9 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
+
+  icon:
+    repo: fontawesome/brands/github
 
 plugins:
   - search
