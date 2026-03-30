@@ -5,7 +5,7 @@ import matplotlib.ticker as ticker
 import pandas as pd
 
 benchmark_res_basedir = Path("gpu_benchmark_results_all/")
-devices = ["rtx3080ti", "l40s", "h100"]
+devices = ["rtx3080ti", "rtx4090", "l40s", "h100"]
 simplify_geom = False
 
 # Merge all dataframes
