@@ -1,10 +1,10 @@
 # Citing NeuroMechFly
 
-If you use FlyGym or NeuroMechFly in your research, please cite the following two papers:
+**If you use FlyGym or NeuroMechFly in your research, please cite the following two papers:**
+
+Original NeuroMechFly: Original biomechanical model, kinematic replay, CPG-based neural controller, PyBullet version, DoF analysis, perturbation tests:
 
 ```bibtex
-% Original NeuroMechFly: Original biomechanical model, kinematic replay, CPG-based
-% neural controller, PyBullet version, DoF analysis, perturbation tests
 @article{LobatoRios2022,
     doi = {10.1038/s41592-022-01466-7},
     url = {https://doi.org/10.1038/s41592-022-01466-7},
@@ -17,10 +17,13 @@ If you use FlyGym or NeuroMechFly in your research, please cite the following tw
     title = {{NeuroMechFly}, a neuromechanical model of adult {Drosophila} melanogaster},
     journal = {Nature Methods}
 }
+```
 
-% NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller,
-% hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision,
-% olfaction, RL-based navigation, Gym environment, updated biomechanical model
+---
+
+NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller, hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision, olfaction, RL-based navigation, Gym environment, updated biomechanical model:
+
+```bibtex
 @article{WangChen2024,
     title = {NeuroMechFly v2: simulating embodied sensorimotor control in adult Drosophila},
     volume = {21},
