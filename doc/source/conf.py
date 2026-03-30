@@ -60,6 +60,12 @@ autodoc_mock_imports = ["dm_control", "mujoco", "pybullet"]
 numpydoc_show_class_members = False
 
 html_theme_options = {
+    "announcement": (
+        "<b>A newer FlyGym version is available:</b> see "
+        '<a href="https://neuromechfly.org/">more info here</a>. '
+        "This site is a fork for the legacy API. "
+        "New users should first check out the current version.<br>"
+    ),
     "footer_icons": [
         {
             "name": "GitHub",

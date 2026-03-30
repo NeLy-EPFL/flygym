@@ -1,3 +1,13 @@
+<br><br><br>
+
+> [!CAUTION]
+> **A newer FlyGym API is available:** see [neuromechfly.org](https://neuromechfly.org/) for more information.
+> 
+> This repository is a fork of the legacy API. New users should first check out the version above.
+
+<br><br><br>
+
+
 ## Simulating embodied sensorimotor control with NeuroMechFly v2
 
 ![](https://github.com/NeLy-EPFL/_media/blob/main/flygym/banner_large.jpg?raw=true)
