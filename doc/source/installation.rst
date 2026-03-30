@@ -13,7 +13,7 @@ In the most basic case, if you just want the bare core of FlyGym, you can instal
    
 .. code-block:: bash
 
-   pip install "flygym"
+   pip install "flygym_gymnasium"
 
 Additionally, you can also install the following optional dependencies:
 

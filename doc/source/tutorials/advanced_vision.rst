@@ -57,8 +57,8 @@ direction of movement.
 .. code:: ipython3
 
     import numpy as np
-    from flygym import Camera, Simulation
-    from flygym.examples.locomotion import HybridTurningFly
+    from flygym_gymnasium import Camera, Simulation
+    from flygym_gymnasium.examples.locomotion import HybridTurningFly
     
     timestep = 1e-4
     contact_sensor_placements = [
@@ -180,7 +180,7 @@ replace the observer fly with an instance of ``RealisticVisionFly``:
 
 .. code:: ipython3
 
-    from flygym.examples.vision import RealisticVisionFly
+    from flygym_gymnasium.examples.vision import RealisticVisionFly
     
     target_fly = HybridTurningFly(
         name="target",
@@ -328,7 +328,7 @@ To visualize this block data better, we have implemented a
 
 .. code:: ipython3
 
-    from flygym.examples.vision.viz import visualize_vision
+    from flygym_gymnasium.examples.vision.viz import visualize_vision
     
     plt.ioff()  # turn off interactive display of image
     visualize_vision(

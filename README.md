@@ -43,7 +43,7 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
 ## Installation and dependencies
 In brief:
 ```bash
-pip install "flygym"
+pip install "flygym_gymnasium"
 # or pip install "flygym[examples]" to install additional dependencies needed for examples
 ```
 

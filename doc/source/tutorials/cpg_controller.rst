@@ -367,10 +367,10 @@ Now, let’s load the behavior kinematics data:
 .. code:: ipython3
 
     import pickle
-    from flygym.util import get_data_path
+    from flygym_gymnasium.util import get_data_path
     
     single_steps_path = (
-        get_data_path("flygym", "data") / "behavior/single_steps_untethered.pkl"
+        get_data_path("flygym_gymnasium", "data") / "behavior/single_steps_untethered.pkl"
     )
     with open(single_steps_path, "rb") as f:
         single_steps_data = pickle.load(f)
@@ -543,8 +543,8 @@ We start by initializing the simulation:
 
 .. code:: ipython3
 
-    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
-    from flygym.preprogrammed import all_leg_dofs
+    from flygym_gymnasium import Fly, ZStabilizedCamera, SingleFlySimulation
+    from flygym_gymnasium.preprogrammed import all_leg_dofs
 
     run_time = 1
     fly = Fly(init_pose="stretch", actuated_joints=all_leg_dofs, control="position")

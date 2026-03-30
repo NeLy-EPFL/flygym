@@ -148,9 +148,9 @@ but with the correction amounts set to 0 for simplicity.
     from pathlib import Path
     from typing import Optional
     
-    from flygym import Fly, Camera
-    from flygym.preprogrammed import get_cpg_biases
-    from flygym.examples.path_integration import PathIntegrationArenaFlat
+    from flygym_gymnasium import Fly, Camera
+    from flygym_gymnasium.preprogrammed import get_cpg_biases
+    from flygym_gymnasium.examples.path_integration import PathIntegrationArenaFlat
 
 
 Let’s define the discrete walking states as an ``Enum`` class (see
@@ -321,7 +321,7 @@ this leg at the :math:`i`-th step.
 
 .. code-block:: ipython3
 
-    from flygym.examples.locomotion import HybridTurningController
+    from flygym_gymnasium.examples.locomotion import HybridTurningController
     
     
     class PathIntegrationController(HybridTurningController):

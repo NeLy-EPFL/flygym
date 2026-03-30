@@ -1,6 +1,6 @@
 [project]
-name = "flygym"
-version = "1.2.1"
+name = "flygym-gymnasium"
+version = "1.3.0"
 description = """Implementation of NeuroMechFly v2, a framework for simulating embodied sensorimotor control in adult Drosophila."""
 requires-python = ">=3.10,<3.13"
 authors = [
@@ -72,9 +72,9 @@ examples = [
 
 [project.urls]
 homepage = "https://neuromechfly.org/"
-repository = "https://github.com/NeLy-EPFL/flygym"
+repository = "https://github.com/NeLy-EPFL/flygym-gymnasium"
 documentation = "https://neuromechfly.org/"
-"Bug Tracker" = "https://github.com/NeLy-EPFL/flygym/issues"
+"Bug Tracker" = "https://github.com/NeLy-EPFL/flygym-gymnasium/issues"
 
 [build-system]
 requires = ["poetry-core"]

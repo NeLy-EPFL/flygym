@@ -136,7 +136,7 @@ total wind at every time step.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.simulate_plume_dataset import converging_brownian_step
+    from flygym_gymnasium.examples.olfaction.simulate_plume_dataset import converging_brownian_step
     
     # Simulate Brownian noise and store the wind for every time step
     curr_wind = np.zeros((2,))
@@ -259,7 +259,7 @@ unroll the full plume.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.simulate_plume_dataset import step
+    from flygym_gymnasium.examples.olfaction.simulate_plume_dataset import step
     
     # Run fluid dynamics simulation
     smoke_hist = []
@@ -555,7 +555,7 @@ high plume FPS to make the simulation easier to run.
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction.plume_tracking_arena import OdorPlumeArena
+    from flygym_gymnasium.examples.olfaction.plume_tracking_arena import OdorPlumeArena
 
     main_camera_name = "birdeye_camera"
     arena = OdorPlumeArena(
@@ -568,8 +568,8 @@ the fly stand still for the sake of this demonstration:
 
 .. code:: ipython3
 
-    from flygym import Fly, SingleFlySimulation, Camera
-    from flygym.examples.locomotion import PreprogrammedSteps
+    from flygym_gymnasium import Fly, SingleFlySimulation, Camera
+    from flygym_gymnasium.examples.locomotion import PreprogrammedSteps
     
     timestep = 1e-4
     run_time = 1.0
@@ -858,7 +858,7 @@ Let’s run a sample simulation where the fly walks blindly forward:
 
 .. code:: ipython3
 
-    from flygym.examples.olfaction import PlumeNavigationTask
+    from flygym_gymnasium.examples.olfaction import PlumeNavigationTask
     
     arena = OdorPlumeArena(
         output_dir / "plume.hdf5", plume_simulation_fps=8000, dimension_scale_factor=0.25
@@ -961,7 +961,7 @@ NeuroMechFly v2 paper for more details.
 
     from enum import Enum
     import cv2
-    from flygym.util import get_data_path
+    from flygym_gymnasium.util import get_data_path
     
     
     class WalkingState(Enum):
@@ -1236,7 +1236,7 @@ NeuroMechFly v2 paper for more details.
         """
         Get all icons representing the walking directions
         """
-        icons_dir = get_data_path("flygym", "data") / "etc/locomotion_icons"
+        icons_dir = get_data_path("flygym_gymnasium", "data") / "etc/locomotion_icons"
         icons = {}
         for key in ["forward", "left", "right", "stop"]:
             icon_path = icons_dir / f"{key}.png"

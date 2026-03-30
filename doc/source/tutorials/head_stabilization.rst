@@ -66,10 +66,10 @@ implement the following function:
     from dm_control.utils import transformations
     from dm_control.rl.control import PhysicsError
     
-    from flygym import Fly, ZStabilizedCamera
-    from flygym.arena import FlatTerrain, BlocksTerrain
-    from flygym.preprogrammed import get_cpg_biases
-    from flygym.examples.locomotion import HybridTurningController
+    from flygym_gymnasium import Fly, ZStabilizedCamera
+    from flygym_gymnasium.arena import FlatTerrain, BlocksTerrain
+    from flygym_gymnasium.preprogrammed import get_cpg_biases
+    from flygym_gymnasium.examples.locomotion import HybridTurningController
     
     
     def run_simulation(
@@ -1235,7 +1235,7 @@ To deploy the head stabilization model in closed loop, we will write a
 
 .. code:: ipython3
 
-    from flygym.arena import BaseArena
+    from flygym_gymnasium.arena import BaseArena
     from sklearn.metrics import r2_score
     
     contact_sensor_placements = [

@@ -61,7 +61,7 @@ for documentation of this class.
 
 .. code:: ipython3
 
-    from flygym.examples.locomotion import PreprogrammedSteps
+    from flygym_gymnasium.examples.locomotion import PreprogrammedSteps
 
 
 .. parsed-literal::
@@ -407,7 +407,7 @@ This class is actually included in ``flygym.examples``. Let’s import it.
 
 .. code:: ipython3
 
-    from flygym.examples.locomotion import RuleBasedController
+    from flygym_gymnasium.examples.locomotion import RuleBasedController
 
 Let’s define the weights of the rules and run 1 second of simulation:
 
@@ -548,8 +548,8 @@ signals (joint positions) into the NeuroMechFly physics simulation:
 
 .. code:: ipython3
 
-    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
-    from flygym.preprogrammed import all_leg_dofs
+    from flygym_gymnasium import Fly, ZStabilizedCamera, SingleFlySimulation
+    from flygym_gymnasium.preprogrammed import all_leg_dofs
     from tqdm import trange
     
     

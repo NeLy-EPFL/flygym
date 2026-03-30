@@ -71,10 +71,10 @@ To start, we do the necessary imports:
     from tqdm import trange
     from gymnasium.utils.env_checker import check_env
     
-    from flygym import Fly, Camera
-    from flygym.arena import FlatTerrain
-    from flygym.examples.vision import ObstacleOdorArena
-    from flygym.examples.locomotion import HybridTurningController
+    from flygym_gymnasium import Fly, Camera
+    from flygym_gymnasium.arena import FlatTerrain
+    from flygym_gymnasium.examples.vision import ObstacleOdorArena
+    from flygym_gymnasium.examples.locomotion import HybridTurningController
 
 
 .. code:: ipython3
@@ -549,7 +549,7 @@ our arena and Gym environment:
 
 .. code:: ipython3
 
-    from flygym.examples.vision import MovingObjArena, VisualTaxis
+    from flygym_gymnasium.examples.vision import MovingObjArena, VisualTaxis
     
     obj_threshold = 0.2
     decision_interval = 0.025
@@ -662,7 +662,7 @@ visual experience of the fly:
 
 .. code:: ipython3
 
-    from flygym.vision.visualize import save_video_with_vision_insets
+    from flygym_gymnasium.vision.visualize import save_video_with_vision_insets
     
     save_video_with_vision_insets(
         sim,

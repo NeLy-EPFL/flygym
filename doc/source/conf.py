@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "FlyGym"
+project = "flygym_gymnasium"
 copyright = "Neuroengineering Laboratory, EPFL"
 author = "Neuroengineering Laboratory, EPFL"
 

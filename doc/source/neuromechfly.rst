@@ -102,7 +102,7 @@ The leg DoFs are the most critical to model terrestrial locomotion. In *Drosophi
 
     FlyGym provides hardcoded shorthands for these useful lists of links::
 
-        >>> import flygym
+        >>> import flygym_gymnasium as flygym
 
         # all actuatable leg DoFs:
         >>> flygym.preprogrammed.all_leg_dofs

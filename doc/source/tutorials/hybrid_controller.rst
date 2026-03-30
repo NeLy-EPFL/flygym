@@ -51,7 +51,7 @@ Let’s start by defining a couple of terrains:
 
 .. code:: ipython3
 
-    from flygym.arena import FlatTerrain, GappedTerrain, BlocksTerrain, MixedTerrain
+    from flygym_gymnasium.arena import FlatTerrain, GappedTerrain, BlocksTerrain, MixedTerrain
     
     
     def get_arena(arena_type):
@@ -75,8 +75,8 @@ fly looks while walking over these different terrain types:
     import numpy as np
     import matplotlib.pyplot as plt
     from tqdm import tqdm, trange
-    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
-    from flygym.examples.locomotion import PreprogrammedSteps
+    from flygym_gymnasium import Fly, ZStabilizedCamera, SingleFlySimulation
+    from flygym_gymnasium.examples.locomotion import PreprogrammedSteps
     from pathlib import Path
 
     output_dir = Path("./outputs/hybrid_controller")
@@ -140,8 +140,8 @@ on each of the different terrain types:
 
 .. code:: ipython3
 
-    from flygym.examples.locomotion.cpg_controller import CPGNetwork, run_cpg_simulation
-    from flygym.examples.locomotion.rule_based_controller import (
+    from flygym_gymnasium.examples.locomotion.cpg_controller import CPGNetwork, run_cpg_simulation
+    from flygym_gymnasium.examples.locomotion.rule_based_controller import (
         RuleBasedController,
         construct_rules_graph,
         run_rule_based_simulation,

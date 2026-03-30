@@ -125,8 +125,8 @@ We start with the necessary imports:
     from pathlib import Path
     from tqdm import trange
     
-    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation, get_data_path
-    from flygym.preprogrammed import all_leg_dofs
+    from flygym_gymnasium import Fly, ZStabilizedCamera, SingleFlySimulation, get_data_path
+    from flygym_gymnasium.preprogrammed import all_leg_dofs
 
 Let’s define some simulation parameters:
 
@@ -141,7 +141,7 @@ package:
 
 .. code:: ipython3
 
-    data_path = get_data_path("flygym", "data")
+    data_path = get_data_path("flygym_gymnasium", "data")
     with open(data_path / "behavior" / "210902_pr_fly1.pkl", "rb") as f:
         data = pickle.load(f)
 

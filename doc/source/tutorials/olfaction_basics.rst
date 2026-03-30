@@ -79,7 +79,7 @@ Its implementation is beyond the scope of this tutorial but can be found
 
 .. code:: ipython3
 
-    from flygym.arena import OdorArena
+    from flygym_gymnasium.arena import OdorArena
     
     arena = OdorArena(
         odor_source=odor_source,
@@ -95,8 +95,8 @@ iterations to allow it to stand on the ground in a stable manner.
 .. code:: ipython3
 
     import matplotlib.pyplot as plt
-    from flygym import Fly, Camera
-    from flygym.examples.locomotion import HybridTurningController
+    from flygym_gymnasium import Fly, Camera
+    from flygym_gymnasium.examples.locomotion import HybridTurningController
     from pathlib import Path
 
     outputs_dir = Path("./outputs/olfaction_basics")

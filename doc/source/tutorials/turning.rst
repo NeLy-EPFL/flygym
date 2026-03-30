@@ -145,8 +145,8 @@ as before:
     from gymnasium import spaces
     from gymnasium.utils.env_checker import check_env
     
-    from flygym import Fly, ZStabilizedCamera, SingleFlySimulation
-    from flygym.examples.locomotion import PreprogrammedSteps, CPGNetwork
+    from flygym_gymnasium import Fly, ZStabilizedCamera, SingleFlySimulation
+    from flygym_gymnasium.examples.locomotion import PreprogrammedSteps, CPGNetwork
     
     
     _tripod_phase_biases = np.pi * np.array(
@@ -175,7 +175,7 @@ Now, we will define the ``__init__`` method of our ``HybridTurningController``
 class. The `complete, functional class
 definition <https://github.com/NeLy-EPFL/flygym/blob/main/flygym/examples/locomotion/turning_controller.py>`__
 can be found on our GitHub repository. You can import it with
-``from flygym.examples.locomotion import HybridTurningController``.
+``from flygym_gymnasium.examples.locomotion import HybridTurningController``.
 
 We start with initializing the parent class by calling
 ``super().__init__(...)``. This basically calls the ``__init__`` logic
@@ -584,7 +584,7 @@ Let’s import this class and instantiate it:
 
 .. code:: ipython3
 
-    from flygym.examples.locomotion import HybridTurningController
+    from flygym_gymnasium.examples.locomotion import HybridTurningController
     
     run_time = 1
     timestep = 1e-4
