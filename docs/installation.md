@@ -51,12 +51,11 @@
     Then install using `uv`. The following installs all optional dependencies, but you can
 
     * remove `--extra warp` if you don't care for GPU acceleration, or if you don't have a NVIDIA GPU (e.g., you're on a Mac),
-    * remove `--extra guided` if you don't care for the older FlyGym v1.x.x API, or
     * remove `--extra dev` if you don't care for development tools (e.g., unit testing, automatic doc generation), or
     * remove `--extra examples` if you don't care for running the tutorials.
     
     ```sh
-    uv sync --extra warp --extra guided --extra dev --extra examples
+    uv sync --extra warp --extra dev --extra examples
     ```
 
 === "Using Docker"
