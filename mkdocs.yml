@@ -68,3 +68,8 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: true
+
+extra:
+  analytics:
+    provider: google
+    property: G-DF8S7T56G7
