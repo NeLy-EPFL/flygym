@@ -47,6 +47,9 @@ dev = [
     # Formatting and linting
     "black>=26.1,<27.0",
     "ruff==0.15.8",
+    # PyPI publishing
+    "build>=1.0,<2.0",
+    "twine>=6.0,<7.0",
     # Documentation site
     "mkdocs-material>=9.7,<10.0",
     "mkdocstrings[python]>=1.0.0,<2",
