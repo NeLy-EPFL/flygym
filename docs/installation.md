@@ -31,7 +31,7 @@
     ```
 
 
-=== "In editable model for development"
+=== "Using `uv` (for development)"
 
     FlyGym uses `uv` for package management. Install `uv` following its [official documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
