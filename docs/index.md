@@ -26,6 +26,7 @@ FlyGym is the Python library for NeuroMechFly, a digital twin of the adult fruit
 For more information, see our [NeuroMechFly v2 paper](https://www.nature.com/articles/s41592-024-02497-y.epdf).
 
 NeuroMechFly consists of the following components:
+
 - **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our original NeuroMechFly publication). We have adjusted several body segments (in particular in the antennae) to better reflect the biological reality.
 - **Vision:** The fly has compound eyes consisting of individual units called ommatidia arranged on a hexagonal lattice. We have simulated the visual inputs on the fly’s retinas.
 - **Olfaction:** The fly has odor receptors in the antennae and the maxillary palps. We have simulated the odor inputs experienced by the fly by computing the odor/chemical intensity at these locations.
