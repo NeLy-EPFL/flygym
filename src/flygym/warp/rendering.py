@@ -397,17 +397,21 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
     # Strip textures from fly body materials
     # (rendering textures on complex meshes causes MJWarp memory corruption)
     for material in world.mjcf_root.asset.find_all("material"):
+        # Don't touch things that are not part of a Fly
         if material.full_identifier.split("/")[0] not in world.fly_lookup:
-            continue  # not a fly body material - leave it alone
-        if material.texture is None:
-            continue  # material doesn't have texture - nothing to strip
-        texture_element = world.mjcf_root.asset.find(
-            "texture", material.texture.full_identifier
-        )
-        primary_color_rgb = texture_element.rgb1
-        material.texture = None
-        material.rgba[:3] = primary_color_rgb
-        is_modified = True
+            continue
+        # Make wings half transparent
+        if "wing" in material.full_identifier:
+            material.rgba[3] = 0.5
+        # If material has a texture, remove it to reduce memory use
+        if material.texture is not None:
+            texture_element = world.mjcf_root.asset.find(
+                "texture", material.texture.full_identifier
+            )
+            primary_color_rgb = texture_element.rgb1
+            material.texture = None
+            material.rgba[:3] = primary_color_rgb
+            is_modified = True
 
     # Adjust scale of checker materials (e.g., ground): texrepeat needs to be scaled
     # down by 1000x to get the same pattern - unclear why
