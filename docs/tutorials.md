@@ -1,6 +1,6 @@
 # Tutorials
 
-If you are new to FlyGym, we recommend that you get started with tutorials under "Tutorials" section in the navigation bar.
+If you are new to FlyGym, we recommend that you get started with tutorials under the "Tutorials" section in the navigation bar.
 
 ## Additional guided tutorials
 

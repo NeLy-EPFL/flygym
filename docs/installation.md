@@ -54,7 +54,7 @@
 
     !!! note
 
-        Developers should also install the `nbstripout` filter, which removes bulky Jupyter Notebook outputs upon `git add` (without touching the actual files—the outputs are only removed in the version-controled files). Note that this does not integrate well with IDEs, so you should run `git add <files>` in command line instead of using, for example, the GUI in VS Code.
+        Developers should also install the `nbstripout` filter, which removes bulky Jupyter Notebook outputs upon `git add` (without touching the actual files—the outputs are only removed in the version-controlled files). Note that this does not integrate well with IDEs, so you should run `git add <files>` in command line instead of using, for example, the GUI in VS Code.
 
         ```sh
         source .venv/bin/activate
