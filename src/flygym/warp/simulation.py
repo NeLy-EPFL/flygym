@@ -169,7 +169,7 @@ class GPUSimulation(Simulation):
 
         Returns:
             Warp array of shape ``(n_worlds, n_sites, 3)`` in mm, ordered as in
-            ``fly.anatomicaljoint_to_mjcfsites`` insertion order.
+            ``fly.get_sites_order()``.
         """
         indices = self._wp_internal_siteids_by_fly[fly_name]
         dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
@@ -360,7 +360,7 @@ class GPUSimulation(Simulation):
             n_frames_rendered=self._frames_rendered,
             total_physics_time_ns=self._total_physics_time_ns,
             total_render_time_ns=self._total_render_time_ns,
-            timestep=self.mj_model.opt.timestep,
+            timestep=self.timestep,
             n_worlds=self.n_worlds,
             n_worlds_rendered=len(self.renderer.world_ids),
             show_in_notebook=show_in_notebook,
@@ -446,3 +446,8 @@ class GPUSimulation(Simulation):
             is_modified = True
 
         return is_modified
+
+    @property
+    def timestep(self) -> float:
+        """Simulation timestep in seconds."""
+        return self.mj_model.opt.timestep

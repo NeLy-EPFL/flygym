@@ -210,6 +210,14 @@ class Fly(BaseCompositionElement):
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
 
+    def get_sites_order(self) -> list[AnatomicalJoint]:
+        """Get the canonical order of anatomical joints with associated MJCF sites.
+
+        This is the order used by simulation site-state readout methods such as
+        ``Simulation.get_site_positions``.
+        """
+        return list(self.anatomicaljoint_to_mjcfsites.keys())
+
     def add_joints(
         self,
         skeleton: Skeleton,

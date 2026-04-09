@@ -250,7 +250,7 @@ class Simulation:
 
         Returns:
             Site positions in mm, shape ``(n_sites, 3)``, ordered as in
-            ``fly.anatomicaljoint_to_mjcfsites`` insertion order.
+            ``fly.get_sites_order()``.
         """
         internal_ids = self._internal_siteids_by_fly[fly_name]
         return self.mj_data.site_xpos[internal_ids, :]
@@ -470,6 +470,11 @@ class Simulation:
             n_frames_rendered=self._frames_rendered,
             total_physics_time_ns=self._total_physics_time_ns,
             total_render_time_ns=self._total_render_time_ns,
-            timestep=self.mj_model.opt.timestep,
+            timestep=self.timestep,
             show_in_notebook=show_in_notebook,
         )
+
+    @property
+    def timestep(self) -> float:
+        """Simulation timestep in seconds."""
+        return self.mj_model.opt.timestep

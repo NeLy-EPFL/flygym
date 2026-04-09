@@ -234,7 +234,7 @@ class TestSiteStateQueries:
         sim, fly, cam = gpu_bundle_with_joint_sites
         sim.reset()
         spos = sim.get_site_positions(fly.name)
-        assert spos.shape[1] == len(fly.anatomicaljoint_to_mjcfsites)
+        assert spos.shape[1] == len(fly.get_sites_order())
 
     def test_world0_matches_cpu_site_xpos(self, gpu_bundle_with_joint_sites):
         sim, fly, cam = gpu_bundle_with_joint_sites

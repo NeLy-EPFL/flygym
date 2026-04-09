@@ -159,6 +159,15 @@ class TestFlyAddJointSites:
         mj_model, _ = fly.compile()
         assert mj_model.nsite >= len(joints)
 
+    def test_get_sites_order_matches_add_order(self):
+        fly = Fly(name="joint_sites_order_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        fly.add_joint_sites(joints)
+        assert fly.get_sites_order() == joints
+
 
 class TestFlyCompile:
     def test_compile_produces_mujoco_model(self, fly_with_joints):
