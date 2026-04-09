@@ -219,7 +219,15 @@ class TestGetSitePositions:
         sim, fly = simulation_with_joint_sites
         sim.reset()
         positions = sim.get_site_positions(fly.name)
-        assert positions.shape[0] == len(fly.anatomicaljoint_to_mjcfsites)
+        assert positions.shape[0] == len(fly.get_sites_order())
+
+    def test_site_order_matches_add_order(self, simulation_with_joint_sites):
+        _, fly = simulation_with_joint_sites
+        expected = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        assert fly.get_sites_order() == expected
 
     def test_matches_mujoco_site_xpos(self, simulation_with_joint_sites):
         sim, fly = simulation_with_joint_sites
