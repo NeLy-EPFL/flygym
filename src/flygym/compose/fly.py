@@ -11,6 +11,7 @@ import yaml
 from flygym import assets_dir
 from flygym.anatomy import (
     BodySegment,
+    AnatomicalJoint,
     JointDOF,
     Skeleton,
     RotationAxis,
@@ -116,6 +117,8 @@ class Fly(BaseCompositionElement):
             Maps body segments to MJCF geometry elements.
         jointdof_to_mjcfjoint:
             Maps joint DOFs to MJCF joint elements.
+        anatomicaljoint_to_mjcfsites:
+            Maps anatomical joints to MJCF site elements.
         jointdof_to_mjcfactuator_by_type:
             Maps actuator type to a further dictionary, which maps joint DOFs to MJCF
             actuator elements (only if the actuator exists).
@@ -155,6 +158,7 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
         self.leg_to_adhesionactuator = {}
+        self.anatomicaljoint_to_mjcfsites = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
@@ -354,6 +358,50 @@ class Fly(BaseCompositionElement):
             return_dict[jointdof] = actuator
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
+        return return_dict
+
+    def add_joint_sites(
+        self, anatomical_joints: list[AnatomicalJoint]
+    ) -> dict[AnatomicalJoint, mjcf.Element]:
+        """Add MJCF sites at the origins of selected anatomical joints.
+
+        Each site is placed at ``(0, 0, 0)`` in the child body frame. Since body
+        origins are defined at their parent-child joint locations in this model,
+        these sites track anatomical joint positions in world coordinates during
+        simulation.
+
+        Args:
+            anatomical_joints: Anatomical joints to materialize as MJCF sites.
+
+        Returns:
+            Dictionary mapping each anatomical joint to its created MJCF site
+            element (same entries added into ``self.anatomicaljoint_to_mjcfsites``).
+
+        Raises:
+            ValueError: If a site for a requested anatomical joint already exists.
+        """
+        return_dict = {}
+        for joint in anatomical_joints:
+            if joint in self.anatomicaljoint_to_mjcfsites:
+                raise ValueError(
+                    f"A site has already been added for anatomical joint '{joint.name}'."
+                )
+            child_body_element = self.bodyseg_to_mjcfbody[joint.child]
+            site = child_body_element.add(
+                "site",
+                name=joint.name,
+                pos=(0, 0, 0),  # origin of child body is defined at joint to parent
+            )
+            # child_body_element.add(
+            #     "geom",
+            #     name=f"{joint.name}_sitegeom",
+            #     type="sphere",
+            #     size=(0.05,),
+            #     rgba=(1, 0, 0, 1),
+            #     density=0,
+            # )
+            return_dict[joint] = site
+        self.anatomicaljoint_to_mjcfsites.update(return_dict)
         return return_dict
 
     def add_leg_adhesion(

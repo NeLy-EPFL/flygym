@@ -158,6 +158,28 @@ class GPUSimulation(Simulation):
         )
         return dst
 
+    @override
+    def get_site_positions(
+        self, fly_name: str
+    ) -> Float[wp.array, "n_worlds n_sites 3"]:
+        """Get global anatomical-joint site positions for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_sites, 3)`` in mm, ordered as in
+            ``fly.anatomicaljoint_to_mjcfsites`` insertion order.
+        """
+        indices = self._wp_internal_siteids_by_fly[fly_name]
+        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        wp.launch(
+            wp_gather_indexed_rows_vec3f,
+            dim=(self.n_worlds, indices.size),
+            inputs=[self.mjw_data.site_xpos, dst, indices],
+        )
+        return dst
+
     @property  # type: ignore[override]
     def time(self) -> float:
         """Current simulation time in seconds (from world 0)."""
@@ -381,6 +403,14 @@ class GPUSimulation(Simulation):
         self._wp_intern_adhesionactuatorids_by_fly = {
             k: wp.array(v, dtype=wp.int32)
             for k, v in self._intern_adhesionactuatorids_by_fly.items()
+        }
+
+    @override
+    def _map_internal_site_ids(self) -> None:
+        super()._map_internal_site_ids()
+        self._wp_internal_siteids_by_fly = {
+            k: wp.array(v, dtype=wp.int32)
+            for k, v in self._internal_siteids_by_fly.items()
         }
 
     def _mj_structs_to_mjw_structs(self) -> tuple[mjw.Model, mjw.Data]:

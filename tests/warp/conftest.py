@@ -9,13 +9,22 @@ happens at most once per test file.
 import warnings
 import pytest
 
-from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder
+from flygym.anatomy import (
+    Skeleton,
+    JointPreset,
+    ActuatedDOFPreset,
+    AxisOrder,
+    AnatomicalJoint,
+    BodySegment,
+)
 from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 
 
-def build_gpu_sim(n_worlds: int = 4, fly_name: str = "warp_fly") -> tuple:
+def build_gpu_sim(
+    n_worlds: int = 4, fly_name: str = "warp_fly", add_joint_sites: bool = False
+) -> tuple:
     """Create a minimal GPUSimulation and return ``(sim, fly, cam)``.
 
     The fly has legs-only joints, position actuators, leg adhesion, and one
@@ -37,6 +46,17 @@ def build_gpu_sim(n_worlds: int = 4, fly_name: str = "warp_fly") -> tuple:
         kp=50,
         neutral_input=pose,
     )
+    if add_joint_sites:
+        fly.add_joint_sites(
+            [
+                AnatomicalJoint(
+                    BodySegment("c_thorax"), BodySegment("lf_coxa")
+                ),
+                AnatomicalJoint(
+                    BodySegment("c_thorax"), BodySegment("rf_coxa")
+                ),
+            ]
+        )
     fly.add_leg_adhesion()
     cam = fly.add_tracking_camera()
 
