@@ -48,6 +48,7 @@ class Simulation:
         self._map_internal_adhesionactuator_ids()
         self._map_internal_jointids()
         self._map_internal_groundcontactsensor_ids()
+        self._map_internal_site_ids()
 
         # For performance profiling
         self._curr_step = 0
@@ -241,6 +242,19 @@ class Simulation:
         tangents = sensor_data[:, 13:]
         return contact_active, forces, torques, positions, normals, tangents
 
+    def get_site_positions(self, fly_name: str) -> Float[np.ndarray, "n_sites 3"]:
+        """Get global 3D positions of anatomical-joint sites.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Site positions in mm, shape ``(n_sites, 3)``, ordered as in
+            ``fly.anatomicaljoint_to_mjcfsites`` insertion order.
+        """
+        internal_ids = self._internal_siteids_by_fly[fly_name]
+        return self.mj_data.site_xpos[internal_ids, :]
+
     def set_actuator_inputs(
         self,
         fly_name: str,
@@ -414,6 +428,24 @@ class Simulation:
                 indices_thisfly.extend(list(range(start_idx, start_idx + sensor_dim)))
             indices_arr = np.array(indices_thisfly, dtype=np.int32)
             self._intern_groundcontactsensorids_by_fly[fly_name] = indices_arr
+
+    def _map_internal_site_ids(self) -> None:
+        internal_siteids_by_fly = {
+            fly_name: [] for fly_name in self.world.fly_lookup.keys()
+        }
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for _, mjcf_site_element in fly.anatomicaljoint_to_mjcfsites.items():
+                internal_site_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_SITE,
+                    mjcf_site_element.full_identifier,
+                )
+                internal_siteids_by_fly[fly_name].append(internal_site_id)
+
+        self._internal_siteids_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_siteids_by_fly.items()
+        }
 
     @property
     def time(self) -> float:

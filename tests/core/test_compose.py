@@ -4,7 +4,13 @@ import pytest
 import mujoco as mj
 
 import flygym
-from flygym.anatomy import ActuatedDOFPreset, ContactBodiesPreset, LEGS
+from flygym.anatomy import (
+    ActuatedDOFPreset,
+    ContactBodiesPreset,
+    LEGS,
+    AnatomicalJoint,
+    BodySegment,
+)
 from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
@@ -123,6 +129,35 @@ class TestFlyAddLegAdhesion:
     def test_add_leg_adhesion_twice_raises(self, fly_with_adhesion):
         with pytest.raises(ValueError, match="already been added"):
             fly_with_adhesion.add_leg_adhesion()
+
+
+class TestFlyAddJointSites:
+    def test_add_joint_sites_registers_sites(self):
+        fly = Fly(name="joint_sites_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        returned = fly.add_joint_sites(joints)
+        assert len(returned) == len(joints)
+        assert len(fly.anatomicaljoint_to_mjcfsites) == len(joints)
+
+    def test_add_joint_sites_duplicate_raises(self):
+        fly = Fly(name="joint_sites_dup_fly")
+        joint = AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa"))
+        fly.add_joint_sites([joint])
+        with pytest.raises(ValueError, match="already been added"):
+            fly.add_joint_sites([joint])
+
+    def test_add_joint_sites_compiles(self):
+        fly = Fly(name="joint_sites_compile_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        fly.add_joint_sites(joints)
+        mj_model, _ = fly.compile()
+        assert mj_model.nsite >= len(joints)
 
 
 class TestFlyCompile:
