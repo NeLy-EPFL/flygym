@@ -359,6 +359,15 @@ class AnatomicalJoint:
             if axis in self.axes:
                 yield JointDOF(self.parent, self.child, axis)
 
+    @property
+    def name(self) -> str:
+        """Unique name for the anatomical joint following the pattern
+        `{parent}-{child}`."""
+        return f"{self.parent.name}-{self.child.name}"
+
+    def __hash__(self):
+        return hash((self.parent, self.child))
+
 
 class JointPreset(Enum):
     """Presets for which rotational DoFs are present at which anatomical joints.
