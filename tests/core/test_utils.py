@@ -64,6 +64,12 @@ class TestTree:
         # First edge must start from root
         assert dfs[0][0] == "root"
 
+    def test_dfs_from_internal_node_does_not_go_to_parent(self):
+        nodes = ["root", "a", "b"]
+        edges = [("root", "a"), ("a", "b")]
+        tree = Tree(nodes, edges)
+        assert list(tree.dfs_edges("a")) == [("a", "b")]
+
     def test_single_node_tree(self):
         tree = Tree([1], [])
         assert list(tree.dfs_edges(1)) == []

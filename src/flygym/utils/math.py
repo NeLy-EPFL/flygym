@@ -35,7 +35,7 @@ class Tree(Generic[T]):
         nodes:
             List of unique body segment identifiers.
         edges:
-            List of (parent, child) tuples defining connections.
+            List of directed (parent, child) tuples defining connections.
 
     Raises:
         ValueError:
@@ -55,15 +55,16 @@ class Tree(Generic[T]):
                 raise ValueError(f"Edge ({u}, {v}) is a self-loop")
 
         # Check for parallel edges
-        unique_edges = set(frozenset(edge) for edge in edges)
+        unique_edges = set(edges)
         if len(unique_edges) != len(edges):
             raise ValueError("Tree contains parallel edges")
 
         # Construct graph using adjacency list representation
         self.graph = {node: [] for node in nodes}
+        self.in_degree = {node: 0 for node in nodes}
         for u, v in edges:
             self.graph[u].append(v)
-            self.graph[v].append(u)
+            self.in_degree[v] += 1
 
         if not self._is_valid():
             raise ValueError("Tree is invalid")
@@ -72,14 +73,21 @@ class Tree(Generic[T]):
         if len(self.graph) == 0:
             return True
 
-        # Check if the graph has the right number of edges
-        n_edges = sum(len(neighbors) for neighbors in self.graph.values()) // 2
+        # Directed tree must have n-1 edges.
+        n_edges = sum(len(neighbors) for neighbors in self.graph.values())
         if n_edges != len(self.graph) - 1:
             return False
 
-        # DFS from an arbitrary node to check connectivity
+        # Directed tree must have exactly one root and every other node exactly one parent.
+        roots = [node for node, degree in self.in_degree.items() if degree == 0]
+        if len(roots) != 1:
+            return False
+        if any(degree > 1 for degree in self.in_degree.values()):
+            return False
+
+        # All nodes must be reachable from the unique root via directed edges.
         visited = set()
-        stack = [next(iter(self.graph))]
+        stack = [roots[0]]
         while stack:
             node = stack.pop()
             if node in visited:
