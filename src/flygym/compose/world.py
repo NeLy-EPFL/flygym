@@ -6,7 +6,7 @@ import mujoco as mj
 import dm_control.mjcf as mjcf
 import numpy as np
 
-from flygym.anatomy import ContactBodiesPreset, BodySegment, LEG_LINKS
+from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment, LEG_LINKS
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
@@ -278,7 +278,11 @@ class FlatGroundWorld(BaseWorld):
         )
         freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
 
-        if isinstance(bodysegs_with_ground_contact, ContactBodiesPreset | str):
+        if isinstance(bodysegs_with_ground_contact, BaseContactBodiesPreset):
+            bodysegs_with_ground_contact = (
+                bodysegs_with_ground_contact.to_body_segments_list()
+            )
+        elif isinstance(bodysegs_with_ground_contact, str):
             preset = ContactBodiesPreset(bodysegs_with_ground_contact)
             bodysegs_with_ground_contact = preset.to_body_segments_list()
 
@@ -296,17 +300,18 @@ class FlatGroundWorld(BaseWorld):
         ground_contact_params: ContactParams,
     ) -> None:
         for body_segment in bodysegs_with_ground_contact:
-            body_geom = fly.mjcf_root.find("geom", f"{body_segment.name}")
-            self.mjcf_root.contact.add(
-                "pair",
-                geom1=body_geom,
-                geom2=self.ground_geom,
-                name=f"{body_segment.name}-ground",
-                friction=ground_contact_params.get_friction_tuple(),
-                solref=ground_contact_params.get_solref_tuple(),
-                solimp=ground_contact_params.get_solimp_tuple(),
-                margin=ground_contact_params.margin,
-            )
+            for body_geom in fly.bodyseg_to_mjcfgeom[body_segment]:
+                geom_name = body_geom.name
+                self.mjcf_root.contact.add(
+                    "pair",
+                    geom1=body_geom,
+                    geom2=self.ground_geom,
+                    name=f"{geom_name}-ground",
+                    friction=ground_contact_params.get_friction_tuple(),
+                    solref=ground_contact_params.get_solref_tuple(),
+                    solimp=ground_contact_params.get_solimp_tuple(),
+                    margin=ground_contact_params.margin,
+                )
 
     def _add_ground_contact_sensors(
         self, fly: Fly, bodysegs_with_ground_contact: list[BodySegment]
@@ -317,7 +322,7 @@ class FlatGroundWorld(BaseWorld):
             if bodyseg.is_leg():
                 contact_geoms_by_leg[bodyseg.pos].append(bodyseg)
         for leg, contact_geoms in contact_geoms_by_leg.items():
-            subtree_rootseg = _sort_legsegs_prox2dist(contact_geoms)[0]
+            subtree_rootseg = _sort_legsegs_prox2dist(contact_geoms, fly.LEG_LINKS)[0]
             subtree_rootseg_body = fly.bodyseg_to_mjcfbody[subtree_rootseg]
             sensor = self.mjcf_root.sensor.add(
                 "contact",
@@ -366,7 +371,7 @@ class TetheredWorld(BaseWorld):
         return freejoint
 
 
-def _sort_legsegs_prox2dist(segments: list[BodySegment]) -> list[BodySegment]:
-    bodyseg_linkpos_tuples = [(seg, LEG_LINKS.index(seg.link)) for seg in segments]
+def _sort_legsegs_prox2dist(segments: list[BodySegment], leg_links: list[str]) -> list[BodySegment]:
+    bodyseg_linkpos_tuples = [(seg, leg_links.index(seg.link)) for seg in segments]
     bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
     return [t[0] for t in bodyseg_linkpos_tuples]

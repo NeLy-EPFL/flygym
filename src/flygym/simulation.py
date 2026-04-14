@@ -46,6 +46,7 @@ class Simulation:
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
         self._map_internal_adhesionactuator_ids()
+        self._map_internal_tendonactuaror_ids()
         self._map_internal_jointids()
         self._map_internal_groundcontactsensor_ids()
 
@@ -281,6 +282,27 @@ class Simulation:
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
 
+    def set_tendon_actuator_inputs(
+        self,
+        fly_name: str,
+        inputs: Float[np.ndarray, "n_tendon_actuators"],
+    ) -> None:
+        """Set control inputs for tendon actuators.
+
+        Args:
+            fly_name: Name of the fly.
+            inputs: Control inputs, shape ``(n_tendon_actuators,)``, ordered as in
+                ``fly.get_actuated_jointdofs_order(ActuatorType.TENDON)``.
+        """
+        internal_ids = self._intern_tendonactuatorids_by_fly[fly_name]
+        if len(inputs) != len(internal_ids):
+            raise ValueError(
+                f"Expected {len(internal_ids)} tendon actuator inputs, but got "
+                f"{len(inputs)}"
+            )
+        self.mj_data.ctrl[internal_ids] = inputs
+        
+
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
 
@@ -372,6 +394,23 @@ class Simulation:
             for actuator_ty, ids_by_fly in internal_actuatorids_by_fly_by_type.items()
         }
 
+    def _map_internal_tendonactuaror_ids(self) -> None:
+        internal_tendonactuatorids_by_fly = defaultdict(list)
+        for fly_name, fly in self.world.fly_lookup.items():
+            if len(fly.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]) == 0:
+                continue  # This fly doesn't have any tendon actuators
+            for jointdof, actuator_element in fly.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON].items():
+                internal_actuator_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_ACTUATOR,
+                    actuator_element.full_identifier,
+                )
+                internal_tendonactuatorids_by_fly[fly_name].append(internal_actuator_id)
+        self._intern_tendonactuatorids_by_fly = {
+            fly_name: np.array(ids, dtype=np.int32)
+            for fly_name, ids in internal_tendonactuatorids_by_fly.items()
+        }
+
     def _map_internal_adhesionactuator_ids(self) -> None:
         internal_adhesionactuatorids_by_fly = defaultdict(list)
         for fly_name, fly in self.world.fly_lookup.items():
@@ -391,6 +430,7 @@ class Simulation:
             fly_name: np.array(ids, dtype=np.int32)
             for fly_name, ids in internal_adhesionactuatorids_by_fly.items()
         }
+        
 
     def _map_internal_groundcontactsensor_ids(self) -> None:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:

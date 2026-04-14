@@ -1,0 +1,303 @@
+params:
+  group_001:
+    apply_to: [c_head-l_antenna-pitch, c_head-l_antenna-roll, c_head-l_antenna-yaw, c_head-r_antenna-pitch, c_head-r_antenna-roll, c_head-r_antenna-yaw]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.03'
+    damping: '0.0003'
+  group_002:
+    apply_to: [c_thorax-l_wing-pitch, c_thorax-l_wing-roll, c_thorax-l_wing-yaw, c_thorax-r_wing-pitch, c_thorax-r_wing-roll, c_thorax-r_wing-yaw]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.01'
+    damping: '0.0005'
+  group_003:
+    apply_to: [c_haustellum-l_labrum-pitch, c_haustellum-r_labrum-pitch, c_head-c_rostrum-pitch, c_rostrum-c_haustellum-pitch, c_rostrum-c_haustellum-yaw, c_thorax-c_head-pitch, c_thorax-c_head-roll, c_thorax-c_head-yaw]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.03'
+    damping: '0.001'
+  group_004:
+    apply_to: [lf_tarsus1-lf_tarsus2-pitch, lf_tarsus2-lf_tarsus3-pitch, lf_tarsus3-lf_tarsus4-pitch, lf_tarsus4-lf_claw-pitch, lh_tarsus1-lh_tarsus2-pitch, lh_tarsus2-lh_tarsus3-pitch, lh_tarsus3-lh_tarsus4-pitch, lh_tarsus4-lh_claw-pitch, lm_tarsus1-lm_tarsus2-pitch, lm_tarsus2-lm_tarsus3-pitch, lm_tarsus3-lm_tarsus4-pitch, lm_tarsus4-lm_claw-pitch, rf_tarsus1-rf_tarsus2-pitch, rf_tarsus2-rf_tarsus3-pitch, rf_tarsus3-rf_tarsus4-pitch, rf_tarsus4-rf_claw-pitch, rh_tarsus1-rh_tarsus2-pitch, rh_tarsus2-rh_tarsus3-pitch, rh_tarsus3-rh_tarsus4-pitch, rh_tarsus4-rh_claw-pitch, rm_tarsus1-rm_tarsus2-pitch, rm_tarsus2-rm_tarsus3-pitch, rm_tarsus3-rm_tarsus4-pitch, rm_tarsus4-rm_claw-pitch]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.1'
+    damping: '0.002'
+  group_005:
+    apply_to: [lf_trochanterfemur-lf_tibia-pitch, lh_trochanterfemur-lh_tibia-pitch, lm_trochanterfemur-lm_tibia-pitch, rf_trochanterfemur-rf_tibia-pitch, rh_trochanterfemur-rh_tibia-pitch, rm_trochanterfemur-rm_tibia-pitch]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.01'
+    damping: '0.004'
+  group_006:
+    apply_to: [c_thorax-lf_coxa-pitch, c_thorax-lf_coxa-roll, c_thorax-lf_coxa-yaw, c_thorax-lh_coxa-pitch, c_thorax-lh_coxa-roll, c_thorax-lh_coxa-yaw, c_thorax-lm_coxa-pitch, c_thorax-lm_coxa-roll, c_thorax-lm_coxa-yaw, c_thorax-rf_coxa-pitch, c_thorax-rf_coxa-roll, c_thorax-rf_coxa-yaw, c_thorax-rh_coxa-pitch, c_thorax-rh_coxa-roll, c_thorax-rh_coxa-yaw, c_thorax-rm_coxa-pitch, c_thorax-rm_coxa-roll, c_thorax-rm_coxa-yaw, lf_coxa-lf_trochanterfemur-pitch, lf_coxa-lf_trochanterfemur-roll, lf_tibia-lf_tarsus1-pitch, lh_coxa-lh_trochanterfemur-pitch, lh_coxa-lh_trochanterfemur-roll, lh_tibia-lh_tarsus1-pitch, lm_coxa-lm_trochanterfemur-pitch, lm_coxa-lm_trochanterfemur-roll, lm_tibia-lm_tarsus1-pitch, rf_coxa-rf_trochanterfemur-pitch, rf_coxa-rf_trochanterfemur-roll, rf_tibia-rf_tarsus1-pitch, rh_coxa-rh_trochanterfemur-pitch, rh_coxa-rh_trochanterfemur-roll, rh_tibia-rh_tarsus1-pitch, rm_coxa-rm_trochanterfemur-pitch, rm_coxa-rm_trochanterfemur-roll, rm_tibia-rm_tarsus1-pitch]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.01'
+    damping: '0.01'
+  group_007:
+    apply_to: [c_abdomen1-c_abdomen2-pitch, c_abdomen1-c_abdomen2-yaw, c_abdomen2-c_abdomen3-pitch, c_abdomen2-c_abdomen3-yaw, c_abdomen3-c_abdomen4-pitch, c_abdomen3-c_abdomen4-yaw, c_abdomen4-c_abdomen5-pitch, c_abdomen4-c_abdomen5-yaw, c_abdomen5-c_abdomen6-pitch, c_abdomen5-c_abdomen6-yaw, c_abdomen6-c_abdomen7-pitch, c_abdomen6-c_abdomen7-yaw, c_thorax-c_abdomen1-pitch, c_thorax-c_abdomen1-yaw]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    stiffness: '0.05'
+    damping: '0.01'
+  group_008:
+    apply_to: [c_thorax-l_haltere-pitch, c_thorax-r_haltere-pitch]
+    limited: 'true'
+    solreflimit: ['0.001', '1']
+    armature: 1e-06
+    springdamper: ['0.005', '0.1']
+ranges:
+  c_abdomen1-c_abdomen2-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen1-c_abdomen2-yaw:
+    range: ['-0.1', '0.1']
+  c_abdomen2-c_abdomen3-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen2-c_abdomen3-yaw:
+    range: ['-0.1', '0.1']
+  c_abdomen3-c_abdomen4-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen3-c_abdomen4-yaw:
+    range: ['-0.1', '0.1']
+  c_abdomen4-c_abdomen5-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen4-c_abdomen5-yaw:
+    range: ['-0.1', '0.1']
+  c_abdomen5-c_abdomen6-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen5-c_abdomen6-yaw:
+    range: ['-0.1', '0.1']
+  c_abdomen6-c_abdomen7-pitch:
+    range: ['-0.15', '0.1']
+  c_abdomen6-c_abdomen7-yaw:
+    range: ['-0.1', '0.1']
+  c_haustellum-l_labrum-pitch:
+    range: ['-0.00524', '1.05']
+  c_haustellum-r_labrum-pitch:
+    range: ['-0.00524', '1.05']
+  c_head-c_rostrum-pitch:
+    range: ['-1.24', '0.183']
+    springref: '0.8'
+  c_head-l_antenna-pitch:
+    range: ['-0.2', '0.5']
+  c_head-l_antenna-roll:
+    range: ['-0.1', '0.09']
+  c_head-l_antenna-yaw:
+    range: ['-0.4', '0.8']
+  c_head-r_antenna-pitch:
+    range: ['-0.2', '0.5']
+  c_head-r_antenna-roll:
+    range: ['-0.1', '0.09']
+  c_head-r_antenna-yaw:
+    range: ['-0.4', '0.8']
+  c_rostrum-c_haustellum-pitch:
+    range: ['-1.59', '0.7']
+    springref: '0.8'
+  c_rostrum-c_haustellum-yaw:
+    range: ['-0.0873', '0.0873']
+  c_thorax-c_abdomen1-pitch:
+    range: ['-0.15', '0.1']
+  c_thorax-c_abdomen1-yaw:
+    range: ['-0.1', '0.1']
+  c_thorax-c_head-pitch:
+    range: ['-0.5', '0.3']
+  c_thorax-c_head-roll:
+    range: ['-3', '3']
+  c_thorax-c_head-yaw:
+    range: ['-0.2', '0.2']
+  c_thorax-l_haltere-pitch:
+    range: ['-0.2', '0.2']
+  c_thorax-l_wing-pitch:
+    range: ['-1.27', '2.92']
+    springref: '-1'
+  c_thorax-l_wing-roll:
+    range: ['-1', '1.5']
+    springref: '0.7'
+  c_thorax-l_wing-yaw:
+    range: ['-1.5', '1.5']
+    springref: '1.5'
+  c_thorax-lf_coxa-pitch:
+    range: ['-0.2', '1.7']
+    springref: '0.0584'
+  c_thorax-lf_coxa-roll:
+    range: ['-0.8', '0.8']
+  c_thorax-lf_coxa-yaw:
+    range: ['-1', '0.7']
+  c_thorax-lh_coxa-pitch:
+    range: ['-0.3', '1.3']
+    springref: '0.158'
+  c_thorax-lh_coxa-roll:
+    range: ['-0.15', '0.8']
+    springref: '0.00841'
+  c_thorax-lh_coxa-yaw:
+    range: ['-0.9', '0.25']
+  c_thorax-lm_coxa-pitch:
+    range: ['-0.2', '0.9']
+    springref: '0.408'
+  c_thorax-lm_coxa-roll:
+    range: ['-0.75', '0.8']
+    springref: '-0.742'
+  c_thorax-lm_coxa-yaw:
+    range: ['-0.5', '0.3']
+    springref: '-0.292'
+  c_thorax-r_haltere-pitch:
+    range: ['-0.2', '0.2']
+  c_thorax-r_wing-pitch:
+    range: ['-1.27', '2.92']
+    springref: '-1'
+  c_thorax-r_wing-roll:
+    range: ['-1', '1.5']
+    springref: '0.7'
+  c_thorax-r_wing-yaw:
+    range: ['-1.5', '1.5']
+    springref: '1.5'
+  c_thorax-rf_coxa-pitch:
+    range: ['-0.2', '1.7']
+    springref: '0.0584'
+  c_thorax-rf_coxa-roll:
+    range: ['-0.8', '0.8']
+  c_thorax-rf_coxa-yaw:
+    range: ['-1', '0.7']
+  c_thorax-rh_coxa-pitch:
+    range: ['-0.3', '1.3']
+    springref: '0.158'
+  c_thorax-rh_coxa-roll:
+    range: ['-0.15', '0.8']
+    springref: '0.00841'
+  c_thorax-rh_coxa-yaw:
+    range: ['-0.9', '0.25']
+  c_thorax-rm_coxa-pitch:
+    range: ['-0.2', '0.9']
+    springref: '0.408'
+  c_thorax-rm_coxa-roll:
+    range: ['-0.75', '0.8']
+    springref: '-0.742'
+  c_thorax-rm_coxa-yaw:
+    range: ['-0.5', '0.3']
+    springref: '-0.292'
+  lf_coxa-lf_trochanterfemur-pitch:
+    range: ['-0.15', '2']
+    springref: '-0.142'
+  lf_coxa-lf_trochanterfemur-roll:
+    range: ['-1', '1']
+  lf_tarsus1-lf_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  lf_tarsus2-lf_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  lf_tarsus3-lf_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  lf_tarsus4-lf_claw-pitch:
+    range: ['-0.36', '0.36']
+  lf_tibia-lf_tarsus1-pitch:
+    range: ['-0.7', '1.2']
+    springref: '-0.242'
+  lf_trochanterfemur-lf_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-1.29'
+  lh_coxa-lh_trochanterfemur-pitch:
+    range: ['-0.7', '1.5']
+    springref: '0.258'
+  lh_coxa-lh_trochanterfemur-roll:
+    range: ['-1', '1']
+    springref: '0.558'
+  lh_tarsus1-lh_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  lh_tarsus2-lh_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  lh_tarsus3-lh_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  lh_tarsus4-lh_claw-pitch:
+    range: ['-0.36', '0.36']
+  lh_tibia-lh_tarsus1-pitch:
+    range: ['-0.8', '1.2']
+    springref: '0.258'
+  lh_trochanterfemur-lh_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-0.292'
+  lm_coxa-lm_trochanterfemur-pitch:
+    range: ['-0.15', '2']
+    springref: '0.208'
+  lm_coxa-lm_trochanterfemur-roll:
+    range: ['-1', '1']
+    springref: '0.608'
+  lm_tarsus1-lm_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  lm_tarsus2-lm_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  lm_tarsus3-lm_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  lm_tarsus4-lm_claw-pitch:
+    range: ['-0.36', '0.36']
+  lm_tibia-lm_tarsus1-pitch:
+    range: ['-1', '1.8']
+    springref: '0.608'
+  lm_trochanterfemur-lm_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-1.34'
+  rf_coxa-rf_trochanterfemur-pitch:
+    range: ['-0.15', '2']
+    springref: '-0.142'
+  rf_coxa-rf_trochanterfemur-roll:
+    range: ['-1', '1']
+  rf_tarsus1-rf_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  rf_tarsus2-rf_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  rf_tarsus3-rf_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  rf_tarsus4-rf_claw-pitch:
+    range: ['-0.36', '0.36']
+  rf_tibia-rf_tarsus1-pitch:
+    range: ['-0.7', '1.2']
+    springref: '-0.242'
+  rf_trochanterfemur-rf_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-1.29'
+  rh_coxa-rh_trochanterfemur-pitch:
+    range: ['-0.7', '1.5']
+    springref: '0.258'
+  rh_coxa-rh_trochanterfemur-roll:
+    range: ['-1', '1']
+    springref: '0.558'
+  rh_tarsus1-rh_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  rh_tarsus2-rh_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  rh_tarsus3-rh_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  rh_tarsus4-rh_claw-pitch:
+    range: ['-0.36', '0.36']
+  rh_tibia-rh_tarsus1-pitch:
+    range: ['-0.8', '1.2']
+    springref: '0.258'
+  rh_trochanterfemur-rh_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-0.292'
+  rm_coxa-rm_trochanterfemur-pitch:
+    range: ['-0.15', '2']
+    springref: '0.208'
+  rm_coxa-rm_trochanterfemur-roll:
+    range: ['-1', '1']
+    springref: '0.608'
+  rm_tarsus1-rm_tarsus2-pitch:
+    range: ['-0.36', '0.36']
+  rm_tarsus2-rm_tarsus3-pitch:
+    range: ['-0.36', '0.36']
+  rm_tarsus3-rm_tarsus4-pitch:
+    range: ['-0.36', '0.36']
+  rm_tarsus4-rm_claw-pitch:
+    range: ['-0.36', '0.36']
+  rm_tibia-rm_tarsus1-pitch:
+    range: ['-1', '1.8']
+    springref: '0.608'
+  rm_trochanterfemur-rm_tibia-pitch:
+    range: ['-1.35', '1.3']
+    springref: '-1.34'

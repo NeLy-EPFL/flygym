@@ -18,6 +18,10 @@ option:
     multiccd: enable
     energy: enable
 
+# default:
+#   mesh:
+#     scale: [1000, 1000, 1000]
+
 visual:
   headlight:
     ambient: [0.5, 0.5, 0.5]

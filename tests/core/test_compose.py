@@ -5,7 +5,8 @@ import mujoco as mj
 
 import flygym
 from flygym.anatomy import ActuatedDOFPreset, ContactBodiesPreset, LEGS
-from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
+from flygym.assets.model.flybody.anatomy_flybody import FlybodyContactBodiesPreset
+from flygym.compose.fly import Fly, FlybodyFly, ActuatorType, GeomFittingOption
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
 from flygym.compose.physics import ContactParams
@@ -213,6 +214,18 @@ class TestFlatGroundWorld:
 
     def test_world_dof_neutral_states_set(self, flat_world_with_fly):
         assert len(flat_world_with_fly.world_dof_neutral_states) > 0
+
+    def test_accepts_flybody_contact_preset(self):
+        fly = FlybodyFly(name="flybody_contact_test")
+        world = FlatGroundWorld(name="flybody_contact_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            bodysegs_with_ground_contact=FlybodyContactBodiesPreset.LEGS_ONLY,
+            add_ground_contact_sensors=False,
+        )
+        assert fly.name in world.fly_lookup
 
 
 class TestTetheredWorld:
