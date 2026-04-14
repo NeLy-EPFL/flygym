@@ -1,33 +1,8 @@
-"""Anatomical definitions for the fly body, including enums for categorical options for
-model configuration, classes representing body features, and constants specifying
-anatomical structures and nomenclature.
+"""Base anatomical definitions for the default fly model.
 
-Attributes:
-    SIDES:
-        Alias for ["l", "r"].
-    LEGS:
-        List of leg position identifiers (e.g., "lf" for left front leg).
-    BODY_POSITIONS:
-        List of body position identifiers including `LEGS`, `SIDES` (for non-leg but
-        sided body parts like wings), and `c` (center, like the thorax).
-    LEG_LINKS:
-        List of segment names in the leg kinematic chain (i.e., coxa, trochanterfemur,
-        femur, tibia, tarsus1, ..., tarsus5). Note that trochanter and femur are fused.
-    ANTENNA_LINKS:
-        Alias for ["pedicel", "funiculus", "arista"].
-    PROBOSCIS_LINKS:
-        Alias for ["rostrum", "haustellum"].
-    ABDOMEN_LINKS:
-        List of segment names in the abdomen kinematic chain (i.e., abdomen12, abdomen3,
-        abdomen4, abdomen5, abdomen6). Note that abdomen1 and abdomen2 are fused.
-    PASSIVE_TARSAL_LINKS:
-        List of tarsal segments that are unactuated in the real fly and therefore often
-        kept passive in simulation (i.e., tarsus 2-to-3, 3-to-4, and 4-to-5).
-    ALL_CONNECTED_SEGMENT_PAIRS:
-        List of all parent-child pairs of body segments that are connected by anatomical
-        joints.
-    ALL_SEGMENT_NAMES:
-        List of all body segment names.
+This module contains model-agnostic and default-model anatomy definitions.
+Flybody-specific anatomy is defined in
+``flygym.assets.model.flybody.anatomy_flybody``.
 """
 
 from dataclasses import dataclass, field
@@ -38,16 +13,24 @@ from flygym.utils.math import orderedset, Tree
 from flygym.utils.exceptions import FlyGymInternalError
 
 __all__ = [
+    "BaseRotationAxis",
     "RotationAxis",
+    "RotationAxisLike",
+    "BaseAxisOrder",
     "AxesSet",
+    "AxesSetLike",
     "AxisOrder",
     "JointPreset",
+    "BaseActuatedDOFPreset",
     "ActuatedDOFPreset",
     "ContactBodiesPreset",
+    "BaseContactBodiesPreset",
     "BodySegment",
     "JointDOF",
     "AnatomicalJoint",
+    "BaseJointPreset",
     "Skeleton",
+    "_chain2joints",
     "SIDES",
     "LEGS",
     "BODY_POSITIONS",
@@ -61,11 +44,45 @@ __all__ = [
 ]
 
 
-class RotationAxis(Enum):
-    """Enumeration of rotation axes for joints.
+class BaseRotationAxis(Enum):
+    """Base enum for axis naming and coordinate conversion.
 
-    Supports pitch (P), roll (R), and yaw (Y) rotations with both full names and
-    single-letter aliases.
+    Child enums must define PITCH / ROLL / YAW members and provide `_VECTOR_BY_AXIS`.
+    """
+
+    _VECTOR_BY_AXIS: dict[str, tuple[float, float, float]]
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str) and len(value) == 1:
+            if value.lower() == "p":
+                return cls.PITCH
+            if value.lower() == "r":
+                return cls.ROLL
+            if value.lower() == "y":
+                return cls.YAW
+        return super()._missing_(value)
+
+    def to_vector(self) -> tuple[float, float, float]:
+        """Convert rotation axis to a 3D unit vector in XYZ order."""
+        vector_by_axis = self._VECTOR_BY_AXIS
+        if isinstance(vector_by_axis, Enum):
+            vector_by_axis = vector_by_axis.value
+        return vector_by_axis[self.value]
+
+    def to_letter_xyz(self) -> str:
+        """Convert rotation axis to its corresponding letter ('x', 'y', or 'z')."""
+        return {
+            (1, 0, 0): "x",
+            (0, 1, 0): "y",
+            (0, 0, 1): "z",
+        }[self.to_vector()]
+
+
+class RotationAxis(BaseRotationAxis):
+    """Default flygym axis convention.
+
+    pitch -> y, roll -> z, yaw -> x.
     """
 
     PITCH = "pitch"
@@ -75,36 +92,11 @@ class RotationAxis(Enum):
     YAW = "yaw"
     Y = YAW
 
-    @classmethod
-    def _missing_(cls, value):
-        if isinstance(value, str) and len(value) == 1:
-            if value.lower() == "p":
-                return cls.PITCH
-            elif value.lower() == "r":
-                return cls.ROLL
-            elif value.lower() == "y":
-                return cls.YAW
-        return super()._missing_(value)
-
-    def to_vector(self) -> tuple[float, float, float]:
-        """Convert rotation axis to 3D unit vector in XYZ order."""
-        match self:
-            case RotationAxis.PITCH:
-                return (0, 1, 0)
-            case RotationAxis.ROLL:
-                return (0, 0, 1)
-            case RotationAxis.YAW:
-                return (1, 0, 0)
-
-    def to_letter_xyz(self) -> str:
-        """Convert rotation axis to its corresponding letter ('x', 'y', or 'z')."""
-        match self:
-            case RotationAxis.PITCH:
-                return "y"
-            case RotationAxis.ROLL:
-                return "z"
-            case RotationAxis.YAW:
-                return "x"
+    _VECTOR_BY_AXIS = {
+        "pitch": (0, 1, 0),
+        "roll": (0, 0, 1),
+        "yaw": (1, 0, 0),
+    }
 
 
 RotationAxisLike: TypeAlias = RotationAxis | str
@@ -114,23 +106,81 @@ class AxesSet(set[RotationAxis]):
     """Set of rotation axes with automatic RotationAxis conversion. Useful for
     specifying which rotational DoFs are present at an anatomical joint."""
 
+    rotation_axis_class = RotationAxis
+
     def __init__(self, iterable: Iterable = None, /):
         if iterable is None:
             super().__init__()
         else:
-            super().__init__({RotationAxis(x) for x in iterable})
+            super().__init__({self.rotation_axis_class(x) for x in iterable})
 
     def add(self, value, /):
-        super().add(RotationAxis(value))
+        super().add(self.rotation_axis_class(value))
 
     def remove(self, value, /):
-        super().remove(RotationAxis(value))
+        super().remove(self.rotation_axis_class(value))
 
 
 AxesSetLike: TypeAlias = AxesSet | Iterable[RotationAxisLike]
 
 
-class AxisOrder(Enum):
+class BaseAxisOrder:
+    """Base class for axis-order enums parametrized by an axis enum type."""
+
+    @classmethod
+    def _axis_enum_cls(cls):
+        return RotationAxis
+
+    @classmethod
+    def _missing_(cls, value):
+        axis_enum_cls = cls._axis_enum_cls()
+
+        if isinstance(value, axis_enum_cls):
+            value = [value]
+
+        if isinstance(value, str) and len((split_values := value.split("_"))) == 3:
+            value = split_values
+
+        if isinstance(value, list) and len(value) == 3:
+            try:
+                normalized = []
+                for x in value:
+                    if isinstance(x, Enum):
+                        normalized.append(axis_enum_cls(x.value))
+                    else:
+                        normalized.append(axis_enum_cls(x))
+                return cls(tuple(normalized))
+            except Exception as e:
+                raise e
+
+        if isinstance(value, tuple) and len(value) == 3:
+            try:
+                normalized = []
+                for x in value:
+                    if isinstance(x, Enum):
+                        normalized.append(axis_enum_cls(x.value))
+                    else:
+                        normalized.append(axis_enum_cls(x))
+                return cls(tuple(normalized))
+            except Exception as e:
+                raise e
+
+        return super()._missing_(value)
+
+    def to_letters_xyz(self) -> str:
+        """Convert axis order to a permutation of 'x', 'y', and 'z' (as one string)."""
+        return "".join(axis.to_letter_xyz() for axis in self.value)
+
+    def to_list_of_str(self) -> list[str]:
+        """Convert to a list of axis name strings (e.g. ``['pitch', 'roll', 'yaw']``)."""
+        return [axis.value for axis in self.value]
+
+    def to_str(self) -> str:
+        """Convert to an underscore-joined axis string (e.g. ``'pitch_roll_yaw'``)."""
+        return "_".join(self.to_list_of_str())
+
+
+class AxisOrder(BaseAxisOrder, Enum):
     """An enum specifying the order by which one-axis DoFs are chained together at
     anatomical joints with multiple DoFs.
 
@@ -143,6 +193,10 @@ class AxisOrder(Enum):
     case, we can use `DONTCARE` (which aliases to `PITCH_ROLL_YAW`) to make our
     intention explicit.
     """
+
+    @classmethod
+    def _axis_enum_cls(cls):
+        return RotationAxis
 
     PITCH_ROLL_YAW = (RotationAxis.PITCH, RotationAxis.ROLL, RotationAxis.YAW)
     PRY = PITCH_ROLL_YAW
@@ -158,29 +212,6 @@ class AxisOrder(Enum):
     YRP = YAW_ROLL_PITCH
 
     DONTCARE = PITCH_ROLL_YAW
-
-    @classmethod
-    def _missing_(cls, value):
-        if isinstance(value, str) and len((split_values := value.split("_"))) == 3:
-            value = split_values
-        if isinstance(value, list) and len(value) == 3:
-            try:
-                return cls(tuple(RotationAxis(x) for x in value))
-            except Exception as e:
-                raise e
-        return super()._missing_(value)
-
-    def to_letters_xyz(self) -> str:
-        """Convert axis order to a permutation of 'x', 'y', and 'z' (as one string)."""
-        return "".join(axis.to_letter_xyz() for axis in self.value)
-
-    def to_list_of_str(self) -> list[str]:
-        """Convert to a list of axis name strings (e.g. ``['pitch', 'roll', 'yaw']``)."""
-        return [axis.value for axis in self.value]
-
-    def to_str(self) -> str:
-        """Convert to an underscore-joined axis string (e.g. ``'pitch_roll_yaw'``)."""
-        return "_".join(self.to_list_of_str())
 
 
 def _chain2joints(*args: str) -> list[tuple[str, str]]:
@@ -231,7 +262,7 @@ ALL_SEGMENT_NAMES: list[str] = orderedset(
 class BodySegment:
     """Represents a body segment in the fly anatomy.
 
-    See `flygym.anatomy.ALL_SEGMENT_NAMES` for all possible names.
+    See `flygym.anatomy_base.ALL_SEGMENT_NAMES` for all possible names.
 
     Attributes:
         name:
@@ -301,22 +332,7 @@ class BodySegment:
 
 @dataclass(frozen=True)
 class JointDOF:
-    """A single rotational degree of freedom in an anatomical joint.
-
-    For example, the thorax-coxa joint of a leg is an `AnatomicalJoint`. It has 3
-    `JointDOF`s corresponding to the three rotation axes as it is a ball joint.
-
-    Attributes:
-        parent:
-            Parent body segment.
-        child:
-            Child body segment.
-        axis:
-            Rotation axis for this DOF.
-        name:
-            Unique identifier for the joint DOF following the pattern
-            `{parent}-{child}-{axis}`.
-    """
+    """A single rotational degree of freedom in an anatomical joint."""
 
     parent: BodySegment
     child: BodySegment
@@ -343,124 +359,109 @@ class JointDOF:
 
 @dataclass
 class AnatomicalJoint:
-    """Represents an anatomical joint connecting two body segments (e.g., thorax to
-    left-front coxa). This can encompass multiple rotational DoFs (e.g., pitch, roll,
-    and yaw for a ball joint), which are specified by the `axes` attribute."""
+    """Represents an anatomical joint connecting two body segments."""
 
     parent: BodySegment
     child: BodySegment
-    # Rotation axes that exist at this joint. Defaults to all three.
     axes: AxesSet = field(default_factory=lambda: AxesSet(RotationAxis))
 
     def iter_dofs(self, axis_order: AxisOrder) -> Iterator[JointDOF]:
-        """Iterate through the `JointDOF`s at to this anatomical joint in the specified
-        axis order."""
+        """Iterate through the `JointDOF`s in the specified axis order."""
         for axis in axis_order.value:
             if axis in self.axes:
                 yield JointDOF(self.parent, self.child, axis)
 
 
-class JointPreset(Enum):
-    """Presets for which rotational DoFs are present at which anatomical joints.
+class BaseJointPreset(Enum):
+    """Base class containing all joint preset logic."""
 
-    This is useful because excluding DoFs that we do not care about (e.g., wing joints
-    in walking tasks) can speed up simulation and simplify control.
+    @classmethod
+    def _get_connected_segment_pairs(cls) -> list[tuple[str, str]]:
+        raise NotImplementedError
 
-    Attributes:
-        ALL_POSSIBLE:
-            All theoretically possible joint DoFs (i.e., 3 DoFs per anatomical joint).
-        ALL_BIOLOGICAL:
-            All biologically plausible joint DoFs (e.g., some leg joints do not have all
-            three DoFs).
-        LEGS_ONLY:
-            `ALL_BIOLOGICAL` but only for legs.
-        LEGS_ACTIVE_ONLY:
-            `LEGS_ONLY` but excluding passive tarsal links.
-    """
+    @classmethod
+    def _get_passive_tarsal_links(cls) -> list[str]:
+        raise NotImplementedError
+
+    def to_joint_list(self) -> list[AnatomicalJoint]:
+        match self.value:
+            case "all_possible":
+                return self._get_all_possible_joints()
+            case "all_biological":
+                return self._get_all_biological_joints()
+            case "legs_only":
+                return self._get_leg_joints()
+            case "legs_active_only":
+                return self._get_leg_active_joints()
+
+    @classmethod
+    def _get_all_possible_joints(cls) -> list[AnatomicalJoint]:
+        return [
+            AnatomicalJoint(BodySegment(parent), BodySegment(child), AxesSet(RotationAxis))
+            for parent, child in cls._get_connected_segment_pairs()
+        ]
+
+    @classmethod
+    def _get_all_biological_joints(cls) -> list[AnatomicalJoint]:
+        joints = cls._get_all_possible_joints()
+        for joint in joints:
+            if joint.child.is_leg():
+                match joint.child.link:
+                    case "coxa":
+                        pass
+                    case "trochanterfemur":
+                        joint.axes.remove("yaw")
+                    case _:
+                        joint.axes.remove("roll")
+                        joint.axes.remove("yaw")
+        return joints
+
+    @classmethod
+    def _get_leg_joints(cls) -> list[AnatomicalJoint]:
+        return [j for j in cls._get_all_biological_joints() if j.child.is_leg()]
+
+    @classmethod
+    def _get_leg_active_joints(cls) -> list[AnatomicalJoint]:
+        return [
+            j
+            for j in cls._get_leg_joints()
+            if j.child.link not in cls._get_passive_tarsal_links()
+        ]
+
+
+class JointPreset(BaseJointPreset):
+    """Presets for which rotational DoFs are present at which anatomical joints."""
 
     ALL_POSSIBLE = "all_possible"
     ALL_BIOLOGICAL = "all_biological"
     LEGS_ONLY = "legs_only"
     LEGS_ACTIVE_ONLY = "legs_active_only"
 
-    def to_joint_list(self) -> list[AnatomicalJoint]:
-        """Return the list of `AnatomicalJoint` objects defined by this preset."""
-        match self:
-            case JointPreset.ALL_POSSIBLE:
-                return self._get_all_possible_joints()
-            case JointPreset.ALL_BIOLOGICAL:
-                return self._get_all_biological_joints()
-            case JointPreset.LEGS_ONLY:
-                return self._get_leg_joints()
-            case JointPreset.LEGS_ACTIVE_ONLY:
-                return self._get_leg_active_joints()
+    @classmethod
+    def _get_connected_segment_pairs(cls):
+        return ALL_CONNECTED_SEGMENT_PAIRS
 
-    @staticmethod
-    def _get_all_possible_joints() -> list[AnatomicalJoint]:
-        return [
-            AnatomicalJoint(
-                BodySegment(parent), BodySegment(child), AxesSet(RotationAxis)
-            )
-            for parent, child in ALL_CONNECTED_SEGMENT_PAIRS
-        ]
-
-    @staticmethod
-    def _get_all_biological_joints() -> list[AnatomicalJoint]:
-        joints = JointPreset._get_all_possible_joints()
-        for joint in joints:
-            if joint.child.is_leg():
-                match joint.child.link:
-                    case "coxa":
-                        # thorax-coxa has all 3 DoFs
-                        pass
-                    case "trochanterfemur":
-                        # thorax-trochanter has pitch and roll
-                        joint.axes.remove("yaw")
-                    case _:
-                        # the rest have only pitch
-                        joint.axes.remove("roll")
-                        joint.axes.remove("yaw")
-        return joints
-
-    @staticmethod
-    def _get_leg_joints() -> list[AnatomicalJoint]:
-        return [j for j in JointPreset._get_all_biological_joints() if j.child.is_leg()]
-
-    @staticmethod
-    def _get_leg_active_joints() -> list[AnatomicalJoint]:
-        return [
-            j
-            for j in JointPreset._get_leg_joints()
-            if j.child.link not in PASSIVE_TARSAL_LINKS
-        ]
+    @classmethod
+    def _get_passive_tarsal_links(cls):
+        return PASSIVE_TARSAL_LINKS
 
 
-class ActuatedDOFPreset(Enum):
-    """Presets for which joint DoFs present in a skeleton should be actuated. The exact
-    list of DoFs therefore depends on which ones are present in the skeleton.
+class BaseActuatedDOFPreset(Enum):
+    """Base class for presets that select which joint DoFs should be actuated."""
 
-    Attributes:
-        ALL:
-            Every DoF that is present in the skeleton.
-        LEGS_ONLY:
-            Only leg DoFs in the skeleton.
-        LEGS_ACTIVE_ONLY:
-            Only active leg DoFs in the skeleton (i.e., excluding passive tarsal links).
-    """
-
-    ALL = "all"
-    LEGS_ONLY = "legs_only"
-    LEGS_ACTIVE_ONLY = "legs_active_only"
+    @classmethod
+    def _get_passive_tarsal_links(cls) -> list[str]:
+        raise NotImplementedError
 
     def filter(self, jointdofs: list[JointDOF]) -> list[JointDOF]:
         """Filter given joint DoFs according to the preset."""
-        match self:
-            case ActuatedDOFPreset.ALL:
-                return list(jointdofs)
-            case ActuatedDOFPreset.LEGS_ONLY:
-                return self._get_leg_only(jointdofs)
-            case ActuatedDOFPreset.LEGS_ACTIVE_ONLY:
-                return self._get_leg_active_only(jointdofs)
+        if self == self.__class__.ALL:
+            return list(jointdofs)
+        if self == self.__class__.LEGS_ONLY:
+            return self._get_leg_only(jointdofs)
+        if self == self.__class__.LEGS_ACTIVE_ONLY:
+            return self._get_leg_active_only(jointdofs)
+        raise ValueError(f"Unhandled actuated DoF preset: {self}")
 
     def _get_leg_only(self, jointdofs: list[JointDOF]) -> list[JointDOF]:
         return [dof for dof in jointdofs if dof.child.is_leg()]
@@ -469,92 +470,81 @@ class ActuatedDOFPreset(Enum):
         return [
             dof
             for dof in self._get_leg_only(jointdofs)
-            if dof.child.link not in PASSIVE_TARSAL_LINKS
+            if dof.child.link not in self._get_passive_tarsal_links()
         ]
 
 
-class ContactBodiesPreset(Enum):
-    """Presets for which body segments should be able to collide with the ground.
+class ActuatedDOFPreset(BaseActuatedDOFPreset):
+    """Presets for which joint DoFs present in a skeleton should be actuated."""
 
-    This is useful because excluding contacts that we do not care about (e.g.
-    wing-to-ground) can speed up simulation.
+    ALL = "all"
+    LEGS_ONLY = "legs_only"
+    LEGS_ACTIVE_ONLY = "legs_active_only"
 
-    Attributes:
-        ALL:
-            All body segments have ground contact.
-        LEGS_THORAX_ABDOMEN_HEAD:
-            Legs, thorax, abdomen, and head segments (i.e., the big ones). This is a
-            good default choice for most purposes.
-        LEGS_ONLY:
-            All leg segments.
-        TIBIA_TARSUS_ONLY:
-            Only tibia and tarsus segments (i.e., the most distal leg segments).
-    """
+    @classmethod
+    def _get_passive_tarsal_links(cls) -> list[str]:
+        return PASSIVE_TARSAL_LINKS
+
+
+class BaseContactBodiesPreset(Enum):
+    """Base class for body-segment contact presets."""
+
+    @classmethod
+    def _get_all_segments(cls) -> list[BodySegment]:
+        raise NotImplementedError
+
+    @classmethod
+    def _get_legs_thorax_abdomen_segments(cls) -> list[BodySegment]:
+        return [
+            seg
+            for seg in cls._get_all_segments()
+            if seg.is_leg() or seg.is_thorax() or seg.is_abdomen() or seg.is_head()
+        ]
+
+    @classmethod
+    def _get_leg_segments(cls) -> list[BodySegment]:
+        return [seg for seg in cls._get_all_segments() if seg.is_leg()]
+
+    @classmethod
+    def _get_tibia_tarsus_segments(cls) -> list[BodySegment]:
+        return [
+            seg
+            for seg in cls._get_leg_segments()
+            if seg.link == "tibia" or seg.link.startswith("tarsus")
+        ]
+
+    def to_body_segments_list(self) -> list[BodySegment]:
+        """Return the list of `BodySegment` objects defined by this preset."""
+        match self.value:
+            case "all":
+                return type(self)._get_all_segments()
+            case "legs_thorax_abdomen_head":
+                return type(self)._get_legs_thorax_abdomen_segments()
+            case "legs_only":
+                return type(self)._get_leg_segments()
+            case "tibia_tarsus_only":
+                return type(self)._get_tibia_tarsus_segments()
+            case _:
+                raise FlyGymInternalError(
+                    f"FlyGym internal error: unhandled ContactBodiesPreset {self}"
+                )
+
+
+class ContactBodiesPreset(BaseContactBodiesPreset):
+    """Presets for which body segments should be able to collide with the ground."""
 
     ALL = "all"
     LEGS_THORAX_ABDOMEN_HEAD = "legs_thorax_abdomen_head"
     LEGS_ONLY = "legs_only"
     TIBIA_TARSUS_ONLY = "tibia_tarsus_only"
 
-    def to_body_segments_list(self) -> list[BodySegment]:
-        """Return the list of `BodySegment` objects defined by this preset."""
-        match self:
-            case ContactBodiesPreset.ALL:
-                return ContactBodiesPreset._get_all_segments()
-            case ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD:
-                return ContactBodiesPreset._get_legs_thorax_abdomen_segments()
-            case ContactBodiesPreset.LEGS_ONLY:
-                return ContactBodiesPreset._get_leg_segments()
-            case ContactBodiesPreset.TIBIA_TARSUS_ONLY:
-                return ContactBodiesPreset._get_tibia_tarsus_segments()
-            case _:
-                raise FlyGymInternalError(
-                    f"FlyGym internal error: unhandled ContactBodiesPreset {self}"
-                )
-
-    @staticmethod
-    def _get_all_segments() -> list[BodySegment]:
+    @classmethod
+    def _get_all_segments(cls) -> list[BodySegment]:
         return [BodySegment(segname) for segname in ALL_SEGMENT_NAMES]
-
-    @staticmethod
-    def _get_legs_thorax_abdomen_segments() -> list[BodySegment]:
-        return [
-            seg
-            for seg in ContactBodiesPreset._get_all_segments()
-            if seg.is_leg() or seg.is_thorax() or seg.is_abdomen() or seg.is_head()
-        ]
-
-    @staticmethod
-    def _get_leg_segments() -> list[BodySegment]:
-        return [seg for seg in ContactBodiesPreset._get_all_segments() if seg.is_leg()]
-
-    @staticmethod
-    def _get_tibia_tarsus_segments() -> list[BodySegment]:
-        return [
-            seg
-            for seg in ContactBodiesPreset._get_leg_segments()
-            if seg.link == "tibia" or seg.link.startswith("tarsus")
-        ]
 
 
 class Skeleton:
-    """Fly skeleton defining joint structure and degrees of freedom.
-
-    The skeleton manages the hierarchical structure of body segments and their
-    connections, generating appropriate DoFs based on axis ordering.
-
-    Args:
-        axis_order:
-            Order of rotation axes (e.g., `AxisOrder.ROLL_YAW_PITCH`). lists of
-            `RotationAxis` objects or strings are also accepted (e.g.,
-            `["roll", "yaw", "pitch"]`).
-        joint_preset:
-            Preset defining which joints to include. Either this or `anatomical_joints`
-            must be provided, but not both.
-        anatomical_joints:
-            Explicit list of `AnatomicalJoint` objects defining the skeleton. Either
-            this or `joint_preset` must be provided, but not both.
-    """
+    """Fly skeleton defining joint structure and degrees of freedom."""
 
     def __init__(
         self,
@@ -601,9 +591,12 @@ class Skeleton:
                 yield jointdof
 
     def get_actuated_dofs_from_preset(
-        self, preset: ActuatedDOFPreset | str
+        self, preset: BaseActuatedDOFPreset | str
     ) -> list[JointDOF]:
-        """Given a preset of actuated DoFs, return an explicit list of `JointDOF`
-        objects that are actuated according to the preset."""
-        preset = ActuatedDOFPreset(preset)
+        """Given a preset of actuated DoFs, return an explicit list of `JointDOF`.
+        """
+        if isinstance(preset, BaseActuatedDOFPreset):
+            preset = ActuatedDOFPreset(preset.value)
+        else:
+            preset = ActuatedDOFPreset(preset)
         return preset.filter(list(self.iter_jointdofs()))

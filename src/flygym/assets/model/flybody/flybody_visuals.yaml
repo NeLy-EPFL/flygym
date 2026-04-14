@@ -1,0 +1,50 @@
+body:
+  apply_to: '*_body'
+  material:
+    shininess: '0.6'
+    rgba: ['0.674', '0.35', '0.143', '1']
+red:
+  apply_to: '*_red'
+  material:
+    shininess: '0.692'
+    rgba: ['0.8', '0.0279', '0.00154', '1']
+ocelli:
+  apply_to: '*_ocelli'
+  material:
+    shininess: '1'
+    rgba: ['0.128', '0.0488', '0.0154', '1']
+black:
+  apply_to: '*_black'
+  material:
+    shininess: '0.727'
+    rgba: ['0', '0', '0', '1']
+bristle-brown:
+  apply_to: '*_bristle-brown'
+  material:
+    shininess: '0.907'
+    rgba: ['0', '0', '0', '1']
+lower:
+  apply_to: '*_lower'
+  material:
+    shininess: '0.6'
+    rgba: ['0.799', '0.61', '0.386', '1']
+brown:
+  apply_to: '*_brown'
+  material:
+    shininess: '0.6'
+    rgba: ['0.202', '0.0782', '0.0262', '1']
+membrane:
+  apply_to: '*_membrane'
+  material:
+    specular: '0.62'
+    shininess: '0.907'
+    rgba: ['0.539', '0.686', '0.8', '0.4']
+blue:
+  apply_to: '*_blue'
+  material:
+    shininess: '0.6'
+    rgba: ['0.2', '0.3', '1', '1']
+pink:
+  apply_to: '*_pink'
+  material:
+    rgba: ['0.6', '0.3', '1', '1']

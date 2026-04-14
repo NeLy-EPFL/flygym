@@ -24,6 +24,10 @@ from flygym.anatomy import (
     ALL_CONNECTED_SEGMENT_PAIRS,
     ALL_SEGMENT_NAMES,
 )
+from flygym.assets.model.flybody.anatomy_flybody import (
+    FlybodyContactBodiesPreset,
+    FLYBODY_ALL_SEGMENT_NAMES,
+)
 
 
 # ==============================================================================
@@ -404,6 +408,23 @@ class TestContactBodiesPreset:
 
     def test_from_string(self):
         assert ContactBodiesPreset("legs_only") is ContactBodiesPreset.LEGS_ONLY
+
+
+class TestFlybodyContactBodiesPreset:
+    def test_all_returns_all_segments(self):
+        segs = FlybodyContactBodiesPreset.ALL.to_body_segments_list()
+        assert len(segs) == len(FLYBODY_ALL_SEGMENT_NAMES)
+
+    def test_legs_only_returns_only_leg_segs(self):
+        segs = FlybodyContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
+        for seg in segs:
+            assert seg.is_leg()
+
+    def test_from_string(self):
+        assert (
+            FlybodyContactBodiesPreset("legs_only")
+            is FlybodyContactBodiesPreset.LEGS_ONLY
+        )
 
 
 # ==============================================================================

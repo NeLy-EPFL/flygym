@@ -1,0 +1,45 @@
+angle_unit: radian
+axis_order: [yaw, roll, pitch]
+joint_angles:
+  c_head-c_rostrum-pitch: 0.8
+  c_rostrum-c_haustellum-pitch: 0.8
+  c_thorax-l_wing-yaw: 1.5
+  c_thorax-l_wing-roll: 0.7
+  c_thorax-l_wing-pitch: -1.0
+  c_thorax-r_wing-yaw: 1.5
+  c_thorax-r_wing-roll: 0.7
+  c_thorax-r_wing-pitch: -1.0
+  c_thorax-lf_coxa-pitch: 0.0584
+  lf_coxa-lf_trochanterfemur-pitch: -0.142
+  lf_trochanterfemur-lf_tibia-pitch: -1.29
+  lf_tibia-lf_tarsus1-pitch: -0.242
+  c_thorax-rf_coxa-pitch: 0.0584
+  rf_coxa-rf_trochanterfemur-pitch: -0.142
+  rf_trochanterfemur-rf_tibia-pitch: -1.29
+  rf_tibia-rf_tarsus1-pitch: -0.242
+  c_thorax-lm_coxa-yaw: -0.292
+  c_thorax-lm_coxa-roll: -0.742
+  c_thorax-lm_coxa-pitch: 0.408
+  lm_coxa-lm_trochanterfemur-roll: 0.608
+  lm_coxa-lm_trochanterfemur-pitch: 0.208
+  lm_trochanterfemur-lm_tibia-pitch: -1.34
+  lm_tibia-lm_tarsus1-pitch: 0.608
+  c_thorax-rm_coxa-yaw: -0.292
+  c_thorax-rm_coxa-roll: -0.742
+  c_thorax-rm_coxa-pitch: 0.408
+  rm_coxa-rm_trochanterfemur-roll: 0.608
+  rm_coxa-rm_trochanterfemur-pitch: 0.208
+  rm_trochanterfemur-rm_tibia-pitch: -1.34
+  rm_tibia-rm_tarsus1-pitch: 0.608
+  c_thorax-lh_coxa-roll: 0.00841
+  c_thorax-lh_coxa-pitch: 0.158
+  lh_coxa-lh_trochanterfemur-roll: 0.558
+  lh_coxa-lh_trochanterfemur-pitch: 0.258
+  lh_trochanterfemur-lh_tibia-pitch: -0.292
+  lh_tibia-lh_tarsus1-pitch: 0.258
+  c_thorax-rh_coxa-roll: 0.00841
+  c_thorax-rh_coxa-pitch: 0.158
+  rh_coxa-rh_trochanterfemur-roll: 0.558
+  rh_coxa-rh_trochanterfemur-pitch: 0.258
+  rh_trochanterfemur-rh_tibia-pitch: -0.292
+  rh_tibia-rh_tarsus1-pitch: 0.258

@@ -136,11 +136,14 @@ class KinematicPosePreset(Enum):
     """
 
     NEUTRAL = "neutral"
+    FLYBODY_NEUTRAL = "flybody_neutral"
 
     def get_dir(self) -> Path:
         match self:
             case KinematicPosePreset.NEUTRAL:
                 return assets_dir / "model/pose/neutral/"
+            case KinematicPosePreset.FLYBODY_NEUTRAL:
+                return assets_dir / "model/flybody/pose/neutral/"
             case _:
                 raise ValueError(f"Unsupported KinematicPosePreset: {self.value}")
 
