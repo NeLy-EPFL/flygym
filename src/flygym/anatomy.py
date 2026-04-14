@@ -47,10 +47,13 @@ __all__ = [
 class BaseRotationAxis(Enum):
     """Base enum for axis naming and coordinate conversion.
 
-    Child enums must define PITCH / ROLL / YAW members and provide `_VECTOR_BY_AXIS`.
+    Child enums must define PITCH / ROLL / YAW members and implement
+    `_vector_by_axis`.
     """
 
-    _VECTOR_BY_AXIS: dict[str, tuple[float, float, float]]
+    @classmethod
+    def _vector_by_axis(cls) -> dict[str, tuple[float, float, float]]:
+        raise NotImplementedError
 
     @classmethod
     def _missing_(cls, value):
@@ -65,9 +68,7 @@ class BaseRotationAxis(Enum):
 
     def to_vector(self) -> tuple[float, float, float]:
         """Convert rotation axis to a 3D unit vector in XYZ order."""
-        vector_by_axis = self._VECTOR_BY_AXIS
-        if isinstance(vector_by_axis, Enum):
-            vector_by_axis = vector_by_axis.value
+        vector_by_axis = type(self)._vector_by_axis()
         return vector_by_axis[self.value]
 
     def to_letter_xyz(self) -> str:
@@ -92,11 +93,13 @@ class RotationAxis(BaseRotationAxis):
     YAW = "yaw"
     Y = YAW
 
-    _VECTOR_BY_AXIS = {
-        "pitch": (0, 1, 0),
-        "roll": (0, 0, 1),
-        "yaw": (1, 0, 0),
-    }
+    @classmethod
+    def _vector_by_axis(cls) -> dict[str, tuple[float, float, float]]:
+        return {
+            "pitch": (0, 1, 0),
+            "roll": (0, 0, 1),
+            "yaw": (1, 0, 0),
+        }
 
 
 RotationAxisLike: TypeAlias = RotationAxis | str
@@ -328,6 +331,10 @@ class BodySegment:
     def is_abdomen(self) -> bool:
         """Return True if this segment belongs to the abdomen."""
         return self.link in ABDOMEN_LINKS
+
+    def is_claw(self) -> bool:
+        """Return True if this segment is a claw (i.e. tarsus5)."""
+        return self.link == "tarsus5"
 
 
 @dataclass(frozen=True)
