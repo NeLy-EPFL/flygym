@@ -18,7 +18,7 @@ actuator_type = ActuatorType.POSITION
 #actuator_position_gain = 50.0
 neutral_pose = KinematicPosePreset.FLYBODY_NEUTRAL
 bodysegs_with_ground_contact = FlybodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD
-spawn_position = (0, 0, 0.8)  # xyz in mm
+spawn_position = (0, 0, 2.0)  # xyz in mm
 spawn_rotation = Rotation3D("quat", (1, 0, 0, 0))  # wxyz in quaternion
 run_async = False  # might need to change to True if launched from a notebook
 
@@ -33,7 +33,6 @@ def main():
 	fly.add_actuators(
 		actuated_dofs_list,
 		actuator_type,
-		kp=1.0,
 				)
 	fly.add_tendons()
 	fly.add_tendon_actuators()

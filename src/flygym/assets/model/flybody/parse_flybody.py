@@ -2,9 +2,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import yaml
 
-# density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
+# density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
 units_mapping = {
     "pos": 10,
+    "size": 10,
+    "fromto": 10,
     "density": 1e-3,
     "viscosity": 1e-1,
     "forcerange": 10,
@@ -86,6 +88,32 @@ def _first_or_value(value):
     return value
 
 
+def _scale_numeric_value(value, scale):
+    if isinstance(value, (int, float)):
+        scaled_value = value * scale
+    else:
+        try:
+            scaled_value = float(value) * scale
+        except (TypeError, ValueError):
+            return value
+
+    if float(scaled_value).is_integer():
+        return str(int(scaled_value))
+    return str(scaled_value)
+
+
+def _parse_and_scale_attr(attr_name, value):
+    parsed_value = _split_whitespace_to_list(value)
+    scale = units_mapping.get(attr_name)
+    if scale is None:
+        return parsed_value
+
+    if isinstance(parsed_value, list):
+        return [_scale_numeric_value(item, scale) for item in parsed_value]
+
+    return _scale_numeric_value(parsed_value, scale)
+
+
 def _write_yaml_file(path, data):
     with open(path, "w", encoding="utf-8") as yaml_file:
         yaml.dump(
@@ -139,14 +167,14 @@ def parse_xml_to_rig(xml_path, yaml_path):
         flybody_name = body.get("name")
         flygym_name = map_flybody_bname_to_flygym_bname(flybody_name)
         selected_data = {
-            k: _split_whitespace_to_list(v)
+            k: _parse_and_scale_attr(k, v)
             for k, v in body.attrib.items()
             if k in ["pos", "quat"]
         }
         if not "pos" in selected_data:
-            selected_data["pos"] = _split_whitespace_to_list("0 0 0")
+            selected_data["pos"] = _parse_and_scale_attr("pos", "0 0 0")
         if not "quat" in selected_data:
-            selected_data["quat"] = _split_whitespace_to_list("1 0 0 0")
+            selected_data["quat"] = _parse_and_scale_attr("quat", "1 0 0 0")
 
         selected_data["geoms"] = {}
 
@@ -163,8 +191,8 @@ def parse_xml_to_rig(xml_path, yaml_path):
             )
             for default_param in ["density", "mass"]:
                 if default_param in geom_defaults:
-                    geom_selected_data[default_param] = _split_whitespace_to_list(
-                        geom_defaults[default_param]
+                    geom_selected_data[default_param] = _parse_and_scale_attr(
+                        default_param, geom_defaults[default_param]
                     )
 
             for k, v in child_geom.attrib.items():
@@ -176,7 +204,7 @@ def parse_xml_to_rig(xml_path, yaml_path):
                     # We want to keep the original name of the geom for the visuals, but we will use the flygym name for the rigging
                     continue
                 else:
-                    geom_selected_data[k] = _split_whitespace_to_list(v)
+                    geom_selected_data[k] = _parse_and_scale_attr(k, v)
 
             geom_name = child_geom.get("name") or ""
             is_wing_brown = body_childclass == "wing" and geom_name.endswith("_brown")
@@ -184,11 +212,13 @@ def parse_xml_to_rig(xml_path, yaml_path):
 
             if is_wing_membrane and wing_inertial_mass is not None:
                 # Keep inertial geoms out of rigging while transferring their mass.
-                geom_selected_data["mass"] = wing_inertial_mass
+                geom_selected_data["mass"] = _parse_and_scale_attr(
+                    "mass", wing_inertial_mass
+                )
 
             if is_wing_brown:
-                geom_selected_data["mass"] = _split_whitespace_to_list("0")
-                geom_selected_data["density"] = _split_whitespace_to_list("0")
+                geom_selected_data["mass"] = _parse_and_scale_attr("mass", "0")
+                geom_selected_data["density"] = _parse_and_scale_attr("density", "0")
 
             # If mass is explicitly/effectively set, keep mass and skip density.
             if "mass" in geom_selected_data and not is_wing_brown:
@@ -403,6 +433,13 @@ def _clean_actuator_tag_config(tag, tag_cfg, ignore_ctrlrange):
     return cleaned
 
 
+def _scale_actuator_tag_config(tag_cfg):
+    return {
+        key: _parse_and_scale_attr(key, value)
+        for key, value in tag_cfg.items()
+    }
+
+
 def _has_meaningful_local_actuation(class_name, hierarchy, actuator_tags, ignore_ctrlrange):
     class_info = hierarchy.get(class_name, {})
     local_params = class_info.get("local", {})
@@ -517,7 +554,7 @@ def parse_actuators(xml_path, yaml_path, ignore_ctrlrange=True, merge_equivalent
             )
 
             if tag_cfg:
-                group_cfg[tag] = tag_cfg
+                group_cfg[tag] = _scale_actuator_tag_config(tag_cfg)
 
         if not group_cfg:
             continue

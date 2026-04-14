@@ -21,6 +21,8 @@ option:
 # default:
 #   mesh:
 #     scale: [1000, 1000, 1000]
+statistic: 
+  extent: '5' # camera can view from closer
 
 visual:
   headlight:

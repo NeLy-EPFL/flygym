@@ -696,7 +696,7 @@ class FlybodyFly(Fly):
         - different joint definitions
         
     """
-    SCALE = 0.1  # The flybody XML is already in mm units, so no scaling is needed
+    SCALE = 1.0  # The flybody XML is already in mm units, so no scaling is needed
     # BUT in the original xml meshes are scaled by 0.1
     # Therefore we need to adjust all other length-realteed quantities by 10 to keep units consitant.
     # density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
@@ -1358,7 +1358,7 @@ class FlybodyFly(Fly):
             if wing_bodyseg in self.bodyseg_to_mjcfbody:
                 mjcf_body = self.bodyseg_to_mjcfbody[wing_bodyseg]
                 bquat = R.from_quat(mjcf_body.quat, scalar_first=True)
-                correction_quat = R.from_euler("xyz", [0, 0, -88 if side == "r" else 88], degrees=True)
+                correction_quat = R.from_euler("xyz", [0, 0, -89 if side == "r" else 89], degrees=True)
                 new_quat = (correction_quat * bquat).as_quat(scalar_first=True)
                 mjcf_body.quat = tuple(new_quat)
             else:
