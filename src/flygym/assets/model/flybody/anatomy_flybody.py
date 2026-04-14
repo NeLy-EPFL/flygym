@@ -59,11 +59,13 @@ class FlybodyRotationAxis(BaseRotationAxis):
     YAW = "yaw"
     Y = YAW
 
-    _VECTOR_BY_AXIS = {
-        "pitch": (1, 0, 0),
-        "roll": (0, 1, 0),
-        "yaw": (0, 0, 1),
-    }
+    @classmethod
+    def _vector_by_axis(cls) -> dict[str, tuple[float, float, float]]:
+        return {
+            "pitch": (1, 0, 0),
+            "roll": (0, 1, 0),
+            "yaw": (0, 0, 1),
+        }
 
 
 class WingFlybodyRotationAxis(BaseRotationAxis):
@@ -80,11 +82,13 @@ class WingFlybodyRotationAxis(BaseRotationAxis):
     YAW = "yaw"
     Y = YAW
 
-    _VECTOR_BY_AXIS = {
-        "pitch": (0, 1, 0),
-        "roll": (1, 0, 0),
-        "yaw": (0, 0, 1),
-    }
+    @classmethod
+    def _vector_by_axis(cls) -> dict[str, tuple[float, float, float]]:
+        return {
+            "pitch": (0, 1, 0),
+            "roll": (1, 0, 0),
+            "yaw": (0, 0, 1),
+        }
 
 
 class FlybodyAxesSet(AxesSet):
@@ -249,6 +253,10 @@ class FlybodyBodySegment(BodySegment):
     def is_abdomen(self) -> bool:
         """Return True if this segment belongs to the abdomen."""
         return self.link in FLYBODY_ABDOMEN_LINKS
+
+    def is_claw(self) -> bool:
+        """Return True if this segment is a claw."""
+        return self.link == "claw"
     
 class FlybodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""

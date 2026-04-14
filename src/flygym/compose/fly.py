@@ -231,7 +231,7 @@ class Fly(BaseCompositionElement):
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
     
-    def get_pose_lookup(self, neutral_pose: KinematicPose | KinematicPosePreset | dict[str, float] | None) -> dict[str, float]:
+    def get_pose_lookup(self, neutral_pose: KinematicPose | KinematicPosePreset | None) -> dict[str, float]:
         """Get a lookup dictionary mapping joint DOF names to neutral angles for a given
         neutral pose."""
 
@@ -240,8 +240,6 @@ class Fly(BaseCompositionElement):
 
         if neutral_pose is None:
             return {}
-        elif isinstance(neutral_pose, dict):
-            return neutral_pose
         elif isinstance(neutral_pose, KinematicPose):
             return neutral_pose.joint_angles_lookup_rad
         elif isinstance(neutral_pose, KinematicPosePreset):
@@ -584,7 +582,7 @@ class Fly(BaseCompositionElement):
         for bodyseg, mjcf_elements in self.bodyseg_to_mjcfgeom.items():
             for mjcf_element in mjcf_elements:
                 if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
-                    bodyseg.is_leg() and bodyseg.link == "tarsus5"
+                    bodyseg.is_claw() and geom_fitting_option == GeomFittingOption.CLAWS_TO_CAPSULES
                 ):
                     mjcf_element.type = "capsule"
 
@@ -1169,7 +1167,7 @@ class FlybodyFly(Fly):
                 has_timeconst = "timeconst" in kwargs
                 warning_str = f"WARNING: actuator type is POSITION but "
                 has_missing_param = False
-                for param, has_it in [("kp", has_kp), ("kv", has_kv), ("timeconst", has_timeconst)]:
+                for param, has_it in [("kp", has_kp)]:#, ("kv", has_kv), ("timeconst", has_timeconst)]:
                     if not has_it:
                         warning_str += f"{param} not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
                         has_missing_param = True
@@ -1202,7 +1200,7 @@ class FlybodyFly(Fly):
         self, gain: float | dict[str, float] = 0.985, add_labrum: bool = True,
         labrum_gain: float = 1.0
         ) -> dict[str, mjcf.Element]:
-        """Add adhesion actuators to the tarsus5 segments of all legs.
+        """Add adhesion actuators to the claw segments of all legs and optionally to the labrum.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
         surfaces. The control input per leg ranges from 1 to 100.
@@ -1358,7 +1356,7 @@ class FlybodyFly(Fly):
             if wing_bodyseg in self.bodyseg_to_mjcfbody:
                 mjcf_body = self.bodyseg_to_mjcfbody[wing_bodyseg]
                 bquat = R.from_quat(mjcf_body.quat, scalar_first=True)
-                correction_quat = R.from_euler("xyz", [0, 0, -89 if side == "r" else 89], degrees=True)
+                correction_quat = R.from_euler("xyz", [0, 0, -90 if side == "r" else 90], degrees=True)
                 new_quat = (correction_quat * bquat).as_quat(scalar_first=True)
                 mjcf_body.quat = tuple(new_quat)
             else:

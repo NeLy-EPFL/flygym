@@ -7,6 +7,7 @@ assets_dir = _Path(str(_importlib_resources_files("flygym") / "assets"))
 
 from . import anatomy
 from . import compose
+from . import flybody
 from .simulation import Simulation
 from .rendering import Renderer, launch_interactive_viewer, preview_model
 
@@ -14,6 +15,7 @@ __all__ = [
     "assets_dir",
     "anatomy",
     "compose",
+    "flybody",
     "Simulation",
     "Renderer",
     "launch_interactive_viewer",
