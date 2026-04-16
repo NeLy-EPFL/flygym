@@ -322,6 +322,14 @@ class JointDOF:
     child: BodySegment
     axis: RotationAxis
 
+    def __post_init__(self):
+        if isinstance(self.parent, str):
+            self.parent = BodySegment(self.parent)
+        if isinstance(self.child, str):
+            self.child = BodySegment(self.child)
+        if isinstance(self.axis, str):
+            self.axis = RotationAxis(self.axis)
+
     @property
     def name(self) -> str:
         """Unique name following the pattern ``{parent}-{child}-{axis}``."""
@@ -351,6 +359,14 @@ class AnatomicalJoint:
     child: BodySegment
     # Rotation axes that exist at this joint. Defaults to all three.
     axes: AxesSet = field(default_factory=lambda: AxesSet(RotationAxis))
+    
+    def __post_init__(self):
+        if isinstance(self.parent, str):
+            self.parent = BodySegment(self.parent)
+        if isinstance(self.child, str):
+            self.child = BodySegment(self.child)
+        if not isinstance(self.axes, AxesSet):
+            self.axes = AxesSet(self.axes)
 
     def iter_dofs(self, axis_order: AxisOrder) -> Iterator[JointDOF]:
         """Iterate through the `JointDOF`s at to this anatomical joint in the specified
