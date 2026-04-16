@@ -30,4 +30,5 @@
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
+* [Changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md)
 * [Citing NeuroMechFly](citation.md)
