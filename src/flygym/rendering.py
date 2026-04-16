@@ -10,6 +10,7 @@ import mediapy
 import imageio.v3 as iio
 import numpy as np
 
+
 __all__ = ["Renderer", "launch_interactive_viewer", "preview_model"]
 
 
@@ -42,13 +43,22 @@ class Renderer:
         output_fps: int = 25,
         buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
+        render_depth: bool = False,
+        render_segmentation: bool = False,
         **kwargs: Any,
     ):
         self.mj_model = mj_model
         self.camera_res = camera_res
         nrows, ncols = camera_res
         self.buffer_frames = buffer_frames
+        
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+        self.render_depth = render_depth
+        if self.render_depth:
+            self.mj_renderer.enable_depth_rendering()
+        self.render_segmentation = render_segmentation
+        if self.render_segmentation:
+            self.mj_renderer.enable_segmentation_rendering()
 
         if scene_option is None:
             self.scene_option = mj.MjvOption()
@@ -76,7 +86,35 @@ class Renderer:
         if self.buffer_frames:
             self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
         else:
-            self.frames = None
+            self.frames = None    
+
+        
+    def get_xmat_for_camera(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
+        """Get the camera's orientation matrix (xmat) from the current MJData."""
+        internal_cam_id, _ = self._resolve_camera_id_and_name(camera)
+        # update the scene to get the latest camera position and orientation
+        self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
+        pos = mj_data.cam_xpos[internal_cam_id]
+        rot = mj_data.cam_xmat[internal_cam_id].reshape(3, 3)
+        fov = mj_model.cam_fovy[internal_cam_id]
+        width, height = self.camera_res
+
+
+        # Translation matrix (4x4).
+        translation = np.eye(4)
+        translation[0:3, 3] = -pos
+        # Rotation matrix (4x4).
+        rotation = np.eye(4)
+        rotation[0:3, 0:3] = rot
+        # Focal transformation matrix (3x4).
+        focal_scaling = (1./np.tan(np.deg2rad(fov)/2)) * height / 2.0
+        focal = np.diag([-focal_scaling, focal_scaling, 1.0, 0])[0:3, :]
+        # Image matrix (3x3).
+        image = np.eye(3)
+        image[0, 2] = (width - 1) / 2.0
+        image[1, 2] = (height - 1) / 2.0
+
+        return image @ focal @ rotation @ translation
 
     def render_as_needed(self, mj_data: mj.MjData) -> bool:
         """Render frames for all cameras if enough time has elapsed.
@@ -95,6 +133,11 @@ class Renderer:
                 )
                 frame = self.mj_renderer.render()
                 if self.buffer_frames:
+                    if self.render_segmentation:
+                        # segmentation renders 2 channels one is body the other is fly vs background
+                        frame = frame[:, :, 0]
+                        assert np.all(frame<=255), "More than 255 bodies not supported"
+                        frame = frame.astype(np.uint8)
                     self.frames[cam_name].append(frame)
             return True
         else:
@@ -136,6 +179,8 @@ class Renderer:
         camera_names = self._normalize_camera_spec(camera)
 
         for cam_name in camera_names:
+            if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
+                self._depth_frames_2uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
@@ -157,19 +202,41 @@ class Renderer:
         path_by_camera = self._resolve_output_paths(output_path)
 
         for cam_name, path in path_by_camera.items():
+            if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
+                self._depth_frames_2uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
 
             path.parent.mkdir(parents=True, exist_ok=True)
+
             iio.imwrite(
                 path,
                 frames,
                 fps=self.output_fps,
                 codec="libx264",
                 quality=8,
-                **kwargs,
+                **kwargs
             )
+    
+    def _depth_frames_2uint8(self, cam_name: str) -> None:
+        """
+        Convert depth frames from uint32 to uint8. 
+        This is necessary because depth frames are rendered as 32-bit floats, but
+        we want to save them as 8-bit videos.
+        We will find the max value (background) and scale from the second biggest value to the min value (0-255)
+        """
+
+        max_val = np.max(self.frames[cam_name][0]) # first frame should contain background
+        no_max_frame = self.frames[cam_name][0][self.frames[cam_name][0] != max_val] # not perfect if suddenly becomes much more distant in next frames more than 0.2
+        max_no_max_val = np.max(no_max_frame)
+        min_val = np.min(self.frames[cam_name])
+        print(f"Depth frame scaling for camera '{cam_name}': max={max_val}, second_max={max_no_max_val}, min={min_val}")
+        for i in range(len(self.frames[cam_name])):
+            frame = self.frames[cam_name][i]
+            frame_norm = np.clip((frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1)
+            self.frames[cam_name][i] = (frame_norm*255).astype(np.uint8)
+    
 
     def _normalize_camera_spec(
         self,
@@ -231,7 +298,7 @@ class Renderer:
                 _, cam_name = self._resolve_camera_id_and_name(cam_spec)
                 if cam_name not in self._cameras_names2id:
                     raise ValueError(
-                        f"Camera '{cam_name}' in output_path is not available. "
+                        f"Cqamera '{cam_name}' in output_path is not available. "
                         f"Available cameras: {list(self._cameras_names2id.keys())}"
                     )
                 result[cam_name] = Path(path)
@@ -349,3 +416,4 @@ def preview_model(
             renderer.show_in_notebook()
         if output_path:
             renderer.save_video(output_path)
+
