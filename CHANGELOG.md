@@ -4,6 +4,7 @@
 ### Bug fixes
 - Include sample Spotlight data in shipped `flygym_demo` build ([#259](https://github.com/NeLy-EPFL/flygym/pull/259)).
 - Fix dimension check for 3D rotations specified in `axisangle` format.
+- Fix bugs with creating `AnatomicalJoint` and `JointDOF` objects from strings.
 
 ### Housekeeping
 - Add changelog and correct info in LICENSE
