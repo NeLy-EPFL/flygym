@@ -126,7 +126,7 @@ class TestRotation3D:
         assert rot.format == "euler"
 
     def test_axisangle_valid(self):
-        rot = Rotation3D("axisangle", (0, 0, 1))
+        rot = Rotation3D("axisangle", (0, 0, 1, 1))
         assert rot.format == "axisangle"
 
     def test_xyaxes_valid(self):
@@ -192,8 +192,8 @@ class TestFlyGymInternalError:
 
 class TestRotation3DAsKwargs:
     def test_axisangle(self):
-        rot = Rotation3D("axisangle", (0, 0, 1))
-        assert rot.as_kwargs() == {"axisangle": (0, 0, 1)}
+        rot = Rotation3D("axisangle", (0, 0, 1, 1))
+        assert rot.as_kwargs() == {"axisangle": (0, 0, 1, 1)}
 
     def test_xyaxes(self):
         rot = Rotation3D("xyaxes", (1, 0, 0, 0, 1, 0))
@@ -207,7 +207,7 @@ class TestRotation3DAsKwargs:
         for fmt, vals in [
             ("quat", (1, 0, 0, 0)),
             ("euler", (0.1, 0.2, 0.3)),
-            ("axisangle", (0, 1, 0)),
+            ("axisangle", (0, 0, 1, 1)),
             ("xyaxes", (1, 0, 0, 0, 1, 0)),
             ("zaxis", (0, 1, 0)),
         ]:
