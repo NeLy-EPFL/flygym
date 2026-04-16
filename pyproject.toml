@@ -99,3 +99,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 flygym = ["assets/**"]
+flygym_demo = ["spotlight_data/assets/**"]
