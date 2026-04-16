@@ -4,14 +4,6 @@ axis_order:
 - roll
 - yaw
 joint_angles:
-  c_head-l_pedicel-pitch: 5
-  c_head-l_pedicel-roll: -15
-  c_head-l_pedicel-yaw: 51
-  c_thorax-l_haltere-roll: 35
-  c_thorax-l_haltere-yaw: 15
-  c_thorax-l_wing-pitch: -3
-  c_thorax-l_wing-roll: 10
-  c_thorax-l_wing-yaw: -7
   c_thorax-lf_coxa-pitch: 28
   c_thorax-lf_coxa-roll: 26
   c_thorax-lf_coxa-yaw: -18
@@ -21,7 +13,6 @@ joint_angles:
   c_thorax-lm_coxa-pitch: -106
   c_thorax-lm_coxa-roll: 101
   c_thorax-lm_coxa-yaw: 113
-  l_funiculus-l_arista-yaw: -45
   lf_coxa-lf_trochanterfemur-pitch: -139
   lf_coxa-lf_trochanterfemur-roll: -15
   lf_tarsus1-lf_tarsus2-pitch: -5
