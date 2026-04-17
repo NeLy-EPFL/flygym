@@ -6,11 +6,15 @@
 - Fix dimension check for 3D rotations specified in `axisangle` format.
 - Fix bugs with creating `AnatomicalJoint` and `JointDOF` objects from strings.
 
+### Additions
+- New API to add sites to fly model and read out their positions
+- Additional tutorial: _1bis. Advanced model composition_
+
 ### Housekeeping
 - Add changelog and correct info in LICENSE
 
 ### Contributors
-@djsamseng, @sibocw
+@sibocw, @djsamseng
 
 ## Version 2.0.0 (2026–04–02)
 > [!CAUTION]
