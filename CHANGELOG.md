@@ -29,13 +29,13 @@
 
 > [!CAUTION]
 > ### API-breaking changes
-> * Enhance camera logic. See the `Camera API reference <api_ref/camera.html>`_ for details.
-> * Use the `FlyVis package <https://github.com/TuragaLab/flyvis>`_ as `published on PyPI <https://pypi.org/project/flyvis/>`_. Users should now use ``flyvis`` instead of ``flyvision`` as module name.
+> * Enhance camera logic. See the [Camera API reference](api_ref/camera.html) for details.
+> * Use the [FlyVis package](https://github.com/TuragaLab/flyvis) as [published on PyPI](https://pypi.org/project/flyvis/). Users should now use ``flyvis`` instead of ``flyvision`` as module name.
 
 ### Other changes
 * Add NeuroMechFly game for outreach (used at EPFL Scientastic! Days, etc.).
-* Transition from ``setup.py`` to ``pyproject.toml``, specifically using `Poetry <https://python-poetry.org/>`_ as the build backend. Users can now install FlyGym with the exact versions of dependencies used by the developers by running ``poetry install`` from the root directory. This will create a virtual environment with the correct dependencies as specified in the included ``poetry.lock`` file, which is version-tracked as a part of the FlyGym Github repository.
-* Add `VS Code devcontainer <https://code.visualstudio.com/docs/devcontainers/containers>`_ support.
+* Transition from ``setup.py`` to ``pyproject.toml``, specifically using [Poetry](https://python-poetry.org/) as the build backend. Users can now install FlyGym with the exact versions of dependencies used by the developers by running ``poetry install`` from the root directory. This will create a virtual environment with the correct dependencies as specified in the included ``poetry.lock`` file, which is version-tracked as a part of the FlyGym Github repository.
+* Add [VS Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) support.
 * Remove support for Python 3.9.
    
 ## Version 1.1.0
@@ -44,7 +44,7 @@
 * Strictly fixed the required MuJoCo version to 3.2.3, and dm_control version to 1.0.23. This is to prevent API-breaking changes in future versions of these libraries from affecting FlyGym. FlyGym maintainers will periodically check for compatibility with newer versions of these libraries.
 * Changed flip detection method: Previously, flips are reported when all legs reliably lose contact with the ground. Now, we simply check if the z component of the "up" cardinal vector is negative. Additionally, the ``detect_flip`` parameter of ``Fly`` is now deprecated; flips are always detect and reported.
 * Allowed different sets of DoFs to be monitored vs. actuated. Previously, the two sets are always the same.
-* From this version onwards, we will use `EffVer <https://jacobtomlinson.dev/effver/>`_ as the versioning policy. The version number will communicate how much effort we expect a user will need to spend to adopt the new version. While we previously tried to adhere to the stricter `SemVer <https://semver.org/>`_, we found that it was not effective because many core dependencies of FlyGym (e.g., MuJoCo, NumPy, and Python itself) do not use SemVer.
+* From this version onwards, we will use [EffVer](https://jacobtomlinson.dev/effver/) as the versioning policy. The version number will communicate how much effort we expect a user will need to spend to adopt the new version. While we previously tried to adhere to the stricter [SemVer](https://semver.org/), we found that it was not effective because many core dependencies of FlyGym (e.g., MuJoCo, NumPy, and Python itself) do not use SemVer.
 
 ## Version 1.0.1
 Fixed minor bugs related to the set of DoFs in the predefined poses, and to rendering at extremely high frequencies. Fixed outdated class names and links in the docs. In addition, contact sensor placements used by the hybrid turning controller are now added to the ``preprogrammed`` module.

@@ -64,7 +64,7 @@ class GeomFittingOption(Enum):
 
 class ActuatorType(Enum):
     """Actuator types supported by MuJoCo.
-    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
     for details on each type."""
 
     MOTOR = "motor"
@@ -249,7 +249,7 @@ class Fly(BaseCompositionElement):
                 small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
                 for details on supported attributes.
 
         Returns:
@@ -330,7 +330,7 @@ class Fly(BaseCompositionElement):
             **kwargs:
                 Additional arguments passed to MJCF actuator creation (e.g., kp for
                 position actuators, kv for velocity actuators). See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
                 for details on supported attributes.
 
         Returns:
@@ -400,14 +400,6 @@ class Fly(BaseCompositionElement):
                 name=joint.name,
                 pos=(0, 0, 0),  # origin of child body is defined at joint to parent
             )
-            # child_body_element.add(
-            #     "geom",
-            #     name=f"{joint.name}_sitegeom",
-            #     type="sphere",
-            #     size=(0.05,),
-            #     rgba=(1, 0, 0, 1),
-            #     density=0,
-            # )
             return_dict[joint] = site
         self.anatomicaljoint_to_mjcfsites.update(return_dict)
         return return_dict
@@ -494,8 +486,7 @@ class Fly(BaseCompositionElement):
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
             **kwargs: Additional attributes passed to the MJCF camera element. See
-                `MuJoCo XML reference
-                <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_.
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera).
 
         Returns:
             The created MJCF camera element.
