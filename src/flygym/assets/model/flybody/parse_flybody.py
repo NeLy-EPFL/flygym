@@ -39,6 +39,8 @@ def map_flybody_bname_to_flygym_bname(bname):
         case 3:
             if s_bname[0] == "tarsus":
                 s_bname[0] = "tarsus1"
+            elif s_bname[0] == "claw":
+                s_bname[0] = "tarsus5"
             if s_bname[1] in leg_mapping and s_bname[2] in side_mapping:
                 flygym_side = side_mapping[s_bname[2]]
                 flygym_leg = leg_mapping[s_bname[1]]
@@ -46,10 +48,14 @@ def map_flybody_bname_to_flygym_bname(bname):
             else:
                 raise ValueError(f"Unexpected segmented name: {s_bname}")
         case 4:
-            if s_bname[2] in leg_mapping and s_bname[3] in side_mapping and s_bname[1] == "claw":
+            if (
+                s_bname[2] in leg_mapping
+                and s_bname[3] in side_mapping
+                and s_bname[1] in {"claw", "tarsus5"}
+            ):
                 flygym_side = side_mapping[s_bname[3]]
                 flygym_leg = leg_mapping[s_bname[2]]
-                return f"{flygym_side}{flygym_leg}_{s_bname[1]}"
+                return f"{flygym_side}{flygym_leg}_tarsus5"
             elif s_bname[1] in leg_mapping and s_bname[2].isdigit() and s_bname[3] in side_mapping:
                 flygym_side = side_mapping[s_bname[3]]
                 flygym_leg = leg_mapping[s_bname[1]]
@@ -136,9 +142,40 @@ def _is_excluded_geom(geom_name):
     )
 
 
+meshes_suffixes = [
+    "collision", "collision2", "black", "red", "ocelli",
+    "bristle-brown", "lower", "membrane", "brown", "body"
+]
+
+
+def _extract_mesh_base_and_suffix(mesh_name):
+    bname = mesh_name
+    for suffix in meshes_suffixes:
+        if suffix in bname:
+            bname = bname.replace(f"_{suffix}", "")
+
+    if bname == mesh_name:
+        full_suffix = "body"
+    else:
+        full_suffix = mesh_name.replace(f"{bname}_", "")
+
+    return bname, full_suffix
+
+
+def collect_segment_suffixes(mesh_names):
+    all_segment_suffixes = {}
+    for mesh_name in mesh_names:
+        bname, full_suffix = _extract_mesh_base_and_suffix(mesh_name)
+        flygym_name = map_flybody_bname_to_flygym_bname(bname)
+        all_segment_suffixes.setdefault(flygym_name, set()).add(full_suffix)
+
+    return {
+        segment: sorted(suffixes)
+        for segment, suffixes in all_segment_suffixes.items()
+    }
+
+
 def parse_xml_to_rig(xml_path, yaml_path):
-    all_geom_suffixes = {}
-    
     tree = ET.parse(xml_path)
     root = tree.getroot()
     default_lookup = build_effective_default_lookup(root)
@@ -161,6 +198,7 @@ def parse_xml_to_rig(xml_path, yaml_path):
         return resolved_geom_defaults
 
     rigging_parsed = {}
+    all_geom_mesh_names = []
 
     def parse_body_recursive(body, inherited_childclass):
         body_childclass = body.get("childclass", inherited_childclass)
@@ -199,14 +237,14 @@ def parse_xml_to_rig(xml_path, yaml_path):
                 # if k in ["pos", "quat", "type", "size", "fromto"]:
                 #     geom_selected_data[k] = v
                 if k == "mesh":
-                    geom_selected_data[k] = translate_mesh_name(v, all_geom_suffixes)
+                    geom_selected_data[k] = translate_mesh_name(v)
                 elif k == "name" or k == "material" or "class" in k:
-                    # We want to keep the original name of the geom for the visuals, but we will use the flygym name for the rigging
+                    # name is in the yaml as the key
                     continue
                 else:
                     geom_selected_data[k] = _parse_and_scale_attr(k, v)
 
-            geom_name = child_geom.get("name") or ""
+            geom_name = child_geom.get("mesh") or ""
             is_wing_brown = body_childclass == "wing" and geom_name.endswith("_brown")
             is_wing_membrane = body_childclass == "wing" and geom_name.endswith("_membrane")
 
@@ -224,7 +262,10 @@ def parse_xml_to_rig(xml_path, yaml_path):
             if "mass" in geom_selected_data and not is_wing_brown:
                 geom_selected_data.pop("density", None)
 
-            selected_data["geoms"][child_geom.get("name")] = geom_selected_data
+            all_geom_mesh_names.append(geom_name)
+            
+            flygym_geom_name = translate_mesh_name(geom_name)
+            selected_data["geoms"][flygym_geom_name] = geom_selected_data
 
         rigging_parsed[flygym_name] = selected_data
         rigging_parsed[flygym_name]["flybody_name"] = flybody_name
@@ -240,26 +281,12 @@ def parse_xml_to_rig(xml_path, yaml_path):
 
     _write_yaml_file(yaml_path, rigging_parsed)
 
+    all_geom_suffixes = collect_segment_suffixes(all_geom_mesh_names)
     _write_yaml_file(yaml_path.with_name("flybody_all_geom_suffixes.yaml"), all_geom_suffixes)
 
-def translate_mesh_name(mesh_name, all_segment_suffixes):
-    meshes_suffixes = [ 
-        "collision", "collision2", "black", "red", "ocelli",
-        "bristle-brown", "lower", "membrane", "brown", "body"
-    ]
-    bname = mesh_name
-    for suffix in meshes_suffixes:
-        if suffix in bname:
-            bname = bname.replace(f"_{suffix}", "")
-    if bname == mesh_name:
-        full_suffix = "body"
-    else:
-        full_suffix = mesh_name.replace(f"{bname}_", "")
+def translate_mesh_name(mesh_name):
+    bname, full_suffix = _extract_mesh_base_and_suffix(mesh_name)
     flygym_name = map_flybody_bname_to_flygym_bname(bname)
-    if not flygym_name in all_segment_suffixes:
-        all_segment_suffixes[flygym_name] = [full_suffix]
-    else:
-        all_segment_suffixes[flygym_name].append(full_suffix)
     new_mesh_name = f"{flygym_name}_{full_suffix}" if full_suffix else flygym_name
     return new_mesh_name
 
@@ -271,7 +298,7 @@ def parse_meshes(flybody_mesh_dir, mesh_dir):
         existing_mesh.unlink()
     for mesh_path in flybody_mesh_dir.glob("*.obj"):
         mesh_name = mesh_path.stem
-        new_mesh_name = translate_mesh_name(mesh_name, {})
+        new_mesh_name = translate_mesh_name(mesh_name)
         if "None" in new_mesh_name:
             print(f"Warning: mesh {mesh_name} has no suffix, skipping")
             continue
@@ -754,7 +781,7 @@ if __name__ == "__main__":
     parse_actuators(flybody_xml, actuators_flybody_yaml)
     
     flybody_meshes_dir = flybody_xml.parent / "assets"
-    meshes_out_dir = out_dir / "meshes"
+    meshes_out_dir = out_dir / "meshes/fullsize"
     parse_meshes(flybody_meshes_dir, meshes_out_dir)
     
     joint_yaml_path = out_dir / "flybody_joints.yaml"
