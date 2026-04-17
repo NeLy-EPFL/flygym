@@ -123,7 +123,7 @@ class Rotation3D:
     def __post_init__(self):
         expected_dims = {
             "quat": 4,
-            "axisangle": 3,
+            "axisangle": 4,
             "xyaxes": 6,
             "zaxis": 3,
             "euler": 3,
