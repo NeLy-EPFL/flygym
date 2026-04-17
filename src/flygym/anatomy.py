@@ -359,7 +359,7 @@ class AnatomicalJoint:
     child: BodySegment
     # Rotation axes that exist at this joint. Defaults to all three.
     axes: AxesSet = field(default_factory=lambda: AxesSet(RotationAxis))
-    
+
     def __post_init__(self):
         if isinstance(self.parent, str):
             self.parent = BodySegment(self.parent)
