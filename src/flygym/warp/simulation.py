@@ -158,6 +158,28 @@ class GPUSimulation(Simulation):
         )
         return dst
 
+    @override
+    def get_site_positions(
+        self, fly_name: str
+    ) -> Float[wp.array, "n_worlds n_sites 3"]:
+        """Get global anatomical-joint site positions for all parallel worlds.
+
+        Args:
+            fly_name: Name of the fly.
+
+        Returns:
+            Warp array of shape ``(n_worlds, n_sites, 3)`` in mm, ordered as in
+            ``fly.get_sites_order()``.
+        """
+        indices = self._wp_internal_siteids_by_fly[fly_name]
+        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        wp.launch(
+            wp_gather_indexed_rows_vec3f,
+            dim=(self.n_worlds, indices.size),
+            inputs=[self.mjw_data.site_xpos, dst, indices],
+        )
+        return dst
+
     @property  # type: ignore[override]
     def time(self) -> float:
         """Current simulation time in seconds (from world 0)."""
@@ -338,7 +360,7 @@ class GPUSimulation(Simulation):
             n_frames_rendered=self._frames_rendered,
             total_physics_time_ns=self._total_physics_time_ns,
             total_render_time_ns=self._total_render_time_ns,
-            timestep=self.mj_model.opt.timestep,
+            timestep=self.timestep,
             n_worlds=self.n_worlds,
             n_worlds_rendered=len(self.renderer.world_ids),
             show_in_notebook=show_in_notebook,
@@ -383,6 +405,14 @@ class GPUSimulation(Simulation):
             for k, v in self._intern_adhesionactuatorids_by_fly.items()
         }
 
+    @override
+    def _map_internal_site_ids(self) -> None:
+        super()._map_internal_site_ids()
+        self._wp_internal_siteids_by_fly = {
+            k: wp.array(v, dtype=wp.int32)
+            for k, v in self._internal_siteids_by_fly.items()
+        }
+
     def _mj_structs_to_mjw_structs(self) -> tuple[mjw.Model, mjw.Data]:
         mjw_model = mjw.put_model(self.mj_model)
         mjw_data = mjw.put_data(
@@ -416,3 +446,8 @@ class GPUSimulation(Simulation):
             is_modified = True
 
         return is_modified
+
+    @property
+    def timestep(self) -> float:
+        """Simulation timestep in seconds."""
+        return self.mj_model.opt.timestep

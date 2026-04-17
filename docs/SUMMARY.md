@@ -4,6 +4,7 @@
 * [Interactive Viewer](interactive.md)
 * Tutorials
     * [1. Composing models and scenes](tutorials/1_composing_models_and_scenes.ipynb)
+    * [1bis. Advanced model composition](tutorials/1bis_advanced_model_composition.ipynb)
     * [2. Replaying experimental recordings](tutorials/2_replaying_experimental_recordings.ipynb)
     * [3. GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb)
 * API Reference
@@ -30,4 +31,5 @@
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
+* [Changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md)
 * [Citing NeuroMechFly](citation.md)

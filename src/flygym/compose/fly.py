@@ -11,6 +11,7 @@ import yaml
 from flygym import assets_dir
 from flygym.anatomy import (
     BodySegment,
+    AnatomicalJoint,
     JointDOF,
     Skeleton,
     RotationAxis,
@@ -63,7 +64,7 @@ class GeomFittingOption(Enum):
 
 class ActuatorType(Enum):
     """Actuator types supported by MuJoCo.
-    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
     for details on each type."""
 
     MOTOR = "motor"
@@ -116,6 +117,8 @@ class Fly(BaseCompositionElement):
             Maps body segments to MJCF geometry elements.
         jointdof_to_mjcfjoint:
             Maps joint DOFs to MJCF joint elements.
+        anatomicaljoint_to_mjcfsites:
+            Maps anatomical joints to MJCF site elements.
         jointdof_to_mjcfactuator_by_type:
             Maps actuator type to a further dictionary, which maps joint DOFs to MJCF
             actuator elements (only if the actuator exists).
@@ -155,6 +158,7 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
         self.leg_to_adhesionactuator = {}
+        self.anatomicaljoint_to_mjcfsites = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
 
@@ -206,6 +210,14 @@ class Fly(BaseCompositionElement):
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
 
+    def get_sites_order(self) -> list[AnatomicalJoint]:
+        """Get the canonical order of anatomical joints with associated MJCF sites.
+
+        This is the order used by simulation site-state readout methods such as
+        ``Simulation.get_site_positions``.
+        """
+        return list(self.anatomicaljoint_to_mjcfsites.keys())
+
     def add_joints(
         self,
         skeleton: Skeleton,
@@ -237,7 +249,7 @@ class Fly(BaseCompositionElement):
                 small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
                 for details on supported attributes.
 
         Returns:
@@ -318,7 +330,7 @@ class Fly(BaseCompositionElement):
             **kwargs:
                 Additional arguments passed to MJCF actuator creation (e.g., kp for
                 position actuators, kv for velocity actuators). See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
                 for details on supported attributes.
 
         Returns:
@@ -354,6 +366,42 @@ class Fly(BaseCompositionElement):
             return_dict[jointdof] = actuator
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
+        return return_dict
+
+    def add_joint_sites(
+        self, anatomical_joints: list[AnatomicalJoint]
+    ) -> dict[AnatomicalJoint, mjcf.Element]:
+        """Add MJCF sites at the origins of selected anatomical joints.
+
+        Each site is placed at ``(0, 0, 0)`` in the child body frame. Since body
+        origins are defined at their parent-child joint locations in this model,
+        these sites track anatomical joint positions in world coordinates during
+        simulation.
+
+        Args:
+            anatomical_joints: Anatomical joints to materialize as MJCF sites.
+
+        Returns:
+            Dictionary mapping each anatomical joint to its created MJCF site
+            element (same entries added into ``self.anatomicaljoint_to_mjcfsites``).
+
+        Raises:
+            ValueError: If a site for a requested anatomical joint already exists.
+        """
+        return_dict = {}
+        for joint in anatomical_joints:
+            if joint in self.anatomicaljoint_to_mjcfsites:
+                raise ValueError(
+                    f"A site has already been added for anatomical joint '{joint.name}'."
+                )
+            child_body_element = self.bodyseg_to_mjcfbody[joint.child]
+            site = child_body_element.add(
+                "site",
+                name=joint.name,
+                pos=(0, 0, 0),  # origin of child body is defined at joint to parent
+            )
+            return_dict[joint] = site
+        self.anatomicaljoint_to_mjcfsites.update(return_dict)
         return return_dict
 
     def add_leg_adhesion(
@@ -438,8 +486,7 @@ class Fly(BaseCompositionElement):
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
             **kwargs: Additional attributes passed to the MJCF camera element. See
-                `MuJoCo XML reference
-                <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_.
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera).
 
         Returns:
             The created MJCF camera element.
