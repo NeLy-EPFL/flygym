@@ -2,7 +2,7 @@
 
 !!! note "Summary"
 
-    The older FlyGym 1.x.x API is migrated to [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium).
+    The older FlyGym 1.x.x API has been migrated to [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium).
     
     You can still install it with
 

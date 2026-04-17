@@ -5,7 +5,15 @@ import platform
 import pytest
 import numpy as np
 
-from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton, LEGS
+from flygym.anatomy import (
+    AxisOrder,
+    JointPreset,
+    ActuatedDOFPreset,
+    Skeleton,
+    LEGS,
+    AnatomicalJoint,
+    BodySegment,
+)
 from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
 from flygym.compose.pose import KinematicPose
@@ -170,6 +178,64 @@ class TestGetBodyRotations:
         rots = simulation.get_body_rotations(fly_with_adhesion.name)
         norms = np.linalg.norm(rots, axis=1)
         np.testing.assert_allclose(norms, 1.0, atol=1e-6)
+
+
+# ==============================================================================
+# get_site_positions
+# ==============================================================================
+
+
+@pytest.fixture(scope="module")
+def simulation_with_joint_sites(neutral_pose, skeleton_ypr):
+    fly = Fly(name="sites_sim_fly")
+    fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+    fly.add_joint_sites(
+        [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+    )
+    world = TetheredWorld(name="sites_sim_world")
+    world.add_fly(
+        fly,
+        spawn_position=[0, 0, 1.5],
+        spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+    )
+    sim = Simulation(world)
+    sim.reset()
+    return sim, fly
+
+
+class TestGetSitePositions:
+    def test_returns_2d_array(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        sim.step()
+        positions = sim.get_site_positions(fly.name)
+        assert positions.ndim == 2
+        assert positions.shape[1] == 3
+
+    def test_matches_added_site_count(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        positions = sim.get_site_positions(fly.name)
+        assert positions.shape[0] == len(fly.get_sites_order())
+
+    def test_site_order_matches_add_order(self, simulation_with_joint_sites):
+        _, fly = simulation_with_joint_sites
+        expected = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        assert fly.get_sites_order() == expected
+
+    def test_matches_mujoco_site_xpos(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        sim.step()
+        expected = sim.mj_data.site_xpos[sim._internal_siteids_by_fly[fly.name], :]
+        actual = sim.get_site_positions(fly.name)
+        np.testing.assert_allclose(actual, expected, atol=1e-9)
 
 
 # ==============================================================================

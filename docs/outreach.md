@@ -15,7 +15,7 @@ A prominent theory in neuroscience suggests that animals use neural circuits cal
 
 In this level, you can control the fly to go forward, backward, left, or right using a joystick or four buttons on the keyboard. The CPG circuits take care of low-level motor coordination, and the fly is very easy to control.
 
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/cpg_small.mp4" controls autoplay muted playinline></video>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/cpg_small.mp4" controls autoplay muted playsinline></video>
 
 
 ### Level 2: Medium-level control using a fixed gait pattern
@@ -26,7 +26,7 @@ As insects have six legs, their gaits are different from those of quadrupeds. A 
 
 In this level, you can control the fly to move using the tripod gait. You can use four buttons on the joystick or keyboard to make each group of three legs move forward or backward. You will find that the fly is more challenging to control than in Level 1, but you can still manage it with some practice. Identifying neural circuits controlling these gaits is an active area of research in neuroscience. A significant portion of these circuits are thought to be located in the spinal cord of vertebrates and the ventral nerve cord of insects.
 
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/tripod_gait_small.mp4" controls autoplay muted playinline></video>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/tripod_gait_small.mp4" controls autoplay muted playsinline></video>
 
 
 ### Level 3: Low-level control of individual legs
@@ -35,9 +35,9 @@ When climbers ascend a steep cliff, they need to carefully place each foot and h
 
 Most humans have about 240 muscles in their limbs, and flies have about 84. Coordinating all these muscles to achieve smooth and purposeful movements is a daunting task. Much of the control is handled by the spinal cord in vertebrates and the ventral nerve cord in insects. They transform the reaching and grasping intentions from the brain into precise muscle activations.
 
-If we wanted to control the contraction of each individual muscle, we'd run out of keys on our keyboard very quickly! Therefore, in this level, we simplify the task by allowing you to control each individual leg instead of muscle. You can use the joystick or keyboard to move one leg at a time. This level is very challenging, and it may take a long time to master the control. However, if you can manage it, you will have a deep appreciation of the complexity of low-level motor control in animals.
+If we wanted to control the contraction of each individual muscle, we'd run out of keys on our keyboard very quickly! Therefore, in this level, we simplify the task by allowing you to control each individual leg instead of individual muscles. You can use the joystick or keyboard to move one leg at a time. This level is very challenging, and it may take a long time to master the control. However, if you can manage it, you will have a deep appreciation of the complexity of low-level motor control in animals.
 
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/single_leg_small.mp4" controls autoplay muted playinline></video>
+<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/single_leg_small.mp4" controls autoplay muted playsinline></video>
 
 
 ## Outreach Events
@@ -48,5 +48,5 @@ We have used the NeuroMechFly Video Game as a tool to engage with the public and
 <small>EPFL Scientastic 2024. Lausanne, Switzerland. <a href="https://scientastic.epfl.ch/informations-pratiques/#:~:text=Nous%20souhaitons%20informer%20les%20visiteurs%20et%20participants%20que%20Scientastic%20est%20une%20manifestation%20publique%20sur%20un%20lieu%20public.%20Aussi%2C%20toute%20participation%20%C3%A0%20cet%20%C3%A9v%C3%A9nement%20a%20pour%20cons%C3%A9quence%20imm%C3%A9diate%20ou%20simultan%C3%A9e%20l%E2%80%99approbation%20explicite%20par%20les%20participants%20ou%20leurs%20repr%C3%A9sentants%20l%C3%A9gaux%20de%20l%E2%80%99exploitation%20illimit%C3%A9e%20dans%20le%20temps%20et%20dans%20l%E2%80%99espace%20et%20sans%20indemnisation%20des%20images%20et%20photographies%20r%C3%A9alis%C3%A9es%20durant%20l%E2%80%99%C3%A9v%C3%A9nement%20%28dans%20le%20cadre%20des%20mesures%20de%20communication%20que%20les%20organisateurs%20jugeront%20utiles%29%20sur%20lesquels%20les%20participants%20sont%20identifiables.">Photo authorization/droit à l'image</a>.</small>
 
 
-<img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_01.jpg?raw=true" alt="Outreach event 1">
+<img src="https://github.com/NeLy-EPFL/_media/blob/main/flygym/outreach/epfl_scientastic_2024_01.jpg?raw=true" alt="Outreach event 2">
 <small>EPFL Scientastic 2024. Lausanne, Switzerland. <a href="https://scientastic.epfl.ch/informations-pratiques/#:~:text=Nous%20souhaitons%20informer%20les%20visiteurs%20et%20participants%20que%20Scientastic%20est%20une%20manifestation%20publique%20sur%20un%20lieu%20public.%20Aussi%2C%20toute%20participation%20%C3%A0%20cet%20%C3%A9v%C3%A9nement%20a%20pour%20cons%C3%A9quence%20imm%C3%A9diate%20ou%20simultan%C3%A9e%20l%E2%80%99approbation%20explicite%20par%20les%20participants%20ou%20leurs%20repr%C3%A9sentants%20l%C3%A9gaux%20de%20l%E2%80%99exploitation%20illimit%C3%A9e%20dans%20le%20temps%20et%20dans%20l%E2%80%99espace%20et%20sans%20indemnisation%20des%20images%20et%20photographies%20r%C3%A9alis%C3%A9es%20durant%20l%E2%80%99%C3%A9v%C3%A9nement%20%28dans%20le%20cadre%20des%20mesures%20de%20communication%20que%20les%20organisateurs%20jugeront%20utiles%29%20sur%20lesquels%20les%20participants%20sont%20identifiables.">Photo authorization/droit à l'image</a>.</small>

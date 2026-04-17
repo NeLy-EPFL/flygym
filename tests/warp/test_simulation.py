@@ -25,6 +25,16 @@ def gpu_bundle(gpu_sim_factory):
     yield sim, fly, cam
 
 
+@pytest.fixture(scope="module")
+def gpu_bundle_with_joint_sites(gpu_sim_factory):
+    """GPUSimulation with joint sites added to the fly."""
+    sim, fly, cam = gpu_sim_factory(
+        n_worlds=4, fly_name="sim_sites_test_fly", add_joint_sites=True
+    )
+    sim.reset()
+    yield sim, fly, cam
+
+
 # ==============================================================================
 # Construction
 # ==============================================================================
@@ -208,6 +218,31 @@ class TestStateQueries:
     def test_time_returns_float(self, gpu_bundle):
         sim, fly, cam = gpu_bundle
         assert isinstance(sim.time, float)
+
+
+class TestSiteStateQueries:
+    def test_get_site_positions_shape(self, gpu_bundle_with_joint_sites):
+        sim, fly, cam = gpu_bundle_with_joint_sites
+        sim.reset()
+        sim.step()
+        spos = sim.get_site_positions(fly.name)
+        assert isinstance(spos, wp.array)
+        assert spos.shape[0] == sim.n_worlds
+        assert spos.shape[2] == 3
+
+    def test_site_positions_match_site_count(self, gpu_bundle_with_joint_sites):
+        sim, fly, cam = gpu_bundle_with_joint_sites
+        sim.reset()
+        spos = sim.get_site_positions(fly.name)
+        assert spos.shape[1] == len(fly.get_sites_order())
+
+    def test_world0_matches_cpu_site_xpos(self, gpu_bundle_with_joint_sites):
+        sim, fly, cam = gpu_bundle_with_joint_sites
+        sim.reset()
+        sim.step()
+        gpu_site_xpos = sim.get_site_positions(fly.name).numpy()[0]
+        cpu_site_xpos = sim.mj_data.site_xpos[sim._internal_siteids_by_fly[fly.name], :]
+        np.testing.assert_allclose(gpu_site_xpos, cpu_site_xpos, atol=1e-6)
 
 
 # ==============================================================================
