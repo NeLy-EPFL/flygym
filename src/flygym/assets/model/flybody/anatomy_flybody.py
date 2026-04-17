@@ -198,12 +198,11 @@ FLYBODY_LEG_LINKS: list[str] = [
     "coxa",
     "trochanterfemur",
     "tibia",
-    *(f"tarsus{seg}" for seg in "1234"),
-    "claw",
+    *(f"tarsus{seg}" for seg in "12345"),
 ]
 FLYBODY_PROBOSCIS_LINKS: list[str] = ["rostrum", "haustellum"]
 FLYBODY_ABDOMEN_LINKS: list[str] = [f"abdomen{seg}" for seg in "1234567"]
-FLYBODY_PASSIVE_TARSAL_LINKS: list[str] = ["claw", *(f"tarsus{seg}" for seg in "234")]
+FLYBODY_PASSIVE_TARSAL_LINKS: list[str] = [f"tarsus{seg}" for seg in "2345"]
 FLYBODY_ALL_CONNECTED_SEGMENT_PAIRS: list[tuple[str, str]] = [
     ("c_thorax", "c_head"),
     *(_chain2joints("c_head", *(f"c_{lk}" for lk in FLYBODY_PROBOSCIS_LINKS))),
@@ -253,10 +252,6 @@ class FlybodyBodySegment(BodySegment):
     def is_abdomen(self) -> bool:
         """Return True if this segment belongs to the abdomen."""
         return self.link in FLYBODY_ABDOMEN_LINKS
-
-    def is_claw(self) -> bool:
-        """Return True if this segment is a claw."""
-        return self.link == "claw"
     
 class FlybodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""

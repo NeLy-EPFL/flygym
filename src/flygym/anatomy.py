@@ -333,7 +333,7 @@ class BodySegment:
         return self.link in ABDOMEN_LINKS
 
     def is_claw(self) -> bool:
-        """Return True if this segment is a claw (i.e. tarsus5)."""
+        """Return True if this segment is tarsus5."""
         return self.link == "tarsus5"
 
 

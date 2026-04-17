@@ -68,7 +68,7 @@ class GeomFittingOption(Enum):
     Attributes:
         UNMODIFIED: Keep the original mesh-based geometries.
         ALL_TO_CAPSULES: Replace all geometries with capsule approximations.
-        CLAWS_TO_CAPSULES: Replace only tarsus5 (claw) geometries with capsules.
+        CLAWS_TO_CAPSULES: Replace only tarsus5 geometries with capsules.
     """
 
     UNMODIFIED = "unmodified"
@@ -452,9 +452,10 @@ class Fly(BaseCompositionElement):
                 )
                 material.texture = texture
 
-        for segment, geoms in self.bodyseg_to_mjcfgeom.items():
+        for _, geoms in self.bodyseg_to_mjcfgeom.items():
             for geom in geoms:
-                vis_set_name = lookup[segment]
+                geom_name = geom.name
+                vis_set_name = lookup[geom_name]
                 geom.set_attributes(material=vis_set_name)
 
     def add_tracking_camera(
@@ -608,15 +609,16 @@ class Fly(BaseCompositionElement):
             conaffinity=0,  # contact pairs to be added explicitly later
         )
         return body_element, [geom_element]
-
-    @staticmethod
+    
     def _parse_visuals_config(
+        self,
         visuals_config_path: PathLike,
     ) -> tuple[dict[str, dict], dict[BodySegment, dict]]:
-        # Load visuals config and assign vis sets to body segments
+        # Load visuals config and assign vis sets to geometry name
+        all_geom_names = [geom.name for geoms in self.bodyseg_to_mjcfgeom.values() for geom in geoms]
         with open(visuals_config_path) as f:
             vis_set_params_all = yaml.safe_load(f)
-        all_matches_by_segname = {k: [] for k in ALL_SEGMENT_NAMES}
+        all_matches_by_geomname = {k: [] for k in all_geom_names}
         for vis_set_name, vis_set_params in vis_set_params_all.items():
             apply_to = vis_set_params.get("apply_to")
             material = vis_set_params.get("material")
@@ -631,22 +633,22 @@ class Fly(BaseCompositionElement):
                     f"Invalid keys in visualization set {vis_set_name}: "
                     f"{invalid_keys}. Must be one of {allowed_keys}."
                 )
-            target_segnames = set()
+            target_geomnames = set()
             for pattern in [apply_to] if isinstance(apply_to, str) else apply_to:
-                target_segnames |= set(filter_with_wildcard(ALL_SEGMENT_NAMES, pattern))
-            for segname in target_segnames:
-                all_matches_by_segname[segname].append(vis_set_name)
-        for segname, vis_set_names in all_matches_by_segname.items():
+                target_geomnames |= set(filter_with_wildcard(all_geom_names, pattern))
+            for geomname in target_geomnames:
+                all_matches_by_geomname[geomname].append(vis_set_name)
+        for geomname, vis_set_names in all_matches_by_geomname.items():
             if len(vis_set_names) != 1:
                 raise ValueError(
-                    f"Zero or multiple vis sets matched for body segment {segname}: "
+                    f"Zero or multiple vis sets matched for body segment {geomname}: "
                     f"{vis_set_names}. Only one should apply."
                 )
-        lookup_by_segname = {
-            BodySegment(segname): matches[0]
-            for segname, matches in all_matches_by_segname.items()
+        lookup_by_geomname = {
+            geomname: matches[0]
+            for geomname, matches in all_matches_by_geomname.items()
         }
-        return vis_set_params_all, lookup_by_segname
+        return vis_set_params_all, lookup_by_geomname
 
     def _rebuild_neutral_keyframe(self):
         mj_model, _ = self.compile()
@@ -826,9 +828,7 @@ class FlybodyFly(Fly):
         )
 
         all_geom_elements = []
-        for fbodygeom_name, geom_config in my_rigging_config["geoms"].items():
-            # subtract flybody_name to fbodygeom_name to get suffix
-            geom_name = f"{segment.pos}_{fbodygeom_name}"
+        for geom_name, geom_config in my_rigging_config["geoms"].items():
 
             geom_element = body_element.add(
                 "geom",
@@ -869,12 +869,13 @@ class FlybodyFly(Fly):
                 mesh_path = (mesh_dir / f"{mesh_name}.obj").resolve()
                 if not mesh_path.exists():
                     mesh_path = (mesh_fallback_dir / f"{mesh_name}.obj").resolve()
+                    print(mesh_path)
                     if not mesh_path.exists():
                         raise FileNotFoundError(
                             f"Mesh file not found for segment {segment_name}: "
                             f"tried {mesh_dir} and {mesh_fallback_dir}."
                         )
-
+                    
                 mesh = self.mjcf_root.asset.add(
                     "mesh",
                     name=mesh_name,
@@ -894,44 +895,47 @@ class FlybodyFly(Fly):
             scale=(self.SCALE, self.SCALE, self.SCALE))
         )
     
-    def colorize(
-        self, visuals_config_path: PathLike = FLYBODY_VISUALS_CONFIG_PATH
-    ) -> None:
-        """Apply colors and textures to the fly model.
+    def colorize(self, visuals_config_path = FLYBODY_VISUALS_CONFIG_PATH):
+        return super().colorize(visuals_config_path)
+    
+    # def colorize(
+    #     self, visuals_config_path: PathLike = FLYBODY_VISUALS_CONFIG_PATH
+    # ) -> None:
+    #     """Apply colors and textures to the fly model.
 
-        Args:
-            visuals_config_path: Path to the YAML file defining per-segment material
-                and texture assignments.
-        """
-        if len(self.bodyseg_to_mjcfgeom) == 0:
-            raise ValueError("Must first add geoms via `_add_bodies_and_geoms`.")
+    #     Args:
+    #         visuals_config_path: Path to the YAML file defining per-segment material
+    #             and texture assignments.
+    #     """
+    #     if len(self.bodyseg_to_mjcfgeom) == 0:
+    #         raise ValueError("Must first add geoms via `_add_bodies_and_geoms`.")
 
-        with open(visuals_config_path) as f:
-            vis_config = yaml.safe_load(f)
+    #     with open(visuals_config_path) as f:
+    #         vis_config = yaml.safe_load(f)
 
-        for vis_set_name, params in vis_config.items():
-            material = self.mjcf_root.asset.add(
-                "material", name=vis_set_name, **params["material"]
-            )
-            if texture_params := params.get("texture"):
-                texture = self.mjcf_root.asset.add(
-                    "texture", name=vis_set_name, **texture_params
-                )
-                material.texture = texture
+    #     for vis_set_name, params in vis_config.items():
+    #         material = self.mjcf_root.asset.add(
+    #             "material", name=vis_set_name, **params["material"]
+    #         )
+    #         if texture_params := params.get("texture"):
+    #             texture = self.mjcf_root.asset.add(
+    #                 "texture", name=vis_set_name, **texture_params
+    #             )
+    #             material.texture = texture
 
-        for _, geoms in self.bodyseg_to_mjcfgeom.items():
-            for geom in geoms:
-                found_match = False
-                for mat_name in vis_config.keys():
-                    if geom.name.endswith(mat_name):
-                        geom.set_attributes(material=mat_name)
-                        found_match = True
-                        break
-                if not found_match:
-                    if "claw" in geom.name:
-                        geom.set_attributes(material="brown")
-                    else:
-                        geom.set_attributes(material="body")
+    #     for _, geoms in self.bodyseg_to_mjcfgeom.items():
+    #         for geom in geoms:
+    #             found_match = False
+    #             for mat_name in vis_config.keys():
+    #                 if geom.name.endswith(mat_name):
+    #                     geom.set_attributes(material=mat_name)
+    #                     found_match = True
+    #                     break
+    #             if not found_match:
+    #                 if "tarsus5" in geom.name:
+    #                     geom.set_attributes(material="brown")
+    #                 else:
+    #                     geom.set_attributes(material="body")
 
         
     def add_joints(
@@ -1200,7 +1204,7 @@ class FlybodyFly(Fly):
         self, gain: float | dict[str, float] = 0.985, add_labrum: bool = True,
         labrum_gain: float = 1.0
         ) -> dict[str, mjcf.Element]:
-        """Add adhesion actuators to the claw segments of all legs and optionally to the labrum.
+        """Add adhesion actuators to the tarsus5 segments of all legs and optionally to the labrum.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
         surfaces. The control input per leg ranges from 1 to 100.
@@ -1220,15 +1224,15 @@ class FlybodyFly(Fly):
         if len(self.leg_to_adhesionactuator) > 0:
             raise ValueError("Leg adhesion actuators have already been added.")
         for leg in LEGS:
-            claw = FlybodyBodySegment(f"{leg}_claw")
+            tarsus5_segment = FlybodyBodySegment(f"{leg}_tarsus5")
             if isinstance(gain, dict):
                 gain_this_leg = gain[leg]
             else:
                 gain_this_leg = gain
             self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
                 "adhesion",
-                name=f"{claw.name}-adhesion",
-                body=self.bodyseg_to_mjcfbody[claw],
+                name=f"{tarsus5_segment.name}-adhesion",
+                body=self.bodyseg_to_mjcfbody[tarsus5_segment],
                 gain=gain_this_leg,
                 ctrlrange=(0, 1),
             )

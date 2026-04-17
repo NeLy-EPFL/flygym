@@ -49,7 +49,8 @@ class KinematicPose:
                     "When initializing from `joint_angles_rad_dict`, axis_order must "
                     "also be provided."
                 )
-            axis_order = AxisOrder(axis_order)
+            if isinstance(axis_order, str) or isinstance(axis_order, list):
+                axis_order = AxisOrder(axis_order)
         elif path is not None and joint_angles_rad_dict is None:
             if axis_order is not None:
                 raise ValueError(
