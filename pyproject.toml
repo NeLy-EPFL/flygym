@@ -69,7 +69,7 @@ dev = [
 ]
 examples = [
     "ipykernel>=7.1.0",
-    "ipython>=9.10,<10.0",
+    "ipython>=7.34,<10.0",
     "pandas>=3.0,<4.0",
 ]
 
