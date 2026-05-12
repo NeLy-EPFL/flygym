@@ -1,0 +1,32 @@
+fovy_per_eye: 157
+raw_img_height_px: 512
+raw_img_width_px: 450
+num_ommatidia_per_eye: 721
+fisheye_distortion_coefficient: 3.8
+fisheye_zoom: 2.72
+hidden_segments:
+  - c_thorax
+  - c_head
+  - c_rostrum
+  - c_haustellum
+  - l_eye
+  - r_eye
+  - l_pedicel
+  - r_pedicel
+  - l_funiculus
+  - r_funiculus
+  - l_arista
+  - r_arista
+  - lf_coxa
+  - rf_coxa
+sensors:
+  l_eye_cam:
+    parent: l_eye
+    rel_pos: [-0.03, 0.38, 0]
+    orientation: [1.57, 0.00, -0.47]
+    marker_rgba: [0.07, 0.45, 0.35, 1]
+  r_eye_cam:
+    parent: r_eye
+    rel_pos: [-0.03, -0.38, 0]
+    orientation: [-1.57, 3.14, 0.47]
+    marker_rgba: [0.07, 0.45, 0.35, 1]
