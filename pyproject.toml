@@ -33,6 +33,7 @@ dependencies = [
     "loguru==0.7.3",
     "pillow>=11,<13",
     "matplotlib>=3.10,<4.0",
+    "numba>=0.65.1",
 ]
 
 [project.optional-dependencies]

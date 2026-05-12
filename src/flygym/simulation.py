@@ -49,6 +49,11 @@ class Simulation:
         self._map_internal_jointids()
         self._map_internal_groundcontactsensor_ids()
         self._map_internal_site_ids()
+        self._map_internal_eye_camera_ids()
+        self._map_internal_hidden_geom_ids()
+
+        self.eye_renderer = None
+        self.retina = None
 
         # For performance profiling
         self._curr_step = 0
@@ -207,7 +212,9 @@ class Simulation:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         return self.mj_data.actuator_force[internal_ids]
 
-    def get_ground_contact_info(self, fly_name: str) -> tuple[
+    def get_ground_contact_info(
+        self, fly_name: str
+    ) -> tuple[
         Float[np.ndarray, "6"],  # contact/no contact flag
         Float[np.ndarray, "6 3"],  # force (in contact frame)
         Float[np.ndarray, "6 3"],  # torque (in contact frame)
@@ -294,6 +301,55 @@ class Simulation:
                 f"expected {len(internal_ids)}, got {len(leg_to_adhesion_state)}"
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
+
+    def get_raw_vision(
+        self, fly_name: str
+    ) -> list[Float[np.ndarray, "height width 3"]]:
+        try:
+            internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
+        except KeyError:
+            raise ValueError(
+                f"Fly '{fly_name}' does not have any eye cameras defined. "
+                "Make sure to call fly.add_vision() when constructing the fly."
+            )
+
+        internal_hidden_geom_ids = self._intern_hidden_geom_ids_by_fly.get(fly_name, [])
+        alpha = self.mj_model.geom_rgba[internal_hidden_geom_ids, 3].copy()
+        # Hide hidden geoms by setting alpha to 0
+        self.mj_model.geom_rgba[internal_hidden_geom_ids, 3] = 0
+        frames = []
+
+        if self.retina is None:
+            from flygym.vision.retina import Retina
+
+            self.retina = Retina()
+
+        if self.eye_renderer is None:
+            self.eye_renderer = mj.Renderer(
+                self.mj_model,
+                height=self.retina.nrows,
+                width=self.retina.ncols,
+            )
+
+        for cam_id in internal_eye_camera_ids:
+            self.eye_renderer.update_scene(self.mj_data, cam_id)
+            raw_frame = self.eye_renderer.render()
+            fish_img = self.retina.correct_fisheye(raw_frame)
+            frames.append(fish_img)
+
+        # # Restore original alpha values
+        self.mj_model.geom_rgba[internal_hidden_geom_ids, 3] = alpha
+        return frames
+
+    def get_ommatidia_readouts(
+        self, fly_name: str
+    ) -> Float[np.ndarray, "n_cameras n_ommatidia 2"]:
+        raw_vision = self.get_raw_vision(fly_name)
+        ommatidia_readouts = np.array(
+            [self.retina.raw_image_to_hex_pxls(image) for image in raw_vision],
+            dtype=np.float32,
+        )
+        return ommatidia_readouts
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
@@ -445,6 +501,42 @@ class Simulation:
 
         self._internal_siteids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_siteids_by_fly.items()
+        }
+
+    def _map_internal_eye_camera_ids(self):
+        internal_eye_camera_ids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for eye_camera_element in fly.eyecameraname_to_mjcfcamera.values():
+                internal_eye_camera_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_CAMERA,
+                    eye_camera_element.full_identifier,
+                )
+                internal_eye_camera_ids_by_fly[fly_name].append(internal_eye_camera_id)
+
+        self._intern_eye_camera_ids_by_fly = {
+            k: np.array(v, dtype=np.int32)
+            for k, v in internal_eye_camera_ids_by_fly.items()
+        }
+
+    def _map_internal_hidden_geom_ids(self):
+        internal_hidden_geom_ids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for hidden_geom in fly.hidden_geoms:
+                internal_hidden_geom_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_GEOM,
+                    hidden_geom.full_identifier,
+                )
+                internal_hidden_geom_ids_by_fly[fly_name].append(
+                    internal_hidden_geom_id
+                )
+
+        self._intern_hidden_geom_ids_by_fly = {
+            k: np.array(v, dtype=np.int32)
+            for k, v in internal_hidden_geom_ids_by_fly.items()
         }
 
     @property
