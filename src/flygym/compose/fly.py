@@ -412,7 +412,8 @@ class Fly(BaseCompositionElement):
         """Add adhesion actuators to the tarsus5 segments of all legs.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
-        surfaces. The control input per leg ranges from 1 to 100.
+        surfaces. The control input per leg ranges from 0 to 100, where 0 fully
+        releases adhesion.
 
         Args:
             gain: Adhesion actuator gain. Either a single float applied to all legs,
@@ -438,7 +439,7 @@ class Fly(BaseCompositionElement):
                 name=f"{tarsus5.name}-adhesion",
                 body=self.bodyseg_to_mjcfbody[tarsus5],
                 gain=gain_this_leg,
-                ctrlrange=(1, 100),
+                ctrlrange=(0, 100),
             )
         return self.leg_to_adhesionactuator
 
