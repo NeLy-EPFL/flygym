@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 2.0.2 (UNRELEASED, ongoing development)
+[Describe changes here]
+
 ## Version 2.0.1 (2026–04–16)
 ### Bug fixes
 - Include sample Spotlight data in shipped `flygym_demo` build ([#259](https://github.com/NeLy-EPFL/flygym/pull/259)).
