@@ -7,6 +7,10 @@
     * [1bis. Advanced model composition](tutorials/1bis_advanced_model_composition.ipynb)
     * [2. Replaying experimental recordings](tutorials/2_replaying_experimental_recordings.ipynb)
     * [3. GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb)
+    * [4. CPG locomotion controller](tutorials/4_cpg_controller.ipynb)
+    * [5. Rule-based locomotion controller](tutorials/5_rule_based_controller.ipynb)
+    * [6. Hybrid locomotion controller](tutorials/6_hybrid_controller.ipynb)
+    * [7. Turning locomotion controller](tutorials/7_turning_controller.ipynb)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
