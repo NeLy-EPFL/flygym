@@ -3,7 +3,6 @@
 import pytest
 import mujoco as mj
 
-import flygym
 from flygym.anatomy import (
     ActuatedDOFPreset,
     ContactBodiesPreset,
@@ -12,8 +11,8 @@ from flygym.anatomy import (
     BodySegment,
 )
 from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
-from flygym.compose.world import FlatGroundWorld, TetheredWorld
-from flygym.compose.pose import KinematicPose, KinematicPosePreset
+from flygym.compose.world import FlatGroundWorld, MixedTerrainWorld, TetheredWorld
+from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
 
@@ -259,6 +258,25 @@ class TestFlatGroundWorld:
         assert len(flat_world_with_fly.world_dof_neutral_states) > 0
 
 
+class TestMixedTerrainWorld:
+    def test_block_section_uses_v1_height_profile(self):
+        world = MixedTerrainWorld()
+        block_tops = [
+            float(geom.pos[2] + geom.size[2])
+            for geom in world.ground_geoms
+            if geom.name.startswith("ground_mixed_block")
+        ]
+        base_heights = [
+            float(geom.pos[2])
+            for geom in world.ground_geoms
+            if geom.name.startswith("ground_base")
+        ]
+
+        assert min(block_tops) == pytest.approx(-0.35)
+        assert max(block_tops) == pytest.approx(0.0)
+        assert base_heights == pytest.approx([-1.0, -1.0, -1.0])
+
+
 class TestTetheredWorld:
     def test_construction(self):
         world = TetheredWorld()
@@ -281,7 +299,7 @@ class TestTetheredWorld:
 class TestFlyAddTrackingCamera:
     def test_camera_registered_in_lookup(self):
         fly = Fly(name="cam_fly")
-        cam = fly.add_tracking_camera(name="trackcam")
+        fly.add_tracking_camera(name="trackcam")
         assert "trackcam" in fly.cameraname_to_mjcfcamera
 
     def test_returns_mjcf_element(self):

@@ -319,6 +319,7 @@ class TestGroundContactInfo:
             flat_sim.get_ground_contact_info(fly_with_joints.name)
         )
         assert len(contact_active) == 6
+        assert set(contact_active).issubset({0.0, 1.0})
         assert forces.shape == (6, 3)
         assert torques.shape == (6, 3)
         assert positions.shape == (6, 3)

@@ -13,7 +13,14 @@ from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D, Vec3
 from flygym.utils.exceptions import FlyGymInternalError
 
-__all__ = ["BaseWorld", "FlatGroundWorld", "TetheredWorld"]
+__all__ = [
+    "BaseWorld",
+    "FlatGroundWorld",
+    "GappedTerrainWorld",
+    "BlocksTerrainWorld",
+    "MixedTerrainWorld",
+    "TetheredWorld",
+]
 
 
 _STATE_DIM_BY_JOINT_TYPE = {"free": 7, "ball": 4, "hinge": 1, "slide": 1}
@@ -52,6 +59,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         """
         self._mjcf_root = mjcf.RootElement(model=name)
         self._fly_lookup: dict[str, Fly] = {}
+        self.ground_geoms: list = []
         self.world_dof_neutral_states = {}
         self._neutral_keyframe = self.mjcf_root.keyframe.add(
             "key", name="neutral", time=0
@@ -271,6 +279,7 @@ class FlatGroundWorld(BaseWorld):
             contype=0,
             conaffinity=0,
         )
+        self.ground_geoms = [self.ground_geom]
         self.legpos_to_groundcontactsensors_by_fly = None
 
     @override
@@ -310,20 +319,25 @@ class FlatGroundWorld(BaseWorld):
     ) -> None:
         for body_segment in bodysegs_with_ground_contact:
             body_geom = fly.mjcf_root.find("geom", f"{body_segment.name}")
-            self.mjcf_root.contact.add(
-                "pair",
-                geom1=body_geom,
-                geom2=self.ground_geom,
-                name=f"{body_segment.name}-ground",
-                friction=ground_contact_params.get_friction_tuple(),
-                solref=ground_contact_params.get_solref_tuple(),
-                solimp=ground_contact_params.get_solimp_tuple(),
-                margin=ground_contact_params.margin,
-            )
+            for ground_geom in self.ground_geoms:
+                self.mjcf_root.contact.add(
+                    "pair",
+                    geom1=body_geom,
+                    geom2=ground_geom,
+                    name=f"{body_segment.name}-{ground_geom.name}-ground",
+                    friction=ground_contact_params.get_friction_tuple(),
+                    solref=ground_contact_params.get_solref_tuple(),
+                    solimp=ground_contact_params.get_solimp_tuple(),
+                    margin=ground_contact_params.margin,
+                )
 
     def _add_ground_contact_sensors(
         self, fly: Fly, bodysegs_with_ground_contact: list[BodySegment]
     ) -> None:
+        if len(self.ground_geoms) != 1:
+            self.legpos_to_groundcontactsensors_by_fly = None
+            return
+
         self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
         contact_geoms_by_leg = defaultdict(list)
         for bodyseg in bodysegs_with_ground_contact:
@@ -335,13 +349,216 @@ class FlatGroundWorld(BaseWorld):
             sensor = self.mjcf_root.sensor.add(
                 "contact",
                 subtree1=subtree_rootseg_body,
-                geom2=self.ground_geom,
+                geom2=self.ground_geoms[0],
                 num=1,
                 reduce="netforce",
                 data="found force torque pos normal tangent",
                 name=f"ground_contact_{leg}_leg",
             )
             self.legpos_to_groundcontactsensors_by_fly[fly.name][leg] = sensor
+
+
+class _ComplexTerrainWorld(FlatGroundWorld):
+    def __init__(self, name: str) -> None:
+        BaseWorld.__init__(self, name=name)
+        self.ground_geoms = []
+        self.legpos_to_groundcontactsensors_by_fly = None
+
+    def _add_ground_box(
+        self,
+        name: str,
+        size: tuple[float, float, float],
+        pos: tuple[float, float, float],
+        *,
+        rgba: tuple[float, float, float, float],
+    ) -> mjcf.Element:
+        geom = self.mjcf_root.worldbody.add(
+            "geom",
+            type="box",
+            name=name,
+            size=size,
+            pos=pos,
+            rgba=rgba,
+            contype=0,
+            conaffinity=0,
+        )
+        self.ground_geoms.append(geom)
+        return geom
+
+    def _add_ground_plane(
+        self,
+        name: str,
+        size: tuple[float, float, float],
+        pos: tuple[float, float, float],
+        *,
+        rgba: tuple[float, float, float, float],
+    ) -> mjcf.Element:
+        geom = self.mjcf_root.worldbody.add(
+            "geom",
+            type="plane",
+            name=name,
+            size=size,
+            pos=pos,
+            rgba=rgba,
+            contype=0,
+            conaffinity=0,
+        )
+        self.ground_geoms.append(geom)
+        return geom
+
+
+class GappedTerrainWorld(_ComplexTerrainWorld):
+    """World with alternating floor blocks and transverse gaps."""
+
+    def __init__(
+        self,
+        name: str = "gapped_terrain_world",
+        *,
+        x_range: tuple[float, float] = (-10, 25),
+        y_range: tuple[float, float] = (-20, 20),
+        gap_width: float = 0.3,
+        block_width: float = 1.0,
+        gap_depth: float = 2.0,
+        ground_alpha: float = 1.0,
+    ) -> None:
+        super().__init__(name=name)
+        y_halfwidth = (y_range[1] - y_range[0]) / 2
+        block_centers = np.arange(
+            x_range[0] + block_width / 2,
+            x_range[1],
+            block_width + gap_width,
+        )
+        for x_pos in block_centers:
+            self._add_ground_box(
+                name=f"ground_block_x{_format_name_number(x_pos)}",
+                size=(block_width / 2, y_halfwidth, gap_depth / 2),
+                pos=(x_pos, 0, -gap_depth / 2),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
+        self._add_ground_plane(
+            name="ground_base",
+            size=((x_range[1] - x_range[0]) / 2, y_halfwidth, 1),
+            pos=(np.mean(x_range), 0, -gap_depth),
+            rgba=(0.3, 0.3, 0.3, ground_alpha),
+        )
+
+
+class BlocksTerrainWorld(_ComplexTerrainWorld):
+    """World tiled by blocks with alternating heights."""
+
+    def __init__(
+        self,
+        name: str = "blocks_terrain_world",
+        *,
+        x_range: tuple[float, float] = (-10, 25),
+        y_range: tuple[float, float] = (-20, 20),
+        block_size: float = 1.3,
+        height_range: tuple[float, float] = (0.35, 0.35),
+        ground_alpha: float = 1.0,
+        rand_seed: int = 0,
+    ) -> None:
+        super().__init__(name=name)
+        rand_state = np.random.RandomState(rand_seed)
+        x_centers = np.arange(x_range[0] + block_size / 2, x_range[1], block_size)
+        y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
+        for i, x_pos in enumerate(x_centers):
+            for j, y_pos in enumerate(y_centers):
+                if (i % 2 == 1) != (j % 2 == 1):
+                    height = 0.1
+                else:
+                    height = 0.1 + rand_state.uniform(*height_range)
+                self._add_ground_box(
+                    name=(
+                        "ground_block_"
+                        f"x{_format_name_number(x_pos)}_y{_format_name_number(y_pos)}"
+                    ),
+                    size=(0.55 * block_size, 0.55 * block_size, height / 2),
+                    pos=(x_pos, y_pos, height / 2),
+                    rgba=(0.3, 0.3, 0.3, ground_alpha),
+                )
+
+
+class MixedTerrainWorld(_ComplexTerrainWorld):
+    """World with repeated blocks, gaps, and flat floor sections."""
+
+    def __init__(
+        self,
+        name: str = "mixed_terrain_world",
+        *,
+        gap_width: float = 0.3,
+        gapped_block_width: float = 1.0,
+        gap_depth: float = 2.0,
+        block_size: float = 1.3,
+        height_range: tuple[float, float] = (0.35, 0.35),
+        ground_alpha: float = 1.0,
+        rand_seed: int = 0,
+    ) -> None:
+        super().__init__(name=name)
+        y_range = (-20, 20)
+        y_halfwidth = (y_range[1] - y_range[0]) / 2
+        rand_state = np.random.RandomState(rand_seed)
+        height_expected_value = np.mean(height_range)
+
+        for range_idx, x_range in enumerate([(-4, 5), (5, 14), (14, 23)]):
+            x_centers = np.arange(
+                x_range[0] + block_size / 2,
+                x_range[0] + block_size * 3,
+                block_size,
+            )
+            y_centers = np.arange(y_range[0] + block_size / 2, y_range[1], block_size)
+            for i, x_pos in enumerate(x_centers):
+                for j, y_pos in enumerate(y_centers):
+                    if (i % 2 == 1) != (j % 2 == 1):
+                        height = 0.1
+                    else:
+                        height = 0.1 + rand_state.uniform(*height_range)
+                    self._add_ground_box(
+                        name=(
+                            f"ground_mixed_block{range_idx}_"
+                            f"x{_format_name_number(x_pos)}_"
+                            f"y{_format_name_number(y_pos)}"
+                        ),
+                        size=(
+                            0.55 * block_size,
+                            0.55 * block_size,
+                            height / 2 + block_size / 2,
+                        ),
+                        pos=(
+                            x_pos,
+                            y_pos,
+                            height / 2 - block_size / 2 - height_expected_value - 0.1,
+                        ),
+                        rgba=(0.3, 0.3, 0.3, ground_alpha),
+                    )
+
+            curr_x_pos = x_range[0] + block_size * 3
+            self._add_ground_box(
+                name=f"ground_gap_pre{range_idx}",
+                size=(gapped_block_width / 4, y_halfwidth, gap_depth / 2),
+                pos=(curr_x_pos + gapped_block_width / 4, 0, -gap_depth / 2),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
+            curr_x_pos += gapped_block_width / 2 + gap_width
+            self._add_ground_box(
+                name=f"ground_gap_post{range_idx}",
+                size=(gapped_block_width / 2, y_halfwidth, gap_depth / 2),
+                pos=(curr_x_pos + gapped_block_width / 2, 0, -gap_depth / 2),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
+            curr_x_pos += gapped_block_width + gap_width
+            remaining_space = x_range[1] - curr_x_pos
+            self._add_ground_box(
+                name=f"ground_flat{range_idx}",
+                size=(remaining_space / 2, y_halfwidth, gap_depth / 2),
+                pos=(curr_x_pos + remaining_space / 2, 0, -gap_depth / 2),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
+            self._add_ground_plane(
+                name=f"ground_base{range_idx}",
+                size=((x_range[1] - x_range[0]) / 2, y_halfwidth, 1),
+                pos=(np.mean(x_range), 0, -gap_depth / 2),
+                rgba=(0.3, 0.3, 0.3, ground_alpha),
+            )
 
 
 class TetheredWorld(BaseWorld):
@@ -383,3 +600,7 @@ def _sort_legsegs_prox2dist(segments: list[BodySegment]) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, LEG_LINKS.index(seg.link)) for seg in segments]
     bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
     return [t[0] for t in bodyseg_linkpos_tuples]
+
+
+def _format_name_number(value: float) -> str:
+    return f"{value:.3f}".replace("-", "m").replace(".", "p")
