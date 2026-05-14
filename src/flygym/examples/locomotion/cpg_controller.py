@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from jaxtyping import Float
 
 from flygym.anatomy import JointDOF
 from flygym.examples.locomotion.common import LocomotionAction
@@ -11,14 +10,14 @@ from flygym.examples.locomotion.preprogrammed import PreprogrammedSteps
 
 
 def calculate_ddt(
-    theta: Float[np.ndarray, "n"],
-    r: Float[np.ndarray, "n"],
-    w: Float[np.ndarray, "n n"],
-    phi: Float[np.ndarray, "n n"],
-    nu: Float[np.ndarray, "n"],
-    R: Float[np.ndarray, "n"],
-    alpha: Float[np.ndarray, "n"],
-) -> tuple[Float[np.ndarray, "n"], Float[np.ndarray, "n"]]:
+    theta: np.ndarray,
+    r: np.ndarray,
+    w: np.ndarray,
+    phi: np.ndarray,
+    nu: np.ndarray,
+    R: np.ndarray,
+    alpha: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute oscillator phase and magnitude derivatives."""
     intrinsic_term = 2 * np.pi * nu
     phase_diff = theta[np.newaxis, :] - theta[:, np.newaxis]
@@ -34,13 +33,13 @@ class CPGNetwork:
     def __init__(
         self,
         timestep: float,
-        intrinsic_freqs: Float[np.ndarray, "n"],
-        intrinsic_amps: Float[np.ndarray, "n"],
-        coupling_weights: Float[np.ndarray, "n n"],
-        phase_biases: Float[np.ndarray, "n n"],
-        convergence_coefs: Float[np.ndarray, "n"],
-        init_phases: Float[np.ndarray, "n"] | None = None,
-        init_magnitudes: Float[np.ndarray, "n"] | None = None,
+        intrinsic_freqs: np.ndarray,
+        intrinsic_amps: np.ndarray,
+        coupling_weights: np.ndarray,
+        phase_biases: np.ndarray,
+        convergence_coefs: np.ndarray,
+        init_phases: np.ndarray | None = None,
+        init_magnitudes: np.ndarray | None = None,
         seed: int = 0,
     ) -> None:
         self.timestep = timestep
@@ -67,8 +66,8 @@ class CPGNetwork:
 
     def reset(
         self,
-        init_phases: Float[np.ndarray, "n"] | None = None,
-        init_magnitudes: Float[np.ndarray, "n"] | None = None,
+        init_phases: np.ndarray | None = None,
+        init_magnitudes: np.ndarray | None = None,
     ) -> None:
         if init_phases is None:
             self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
@@ -118,7 +117,7 @@ class CPGController:
         )
 
 
-def get_cpg_biases(gait: str) -> Float[np.ndarray, "6 6"]:
+def get_cpg_biases(gait: str) -> np.ndarray:
     """Define phase biases for tripod, tetrapod, or wave gaits."""
     gait = gait.lower()
     if gait == "tripod":
@@ -174,20 +173,7 @@ def make_tripod_cpg_network(
     convergence_coef: float = 20.0,
     seed: int = 0,
 ) -> CPGNetwork:
-    """Create the default six-leg tripod CPG network used in v1 tutorials.
-
-    ``intrinsic_frequency`` defaults to **12 Hz**, matching the legacy v1 CPG demos.
-    Setting it to ``1 / PreprogrammedSteps().duration`` (see
-    ``PreprogrammedSteps.step_cycle_frequency_hz``, ~7.4 Hz for the bundled pickle)
-    matches how fast the *kinematic* spline was sampled along one recorded step cycle,
-    but in MuJoCo v2 that choice typically **produces far less thorax translation** than
-    12 Hz for the same wall time: floating-base walking builds thrust from dynamic
-    interaction with adhesion and friction, not from kinematic time-scaling alone.
-    Higher ``coupling_strength`` (with 12 Hz) tends to further increase forward drift
-    by locking tripod phasing. Replay of experimental joint angles (Tutorial 2) can
-    still move the body faster than this open-loop CPG because the recording encodes
-    whole-animal progression, not only periodic leg templates.
-    """
+    """Create the default six-leg tripod CPG network."""
     phase_biases = get_cpg_biases("tripod")
     return CPGNetwork(
         timestep=timestep,

@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 
 import numpy as np
-from jaxtyping import Float
 from scipy.interpolate import CubicSpline
 
 from flygym import assets_dir
@@ -102,13 +101,7 @@ class PreprogrammedSteps:
 
     @property
     def step_cycle_frequency_hz(self) -> float:
-        """Hz at which one oscillator cycle (2π rad) matches one recorded step cycle.
-
-        This is ``1 / self.duration`` for the bundled ``single_steps_untethered.pkl``
-        (about 7.4 Hz). It describes **kinematic** spline pacing, not the frequency
-        that maximizes thorax translation in MuJoCo; ``make_tripod_cpg_network`` still
-        defaults to **12 Hz** for that reason (see its docstring).
-        """
+        """Frequency at which one oscillator cycle matches one recorded step."""
         return 1.0 / self.duration
 
     def get_joint_angles(
@@ -116,7 +109,7 @@ class PreprogrammedSteps:
         leg: str,
         phase: float | np.ndarray,
         magnitude: float | np.ndarray = 1,
-    ) -> Float[np.ndarray, "7 n"] | Float[np.ndarray, "7"]:
+    ) -> np.ndarray:
         """Get seven per-leg joint angles at a stepping phase."""
         leg = leg.lower()
         if leg not in self.legs:
@@ -136,10 +129,10 @@ class PreprogrammedSteps:
 
     def get_joint_angles_by_dof_order(
         self,
-        phases: Float[np.ndarray, "6"],
-        magnitudes: Float[np.ndarray, "6"] | None = None,
+        phases: np.ndarray,
+        magnitudes: np.ndarray | None = None,
         output_dof_order: list[JointDOF] | None = None,
-    ) -> Float[np.ndarray, "n_dofs"]:
+    ) -> np.ndarray:
         """Return all leg angles in a requested FlyGym v2 DOF order."""
         if output_dof_order is None:
             from flygym.examples.locomotion.common import (
@@ -161,9 +154,7 @@ class PreprogrammedSteps:
                 ]
         return np.array([angles_by_dof[dof] for dof in output_dof_order], dtype=float)
 
-    def get_adhesion_onoff_by_phase(
-        self, phases: Float[np.ndarray, "6"]
-    ) -> Float[np.ndarray, "6"]:
+    def get_adhesion_onoff_by_phase(self, phases: np.ndarray) -> np.ndarray:
         """Return per-leg adhesion flags ordered as ``fly.get_legs_order()``."""
         return np.array(
             [
@@ -175,14 +166,14 @@ class PreprogrammedSteps:
 
     def default_pose_by_dof_order(
         self, output_dof_order: list[JointDOF] | None = None
-    ) -> Float[np.ndarray, "n_dofs"]:
+    ) -> np.ndarray:
         """Return the neutral preprogrammed step pose in v2 actuator order."""
         phases = np.full(len(self.legs), np.pi)
         magnitudes = np.ones(len(self.legs))
         return self.get_joint_angles_by_dof_order(phases, magnitudes, output_dof_order)
 
     @property
-    def default_pose(self) -> Float[np.ndarray, "42"]:
+    def default_pose(self) -> np.ndarray:
         """Default pose ordered like the default v2 active leg actuators."""
         return self.default_pose_by_dof_order()
 

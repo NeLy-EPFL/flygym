@@ -14,6 +14,9 @@ from .cpg_controller import (
     get_cpg_biases,
     make_tripod_cpg_network,
 )
+from .rule_based_controller import RuleBasedController, construct_rules_graph
+from .hybrid_controller import HybridController
+from .turning_controller import HybridTurningController
 
 __all__ = [
     "LocomotionAction",
@@ -26,4 +29,8 @@ __all__ = [
     "calculate_ddt",
     "get_cpg_biases",
     "make_tripod_cpg_network",
+    "RuleBasedController",
+    "construct_rules_graph",
+    "HybridController",
+    "HybridTurningController",
 ]

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from jaxtyping import Float
 
 from flygym.anatomy import (
     ActuatedDOFPreset,
@@ -21,8 +20,8 @@ from flygym.simulation import Simulation
 class LocomotionAction:
     """Position-actuator and adhesion commands for v2 locomotion examples."""
 
-    joint_angles: Float[np.ndarray, "n_actuated_dofs"]
-    adhesion_onoff: Float[np.ndarray, "6"] | None = None
+    joint_angles: np.ndarray
+    adhesion_onoff: np.ndarray | None = None
 
 
 def get_default_locomotion_dof_order() -> list[JointDOF]:
@@ -47,14 +46,7 @@ def make_locomotion_fly(
     adhesion_gain: float = 40.0,
     colorize: bool = False,
 ) -> Fly:
-    """Create a standard legs-only, position-controlled fly for walking examples.
-
-    Defaults mirror FlyGym v1 ``flygym_gymnasium.Fly`` position-control locomotion
-    settings: soft actuated leg joints, stiffer passive tarsi, ``actuator_gain=45``,
-    ``adhesion_gain=40``, and ``forcerange`` ±65. Higher ``actuator_gain`` (e.g.
-    80–150) can increase open-loop translation but often trades off against smoother
-    contact-driven motion.
-    """
+    """Create a standard legs-only, position-controlled fly."""
     neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
         AxisOrder.YAW_PITCH_ROLL
     )
