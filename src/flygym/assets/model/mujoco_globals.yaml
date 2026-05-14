@@ -28,3 +28,8 @@ visual:
     stiffnessrot: 5e6
     force: 1e-5
     torque: 2e-4
+    znear: 1e-4
+    zfar: 3.0
+  global:
+    offwidth: 2048
+    offheight: 2048
