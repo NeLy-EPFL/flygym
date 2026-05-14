@@ -79,12 +79,12 @@ class Retina:
             vision_config = yaml.safe_load(f)
 
         if ommatidia_id_map is None:
-            ommatidia_id_map_path = assets_dir / "model/vision/ommatidia_id_map.npy"
-            ommatidia_id_map = np.load(ommatidia_id_map_path)
+            with np.load(assets_dir / "model/compound_eye.npz") as data:
+                ommatidia_id_map = data["ommatidia_id_map"]
 
         if pale_type_mask is None:
-            pale_type_mask_path = assets_dir / "model/vision/pale_mask.npy"
-            pale_type_mask = np.load(pale_type_mask_path).astype(int)
+            with np.load(assets_dir / "model/compound_eye.npz") as data:
+                pale_type_mask = data["pale_mask"].astype(int)
 
         if distortion_coefficient is None:
             distortion_coefficient = vision_config["fisheye_distortion_coefficient"]
