@@ -122,7 +122,7 @@ class Retina:
         np.ndarray
             Our simulation of what the fly might see through its compound
             eyes. It is a (N, 2) array where the first dimension is for the
-            N ommatidia, and the third dimension is for the two channels.
+            N ommatidia, and the second dimension is for the two channels.
         """
         return self._raw_image_to_hex_pxls(
             raw_img,
