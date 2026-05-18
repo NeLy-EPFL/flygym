@@ -1,7 +1,11 @@
 # Changelog
 
 ## Version 2.0.2 (UNRELEASED, ongoing development)
-[Describe changes here]
+### Bug fixes
+TODO
+
+### Additions
+- Added vision to CPU-based simulation. Addition of vision to GPU-based simulation will be deferred for now.
 
 ## Version 2.0.1 (2026–04–16)
 ### Bug fixes
