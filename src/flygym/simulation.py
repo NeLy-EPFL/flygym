@@ -68,10 +68,8 @@ class Simulation:
         # Reset renderers
         if self.renderer is not None:
             self.renderer.reset()
-        # Rebuild eye renderer only if it's been set up before (if the user never
-        # queried visual input, then there's no visual renderer to reset to start with)
-        if self.eye_renderer is not None:
-            self._set_up_eye_renderer()  # destruction logic is in this setup method
+        # The eye renderer doesn't have to be reset as it's stateless (it's the plain
+        # MuJoCo renderer, not our flygym.rendering.Renderer)
 
         # Stuff for performance profiling
         self._curr_step = 0
@@ -308,8 +306,8 @@ class Simulation:
 
         Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
         configured in `flygym/assets/model/vision.yaml`. These geoms are assigned to
-        geom group 2, which _is_ rendered by the MuJoCo render by default, but the eye
-        render within FlyGym is configured to ignore this geom group.
+        geom group 2, which _is_ rendered by the MuJoCo renderer by default, but the eye
+        renderer within FlyGym is configured to ignore this geom group.
 
         Args:
             fly_name: Name of the fly to query.
@@ -328,8 +326,21 @@ class Simulation:
             )
 
         # Lazy-construct Retina and eye renderer only if user queries visual input
-        if self.eye_renderer is None:
-            self._set_up_eye_renderer()
+        if self.retina is None:
+            from flygym.vision.retina import Retina
+
+            self.retina = Retina()
+
+            self.eye_renderer = mj.Renderer(
+                self.mj_model,
+                height=self.retina.nrows,
+                width=self.retina.ncols,
+            )
+            # Make eye render apply option to ignore geoms in group 2, which includes
+            # body segments that should not be rendered by the eye cameras to avoid
+            # self-occlusion.
+            self.eye_renderer_scene_option = mj.MjvOption()
+            self.eye_renderer_scene_option.geomgroup[2] = 0
 
         # Render each eye camera and apply fisheye correction
         frames = []
@@ -535,27 +546,6 @@ class Simulation:
             for k, v in internal_eye_camera_ids_by_fly.items()
         }
 
-    def _set_up_eye_renderer(self):
-        if self.retina is None:
-            from flygym.vision.retina import Retina
-
-            self.retina = Retina()
-
-        if self.eye_renderer is not None:
-            self.eye_renderer.close()
-            self.eye_renderer = None
-
-        self.eye_renderer = mj.Renderer(
-            self.mj_model,
-            height=self.retina.nrows,
-            width=self.retina.ncols,
-        )
-        # Make eye render apply option to ignore geoms in group 2, which includes
-        # body segments that should not be rendered by the eye cameras to avoid
-        # self-occlusion.
-        self.eye_renderer_scene_option = mj.MjvOption()
-        self.eye_renderer_scene_option.geomgroup[2] = 0
-
     @property
     def time(self) -> float:
         """Current simulation time in seconds."""
@@ -589,6 +579,11 @@ class Simulation:
         return self.mj_model.opt.timestep
 
     def close(self):
+        """Clean up resources allocated by the simulation.
+
+        This method is idempotent (safe to call multiple times).
+        """
+
         # Use getattr to handle cases where attributes may not exist
         renderer = getattr(self, "renderer", None)
         if renderer is not None:
@@ -600,10 +595,3 @@ class Simulation:
         # Clear references to help GC and make close idempotent
         self.renderer = None
         self.eye_renderer = None
-
-    def __del__(self):
-        try:
-            self.close()
-        except Exception:
-            # Never raise in __del__
-            pass
