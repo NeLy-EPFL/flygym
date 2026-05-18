@@ -331,17 +331,18 @@ class Simulation:
 
             self.retina = Retina()
 
+        if self.eye_renderer is None:
             self.eye_renderer = mj.Renderer(
                 self.mj_model,
                 height=self.retina.nrows,
                 width=self.retina.ncols,
             )
-            # Make eye render apply option to ignore geoms in group 2, which includes
+            # Make eye renderer apply option to ignore geoms in group 2, which includes
             # body segments that should not be rendered by the eye cameras to avoid
             # self-occlusion. Disable group 1 as well because markers for eye positions
             # belong to group 1.
             self.eye_renderer_scene_option = mj.MjvOption()
-            self.eye_renderer_scene_option.geomgroup[1] = 1
+            self.eye_renderer_scene_option.geomgroup[1] = 0
             self.eye_renderer_scene_option.geomgroup[2] = 0
 
         # Render each eye camera and apply fisheye correction
@@ -596,5 +597,6 @@ class Simulation:
 
         # Clear references to help GC and make close idempotent
         self.renderer = None
-        self.retina = None
         self.eye_renderer = None
+        # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
+        # reused and retina init requires some IO ops.
