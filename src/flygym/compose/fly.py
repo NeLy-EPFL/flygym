@@ -478,6 +478,8 @@ class Fly(BaseCompositionElement):
                 size=[0.06],
                 rgba=sensor_info["marker_rgba"],
                 mass=0,
+                contype=0,
+                conaffinity=0,
                 group=geom_group,
             )
 
