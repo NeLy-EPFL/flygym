@@ -394,11 +394,14 @@ class TestProfilingMethods:
 
 class TestSimulationCloseMethods:
     def test_close_no_renderers_is_noop(self, simulation):
-        # simulation fixture should have no renderers by default
-        assert simulation.renderer is None
-        assert simulation.eye_renderer is None
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        # fresh simulation should have no renderers by default
+        assert fresh_simulation.renderer is None
+        assert fresh_simulation.eye_renderer is None
         # calling close should be a no-op and not raise
-        simulation.close()
+        fresh_simulation.close()
 
     def test_close_closes_both_renderers_and_is_idempotent(self, simulation):
         class _DummyRenderer:
