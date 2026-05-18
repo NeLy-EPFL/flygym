@@ -4,6 +4,7 @@ import platform
 
 import pytest
 import numpy as np
+import mujoco as mj
 import yaml
 
 from flygym import assets_dir
@@ -210,25 +211,36 @@ class TestFlyAddVision:
         fly.add_vision()
         assert set(fly.eyecameraname_to_mjcfcamera.keys()) == {"l_eye_cam", "r_eye_cam"}
 
-    def test_no_markers_by_default(self, vision_config):
-        """With draw_sensor_markers=False, only the hidden body segments are added
-        to hidden_geoms — no marker spheres."""
+    def test_markers_hidden_by_default(self, vision_config):
+        """With draw_sensor_markers=False, marker geoms stay in the hidden group."""
         fly = Fly(name="vision_fly_nomarkers")
         fly.add_vision(draw_sensor_markers=False)
-        assert len(fly.hidden_geoms) == len(vision_config["hidden_segments"])
+        mj_model, _ = fly.compile()
+        for sensor_name in vision_config["sensors"]:
+            marker_name = f"{sensor_name}_marker"
+            marker_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, marker_name)
+            assert marker_id >= 0
+            assert mj_model.geom_group[marker_id] == 4
+
+    def test_hidden_segments_use_expected_groups(self, vision_config):
+        fly = Fly(name="vision_fly_hidden_groups")
+        fly.add_vision(draw_sensor_markers=False)
+        mj_model, _ = fly.compile()
+        for segname in vision_config["hidden_segments"]:
+            geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, segname)
+            assert geom_id >= 0
+            expected_group = 0 if segname == "c_thorax" else 2
+            assert mj_model.geom_group[geom_id] == expected_group
 
     def test_markers_added_when_requested(self, vision_config):
         fly = Fly(name="vision_fly_markers")
         fly.add_vision(draw_sensor_markers=True)
-        # One marker per eye camera + all hidden body-segment geoms
-        expected = len(vision_config["sensors"]) + len(vision_config["hidden_segments"])
-        assert len(fly.hidden_geoms) == expected
-
-    def test_hidden_segments_present_in_hidden_geoms(self, vision_config):
-        fly = Fly(name="vision_fly_segs")
-        fly.add_vision(draw_sensor_markers=False)
-        hidden_names = {g.name for g in fly.hidden_geoms}
-        assert set(vision_config["hidden_segments"]).issubset(hidden_names)
+        mj_model, _ = fly.compile()
+        for sensor_name in vision_config["sensors"]:
+            marker_name = f"{sensor_name}_marker"
+            marker_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, marker_name)
+            assert marker_id >= 0
+            assert mj_model.geom_group[marker_id] == 1
 
     def test_compiles_after_add_vision(self):
         fly = Fly(name="vision_fly_compile")
@@ -319,23 +331,12 @@ class TestSimulationVisionIDMapping:
         assert ids.dtype == np.int32
         assert (ids >= 0).all()
 
-    def test_hidden_geom_ids_present(self, simulation_with_vision, fly_with_vision, vision_config):
-        ids = simulation_with_vision._intern_hidden_geom_ids_by_fly[fly_with_vision.name]
-        expected = len(vision_config["sensors"]) + len(vision_config["hidden_segments"])
-        assert ids.shape == (expected,)
-        assert ids.dtype == np.int32
-        assert (ids >= 0).all()
-
     def test_fly_without_vision_has_no_ids(
         self, simulation_without_vision, fly_without_vision
     ):
         assert (
             fly_without_vision.name
             not in simulation_without_vision._intern_eye_camera_ids_by_fly
-        )
-        assert (
-            fly_without_vision.name
-            not in simulation_without_vision._intern_hidden_geom_ids_by_fly
         )
 
     def test_get_raw_vision_raises_for_fly_without_vision(
@@ -381,15 +382,12 @@ class TestSimulationGetRawVision:
         assert simulation_with_vision.eye_renderer is not None
 
     def test_hidden_geom_alpha_restored(self, simulation_with_vision, fly_with_vision):
-        """get_raw_vision temporarily zeroes hidden geoms' alpha during rendering;
-        the original values must be restored on return."""
-        hidden_ids = simulation_with_vision._intern_hidden_geom_ids_by_fly[
-            fly_with_vision.name
-        ]
-        before = simulation_with_vision.mj_model.geom_rgba[hidden_ids, 3].copy()
+        """get_raw_vision should keep the scene-option state stable across renders."""
+        before = simulation_with_vision.eye_renderer_scene_option.geomgroup.copy()
         simulation_with_vision.get_raw_vision(fly_with_vision.name)
-        after = simulation_with_vision.mj_model.geom_rgba[hidden_ids, 3]
+        after = simulation_with_vision.eye_renderer_scene_option.geomgroup
         np.testing.assert_array_equal(before, after)
+        assert after[2] == 0
 
 
 @pytest.mark.skipif(
