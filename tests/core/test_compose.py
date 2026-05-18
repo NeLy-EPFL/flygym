@@ -11,7 +11,13 @@ from flygym.anatomy import (
     BodySegment,
 )
 from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
-from flygym.compose.world import FlatGroundWorld, MixedTerrainWorld, TetheredWorld
+from flygym.compose.world import (
+    BlocksTerrainWorld,
+    FlatGroundWorld,
+    GappedTerrainWorld,
+    MixedTerrainWorld,
+    TetheredWorld,
+)
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
@@ -259,6 +265,18 @@ class TestFlatGroundWorld:
 
 
 class TestMixedTerrainWorld:
+    @pytest.mark.parametrize(
+        "world_cls",
+        [GappedTerrainWorld, BlocksTerrainWorld, MixedTerrainWorld],
+    )
+    def test_complex_terrain_construction(self, world_cls):
+        world = world_cls()
+        assert len(world.ground_geoms) > 1
+
+    def test_mixed_terrain_does_not_create_flat_ground_plane_attr(self):
+        world = MixedTerrainWorld()
+        assert not hasattr(world, "ground_geom")
+
     def test_block_section_uses_v1_height_profile(self):
         world = MixedTerrainWorld()
         block_tops = [
@@ -275,6 +293,15 @@ class TestMixedTerrainWorld:
         assert min(block_tops) == pytest.approx(-0.35)
         assert max(block_tops) == pytest.approx(0.0)
         assert base_heights == pytest.approx([-1.0, -1.0, -1.0])
+
+    def test_custom_ranges_are_used(self):
+        world = MixedTerrainWorld(x_ranges=((0, 9),), y_range=(-2, 2))
+        base_geoms = [
+            geom for geom in world.ground_geoms if geom.name.startswith("ground_base")
+        ]
+        assert len(base_geoms) == 1
+        assert float(base_geoms[0].pos[0]) == pytest.approx(4.5)
+        assert float(base_geoms[0].size[1]) == pytest.approx(2.0)
 
 
 class TestTetheredWorld:

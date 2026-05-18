@@ -16,11 +16,9 @@ from flygym.anatomy import (
 )
 from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
-from flygym.compose.pose import KinematicPose
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
-import flygym
 
 
 # ==============================================================================
@@ -315,16 +313,25 @@ class TestGroundContactInfo:
 
     def test_returns_six_tuples(self, flat_sim, fly_with_joints):
         flat_sim.reset()
-        contact_active, forces, torques, positions, normals, tangents = (
+        contact_found, forces, torques, positions, normals, tangents = (
             flat_sim.get_ground_contact_info(fly_with_joints.name)
         )
-        assert len(contact_active) == 6
-        assert set(contact_active).issubset({0.0, 1.0})
+        assert len(contact_found) == 6
+        assert np.all(contact_found >= 0)
         assert forces.shape == (6, 3)
         assert torques.shape == (6, 3)
         assert positions.shape == (6, 3)
         assert normals.shape == (6, 3)
         assert tangents.shape == (6, 3)
+
+    def test_bodysegment_contact_forces_shape(self, flat_sim, fly_with_joints):
+        flat_sim.reset()
+        forces = flat_sim.get_bodysegment_contact_forces(
+            fly_with_joints.name,
+            [BodySegment("lf_tarsus5"), "rf_tarsus5"],
+        )
+        assert forces.shape == (2, 3)
+        assert np.all(np.isfinite(forces))
 
 
 # ==============================================================================
