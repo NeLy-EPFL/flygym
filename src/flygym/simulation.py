@@ -338,8 +338,10 @@ class Simulation:
             )
             # Make eye render apply option to ignore geoms in group 2, which includes
             # body segments that should not be rendered by the eye cameras to avoid
-            # self-occlusion.
+            # self-occlusion. Disable group 1 as well because markers for eye positions
+            # belong to group 1.
             self.eye_renderer_scene_option = mj.MjvOption()
+            self.eye_renderer_scene_option.geomgroup[1] = 1
             self.eye_renderer_scene_option.geomgroup[2] = 0
 
         # Render each eye camera and apply fisheye correction
@@ -594,4 +596,5 @@ class Simulation:
 
         # Clear references to help GC and make close idempotent
         self.renderer = None
+        self.retina = None
         self.eye_renderer = None

@@ -410,15 +410,18 @@ class TestSimulationCloseMethods:
 
         dummy_a = _DummyRenderer()
         dummy_b = _DummyRenderer()
-        simulation.renderer = dummy_a
-        simulation.eye_renderer = dummy_b
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        fresh_simulation.renderer = dummy_a
+        fresh_simulation.eye_renderer = dummy_b
 
-        simulation.close()
+        fresh_simulation.close()
         assert dummy_a.closed is True
         assert dummy_b.closed is True
 
         # calling again should not raise and should leave state unchanged
-        simulation.close()
+        fresh_simulation.close()
         assert dummy_a.closed is True
         assert dummy_b.closed is True
 
