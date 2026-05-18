@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from flygym.anatomy import JointDOF, LEGS
-from flygym.examples.locomotion.common import LocomotionAction
-from flygym.examples.locomotion.preprogrammed import PreprogrammedSteps
+from flygym_demo.complex_terrain.common import LocomotionAction
+from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
 
 RuleGraph = dict[str, dict[str, tuple[str, ...]]]
 
@@ -70,6 +70,10 @@ class RuleBasedController:
         self.leg_phases = np.zeros(6)
         self.mask_is_stepping = np.zeros(6, dtype=bool)
         self._leg2id = {leg: i for i, leg in enumerate(self.legs)}
+        self._initial_stepping_leg_ids = np.array(
+            [i for i, leg in enumerate(self.legs) if leg[1].lower() != "h"],
+            dtype=int,
+        )
 
     @property
     def combined_scores(self) -> np.ndarray:
@@ -88,7 +92,7 @@ class RuleBasedController:
     def step(self) -> LocomotionAction:
         """Advance the coordinator and return a simulation action."""
         if self.curr_step == 0:
-            stepping_leg_id = self.random_state.choice([0, 1, 3, 4])
+            stepping_leg_id = self.random_state.choice(self._initial_stepping_leg_ids)
         else:
             stepping_leg_id = self._select_stepping_leg()
 

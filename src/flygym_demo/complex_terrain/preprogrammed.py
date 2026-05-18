@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from importlib.resources import files
 import pickle
 
 import numpy as np
 from scipy.interpolate import CubicSpline
 
-from flygym import assets_dir
-from flygym.anatomy import BodySegment, JointDOF, LEGS, RotationAxis
+from flygym.anatomy import JointDOF, LEGS
+from flygym_demo.complex_terrain.common import (
+    dof_spec_to_jointdof,
+    get_default_locomotion_dof_order,
+)
 
 _LEGACY_LEG = {leg: leg.upper() for leg in LEGS}
 _LEG_BY_LEGACY = {v: k for k, v in _LEGACY_LEG.items()}
@@ -55,9 +59,16 @@ class PreprogrammedSteps:
         ),
     ) -> None:
         if path is None:
-            path = assets_dir / "behavior/single_steps_untethered.pkl"
-        with open(path, "rb") as f:
-            single_steps_data = pickle.load(f)
+            path = (
+                files("flygym_demo.complex_terrain")
+                / "assets/single_steps_untethered.pkl"
+            )
+        if hasattr(path, "open"):
+            with path.open("rb") as f:
+                single_steps_data = pickle.load(f)
+        else:
+            with open(path, "rb") as f:
+                single_steps_data = pickle.load(f)
 
         self._length = len(single_steps_data["joint_LFCoxa"])
         self._timestep = single_steps_data["meta"]["timestep"]
@@ -114,13 +125,16 @@ class PreprogrammedSteps:
         leg = leg.lower()
         if leg not in self.legs:
             raise ValueError(f"Unknown leg '{leg}'. Expected one of {self.legs}.")
-        phase = np.asarray(phase)
-        if phase.shape == ():
+        phase = np.asarray(phase, dtype=float)
+        phase_is_scalar = phase.shape == ()
+        if phase_is_scalar:
             phase = phase[np.newaxis]
         psi_func = self._psi_funcs[leg]
         offset = psi_func(phase) - self.neutral_pos[leg]
         joint_angles = self.neutral_pos[leg] + magnitude * offset
-        return joint_angles.squeeze()
+        if phase_is_scalar:
+            return joint_angles[:, 0]
+        return joint_angles
 
     def get_adhesion_onoff(self, leg: str, phase: float) -> bool:
         """Return whether adhesion should be on for one leg at a phase."""
@@ -135,10 +149,6 @@ class PreprogrammedSteps:
     ) -> np.ndarray:
         """Return all leg angles in a requested FlyGym v2 DOF order."""
         if output_dof_order is None:
-            from flygym.examples.locomotion.common import (
-                get_default_locomotion_dof_order,
-            )
-
             output_dof_order = get_default_locomotion_dof_order()
         if magnitudes is None:
             magnitudes = np.ones(len(self.legs))
@@ -149,7 +159,7 @@ class PreprogrammedSteps:
                 leg, phases[leg_idx], magnitudes[leg_idx]
             )
             for dof_idx, dof_spec in enumerate(self.dofs_per_leg):
-                angles_by_dof[_dof_spec_to_jointdof(leg, dof_spec)] = leg_angles[
+                angles_by_dof[dof_spec_to_jointdof(leg, dof_spec)] = leg_angles[
                     dof_idx
                 ]
         return np.array([angles_by_dof[dof] for dof in output_dof_order], dtype=float)
@@ -176,13 +186,3 @@ class PreprogrammedSteps:
     def default_pose(self) -> np.ndarray:
         """Default pose ordered like the default v2 active leg actuators."""
         return self.default_pose_by_dof_order()
-
-
-def _dof_spec_to_jointdof(leg: str, dof_spec: tuple[str, str, str]) -> JointDOF:
-    parent_link, child_link, axis = dof_spec
-    if parent_link == "thorax":
-        parent = BodySegment("c_thorax")
-    else:
-        parent = BodySegment(f"{leg}_{parent_link}")
-    child = BodySegment(f"{leg}_{child_link}")
-    return JointDOF(parent, child, RotationAxis(axis))

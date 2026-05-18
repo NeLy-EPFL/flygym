@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from flygym.anatomy import JointDOF
-from flygym.examples.locomotion.common import LocomotionAction
-from flygym.examples.locomotion.preprogrammed import PreprogrammedSteps
+from flygym_demo.complex_terrain.common import LocomotionAction
+from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
 
 
 def calculate_ddt(
@@ -51,8 +51,6 @@ class CPGNetwork:
         self.convergence_coefs = np.asarray(convergence_coefs, dtype=float)
         self.random_state = np.random.RandomState(seed)
 
-        self.reset(init_phases, init_magnitudes)
-
         if self.intrinsic_freqs.shape != (self.num_cpgs,):
             raise ValueError("intrinsic_freqs must have shape (n,).")
         if self.intrinsic_amps.shape != (self.num_cpgs,):
@@ -63,6 +61,8 @@ class CPGNetwork:
             raise ValueError("phase_biases must have shape (n, n).")
         if self.convergence_coefs.shape != (self.num_cpgs,):
             raise ValueError("convergence_coefs must have shape (n,).")
+
+        self.reset(init_phases, init_magnitudes)
 
     def reset(
         self,

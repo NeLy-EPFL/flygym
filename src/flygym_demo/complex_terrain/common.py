@@ -7,9 +7,11 @@ import numpy as np
 from flygym.anatomy import (
     ActuatedDOFPreset,
     AxisOrder,
+    BodySegment,
     JointDOF,
     JointPreset,
     PASSIVE_TARSAL_LINKS,
+    RotationAxis,
     Skeleton,
 )
 from flygym.compose import ActuatorType, Fly, KinematicPosePreset
@@ -31,6 +33,16 @@ def get_default_locomotion_dof_order() -> list[JointDOF]:
         joint_preset=JointPreset.LEGS_ONLY,
     )
     return skeleton.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+
+
+def dof_spec_to_jointdof(leg: str, dof_spec: tuple[str, str, str]) -> JointDOF:
+    parent_link, child_link, axis = dof_spec
+    if parent_link == "thorax":
+        parent = BodySegment("c_thorax")
+    else:
+        parent = BodySegment(f"{leg}_{parent_link}")
+    child = BodySegment(f"{leg}_{child_link}")
+    return JointDOF(parent, child, RotationAxis(axis))
 
 
 def make_locomotion_fly(
