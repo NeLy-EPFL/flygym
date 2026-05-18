@@ -392,6 +392,43 @@ class TestProfilingMethods:
         assert "Physics" in captured.out
 
 
+class TestSimulationCloseMethods:
+    def test_close_no_renderers_is_noop(self, simulation):
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        # fresh simulation should have no renderers by default
+        assert fresh_simulation.renderer is None
+        assert fresh_simulation.eye_renderer is None
+        # calling close should be a no-op and not raise
+        fresh_simulation.close()
+
+    def test_close_closes_both_renderers_and_is_idempotent(self, simulation):
+        class _DummyRenderer:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        dummy_a = _DummyRenderer()
+        dummy_b = _DummyRenderer()
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        fresh_simulation.renderer = dummy_a
+        fresh_simulation.eye_renderer = dummy_b
+
+        fresh_simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+        # calling again should not raise and should leave state unchanged
+        fresh_simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+
 # ==============================================================================
 # set_renderer
 # ==============================================================================

@@ -122,7 +122,7 @@ class Retina:
         np.ndarray
             Our simulation of what the fly might see through its compound
             eyes. It is a (N, 2) array where the first dimension is for the
-            N ommatidia, and the third dimension is for the two channels.
+            N ommatidia, and the second dimension is for the two channels.
         """
         return self._raw_image_to_hex_pxls(
             raw_img,
@@ -228,8 +228,8 @@ class Retina:
         hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
-            hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
             if hex_pxl_id != -1:
+                hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
                 ch_idx = pale_type_mask[hex_pxl_id]
                 vals[hex_pxl_id, ch_idx] += img_arr_flat[i, ch_idx + 1] / hex_pxl_size
         return vals / 255
