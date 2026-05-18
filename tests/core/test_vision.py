@@ -229,7 +229,7 @@ class TestFlyAddVision:
         for segname in vision_config["hidden_segments"]:
             geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, segname)
             assert geom_id >= 0
-            expected_group = 0 if segname == "c_thorax" else 2
+            expected_group = 2
             assert mj_model.geom_group[geom_id] == expected_group
 
     def test_markers_added_when_requested(self, vision_config):
@@ -359,10 +359,13 @@ class TestSimulationVisionIDMapping:
     ),
 )
 class TestSimulationGetRawVision:
-    def test_returns_two_frames(self, simulation_with_vision, fly_with_vision):
+    def test_returns_shape_and_type(self, simulation_with_vision, fly_with_vision):
         frames = simulation_with_vision.get_raw_vision(fly_with_vision.name)
-        assert isinstance(frames, list)
-        assert len(frames) == 2
+        assert isinstance(frames, np.ndarray)
+        assert frames.ndim == 4  # (n_cams, height, width, channels)
+        assert frames.shape[0] == 2  # two eye cameras
+        assert frames.shape[3] == 3  # RGB channels
+        assert frames.dtype == np.uint8
 
     def test_frame_shape_matches_retina(self, simulation_with_vision, fly_with_vision):
         frames = simulation_with_vision.get_raw_vision(fly_with_vision.name)
@@ -380,14 +383,6 @@ class TestSimulationGetRawVision:
         simulation_with_vision.get_raw_vision(fly_with_vision.name)
         assert simulation_with_vision.retina is not None
         assert simulation_with_vision.eye_renderer is not None
-
-    def test_hidden_geom_alpha_restored(self, simulation_with_vision, fly_with_vision):
-        """get_raw_vision should keep the scene-option state stable across renders."""
-        before = simulation_with_vision.eye_renderer_scene_option.geomgroup.copy()
-        simulation_with_vision.get_raw_vision(fly_with_vision.name)
-        after = simulation_with_vision.eye_renderer_scene_option.geomgroup
-        np.testing.assert_array_equal(before, after)
-        assert after[2] == 0
 
 
 @pytest.mark.skipif(

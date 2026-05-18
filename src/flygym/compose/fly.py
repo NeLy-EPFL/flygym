@@ -462,7 +462,7 @@ class Fly(BaseCompositionElement):
                 fovy=info["fovy_per_eye"],
             )
 
-            # Add visual markers indicating where they eye sensors are
+            # Add visual markers indicating where the eye sensors are
             # The MuJoCo renderer by default renders geoms of groups 0, 1, 2.
             # By convention, group 0 is for main visual/collision bodies, group 1 is for
             # helper/mocap geoms, and group 2 is for debug geoms. So if the user wants
@@ -599,12 +599,15 @@ class Fly(BaseCompositionElement):
         with open(assets_dir / "model/vision.yaml") as f:
             info = yaml.safe_load(f)
 
-        # Add root body and geom
+        # Add root body and geom. The root can also be hidden from eye cameras if
+        # requested in the vision config, so we apply the same group assignment rule
+        # used for all other body segments.
+        root_geom_group = 2 if self.root_segment.name in info["hidden_segments"] else 0
         body, geom = self._add_one_body_and_geom(
             self.mjcf_root.worldbody,
             self.root_segment,
             rigging_config[self.root_segment.name],
-            geom_group=0,
+            geom_group=root_geom_group,
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
@@ -628,11 +631,11 @@ class Fly(BaseCompositionElement):
                 )
 
             # If the geom should be invisible to eye cameras, we put it in group 2.
-            # Otherwise, it goes in group 0. The MuJoCo render renders geoms in groups
+            # Otherwise, it goes in group 0. The MuJoCo renderer renders geoms in groups
             # 0, 1, 2 by default, so a default renderer renders all body geoms, but the
             # eye cameras can be configured to ignore group 2 geoms to avoid visual
             # occlusion. This makes the behavior of FlyGym less surprising to users who
-            # wish to add their own renderes manually. We avoid group 1 becasue it's by
+            # wish to add their own renderers manually. We avoid group 1 because it's by
             # convention meant for mocap markers and helper geoms.
             geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
 

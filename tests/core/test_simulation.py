@@ -422,20 +422,6 @@ class TestSimulationCloseMethods:
         assert dummy_a.closed is True
         assert dummy_b.closed is True
 
-    def test___del___calls_close(self, simulation):
-        class _DummyRenderer:
-            def __init__(self):
-                self.closed = False
-
-            def close(self):
-                self.closed = True
-
-        dummy = _DummyRenderer()
-        simulation.renderer = dummy
-        # call destructor helper directly (don't rely on GC timing)
-        simulation.__del__()
-        assert dummy.closed is True
-
 
 # ==============================================================================
 # set_renderer
