@@ -303,9 +303,7 @@ class Simulation:
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
 
-    def get_raw_vision(
-        self, fly_name: str
-    ) -> list[Float[np.ndarray, "height width 3"]]:
+    def get_raw_vision(self, fly_name: str) -> Float[np.ndarray, "2 height width 3"]:
         """Render the fly's eye cameras and return fisheye-corrected frames.
 
         Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
@@ -317,8 +315,9 @@ class Simulation:
             fly_name: Name of the fly to query.
 
         Returns:
-            A list of two RGB images, one per eye camera, each with shape
-            ``(height, width, 3)`` and dtype ``uint8``.
+            An array of shape (2, height, width, 3) containing the RGB images from the
+            fly's two eyes. The first dimension corresponds to the left and right eye,
+            in that order.
         """
         try:
             internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
@@ -341,7 +340,7 @@ class Simulation:
             raw_frame = self.eye_renderer.render()
             fish_img = self.retina.correct_fisheye(raw_frame)
             frames.append(fish_img)
-        return frames
+        return np.array(frames)
 
     def get_ommatidia_readouts(
         self, fly_name: str
@@ -352,8 +351,13 @@ class Simulation:
             fly_name: Name of the fly to query.
 
         Returns:
-            A float32 array with shape ``(n_cameras, n_ommatidia, 2)`` containing
-            the pale/yellow channel readings for each eye camera.
+            A float32 array with shape ``(2, n_ommatidia, 2)`` containing
+            the pale/yellow channel readings for each eye camera. The first dimension
+            corresponds to the left and right eyes, in that order). The last
+            dimension corresponds to the yellow- and pale-type ommatidia, in that
+            order. Zero values indicate that the ommatidium is of the other type.
+            For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium
+            is of pale type, and the user should look at `readouts[0, 5, 1]` instead.
         """
         raw_vision = self.get_raw_vision(fly_name)
         ommatidia_readouts = np.array(
