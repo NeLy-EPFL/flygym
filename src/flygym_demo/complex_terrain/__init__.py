@@ -3,6 +3,7 @@
 from .common import (
     LocomotionAction,
     apply_locomotion_action,
+    dof_spec_to_jointdof,
     get_default_locomotion_dof_order,
     make_locomotion_fly,
 )
@@ -21,6 +22,7 @@ from .turning_controller import HybridTurningController
 __all__ = [
     "LocomotionAction",
     "apply_locomotion_action",
+    "dof_spec_to_jointdof",
     "get_default_locomotion_dof_order",
     "make_locomotion_fly",
     "PreprogrammedSteps",

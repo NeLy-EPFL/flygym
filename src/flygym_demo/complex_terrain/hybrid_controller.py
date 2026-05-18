@@ -5,15 +5,16 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from flygym.anatomy import BodySegment, JointDOF, LEGS
-from flygym.examples.locomotion.common import LocomotionAction
-from flygym.examples.locomotion.cpg_controller import (
+from flygym_demo.complex_terrain.common import (
+    LocomotionAction,
+    dof_spec_to_jointdof,
+    get_default_locomotion_dof_order,
+)
+from flygym_demo.complex_terrain.cpg_controller import (
     CPGNetwork,
     make_tripod_cpg_network,
 )
-from flygym.examples.locomotion.preprogrammed import (
-    PreprogrammedSteps,
-    _dof_spec_to_jointdof,
-)
+from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
 from flygym.simulation import Simulation
 
 _CORRECTION_VECTORS = {
@@ -51,7 +52,7 @@ class HybridController:
         self._base_intrinsic_amps = self.cpg_network.intrinsic_amps.copy()
         self.retraction_correction = np.zeros(6, dtype=float)
         self.stumbling_correction = np.zeros(6, dtype=float)
-        self.retraction_persistence_counter = np.zeros(6, dtype=float)
+        self.retraction_persistence_counter = np.zeros(6, dtype=int)
         self.last_info: dict[str, np.ndarray | int | None] = {}
 
     def reset(
@@ -79,7 +80,7 @@ class HybridController:
                 self.retraction_correction[leg_to_correct_retraction]
                 > self.retraction_persistence_initiation_threshold
             ):
-                self.retraction_persistence_counter[leg_to_correct_retraction] = 1.0
+                self.retraction_persistence_counter[leg_to_correct_retraction] = 1
 
         self._update_persistence_counter()
 
@@ -119,15 +120,11 @@ class HybridController:
             net_corrections[leg_idx] = net_correction * phase_gain
 
             for dof_idx, dof_spec in enumerate(self.preprogrammed_steps.dofs_per_leg):
-                jointdof = _dof_spec_to_jointdof(leg, dof_spec)
+                jointdof = dof_spec_to_jointdof(leg, dof_spec)
                 joint_angles_by_dof[jointdof] = leg_angles[dof_idx]
             adhesion_onoff.append(self._get_adhesion_onoff(leg, phase))
 
         if self.output_dof_order is None:
-            from flygym.examples.locomotion.common import (
-                get_default_locomotion_dof_order,
-            )
-
             output_dof_order = get_default_locomotion_dof_order()
         else:
             output_dof_order = self.output_dof_order
@@ -183,7 +180,7 @@ class HybridController:
     def _update_persistence_counter(self) -> None:
         self.retraction_persistence_counter[
             self.retraction_persistence_counter > 0
-        ] += 1.0
+        ] += 1
         self.retraction_persistence_counter[
             self.retraction_persistence_counter > self.retraction_persistence_steps
         ] = 0

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from flygym.examples.locomotion.common import LocomotionAction
-from flygym.examples.locomotion.hybrid_controller import HybridController
+from flygym_demo.complex_terrain.common import LocomotionAction
+from flygym_demo.complex_terrain.hybrid_controller import HybridController
 from flygym.simulation import Simulation
 
 
@@ -25,8 +25,8 @@ class HybridTurningController(HybridController):
         ).ravel()
 
         intrinsic_freqs = self._base_intrinsic_freqs.copy()
-        intrinsic_freqs[:3] *= 1 if descending_signal[0] > 0 else -1
-        intrinsic_freqs[3:] *= 1 if descending_signal[1] > 0 else -1
+        intrinsic_freqs[:3] *= 1 if descending_signal[0] >= 0 else -1
+        intrinsic_freqs[3:] *= 1 if descending_signal[1] >= 0 else -1
         self.cpg_network.intrinsic_freqs = intrinsic_freqs
 
         return super().step(sim, fly_name)
