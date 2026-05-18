@@ -392,6 +392,51 @@ class TestProfilingMethods:
         assert "Physics" in captured.out
 
 
+class TestSimulationCloseMethods:
+    def test_close_no_renderers_is_noop(self, simulation):
+        # simulation fixture should have no renderers by default
+        assert simulation.renderer is None
+        assert simulation.eye_renderer is None
+        # calling close should be a no-op and not raise
+        simulation.close()
+
+    def test_close_closes_both_renderers_and_is_idempotent(self, simulation):
+        class _DummyRenderer:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        dummy_a = _DummyRenderer()
+        dummy_b = _DummyRenderer()
+        simulation.renderer = dummy_a
+        simulation.eye_renderer = dummy_b
+
+        simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+        # calling again should not raise and should leave state unchanged
+        simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+    def test___del___calls_close(self, simulation):
+        class _DummyRenderer:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        dummy = _DummyRenderer()
+        simulation.renderer = dummy
+        # call destructor helper directly (don't rely on GC timing)
+        simulation.__del__()
+        assert dummy.closed is True
+
+
 # ==============================================================================
 # set_renderer
 # ==============================================================================

@@ -50,7 +50,6 @@ class Simulation:
         self._map_internal_groundcontactsensor_ids()
         self._map_internal_site_ids()
         self._map_internal_eye_camera_ids()
-        self._map_internal_hidden_geom_ids()
 
         self.eye_renderer = None
         self.retina = None
@@ -69,6 +68,10 @@ class Simulation:
         # Reset renderers
         if self.renderer is not None:
             self.renderer.reset()
+        # Rebuild eye renderer only if it's been set up before (if the user never
+        # queried visual input, then there's no visual renderer to reset to start with)
+        if self.eye_renderer is not None:
+            self._set_up_eye_renderer()  # destruction logic is in this setup method
 
         # Stuff for performance profiling
         self._curr_step = 0
@@ -212,9 +215,7 @@ class Simulation:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         return self.mj_data.actuator_force[internal_ids]
 
-    def get_ground_contact_info(
-        self, fly_name: str
-    ) -> tuple[
+    def get_ground_contact_info(self, fly_name: str) -> tuple[
         Float[np.ndarray, "6"],  # contact/no contact flag
         Float[np.ndarray, "6 3"],  # force (in contact frame)
         Float[np.ndarray, "6 3"],  # torque (in contact frame)
@@ -305,6 +306,20 @@ class Simulation:
     def get_raw_vision(
         self, fly_name: str
     ) -> list[Float[np.ndarray, "height width 3"]]:
+        """Render the fly's eye cameras and return fisheye-corrected frames.
+
+        Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
+        configured in `flygym/assets/model/vision.yaml`. These geoms are assigned to
+        geom group 2, which _is_ rendered by the MuJoCo render by default, but the eye
+        render within FlyGym is configured to ignore this geom group.
+
+        Args:
+            fly_name: Name of the fly to query.
+
+        Returns:
+            A list of two RGB images, one per eye camera, each with shape
+            ``(height, width, 3)`` and dtype ``uint8``.
+        """
         try:
             internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
         except KeyError:
@@ -313,37 +328,33 @@ class Simulation:
                 "Make sure to call fly.add_vision() when constructing the fly."
             )
 
-        internal_hidden_geom_ids = self._intern_hidden_geom_ids_by_fly.get(fly_name, [])
-        alpha = self.mj_model.geom_rgba[internal_hidden_geom_ids, 3].copy()
-        # Hide hidden geoms by setting alpha to 0
-        self.mj_model.geom_rgba[internal_hidden_geom_ids, 3] = 0
-        frames = []
-
-        if self.retina is None:
-            from flygym.vision.retina import Retina
-
-            self.retina = Retina()
-
+        # Lazy-construct Retina and eye renderer only if user queries visual input
         if self.eye_renderer is None:
-            self.eye_renderer = mj.Renderer(
-                self.mj_model,
-                height=self.retina.nrows,
-                width=self.retina.ncols,
-            )
+            self._set_up_eye_renderer()
 
+        # Render each eye camera and apply fisheye correction
+        frames = []
         for cam_id in internal_eye_camera_ids:
-            self.eye_renderer.update_scene(self.mj_data, cam_id)
+            self.eye_renderer.update_scene(
+                self.mj_data, cam_id, scene_option=self.eye_renderer_scene_option
+            )
             raw_frame = self.eye_renderer.render()
             fish_img = self.retina.correct_fisheye(raw_frame)
             frames.append(fish_img)
-
-        # # Restore original alpha values
-        self.mj_model.geom_rgba[internal_hidden_geom_ids, 3] = alpha
         return frames
 
     def get_ommatidia_readouts(
         self, fly_name: str
     ) -> Float[np.ndarray, "n_cameras n_ommatidia 2"]:
+        """Convert the rendered eye frames into ommatidia readouts.
+
+        Args:
+            fly_name: Name of the fly to query.
+
+        Returns:
+            A float32 array with shape ``(n_cameras, n_ommatidia, 2)`` containing
+            the pale/yellow channel readings for each eye camera.
+        """
         raw_vision = self.get_raw_vision(fly_name)
         ommatidia_readouts = np.array(
             [self.retina.raw_image_to_hex_pxls(image) for image in raw_vision],
@@ -520,24 +531,26 @@ class Simulation:
             for k, v in internal_eye_camera_ids_by_fly.items()
         }
 
-    def _map_internal_hidden_geom_ids(self):
-        internal_hidden_geom_ids_by_fly = defaultdict(list)
+    def _set_up_eye_renderer(self):
+        if self.retina is None:
+            from flygym.vision.retina import Retina
 
-        for fly_name, fly in self.world.fly_lookup.items():
-            for hidden_geom in fly.hidden_geoms:
-                internal_hidden_geom_id = mj.mj_name2id(
-                    self.mj_model,
-                    mj.mjtObj.mjOBJ_GEOM,
-                    hidden_geom.full_identifier,
-                )
-                internal_hidden_geom_ids_by_fly[fly_name].append(
-                    internal_hidden_geom_id
-                )
+            self.retina = Retina()
 
-        self._intern_hidden_geom_ids_by_fly = {
-            k: np.array(v, dtype=np.int32)
-            for k, v in internal_hidden_geom_ids_by_fly.items()
-        }
+        if self.eye_renderer is not None:
+            self.eye_renderer.close()
+            self.eye_renderer = None
+
+        self.eye_renderer = mj.Renderer(
+            self.mj_model,
+            height=self.retina.nrows,
+            width=self.retina.ncols,
+        )
+        # Make eye render apply option to ignore geoms in group 2, which includes
+        # body segments that should not be rendered by the eye cameras to avoid
+        # self-occlusion.
+        self.eye_renderer_scene_option = mj.MjvOption()
+        self.eye_renderer_scene_option.geomgroup[2] = 0
 
     @property
     def time(self) -> float:
@@ -570,3 +583,23 @@ class Simulation:
     def timestep(self) -> float:
         """Simulation timestep in seconds."""
         return self.mj_model.opt.timestep
+
+    def close(self):
+        # Use getattr to handle cases where attributes may not exist
+        renderer = getattr(self, "renderer", None)
+        if renderer is not None:
+            renderer.close()
+        eye_renderer = getattr(self, "eye_renderer", None)
+        if eye_renderer is not None:
+            eye_renderer.close()
+
+        # Clear references to help GC and make close idempotent
+        self.renderer = None
+        self.eye_renderer = None
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            # Never raise in __del__
+            pass
