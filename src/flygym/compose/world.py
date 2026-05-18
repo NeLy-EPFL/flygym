@@ -228,61 +228,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         self._neutral_keyframe.ctrl = neutral_ctrl
 
 
-class FlatGroundWorld(BaseWorld):
-    """World with a flat infinite ground plane. Flies are free to move.
-
-    When calling `add_fly`, the following extra keyword arguments are accepted:
-
-    - ``bodysegs_with_ground_contact``: Body segments that collide with the ground.
-      Accepts a `ContactBodiesPreset`, a preset string, or a collection of
-      `BodySegment` objects. Default: ``ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD``.
-    - ``ground_contact_params``: `ContactParams` for friction and contact physics.
-      Default: ``ContactParams()``.
-    - ``add_ground_contact_sensors``: If True, add contact force sensors for each leg.
-      Default: ``True``.
-
-    Args:
-        name: Name of the world.
-        half_size: Half-size of the ground plane in mm.
-    """
-
-    @override
-    def __init__(
-        self, name: str = "flat_ground_world", *, half_size: float = 1000
-    ) -> None:
-        super().__init__(name=name)
-
-        checker_texture = self.mjcf_root.asset.add(
-            "texture",
-            name="checker",
-            type="2d",
-            builtin="checker",
-            width=300,
-            height=300,
-            rgb1=(0.3, 0.3, 0.3),
-            rgb2=(0.4, 0.4, 0.4),
-        )
-        grid_material = self.mjcf_root.asset.add(
-            "material",
-            name="grid",
-            texture=checker_texture,
-            texrepeat=(250, 250),
-            reflectance=0.2,
-        )
-        self.ground_geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="plane",
-            name="ground_plane",
-            material=grid_material,
-            pos=(0, 0, 0),
-            size=(half_size, half_size, 1),
-            contype=0,
-            conaffinity=0,
-        )
-        self.ground_geoms = [self.ground_geom]
-        self.legpos_to_groundcontactsensors_by_fly = None
-
-    @override
+class _GroundContactMixin:
     def _attach_fly_mjcf(
         self,
         fly: Fly,
@@ -358,9 +304,63 @@ class FlatGroundWorld(BaseWorld):
             self.legpos_to_groundcontactsensors_by_fly[fly.name][leg] = sensor
 
 
-class _ComplexTerrainWorld(FlatGroundWorld):
+class FlatGroundWorld(_GroundContactMixin, BaseWorld):
+    """World with a flat infinite ground plane. Flies are free to move.
+
+    When calling `add_fly`, the following extra keyword arguments are accepted:
+
+    - ``bodysegs_with_ground_contact``: Body segments that collide with the ground.
+      Accepts a `ContactBodiesPreset`, a preset string, or a collection of
+      `BodySegment` objects. Default: ``ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD``.
+    - ``ground_contact_params``: `ContactParams` for friction and contact physics.
+      Default: ``ContactParams()``.
+    - ``add_ground_contact_sensors``: If True, add contact force sensors for each leg.
+      Default: ``True``.
+
+    Args:
+        name: Name of the world.
+        half_size: Half-size of the ground plane in mm.
+    """
+
+    @override
+    def __init__(
+        self, name: str = "flat_ground_world", *, half_size: float = 1000
+    ) -> None:
+        super().__init__(name=name)
+
+        checker_texture = self.mjcf_root.asset.add(
+            "texture",
+            name="checker",
+            type="2d",
+            builtin="checker",
+            width=300,
+            height=300,
+            rgb1=(0.3, 0.3, 0.3),
+            rgb2=(0.4, 0.4, 0.4),
+        )
+        grid_material = self.mjcf_root.asset.add(
+            "material",
+            name="grid",
+            texture=checker_texture,
+            texrepeat=(250, 250),
+            reflectance=0.2,
+        )
+        self.ground_geom = self.mjcf_root.worldbody.add(
+            "geom",
+            type="plane",
+            name="ground_plane",
+            material=grid_material,
+            pos=(0, 0, 0),
+            size=(half_size, half_size, 1),
+            contype=0,
+            conaffinity=0,
+        )
+        self.ground_geoms = [self.ground_geom]
+        self.legpos_to_groundcontactsensors_by_fly = None
+
+class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
     def __init__(self, name: str) -> None:
-        BaseWorld.__init__(self, name=name)
+        super().__init__(name=name)
         self.ground_geoms = []
         self.legpos_to_groundcontactsensors_by_fly = None
 
@@ -485,6 +485,8 @@ class MixedTerrainWorld(_ComplexTerrainWorld):
         self,
         name: str = "mixed_terrain_world",
         *,
+        x_ranges: tuple[tuple[float, float], ...] = ((-4, 5), (5, 14), (14, 23)),
+        y_range: tuple[float, float] = (-20, 20),
         gap_width: float = 0.3,
         gapped_block_width: float = 1.0,
         gap_depth: float = 2.0,
@@ -494,12 +496,11 @@ class MixedTerrainWorld(_ComplexTerrainWorld):
         rand_seed: int = 0,
     ) -> None:
         super().__init__(name=name)
-        y_range = (-20, 20)
         y_halfwidth = (y_range[1] - y_range[0]) / 2
         rand_state = np.random.RandomState(rand_seed)
         height_expected_value = np.mean(height_range)
 
-        for range_idx, x_range in enumerate([(-4, 5), (5, 14), (14, 23)]):
+        for range_idx, x_range in enumerate(x_ranges):
             x_centers = np.arange(
                 x_range[0] + block_size / 2,
                 x_range[0] + block_size * 3,
@@ -547,6 +548,11 @@ class MixedTerrainWorld(_ComplexTerrainWorld):
             )
             curr_x_pos += gapped_block_width + gap_width
             remaining_space = x_range[1] - curr_x_pos
+            if remaining_space <= 0:
+                raise ValueError(
+                    "Each mixed-terrain x-range must leave positive flat-floor "
+                    "space after the block and gap sections."
+                )
             self._add_ground_box(
                 name=f"ground_flat{range_idx}",
                 size=(remaining_space / 2, y_halfwidth, gap_depth / 2),

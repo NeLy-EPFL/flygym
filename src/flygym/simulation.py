@@ -216,7 +216,7 @@ class Simulation:
         return self.mj_data.actuator_force[internal_ids]
 
     def get_ground_contact_info(self, fly_name: str) -> tuple[
-        Float[np.ndarray, "6"],  # contact/no contact flag
+        Float[np.ndarray, "6"],  # raw contact sensor found channel
         Float[np.ndarray, "6 3"],  # force (in contact frame)
         Float[np.ndarray, "6 3"],  # torque (in contact frame)
         Float[np.ndarray, "6 3"],  # pos (in global frame)
@@ -231,7 +231,8 @@ class Simulation:
         Returns:
             A 6-tuple, one entry per leg ordered as in ``fly.get_legs_order()``:
 
-            - ``contact_active``: shape ``(6,)`` — 1 if in contact, 0 otherwise.
+            - ``contact_found``: shape ``(6,)`` — raw ``found`` channel from the
+              MuJoCo contact sensor.
             - ``forces``: shape ``(6, 3)`` — contact force in contact frame.
             - ``torques``: shape ``(6, 3)`` — contact torque in contact frame.
             - ``positions``: shape ``(6, 3)`` — contact position in global frame.
@@ -242,13 +243,13 @@ class Simulation:
         sensor_data = self.mj_data.sensordata[internal_ids]
         # Reshape (6 legs * 16 dims per sensor,) to (6 legs, 16 dim per sensor)
         sensor_data = sensor_data.reshape(6, 16)
-        contact_active = (sensor_data[:, 0] > 0).astype(float)
+        contact_found = sensor_data[:, 0]
         forces = sensor_data[:, 1:4]
         torques = sensor_data[:, 4:7]
         positions = sensor_data[:, 7:10]
         normals = sensor_data[:, 10:13]
         tangents = sensor_data[:, 13:]
-        return contact_active, forces, torques, positions, normals, tangents
+        return contact_found, forces, torques, positions, normals, tangents
 
     def get_bodysegment_contact_forces(
         self,
