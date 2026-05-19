@@ -228,8 +228,8 @@ class Retina:
         hex_id_map_flat = ommatidia_id_map.ravel()
         for i in nb.prange(hex_id_map_flat.size):
             hex_pxl_id = hex_id_map_flat[i] - 1
-            hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
             if hex_pxl_id != -1:
+                hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
                 ch_idx = pale_type_mask[hex_pxl_id]
                 vals[hex_pxl_id, ch_idx] += img_arr_flat[i, ch_idx + 1] / hex_pxl_size
         return vals / 255
