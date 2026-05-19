@@ -162,7 +162,6 @@ class Fly(BaseCompositionElement):
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
         self.eyecameraname_to_mjcfcamera = {}
-        self.hidden_geoms = []
 
         self.jointdof_to_neutralangle = {}
         self.jointdof_to_neutralaction_by_type = {ty: {} for ty in ActuatorType}
@@ -463,22 +462,31 @@ class Fly(BaseCompositionElement):
                 euler=sensor_info["orientation"],
                 fovy=info["fovy_per_eye"],
             )
-            if draw_sensor_markers:
-                geom = sensor_body.add(
-                    "geom",
-                    name=f"{sensor_name}_marker",
-                    type="sphere",
-                    size=[0.06],
-                    rgba=sensor_info["marker_rgba"],
-                    mass=0,
-                )
-                self.hidden_geoms.append(geom)
+
+            # Add visual markers indicating where the eye sensors are
+            # The MuJoCo renderer by default renders geoms of groups 0, 1, 2.
+            # By convention, group 0 is for main visual/collision bodies, group 1 is for
+            # helper/mocap geoms, and group 2 is for debug geoms. So if the user wants
+            # to draw sensor markers, we put them in group 1. Among the groups that are
+            # invisible by default, group 3 is often used for simplified physics geoms,
+            # and group 4 is often for additional stuff. So if the user doesn't want to
+            # draw sensor markers, we put them in group 4.
+            geom_group = 1 if draw_sensor_markers else 4
+            sensor_body.add(
+                "geom",
+                name=f"{sensor_name}_marker",
+                type="sphere",
+                size=[0.06],
+                rgba=sensor_info["marker_rgba"],
+                mass=0,
+                contype=0,
+                conaffinity=0,
+                group=geom_group,
+            )
+
             return_dict[sensor_name] = cam
 
         self.eyecameraname_to_mjcfcamera.update(return_dict)
-
-        for segment_name in info["hidden_segments"]:
-            self.hidden_geoms.append(self.mjcf_root.find("geom", segment_name))
 
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
@@ -589,11 +597,20 @@ class Fly(BaseCompositionElement):
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
 
-        # Add root body and geom
+        # Load vision config to find out which geoms should be invisible to the eye
+        # cameras to avoid occlusion (e.g., the eye geoms themselves)
+        with open(assets_dir / "model/vision.yaml") as f:
+            info = yaml.safe_load(f)
+
+        # Add root body and geom. The root can also be hidden from eye cameras if
+        # requested in the vision config, so we apply the same group assignment rule
+        # used for all other body segments.
+        root_geom_group = 2 if self.root_segment.name in info["hidden_segments"] else 0
         body, geom = self._add_one_body_and_geom(
             self.mjcf_root.worldbody,
             self.root_segment,
             rigging_config[self.root_segment.name],
+            geom_group=root_geom_group,
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geom
@@ -615,8 +632,19 @@ class Fly(BaseCompositionElement):
                 raise FlyGymInternalError(
                     f"Missing rigging config for body segment {jointdof.child.name}"
                 )
+
+            # If the geom should be invisible to eye cameras, we put it in group 2.
+            # Otherwise, it goes in group 0. The MuJoCo renderer renders geoms in groups
+            # 0, 1, 2 by default, so a default renderer renders all body geoms, but the
+            # eye cameras can be configured to ignore group 2 geoms to avoid visual
+            # occlusion. This makes the behavior of FlyGym less surprising to users who
+            # wish to add their own renderers manually. We avoid group 1 because it's by
+            # convention meant for mocap markers and helper geoms.
+            geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
+
+            # Actually add the body and geom to the MJCF model
             body, geom = self._add_one_body_and_geom(
-                parent_body, jointdof.child, my_rigging_config
+                parent_body, jointdof.child, my_rigging_config, geom_group
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geom
@@ -633,6 +661,7 @@ class Fly(BaseCompositionElement):
         parent_body: mjcf.Element,
         segment: BodySegment,
         my_rigging_config: dict[str, Any],
+        geom_group: int,
     ) -> tuple[mjcf.Element, mjcf.Element]:
         body_element = parent_body.add(
             "body",
@@ -648,6 +677,7 @@ class Fly(BaseCompositionElement):
             mass=my_rigging_config["mass"],
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
+            group=geom_group,
         )
         return body_element, geom_element
 
