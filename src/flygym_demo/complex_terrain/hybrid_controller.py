@@ -53,6 +53,7 @@ class HybridController:
         self.retraction_correction = np.zeros(6, dtype=float)
         self.stumbling_correction = np.zeros(6, dtype=float)
         self.retraction_persistence_counter = np.zeros(6, dtype=int)
+        # Populated after each call to step(); empty dict before the first step.
         self.last_info: dict[str, np.ndarray | int | None] = {}
 
     def reset(
