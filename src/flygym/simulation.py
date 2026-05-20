@@ -233,7 +233,7 @@ class Simulation:
             A 6-tuple, one entry per leg ordered as in ``fly.get_legs_order()``:
 
             - ``contact_found``: shape ``(6,)`` — raw ``found`` channel from the
-              MuJoCo contact sensor.
+                MuJoCo contact sensor.
             - ``forces``: shape ``(6, 3)`` — contact force in contact frame.
             - ``torques``: shape ``(6, 3)`` — contact torque in contact frame.
             - ``positions``: shape ``(6, 3)`` — contact position in global frame.
