@@ -220,8 +220,9 @@ class GPUSimulation(Simulation):
 
         Args:
             fly_name: Name of the fly.
-            leg_to_adhesion_state: Adhesion gain array, shape ``(n_worlds, 6)``,
-                ordered as in ``fly.get_legs_order()``. Accepts numpy or Warp arrays.
+            leg_to_adhesion_state: Adhesion control array, shape ``(n_worlds, 6)``,
+                ordered as in ``fly.get_legs_order()``. Values should be in the range
+                ``[0, 1]``. Accepts numpy or Warp arrays.
         """
         if not isinstance(leg_to_adhesion_state, wp.array):
             leg_to_adhesion_state = wp.array(leg_to_adhesion_state, dtype=wp.float32)

@@ -352,7 +352,7 @@ class Simulation:
         Args:
             fly_name: Name of the fly.
             leg_to_adhesion_state: Adhesion control per leg, shape ``(6,)``, ordered as
-                in ``fly.get_legs_order()``. Values should be in the range ``[0, 100]``.
+                in ``fly.get_legs_order()``. Values should be in the range ``[0, 1]``.
         """
         internal_ids = self._intern_adhesionactuatorids_by_fly[fly_name]
         if len(leg_to_adhesion_state) != len(internal_ids):
