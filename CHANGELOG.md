@@ -1,11 +1,19 @@
 # Changelog
 
 ## Version 2.0.2 (UNRELEASED, ongoing development)
+### API-breaking changes
+- **Adhesion control range**: `Fly.add_leg_adhesion()` and `Simulation.set_leg_adhesion_states()` now use a normalised `[0, 1]` control range (0 = fully released, 1 = full gain) instead of the previous `[1, 100]` range. Boolean `0`/`1` adhesion commands that previously fell outside the valid range will now work as expected.
+- **`get_ground_contact_info()` first return value**: renamed from `contact_active` to `contact_found` and now returns the raw MuJoCo contact-sensor `found` channel (a floating-point value) rather than a booleanized flag. Code that compared `contact_active == 1` should now check `contact_found > 0`.
+- **`ContactParams.get_solimp_tuple()`**: now returns a 5-element tuple (was 4). The previously missing `solver_impedance_min2max_width` field is now included as the third element (`[dmin, dmax, width, midpoint, power]`), matching MuJoCo's `solimp` specification. Any code that destructured or indexed the old 4-tuple needs to be updated.
+
 ### Bug fixes
-TODO
+- `ContactParams.get_solimp_tuple()` previously returned a 4-element tuple, causing MuJoCo to silently use a default value for the transition-width parameter. It now returns the correct 5-element tuple.
 
 ### Additions
 - Added vision to CPU-based simulation. Addition of vision to GPU-based simulation will be deferred for now.
+- Added `GappedTerrainWorld`, `BlocksTerrainWorld`, and `MixedTerrainWorld` to `flygym.compose`.
+- Added `Simulation.get_bodysegment_contact_forces()` for querying ground-contact forces on arbitrary body segments.
+- Added locomotion controller examples (`CPGController`, `RuleBasedController`, `HybridController`, `HybridTurningController`) in `flygym_demo.complex_terrain`. Added tutorials accordingly.
 
 ## Version 2.0.1 (2026–04–16)
 ### Bug fixes
