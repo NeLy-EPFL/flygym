@@ -60,6 +60,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         self._mjcf_root = mjcf.RootElement(model=name)
         self._fly_lookup: dict[str, Fly] = {}
         self.ground_geoms: list = []
+        self.legpos_to_groundcontactsensors_by_fly = None
         self.world_dof_neutral_states = {}
         self._neutral_keyframe = self.mjcf_root.keyframe.add(
             "key", name="neutral", time=0
@@ -356,13 +357,32 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
             conaffinity=0,
         )
         self.ground_geoms = [self.ground_geom]
-        self.legpos_to_groundcontactsensors_by_fly = None
 
 class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
+    """Base for terrain worlds built from explicit ground geoms.
+
+    Subclasses should call ``super().__init__(name)`` and then use
+    ``_add_ground_box`` / ``_add_ground_plane`` to populate ``ground_geoms``.
+    Contact-pair generation is handled automatically by ``_GroundContactMixin``
+    when ``add_fly`` is called.
+
+    .. warning::
+
+        Per-leg ground contact sensors are **not** added for multi-geom worlds as is,
+        even when ``add_fly(..., add_ground_contact_sensors=True)`` is requested.
+        This is because it is ambiguous which of the many ground geoms a sensor should
+        be anchored to for each leg. Calling ``Simulation.get_ground_contact_info()`` on
+        such a world will raise a ``TypeError`` at runtime.
+
+        If you need per-leg contact sensors, implement them explicitly in a custom
+        ``_attach_fly_mjcf`` override that hard-codes which geom each sensor monitors.
+        Alternatively, use ``Simulation.get_bodysegment_contact_forces()`` to query
+        contact forces from the raw contact list.
+    """
+
     def __init__(self, name: str) -> None:
         super().__init__(name=name)
         self.ground_geoms = []
-        self.legpos_to_groundcontactsensors_by_fly = None
 
     def _add_ground_box(
         self,
@@ -580,8 +600,6 @@ class TetheredWorld(BaseWorld):
     @override
     def __init__(self, name: str = "tethered_world") -> None:
         super().__init__(name=name)
-        # don't add ground plane
-        self.legpos_to_groundcontactsensors_by_fly = None
 
     @override
     def _attach_fly_mjcf(
