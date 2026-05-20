@@ -102,6 +102,10 @@ class PreprogrammedSteps:
         self.swing_period = {}
         for leg in self.legs:
             legacy_leg = _LEGACY_LEG[leg]
+            # swing_period[leg] = [swing_start, swing_end] in phase units [0, 2π).
+            # Phase 0 is the start of the swing. The raw data stores the duration of
+            # the stance phase (i.e. the time from swing_end back to 0 = next swing_start),
+            # so swing_end = stance_duration / step_duration * 2π and swing_start = 0.
             my_swing_period = np.array(
                 [0, swing_stance_time_dict["stance"][legacy_leg]],
                 dtype=float,
