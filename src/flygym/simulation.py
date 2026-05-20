@@ -278,34 +278,46 @@ class Simulation:
         requested_geom_to_output = {
             geom_ids_by_segment[seg]: i for i, seg in enumerate(requested_segments)
         }
-        ground_geom_ids = set(self._internal_ground_geom_ids)
         forces = np.zeros((len(requested_segments), 3), dtype=float)
 
-        for contact_id in range(self.mj_data.ncon):
-            contact = self.mj_data.contact[contact_id]
-            if contact.exclude:
-                continue
-            geom1 = contact.geom1
-            geom2 = contact.geom2
-            geom1_is_requested = geom1 in requested_geom_to_output
-            geom2_is_requested = geom2 in requested_geom_to_output
-            if not (geom1_is_requested or geom2_is_requested):
-                continue
-            if ground_only:
-                if geom1_is_requested and geom2 not in ground_geom_ids:
-                    continue
-                if geom2_is_requested and geom1 not in ground_geom_ids:
-                    continue
+        ncon = self.mj_data.ncon
+        if ncon == 0:
+            return forces
 
-            contact_force = np.zeros(6, dtype=float)
-            mj.mj_contactForce(self.mj_model, self.mj_data, contact_id, contact_force)
-            contact_frame = np.asarray(contact.frame).reshape(3, 3)
-            world_force = contact_frame.T @ contact_force[:3]
+        # Vectorised filtering: find relevant contact indices without a Python loop.
+        contacts = self.mj_data.contact
+        geom1_arr = contacts.geom1[:ncon]
+        geom2_arr = contacts.geom2[:ncon]
+        exclude_arr = contacts.exclude[:ncon].astype(bool)
 
-            if geom1_is_requested:
-                forces[requested_geom_to_output[geom1]] -= world_force
-            if geom2_is_requested:
-                forces[requested_geom_to_output[geom2]] += world_force
+        requested_geom_arr = np.array(
+            list(requested_geom_to_output.keys()), dtype=np.int32
+        )
+        geom1_requested = np.isin(geom1_arr, requested_geom_arr)
+        geom2_requested = np.isin(geom2_arr, requested_geom_arr)
+        active = (geom1_requested | geom2_requested) & ~exclude_arr
+
+        if ground_only:
+            ground_arr = self._internal_ground_geom_ids
+            geom1_is_ground = np.isin(geom1_arr, ground_arr)
+            geom2_is_ground = np.isin(geom2_arr, ground_arr)
+            active &= (geom1_requested & geom2_is_ground) | (
+                geom2_requested & geom1_is_ground
+            )
+
+        contact_wrench = np.zeros(6, dtype=float)
+        for contact_id in np.where(active)[0]:
+            mj.mj_contactForce(
+                self.mj_model, self.mj_data, int(contact_id), contact_wrench
+            )
+            frame = contacts.frame[contact_id].reshape(3, 3)
+            world_force = frame.T @ contact_wrench[:3]
+
+            g1, g2 = int(geom1_arr[contact_id]), int(geom2_arr[contact_id])
+            if g1 in requested_geom_to_output:
+                forces[requested_geom_to_output[g1]] -= world_force
+            if g2 in requested_geom_to_output:
+                forces[requested_geom_to_output[g2]] += world_force
 
         return forces
 
