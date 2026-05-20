@@ -135,6 +135,10 @@ class TestFlyAddLegAdhesion:
         with pytest.raises(ValueError, match="already been added"):
             fly_with_adhesion.add_leg_adhesion()
 
+    def test_adhesion_control_range_is_normalized(self, fly_with_adhesion):
+        for actuator in fly_with_adhesion.leg_to_adhesionactuator.values():
+            assert list(actuator.ctrlrange) == pytest.approx([0.0, 1.0])
+
 
 class TestFlyAddJointSites:
     def test_add_joint_sites_registers_sites(self):
