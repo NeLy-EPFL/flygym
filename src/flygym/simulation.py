@@ -148,7 +148,7 @@ class Simulation:
             self._frames_rendered += 1
         return render_done
 
-    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
+    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
         """Get current joint angles ordered by the fly's skeleton.
 
         Args:
@@ -161,7 +161,7 @@ class Simulation:
         internal_ids = self._intern_qposadrs_by_fly[fly_name]
         return self.mj_data.qpos[internal_ids]
 
-    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
+    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
         """Get current joint angular velocities ordered by the fly's skeleton.
 
         Args:
@@ -202,7 +202,7 @@ class Simulation:
 
     def get_actuator_forces(
         self, fly_name: str, actuator_type: ActuatorType
-    ) -> Float[np.ndarray, "n_actuators"]:
+    ) -> Float[np.ndarray, "n_actuators"]:  # noqa: F821
         """Get actuator forces for the given actuator type.
 
         Args:
@@ -216,7 +216,9 @@ class Simulation:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         return self.mj_data.actuator_force[internal_ids]
 
-    def get_ground_contact_info(self, fly_name: str) -> tuple[
+    def get_ground_contact_info(
+        self, fly_name: str
+    ) -> tuple[
         Float[np.ndarray, "6"],  # contact/no contact flag
         Float[np.ndarray, "6 3"],  # force (in contact frame)
         Float[np.ndarray, "6 3"],  # torque (in contact frame)
@@ -338,7 +340,7 @@ class Simulation:
         self,
         fly_name: str,
         actuator_type: ActuatorType,
-        inputs: Float[np.ndarray, "n_actuators"],
+        inputs: Float[np.ndarray, "n_actuators"],  # noqa: F821
     ) -> None:
         """Set control inputs for the given actuator type.
 

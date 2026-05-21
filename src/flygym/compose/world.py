@@ -358,6 +358,7 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
         )
         self.ground_geoms = [self.ground_geom]
 
+
 class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
     """Base for terrain worlds built from explicit ground geoms.
 

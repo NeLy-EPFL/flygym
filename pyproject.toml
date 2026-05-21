@@ -101,3 +101,18 @@ where = ["src"]
 [tool.setuptools.package-data]
 flygym = ["assets/**"]
 flygym_demo = ["spotlight_data/assets/**", "complex_terrain/assets/**"]
+
+[tool.ruff.lint]
+# Disable the following ruff linting rules globally:
+ignore = [
+    "F722",  # some jaxtyping warp type hints break this rule on purpose
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow the following ruff linting rules in test files:
+"tests/**/*.py" = [
+    "F401",  # unused imports
+    "F841",  # unused variables
+    "F811",  # duplicated imports
+    "E402",  # module level import not at top of file
+]

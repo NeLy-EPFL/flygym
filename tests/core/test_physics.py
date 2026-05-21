@@ -27,7 +27,9 @@ class TestContactParamsTuples:
         assert len(friction) == 5
 
     def test_get_friction_tuple_values(self):
-        params = ContactParams(sliding_friction=2.0, torsional_friction=0.1, rolling_friction=0.01)
+        params = ContactParams(
+            sliding_friction=2.0, torsional_friction=0.1, rolling_friction=0.01
+        )
         friction = params.get_friction_tuple()
         assert friction[0] == 2.0  # sliding_1
         assert friction[1] == 2.0  # sliding_2
@@ -79,7 +81,9 @@ class TestContactParamsValidation:
         assert params.is_valid(raise_on_invalid=False) is False
 
     def test_zero_friction_is_valid(self):
-        params = ContactParams(sliding_friction=0.0, torsional_friction=0.0, rolling_friction=0.0)
+        params = ContactParams(
+            sliding_friction=0.0, torsional_friction=0.0, rolling_friction=0.0
+        )
         assert params.is_valid() is True
 
     def test_zero_refaccl_timeconst_invalid(self):

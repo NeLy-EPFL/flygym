@@ -163,9 +163,7 @@ class PreprogrammedSteps:
                 leg, phases[leg_idx], magnitudes[leg_idx]
             )
             for dof_idx, dof_spec in enumerate(self.dofs_per_leg):
-                angles_by_dof[dof_spec_to_jointdof(leg, dof_spec)] = leg_angles[
-                    dof_idx
-                ]
+                angles_by_dof[dof_spec_to_jointdof(leg, dof_spec)] = leg_angles[dof_idx]
         return np.array([angles_by_dof[dof] for dof in output_dof_order], dtype=float)
 
     def get_adhesion_onoff_by_phase(self, phases: np.ndarray) -> np.ndarray:

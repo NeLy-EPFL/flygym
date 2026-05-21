@@ -163,9 +163,7 @@ class HybridController:
             return int(sorted_idx[-1])
         return None
 
-    def _get_stumbling_mask(
-        self, sim: Simulation, fly_name: str
-    ) -> np.ndarray:
+    def _get_stumbling_mask(self, sim: Simulation, fly_name: str) -> np.ndarray:
         detected_segments = [
             BodySegment(f"{leg}_{link}")
             for leg in self.legs

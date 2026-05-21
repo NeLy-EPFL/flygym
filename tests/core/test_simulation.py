@@ -41,10 +41,12 @@ class TestSimulationConstruction:
 
     def test_mj_model_accessible(self, simulation):
         import mujoco as mj
+
         assert isinstance(simulation.mj_model, mj.MjModel)
 
     def test_mj_data_accessible(self, simulation):
         import mujoco as mj
+
         assert isinstance(simulation.mj_data, mj.MjData)
 
 
@@ -146,6 +148,7 @@ class TestGetBodyPositions:
 
     def test_correct_number_of_bodies(self, simulation, fly_with_adhesion):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         simulation.reset()
         pos = simulation.get_body_positions(fly_with_adhesion.name)
         assert pos.shape[0] == len(ALL_SEGMENT_NAMES)
@@ -165,6 +168,7 @@ class TestGetBodyRotations:
 
     def test_correct_number_of_bodies(self, simulation, fly_with_adhesion):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         simulation.reset()
         rots = simulation.get_body_rotations(fly_with_adhesion.name)
         assert rots.shape[0] == len(ALL_SEGMENT_NAMES)
@@ -242,10 +246,14 @@ class TestGetSitePositions:
 
 
 class TestActuatorIO:
-    def test_set_and_get_actuator_forces(self, simulation, fly_with_adhesion, skeleton_ypr):
+    def test_set_and_get_actuator_forces(
+        self, simulation, fly_with_adhesion, skeleton_ypr
+    ):
         simulation.reset()
         n_actuators = len(
-            skeleton_ypr.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+            skeleton_ypr.get_actuated_dofs_from_preset(
+                ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+            )
         )
         target_inputs = np.zeros(n_actuators)
         simulation.set_actuator_inputs(
@@ -263,7 +271,9 @@ class TestActuatorIO:
     ):
         simulation.reset()
         n_actuators = len(
-            skeleton_ypr.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+            skeleton_ypr.get_actuated_dofs_from_preset(
+                ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+            )
         )
         bad_inputs = np.zeros(n_actuators + 5)
         with pytest.raises(ValueError):
@@ -459,7 +469,9 @@ class TestSetRenderer:
         from flygym.compose.pose import KinematicPosePreset
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
 
-        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+            AxisOrder.YAW_PITCH_ROLL
+        )
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
@@ -468,7 +480,9 @@ class TestSetRenderer:
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
         )
-        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_actuators(
+            actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50
+        )
         fly.add_leg_adhesion()
         fly.add_tracking_camera(name="trackcam")
 
@@ -496,7 +510,9 @@ class TestSetRenderer:
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
         from flygym.simulation import Simulation
 
-        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+            AxisOrder.YAW_PITCH_ROLL
+        )
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
@@ -505,7 +521,9 @@ class TestSetRenderer:
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
         )
-        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_actuators(
+            actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50
+        )
         fly.add_leg_adhesion()
         fly.add_tracking_camera(name="trackcam")
 

@@ -1,5 +1,4 @@
-"""Tests for flygym.warp.rendering (WarpCPURenderer, modify_world_for_batch_rendering).
-"""
+"""Tests for flygym.warp.rendering (WarpCPURenderer, modify_world_for_batch_rendering)."""
 
 import warnings
 import pytest
@@ -91,7 +90,6 @@ def _advance_past_render_interval(sim, renderer):
 
 
 class TestRenderAsNeeded:
-
     def test_returns_true_after_enough_time(self, render_bundle):
         sim, fly, cam, renderer = render_bundle
         sim.reset()

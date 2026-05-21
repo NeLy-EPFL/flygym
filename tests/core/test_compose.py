@@ -42,10 +42,13 @@ class TestFlyConstruction:
         # All body segments should have a corresponding MJCF body and geom
         assert len(fly.bodyseg_to_mjcfbody) > 0
         assert len(fly.bodyseg_to_mjcfgeom) > 0
-        assert set(fly.bodyseg_to_mjcfbody.keys()) == set(fly.bodyseg_to_mjcfgeom.keys())
+        assert set(fly.bodyseg_to_mjcfbody.keys()) == set(
+            fly.bodyseg_to_mjcfgeom.keys()
+        )
 
     def test_all_segment_names_present(self):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         fly = Fly()
         body_names = {seg.name for seg in fly.bodyseg_to_mjcfbody}
         assert set(ALL_SEGMENT_NAMES) == body_names
@@ -193,6 +196,7 @@ class TestFlyCompile:
 
     def test_get_bodysegs_order_length(self, fly_with_joints):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         order = list(fly_with_joints.get_bodysegs_order())
         assert len(order) == len(ALL_SEGMENT_NAMES)
 
@@ -229,11 +233,17 @@ class TestFlatGroundWorld:
         fly_a = Fly(name="dupfly")
         fly_b = Fly(name="dupfly")
         world = TetheredWorld(name="dupworld")
-        world.add_fly(fly_a, spawn_position=[0, 0, 1.5],
-                      spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]))
+        world.add_fly(
+            fly_a,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
         with pytest.raises(ValueError, match="already exists"):
-            world.add_fly(fly_b, spawn_position=[1, 0, 1.5],
-                          spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]))
+            world.add_fly(
+                fly_b,
+                spawn_position=[1, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
 
     def test_spawn_rotation_must_be_quat(self):
         # Use a fresh, unattached fly so dm_control doesn't error first
@@ -364,7 +374,9 @@ class TestFlyAddTrackingCamera:
         mj_model, _ = world.compile()
         assert mj_model.ncam == 1
 
-    def test_camera_full_identifier_after_world_attachment(self, skeleton_ypr, neutral_pose):
+    def test_camera_full_identifier_after_world_attachment(
+        self, skeleton_ypr, neutral_pose
+    ):
         """After attaching to a world, the camera's full_identifier gets the fly's prefix."""
         fly = Fly(name="cam_fly6")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
@@ -541,19 +553,25 @@ class TestFlatGroundWorldContactOptions:
 class TestFlyConstructionOptions:
     def test_fullsize_mesh_type(self):
         from flygym.compose.fly import MeshType
+
         fly = Fly(name="fullsize_fly", mesh_type=MeshType.FULLSIZE)
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
     def test_claws_to_capsules_fitting(self):
-        fly = Fly(name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES)
+        fly = Fly(
+            name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES
+        )
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
     def test_all_to_capsules_fitting(self):
-        fly = Fly(name="all_capsule_fly", geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES)
+        fly = Fly(
+            name="all_capsule_fly",
+            geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES,
+        )
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None

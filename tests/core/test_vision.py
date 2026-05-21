@@ -54,7 +54,9 @@ class TestRetinaConstruction:
 
     def test_default_distortion_and_zoom_match_config(self, vision_config):
         r = Retina()
-        assert r.distortion_coefficient == vision_config["fisheye_distortion_coefficient"]
+        assert (
+            r.distortion_coefficient == vision_config["fisheye_distortion_coefficient"]
+        )
         assert r.zoom == vision_config["fisheye_zoom"]
 
     def test_ommatidia_id_map_shape_and_dtype(self):
