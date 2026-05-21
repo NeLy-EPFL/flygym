@@ -3,10 +3,16 @@
 * [FlyGym v1 vs. v2 API](migration.md)
 * [Interactive Viewer](interactive.md)
 * Tutorials
-    * [1. Composing models and scenes](tutorials/1_composing_models_and_scenes.ipynb)
-    * [1bis. Advanced model composition](tutorials/1bis_advanced_model_composition.ipynb)
+    * 1&#46; Composing models and scenes
+        * [1a. Basic model composition](tutorials/1a_basic_model_composition.ipynb)
+        * [1b. Advanced model composition](tutorials/1b_advanced_model_composition.ipynb)
     * [2. Replaying experimental recordings](tutorials/2_replaying_experimental_recordings.ipynb)
     * [3. GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb)
+    * 4&#46; Walking controllers
+        * [4a. CPG locomotion controller](tutorials/4a_cpg_controller.ipynb)
+        * [4b. Rule-based locomotion controller](tutorials/4b_rule_based_controller.ipynb)
+        * [4c. Hybrid locomotion controller](tutorials/4c_hybrid_controller.ipynb)
+        * [4d. Turning locomotion controller](tutorials/4d_turning_controller.ipynb)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
@@ -32,4 +38,6 @@
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
 * [Changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md)
+* [Contributing to FlyGym](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTING.md)
+* [Contributors](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTORS.md)
 * [Citing NeuroMechFly](citation.md)

@@ -27,7 +27,9 @@ class TestContactParamsTuples:
         assert len(friction) == 5
 
     def test_get_friction_tuple_values(self):
-        params = ContactParams(sliding_friction=2.0, torsional_friction=0.1, rolling_friction=0.01)
+        params = ContactParams(
+            sliding_friction=2.0, torsional_friction=0.1, rolling_friction=0.01
+        )
         friction = params.get_friction_tuple()
         assert friction[0] == 2.0  # sliding_1
         assert friction[1] == 2.0  # sliding_2
@@ -45,20 +47,22 @@ class TestContactParamsTuples:
     def test_get_solimp_tuple_length(self):
         params = ContactParams()
         solimp = params.get_solimp_tuple()
-        assert len(solimp) == 4
+        assert len(solimp) == 5
 
     def test_get_solimp_tuple_values(self):
         params = ContactParams(
             solver_impedance_min=0.9,
             solver_impedance_max=0.95,
+            solver_impedance_min2max_width=1e-4,
             solver_impedance_transitionmidpoint=0.5,
             solver_impedance_transitionsharpness=2.0,
         )
         solimp = params.get_solimp_tuple()
         assert solimp[0] == 0.9
         assert solimp[1] == 0.95
-        assert solimp[2] == 0.5
-        assert solimp[3] == 2.0
+        assert solimp[2] == 1e-4
+        assert solimp[3] == 0.5
+        assert solimp[4] == 2.0
 
 
 class TestContactParamsValidation:
@@ -77,7 +81,9 @@ class TestContactParamsValidation:
         assert params.is_valid(raise_on_invalid=False) is False
 
     def test_zero_friction_is_valid(self):
-        params = ContactParams(sliding_friction=0.0, torsional_friction=0.0, rolling_friction=0.0)
+        params = ContactParams(
+            sliding_friction=0.0, torsional_friction=0.0, rolling_friction=0.0
+        )
         assert params.is_valid() is True
 
     def test_zero_refaccl_timeconst_invalid(self):

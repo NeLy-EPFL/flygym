@@ -1,0 +1,107 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from flygym.anatomy import (
+    ActuatedDOFPreset,
+    AxisOrder,
+    BodySegment,
+    JointDOF,
+    JointPreset,
+    PASSIVE_TARSAL_LINKS,
+    RotationAxis,
+    Skeleton,
+)
+from flygym.compose import ActuatorType, Fly, KinematicPosePreset
+from flygym.simulation import Simulation
+
+
+@dataclass(frozen=True)
+class LocomotionAction:
+    """Position-actuator and adhesion commands for v2 locomotion examples."""
+
+    joint_angles: np.ndarray
+    adhesion_onoff: np.ndarray | None = None
+
+
+def get_default_locomotion_dof_order() -> list[JointDOF]:
+    """Return the default active leg DOFs used by the locomotion examples."""
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL,
+        joint_preset=JointPreset.LEGS_ONLY,
+    )
+    return skeleton.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+
+
+def dof_spec_to_jointdof(leg: str, dof_spec: tuple[str, str, str]) -> JointDOF:
+    parent_link, child_link, axis = dof_spec
+    if parent_link == "thorax":
+        parent = BodySegment("c_thorax")
+    else:
+        parent = BodySegment(f"{leg}_{parent_link}")
+    child = BodySegment(f"{leg}_{child_link}")
+    return JointDOF(parent, child, RotationAxis(axis))
+
+
+def make_locomotion_fly(
+    name: str = "nmf",
+    *,
+    joint_stiffness: float = 0.05,
+    joint_damping: float = 0.06,
+    passive_tarsus_stiffness: float = 7.5,
+    passive_tarsus_damping: float = 1e-2,
+    actuator_gain: float = 45.0,
+    actuator_forcerange: tuple[float, float] = (-65.0, 65.0),
+    add_adhesion: bool = True,
+    adhesion_gain: float = 40.0,
+    colorize: bool = False,
+) -> Fly:
+    """Create a standard legs-only, position-controlled fly."""
+    neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+        AxisOrder.YAW_PITCH_ROLL
+    )
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL,
+        joint_preset=JointPreset.LEGS_ONLY,
+    )
+    fly = Fly(name=name)
+    joints = fly.add_joints(
+        skeleton,
+        neutral_pose=neutral_pose,
+        stiffness=joint_stiffness,
+        damping=joint_damping,
+    )
+    for jointdof, joint in joints.items():
+        if jointdof.child.link in PASSIVE_TARSAL_LINKS:
+            joint.stiffness = passive_tarsus_stiffness
+            joint.damping = passive_tarsus_damping
+    actuated_dofs = skeleton.get_actuated_dofs_from_preset(
+        ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+    )
+    fly.add_actuators(
+        actuated_dofs,
+        ActuatorType.POSITION,
+        neutral_input=neutral_pose,
+        kp=actuator_gain,
+        forcerange=actuator_forcerange,
+    )
+    if add_adhesion:
+        fly.add_leg_adhesion(gain=adhesion_gain)
+    if colorize:
+        fly.colorize()
+    return fly
+
+
+def apply_locomotion_action(
+    sim: Simulation,
+    fly_name: str,
+    action: LocomotionAction,
+    *,
+    actuator_type: ActuatorType = ActuatorType.POSITION,
+) -> None:
+    """Write a locomotion action into a simulation without stepping physics."""
+    sim.set_actuator_inputs(fly_name, actuator_type, action.joint_angles)
+    if action.adhesion_onoff is not None:
+        sim.set_leg_adhesion_states(fly_name, action.adhesion_onoff)

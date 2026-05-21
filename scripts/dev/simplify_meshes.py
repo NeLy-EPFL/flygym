@@ -197,5 +197,5 @@ if __name__ == "__main__":
     pct_reduced = (total_faces_orig - total_faces_reduced) / total_faces_orig * 100
     print(f"Overall pct reduced: {pct_reduced:.2f}%")
 
-    metadata_path = MESH_DIR_REDUCED / f"simplification_metadata.csv"
+    metadata_path = MESH_DIR_REDUCED / "simplification_metadata.csv"
     df.reset_index().to_csv(metadata_path, index=False)

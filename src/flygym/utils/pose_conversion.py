@@ -107,7 +107,7 @@ def fit_qpos_to_xpos_xquat(
     final_cost = result.fun
     logger.info(
         f"Pose fitting optimization finished with final cost {final_cost:.6f} "
-        f"(initial cost { _cost_hist[0]:.6f})"
+        f"(initial cost {_cost_hist[0]:.6f})"
     )
 
     return solved_qpos
