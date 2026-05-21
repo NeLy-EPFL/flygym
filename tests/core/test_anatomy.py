@@ -129,9 +129,7 @@ class TestAxisOrder:
         assert ao is AxisOrder.YAW_PITCH_ROLL
 
     def test_missing_from_rotation_axis_sequence(self):
-        ao = AxisOrder(
-            (RotationAxis.YAW, RotationAxis.PITCH, RotationAxis.ROLL)
-        )
+        ao = AxisOrder((RotationAxis.YAW, RotationAxis.PITCH, RotationAxis.ROLL))
         assert ao is AxisOrder.YAW_PITCH_ROLL
 
     def test_to_letters_xyz(self):
@@ -327,7 +325,9 @@ class TestJointPreset:
             )
 
     def test_legs_active_only_subset_of_legs_only(self):
-        legs_only_children = {j.child.name for j in JointPreset.LEGS_ONLY.to_joint_list()}
+        legs_only_children = {
+            j.child.name for j in JointPreset.LEGS_ONLY.to_joint_list()
+        }
         legs_active_children = {
             j.child.name for j in JointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
         }
@@ -387,9 +387,12 @@ class TestContactBodiesPreset:
 
     def test_tibia_tarsus_only_is_subset_of_legs_only(self):
         tibia_tarsus = {
-            s.name for s in ContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
+            s.name
+            for s in ContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
         }
-        legs_only = {s.name for s in ContactBodiesPreset.LEGS_ONLY.to_body_segments_list()}
+        legs_only = {
+            s.name for s in ContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
+        }
         assert tibia_tarsus.issubset(legs_only)
 
     def test_tibia_tarsus_only_contains_tibia_and_tarsus(self):

@@ -49,12 +49,8 @@ def build_gpu_sim(
     if add_joint_sites:
         fly.add_joint_sites(
             [
-                AnatomicalJoint(
-                    BodySegment("c_thorax"), BodySegment("lf_coxa")
-                ),
-                AnatomicalJoint(
-                    BodySegment("c_thorax"), BodySegment("rf_coxa")
-                ),
+                AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+                AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
             ]
         )
     fly.add_leg_adhesion()

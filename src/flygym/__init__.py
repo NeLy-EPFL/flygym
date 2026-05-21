@@ -5,10 +5,10 @@ from pathlib import Path as _Path
 # flygym/compose/fly.py does `from flygym import assets_dir` at module level.
 assets_dir = _Path(str(_importlib_resources_files("flygym") / "assets"))
 
-from . import anatomy
-from . import compose
-from .simulation import Simulation
-from .rendering import Renderer, launch_interactive_viewer, preview_model
+from . import anatomy  # noqa: E402
+from . import compose  # noqa: E402
+from .simulation import Simulation  # noqa: E402
+from .rendering import Renderer, launch_interactive_viewer, preview_model  # noqa: E402
 
 __all__ = [
     "assets_dir",

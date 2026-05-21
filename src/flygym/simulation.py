@@ -7,6 +7,7 @@ import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
 
+from flygym.anatomy import BodySegment
 from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.rendering import Renderer
@@ -43,12 +44,18 @@ class Simulation:
         # Map internal IDs in the compiled MuJoCo model. This allows users to read from
         # or write to body/joint/actuator in orders defined by Fly objects.
         self._map_internal_bodyids()
+        self._map_internal_geom_ids()
+        self._map_internal_ground_geom_ids()
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
         self._map_internal_adhesionactuator_ids()
         self._map_internal_jointids()
         self._map_internal_groundcontactsensor_ids()
         self._map_internal_site_ids()
+        self._map_internal_eye_camera_ids()
+
+        self.eye_renderer = None
+        self.retina = None
 
         # For performance profiling
         self._curr_step = 0
@@ -64,6 +71,8 @@ class Simulation:
         # Reset renderers
         if self.renderer is not None:
             self.renderer.reset()
+        # The eye renderer doesn't have to be reset as it's stateless (it's the plain
+        # MuJoCo renderer, not our flygym.rendering.Renderer)
 
         # Stuff for performance profiling
         self._curr_step = 0
@@ -139,7 +148,7 @@ class Simulation:
             self._frames_rendered += 1
         return render_done
 
-    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
+    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
         """Get current joint angles ordered by the fly's skeleton.
 
         Args:
@@ -152,7 +161,7 @@ class Simulation:
         internal_ids = self._intern_qposadrs_by_fly[fly_name]
         return self.mj_data.qpos[internal_ids]
 
-    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
+    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
         """Get current joint angular velocities ordered by the fly's skeleton.
 
         Args:
@@ -193,7 +202,7 @@ class Simulation:
 
     def get_actuator_forces(
         self, fly_name: str, actuator_type: ActuatorType
-    ) -> Float[np.ndarray, "n_actuators"]:
+    ) -> Float[np.ndarray, "n_actuators"]:  # noqa: F821
         """Get actuator forces for the given actuator type.
 
         Args:
@@ -207,7 +216,9 @@ class Simulation:
         internal_ids = self._intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
         return self.mj_data.actuator_force[internal_ids]
 
-    def get_ground_contact_info(self, fly_name: str) -> tuple[
+    def get_ground_contact_info(
+        self, fly_name: str
+    ) -> tuple[
         Float[np.ndarray, "6"],  # contact/no contact flag
         Float[np.ndarray, "6 3"],  # force (in contact frame)
         Float[np.ndarray, "6 3"],  # torque (in contact frame)
@@ -223,7 +234,8 @@ class Simulation:
         Returns:
             A 6-tuple, one entry per leg ordered as in ``fly.get_legs_order()``:
 
-            - ``contact_active``: shape ``(6,)`` — 1 if in contact, 0 otherwise.
+            - ``contact_found``: shape ``(6,)`` — raw ``found`` channel from the
+                MuJoCo contact sensor.
             - ``forces``: shape ``(6, 3)`` — contact force in contact frame.
             - ``torques``: shape ``(6, 3)`` — contact torque in contact frame.
             - ``positions``: shape ``(6, 3)`` — contact position in global frame.
@@ -234,13 +246,82 @@ class Simulation:
         sensor_data = self.mj_data.sensordata[internal_ids]
         # Reshape (6 legs * 16 dims per sensor,) to (6 legs, 16 dim per sensor)
         sensor_data = sensor_data.reshape(6, 16)
-        contact_active = sensor_data[:, 0]
+        contact_found = sensor_data[:, 0]
         forces = sensor_data[:, 1:4]
         torques = sensor_data[:, 4:7]
         positions = sensor_data[:, 7:10]
         normals = sensor_data[:, 10:13]
         tangents = sensor_data[:, 13:]
-        return contact_active, forces, torques, positions, normals, tangents
+        return contact_found, forces, torques, positions, normals, tangents
+
+    def get_bodysegment_contact_forces(
+        self,
+        fly_name: str,
+        body_segments: list[BodySegment | str],
+        *,
+        ground_only: bool = True,
+    ) -> Float[np.ndarray, "n_bodysegments 3"]:
+        """Get net world-frame contact forces on selected body segments.
+
+        Args:
+            fly_name: Name of the fly.
+            body_segments: Body segments to query, ordered as desired in the output.
+            ground_only: If True, include only contacts with world ground geoms.
+
+        Returns:
+            Net force vectors in MuJoCo world coordinates, one row per requested body
+            segment.
+        """
+        requested_segments = [
+            seg if isinstance(seg, BodySegment) else BodySegment(seg)
+            for seg in body_segments
+        ]
+        geom_ids_by_segment = self._internal_geomid_by_bodyseg_by_fly[fly_name]
+        requested_geom_to_output = {
+            geom_ids_by_segment[seg]: i for i, seg in enumerate(requested_segments)
+        }
+        forces = np.zeros((len(requested_segments), 3), dtype=float)
+
+        ncon = self.mj_data.ncon
+        if ncon == 0:
+            return forces
+
+        # Vectorised filtering: find relevant contact indices without a Python loop.
+        contacts = self.mj_data.contact
+        geom1_arr = contacts.geom1[:ncon]
+        geom2_arr = contacts.geom2[:ncon]
+        exclude_arr = contacts.exclude[:ncon].astype(bool)
+
+        requested_geom_arr = np.array(
+            list(requested_geom_to_output.keys()), dtype=np.int32
+        )
+        geom1_requested = np.isin(geom1_arr, requested_geom_arr)
+        geom2_requested = np.isin(geom2_arr, requested_geom_arr)
+        active = (geom1_requested | geom2_requested) & ~exclude_arr
+
+        if ground_only:
+            ground_arr = self._internal_ground_geom_ids
+            geom1_is_ground = np.isin(geom1_arr, ground_arr)
+            geom2_is_ground = np.isin(geom2_arr, ground_arr)
+            active &= (geom1_requested & geom2_is_ground) | (
+                geom2_requested & geom1_is_ground
+            )
+
+        contact_wrench = np.zeros(6, dtype=float)
+        for contact_id in np.where(active)[0]:
+            mj.mj_contactForce(
+                self.mj_model, self.mj_data, int(contact_id), contact_wrench
+            )
+            frame = contacts.frame[contact_id].reshape(3, 3)
+            world_force = frame.T @ contact_wrench[:3]
+
+            g1, g2 = int(geom1_arr[contact_id]), int(geom2_arr[contact_id])
+            if g1 in requested_geom_to_output:
+                forces[requested_geom_to_output[g1]] -= world_force
+            if g2 in requested_geom_to_output:
+                forces[requested_geom_to_output[g2]] += world_force
+
+        return forces
 
     def get_site_positions(self, fly_name: str) -> Float[np.ndarray, "n_sites 3"]:
         """Get global 3D positions of anatomical-joint sites.
@@ -259,7 +340,7 @@ class Simulation:
         self,
         fly_name: str,
         actuator_type: ActuatorType,
-        inputs: Float[np.ndarray, "n_actuators"],
+        inputs: Float[np.ndarray, "n_actuators"],  # noqa: F821
     ) -> None:
         """Set control inputs for the given actuator type.
 
@@ -284,8 +365,8 @@ class Simulation:
 
         Args:
             fly_name: Name of the fly.
-            leg_to_adhesion_state: Adhesion gain per leg, shape ``(6,)``, ordered as in
-                ``fly.get_legs_order()``. Values should be in the range ``[1, 100]``.
+            leg_to_adhesion_state: Adhesion control per leg, shape ``(6,)``, ordered as
+                in ``fly.get_legs_order()``. Values should be in the range ``[0, 1]``.
         """
         internal_ids = self._intern_adhesionactuatorids_by_fly[fly_name]
         if len(leg_to_adhesion_state) != len(internal_ids):
@@ -294,6 +375,85 @@ class Simulation:
                 f"expected {len(internal_ids)}, got {len(leg_to_adhesion_state)}"
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
+
+    def get_raw_vision(self, fly_name: str) -> Float[np.ndarray, "2 height width 3"]:
+        """Render the fly's eye cameras and return fisheye-corrected frames.
+
+        Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
+        configured in `flygym/assets/model/vision.yaml`. These geoms are assigned to
+        geom group 2, which _is_ rendered by the MuJoCo renderer by default, but the eye
+        renderer within FlyGym is configured to ignore this geom group.
+
+        Args:
+            fly_name: Name of the fly to query.
+
+        Returns:
+            An array of shape (2, height, width, 3) containing the RGB images from the
+            fly's two eyes. The first dimension corresponds to the left and right eye,
+            in that order.
+        """
+        try:
+            internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
+        except KeyError:
+            raise ValueError(
+                f"Fly '{fly_name}' does not have any eye cameras defined. "
+                "Make sure to call fly.add_vision() when constructing the fly."
+            )
+
+        # Lazy-construct Retina and eye renderer only if user queries visual input
+        if self.retina is None:
+            from flygym.vision.retina import Retina
+
+            self.retina = Retina()
+
+        if self.eye_renderer is None:
+            self.eye_renderer = mj.Renderer(
+                self.mj_model,
+                height=self.retina.nrows,
+                width=self.retina.ncols,
+            )
+            # Make eye renderer apply option to ignore geoms in group 2, which includes
+            # body segments that should not be rendered by the eye cameras to avoid
+            # self-occlusion. Disable group 1 as well because markers for eye positions
+            # belong to group 1.
+            self.eye_renderer_scene_option = mj.MjvOption()
+            self.eye_renderer_scene_option.geomgroup[1] = 0
+            self.eye_renderer_scene_option.geomgroup[2] = 0
+
+        # Render each eye camera and apply fisheye correction
+        frames = []
+        for cam_id in internal_eye_camera_ids:
+            self.eye_renderer.update_scene(
+                self.mj_data, cam_id, scene_option=self.eye_renderer_scene_option
+            )
+            raw_frame = self.eye_renderer.render()
+            fish_img = self.retina.correct_fisheye(raw_frame)
+            frames.append(fish_img)
+        return np.array(frames)
+
+    def get_ommatidia_readouts(
+        self, fly_name: str
+    ) -> Float[np.ndarray, "n_cameras n_ommatidia 2"]:
+        """Convert the rendered eye frames into ommatidia readouts.
+
+        Args:
+            fly_name: Name of the fly to query.
+
+        Returns:
+            A float32 array with shape ``(2, n_ommatidia, 2)`` containing
+            the pale/yellow channel readings for each eye camera. The first dimension
+            corresponds to the left and right eyes, in that order). The last
+            dimension corresponds to the yellow- and pale-type ommatidia, in that
+            order. Zero values indicate that the ommatidium is of the other type.
+            For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium
+            is of pale type, and the user should look at `readouts[0, 5, 1]` instead.
+        """
+        raw_vision = self.get_raw_vision(fly_name)
+        ommatidia_readouts = np.array(
+            [self.retina.raw_image_to_hex_pxls(image) for image in raw_vision],
+            dtype=np.float32,
+        )
+        return ommatidia_readouts
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
@@ -323,6 +483,35 @@ class Simulation:
         self._internal_bodyids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
         }
+
+    def _map_internal_geom_ids(self) -> None:
+        internal_geomids_by_bodyseg_by_fly = {}
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            internal_geomids_by_bodyseg_by_fly[fly_name] = {}
+            for bodyseg, mjcf_geom_element in fly.bodyseg_to_mjcfgeom.items():
+                internal_geom_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_GEOM,
+                    mjcf_geom_element.full_identifier,
+                )
+                internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = internal_geom_id
+
+        self._internal_geomid_by_bodyseg_by_fly = internal_geomids_by_bodyseg_by_fly
+
+    def _map_internal_ground_geom_ids(self) -> None:
+        internal_ground_geom_ids = []
+        for ground_geom in getattr(self.world, "ground_geoms", []):
+            internal_ground_geom_ids.append(
+                mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_GEOM,
+                    ground_geom.full_identifier,
+                )
+            )
+        self._internal_ground_geom_ids = np.array(
+            internal_ground_geom_ids, dtype=np.int32
+        )
 
     def _map_internal_jointids(self) -> None:
         internal_jointids_by_fly = defaultdict(list)
@@ -410,13 +599,18 @@ class Simulation:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:
             self._intern_groundcontactsensorids_by_fly = None
             return
-        else:
-            self._intern_groundcontactsensorids_by_fly = {}
+
+        self._intern_groundcontactsensorids_by_fly = {}
 
         for fly_name, fly in self.world.fly_lookup.items():
             indices_thisfly = []
+            sensors_by_leg = self.world.legpos_to_groundcontactsensors_by_fly.get(
+                fly_name, {}
+            )
             for leg in fly.get_legs_order():
-                sensor = self.world.legpos_to_groundcontactsensors_by_fly[fly_name][leg]
+                sensor = sensors_by_leg.get(leg)
+                if sensor is None:
+                    continue
                 internal_id = mj.mj_name2id(
                     self.mj_model, mj.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
                 )
@@ -445,6 +639,23 @@ class Simulation:
 
         self._internal_siteids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_siteids_by_fly.items()
+        }
+
+    def _map_internal_eye_camera_ids(self):
+        internal_eye_camera_ids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for eye_camera_element in fly.eyecameraname_to_mjcfcamera.values():
+                internal_eye_camera_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_CAMERA,
+                    eye_camera_element.full_identifier,
+                )
+                internal_eye_camera_ids_by_fly[fly_name].append(internal_eye_camera_id)
+
+        self._intern_eye_camera_ids_by_fly = {
+            k: np.array(v, dtype=np.int32)
+            for k, v in internal_eye_camera_ids_by_fly.items()
         }
 
     @property
@@ -478,3 +689,23 @@ class Simulation:
     def timestep(self) -> float:
         """Simulation timestep in seconds."""
         return self.mj_model.opt.timestep
+
+    def close(self):
+        """Clean up resources allocated by the simulation.
+
+        This method is idempotent (safe to call multiple times).
+        """
+
+        # Use getattr to handle cases where attributes may not exist
+        renderer = getattr(self, "renderer", None)
+        if renderer is not None:
+            renderer.close()
+        eye_renderer = getattr(self, "eye_renderer", None)
+        if eye_renderer is not None:
+            eye_renderer.close()
+
+        # Clear references to help GC and make close idempotent
+        self.renderer = None
+        self.eye_renderer = None
+        # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
+        # reused and retina init requires some IO ops.

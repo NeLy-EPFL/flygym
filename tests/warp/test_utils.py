@@ -51,9 +51,7 @@ class TestWpGatherIndexedCols2d:
     def test_single_column(self):
         from flygym.warp.utils import wp_gather_indexed_cols_2d
 
-        src_np = np.array(
-            [[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]], dtype=np.float32
-        )
+        src_np = np.array([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]], dtype=np.float32)
         col_indices = np.array([2], dtype=np.int32)
 
         src = wp.array(src_np, dtype=wp.float32)
@@ -121,9 +119,7 @@ class TestWpScatterIndexedCols2d:
 
         n_rows = 2
         src_np = np.array([[1.0], [2.0]], dtype=np.float32)
-        dst_np = np.array(
-            [[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]], dtype=np.float32
-        )
+        dst_np = np.array([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]], dtype=np.float32)
         col_indices = np.array([1], dtype=np.int32)
 
         src = wp.array(src_np, dtype=wp.float32)
@@ -154,9 +150,9 @@ class TestWpGatherIndexedRows3d:
         from flygym.warp.utils import wp_gather_indexed_rows_3d
 
         n_worlds, n_rows_wide, n_cols = 2, 5, 3
-        src_np = np.arange(
-            n_worlds * n_rows_wide * n_cols, dtype=np.float32
-        ).reshape(n_worlds, n_rows_wide, n_cols)
+        src_np = np.arange(n_worlds * n_rows_wide * n_cols, dtype=np.float32).reshape(
+            n_worlds, n_rows_wide, n_cols
+        )
         row_indices = np.array([0, 2, 4], dtype=np.int32)
         n_rows_narrow = len(row_indices)
 
@@ -177,9 +173,7 @@ class TestWpGatherIndexedRows3d:
     def test_single_world_single_row(self):
         from flygym.warp.utils import wp_gather_indexed_rows_3d
 
-        src_np = np.array(
-            [[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]], dtype=np.float32
-        )
+        src_np = np.array([[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]], dtype=np.float32)
         row_indices = np.array([2], dtype=np.int32)
 
         src = wp.array(src_np, dtype=wp.float32)
@@ -368,8 +362,8 @@ class TestGetRgbSelectedWorldsAndCamerasValidation:
             rgb_adr=wp.zeros(2, dtype=int),
         )
 
-        worldids = wp.array([0, 1, 2], dtype=int)   # size 3
-        camids = wp.array([0, 1], dtype=int)         # size 2
+        worldids = wp.array([0, 1, 2], dtype=int)  # size 3
+        camids = wp.array([0, 1], dtype=int)  # size 2
         rgb_out = wp.zeros((2, 2, 8, 8), dtype=wp.vec3)  # world-dim=2, mismatch
 
         with pytest.raises(ValueError, match="worldids"):
@@ -385,8 +379,8 @@ class TestGetRgbSelectedWorldsAndCamerasValidation:
             rgb_adr=wp.zeros(3, dtype=int),
         )
 
-        worldids = wp.array([0, 1], dtype=int)       # size 2
-        camids = wp.array([0, 1, 2], dtype=int)      # size 3
+        worldids = wp.array([0, 1], dtype=int)  # size 2
+        camids = wp.array([0, 1, 2], dtype=int)  # size 3
         rgb_out = wp.zeros((2, 2, 8, 8), dtype=wp.vec3)  # cam-dim=2, mismatch
 
         with pytest.raises(ValueError, match="camids"):

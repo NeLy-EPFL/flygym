@@ -1,3 +1,23 @@
+from pathlib import Path
+from tempfile import mkstemp
+
+import yaml
+import mujoco as mj
+import numpy as np
+
+from flygym.anatomy import (
+    Skeleton,
+    JointPreset,
+    JointDOF,
+    ActuatedDOFPreset,
+    ContactBodiesPreset,
+)
+from flygym.compose import Fly, ActuatorType, KinematicPose, FlatGroundWorld
+from flygym.rendering import launch_interactive_viewer
+from flygym.utils.math import Rotation3D
+from flygym.utils.pose_conversion import convert_pose_axis_order
+
+
 norotation_rigging_yaml = """
 c_thorax:
   pos: [0.496, 0.0, 1.3]
@@ -334,26 +354,6 @@ joint_angles:
   c_thorax-l_wing-roll: 100
   c_thorax-l_wing-pitch: -3
 """
-
-
-from pathlib import Path
-from tempfile import mkstemp
-
-import yaml
-import mujoco as mj
-import numpy as np
-
-from flygym.anatomy import (
-    Skeleton,
-    JointPreset,
-    JointDOF,
-    ActuatedDOFPreset,
-    ContactBodiesPreset,
-)
-from flygym.compose import Fly, ActuatorType, KinematicPose, FlatGroundWorld
-from flygym.rendering import launch_interactive_viewer
-from flygym.utils.math import Rotation3D
-from flygym.utils.pose_conversion import convert_pose_axis_order
 
 joint_preset = JointPreset.ALL_BIOLOGICAL
 actuated_dofs = ActuatedDOFPreset.LEGS_ACTIVE_ONLY

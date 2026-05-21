@@ -448,7 +448,9 @@ def compiled_fly_model():
     from flygym.compose.pose import KinematicPosePreset
 
     pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
-    skeleton = Skeleton(axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY)
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
+    )
     fly = Fly(name="pc_fly")
     fly.add_joints(skeleton, neutral_pose=pose)
     mj_model, mj_data = fly.compile()
