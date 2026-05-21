@@ -2,7 +2,7 @@ fovy_per_eye: 157
 raw_img_height_px: 512
 raw_img_width_px: 450
 num_ommatidia_per_eye: 721
-# See supplmentary note 5 of the NeuroMechFly v2 paper for how the fish-eye distortion coefficient and zoom were chosen.
+# See supplementary note 5 of the NeuroMechFly v2 paper for how the fish-eye distortion coefficient and zoom were chosen.
 # https://static-content.springer.com/esm/art%3A10.1038%2Fs41592-024-02497-y/MediaObjects/41592_2024_2497_MOESM1_ESM.pdf
 fisheye_distortion_coefficient: 3.8
 fisheye_zoom: 2.72

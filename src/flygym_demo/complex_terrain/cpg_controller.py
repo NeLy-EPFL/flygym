@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from flygym.anatomy import JointDOF
+from flygym_demo.complex_terrain.common import LocomotionAction
+from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
+
+
+def calculate_ddt(
+    theta: np.ndarray,
+    r: np.ndarray,
+    w: np.ndarray,
+    phi: np.ndarray,
+    nu: np.ndarray,
+    R: np.ndarray,
+    alpha: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute oscillator phase and magnitude derivatives."""
+    intrinsic_term = 2 * np.pi * nu
+    phase_diff = theta[np.newaxis, :] - theta[:, np.newaxis]
+    coupling_term = (r * w * np.sin(phase_diff - phi)).sum(axis=1)
+    dtheta_dt = intrinsic_term + coupling_term
+    dr_dt = alpha * (R - r)
+    return dtheta_dt, dr_dt
+
+
+class CPGNetwork:
+    """Euler-integrated network of coupled phase-amplitude oscillators."""
+
+    def __init__(
+        self,
+        timestep: float,
+        intrinsic_freqs: np.ndarray,
+        intrinsic_amps: np.ndarray,
+        coupling_weights: np.ndarray,
+        phase_biases: np.ndarray,
+        convergence_coefs: np.ndarray,
+        init_phases: np.ndarray | None = None,
+        init_magnitudes: np.ndarray | None = None,
+        seed: int = 0,
+    ) -> None:
+        self.timestep = timestep
+        self.num_cpgs = intrinsic_freqs.size
+        self.intrinsic_freqs = np.asarray(intrinsic_freqs, dtype=float)
+        self.intrinsic_amps = np.asarray(intrinsic_amps, dtype=float)
+        self.coupling_weights = np.asarray(coupling_weights, dtype=float)
+        self.phase_biases = np.asarray(phase_biases, dtype=float)
+        self.convergence_coefs = np.asarray(convergence_coefs, dtype=float)
+        self.random_state = np.random.RandomState(seed)
+
+        if self.intrinsic_freqs.shape != (self.num_cpgs,):
+            raise ValueError("intrinsic_freqs must have shape (n,).")
+        if self.intrinsic_amps.shape != (self.num_cpgs,):
+            raise ValueError("intrinsic_amps must have shape (n,).")
+        if self.coupling_weights.shape != (self.num_cpgs, self.num_cpgs):
+            raise ValueError("coupling_weights must have shape (n, n).")
+        if self.phase_biases.shape != (self.num_cpgs, self.num_cpgs):
+            raise ValueError("phase_biases must have shape (n, n).")
+        if self.convergence_coefs.shape != (self.num_cpgs,):
+            raise ValueError("convergence_coefs must have shape (n,).")
+
+        self.reset(init_phases, init_magnitudes)
+
+    def reset(
+        self,
+        init_phases: np.ndarray | None = None,
+        init_magnitudes: np.ndarray | None = None,
+    ) -> None:
+        if init_phases is None:
+            self.curr_phases = self.random_state.random(self.num_cpgs) * 2 * np.pi
+        else:
+            self.curr_phases = np.asarray(init_phases, dtype=float).copy()
+
+        if init_magnitudes is None:
+            self.curr_magnitudes = np.zeros(self.num_cpgs, dtype=float)
+        else:
+            self.curr_magnitudes = np.asarray(init_magnitudes, dtype=float).copy()
+
+    def step(self) -> None:
+        """Integrate the oscillator state by one timestep."""
+        dtheta_dt, dr_dt = calculate_ddt(
+            theta=self.curr_phases,
+            r=self.curr_magnitudes,
+            w=self.coupling_weights,
+            phi=self.phase_biases,
+            nu=self.intrinsic_freqs,
+            R=self.intrinsic_amps,
+            alpha=self.convergence_coefs,
+        )
+        self.curr_phases += dtheta_dt * self.timestep
+        self.curr_magnitudes += dr_dt * self.timestep
+
+
+@dataclass
+class CPGController:
+    """Map CPG oscillator states to preprogrammed leg-step actions."""
+
+    cpg_network: CPGNetwork
+    preprogrammed_steps: PreprogrammedSteps
+    output_dof_order: list[JointDOF] | None = None
+
+    def step(self) -> LocomotionAction:
+        self.cpg_network.step()
+        joint_angles = self.preprogrammed_steps.get_joint_angles_by_dof_order(
+            self.cpg_network.curr_phases,
+            self.cpg_network.curr_magnitudes,
+            self.output_dof_order,
+        )
+        adhesion_onoff = self.preprogrammed_steps.get_adhesion_onoff_by_phase(
+            self.cpg_network.curr_phases
+        )
+        return LocomotionAction(
+            joint_angles=joint_angles, adhesion_onoff=adhesion_onoff
+        )
+
+
+def get_cpg_biases(gait: str) -> np.ndarray:
+    """Define phase biases for tripod, tetrapod, or wave gaits."""
+    gait = gait.lower()
+    if gait == "tripod":
+        phase_biases = np.array(
+            [
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+                [0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 1, 0],
+            ],
+            dtype=float,
+        )
+        phase_biases *= np.pi
+    elif gait == "tetrapod":
+        phase_biases = np.array(
+            [
+                [0, 1, 2, 2, 0, 1],
+                [2, 0, 1, 1, 2, 0],
+                [1, 2, 0, 0, 1, 2],
+                [1, 2, 0, 0, 1, 2],
+                [0, 1, 2, 2, 0, 1],
+                [2, 0, 1, 1, 2, 0],
+            ],
+            dtype=float,
+        )
+        phase_biases *= 2 * np.pi / 3
+    elif gait == "wave":
+        phase_biases = np.array(
+            [
+                [0, 1, 2, 3, 4, 5],
+                [5, 0, 1, 2, 3, 4],
+                [4, 5, 0, 1, 2, 3],
+                [3, 4, 5, 0, 1, 2],
+                [2, 3, 4, 5, 0, 1],
+                [1, 2, 3, 4, 5, 0],
+            ],
+            dtype=float,
+        )
+        phase_biases *= 2 * np.pi / 6
+    else:
+        raise ValueError(f"Unknown gait: {gait}")
+    return phase_biases
+
+
+def make_tripod_cpg_network(
+    timestep: float,
+    *,
+    intrinsic_frequency: float = 12.0,
+    intrinsic_amplitude: float = 1.0,
+    coupling_strength: float = 10.0,
+    convergence_coef: float = 20.0,
+    seed: int = 0,
+) -> CPGNetwork:
+    """Create the default six-leg tripod CPG network."""
+    phase_biases = get_cpg_biases("tripod")
+    return CPGNetwork(
+        timestep=timestep,
+        intrinsic_freqs=np.ones(6) * intrinsic_frequency,
+        intrinsic_amps=np.ones(6) * intrinsic_amplitude,
+        coupling_weights=(phase_biases > 0) * coupling_strength,
+        phase_biases=phase_biases,
+        convergence_coefs=np.ones(6) * convergence_coef,
+        seed=seed,
+    )

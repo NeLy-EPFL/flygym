@@ -7,6 +7,7 @@ import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
 
+from flygym.anatomy import BodySegment
 from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.rendering import Renderer
@@ -43,6 +44,8 @@ class Simulation:
         # Map internal IDs in the compiled MuJoCo model. This allows users to read from
         # or write to body/joint/actuator in orders defined by Fly objects.
         self._map_internal_bodyids()
+        self._map_internal_geom_ids()
+        self._map_internal_ground_geom_ids()
         self._map_internal_qposqveladrs()
         self._map_internal_actuator_ids()
         self._map_internal_adhesionactuator_ids()
@@ -229,7 +232,8 @@ class Simulation:
         Returns:
             A 6-tuple, one entry per leg ordered as in ``fly.get_legs_order()``:
 
-            - ``contact_active``: shape ``(6,)`` — 1 if in contact, 0 otherwise.
+            - ``contact_found``: shape ``(6,)`` — raw ``found`` channel from the
+                MuJoCo contact sensor.
             - ``forces``: shape ``(6, 3)`` — contact force in contact frame.
             - ``torques``: shape ``(6, 3)`` — contact torque in contact frame.
             - ``positions``: shape ``(6, 3)`` — contact position in global frame.
@@ -240,13 +244,82 @@ class Simulation:
         sensor_data = self.mj_data.sensordata[internal_ids]
         # Reshape (6 legs * 16 dims per sensor,) to (6 legs, 16 dim per sensor)
         sensor_data = sensor_data.reshape(6, 16)
-        contact_active = sensor_data[:, 0]
+        contact_found = sensor_data[:, 0]
         forces = sensor_data[:, 1:4]
         torques = sensor_data[:, 4:7]
         positions = sensor_data[:, 7:10]
         normals = sensor_data[:, 10:13]
         tangents = sensor_data[:, 13:]
-        return contact_active, forces, torques, positions, normals, tangents
+        return contact_found, forces, torques, positions, normals, tangents
+
+    def get_bodysegment_contact_forces(
+        self,
+        fly_name: str,
+        body_segments: list[BodySegment | str],
+        *,
+        ground_only: bool = True,
+    ) -> Float[np.ndarray, "n_bodysegments 3"]:
+        """Get net world-frame contact forces on selected body segments.
+
+        Args:
+            fly_name: Name of the fly.
+            body_segments: Body segments to query, ordered as desired in the output.
+            ground_only: If True, include only contacts with world ground geoms.
+
+        Returns:
+            Net force vectors in MuJoCo world coordinates, one row per requested body
+            segment.
+        """
+        requested_segments = [
+            seg if isinstance(seg, BodySegment) else BodySegment(seg)
+            for seg in body_segments
+        ]
+        geom_ids_by_segment = self._internal_geomid_by_bodyseg_by_fly[fly_name]
+        requested_geom_to_output = {
+            geom_ids_by_segment[seg]: i for i, seg in enumerate(requested_segments)
+        }
+        forces = np.zeros((len(requested_segments), 3), dtype=float)
+
+        ncon = self.mj_data.ncon
+        if ncon == 0:
+            return forces
+
+        # Vectorised filtering: find relevant contact indices without a Python loop.
+        contacts = self.mj_data.contact
+        geom1_arr = contacts.geom1[:ncon]
+        geom2_arr = contacts.geom2[:ncon]
+        exclude_arr = contacts.exclude[:ncon].astype(bool)
+
+        requested_geom_arr = np.array(
+            list(requested_geom_to_output.keys()), dtype=np.int32
+        )
+        geom1_requested = np.isin(geom1_arr, requested_geom_arr)
+        geom2_requested = np.isin(geom2_arr, requested_geom_arr)
+        active = (geom1_requested | geom2_requested) & ~exclude_arr
+
+        if ground_only:
+            ground_arr = self._internal_ground_geom_ids
+            geom1_is_ground = np.isin(geom1_arr, ground_arr)
+            geom2_is_ground = np.isin(geom2_arr, ground_arr)
+            active &= (geom1_requested & geom2_is_ground) | (
+                geom2_requested & geom1_is_ground
+            )
+
+        contact_wrench = np.zeros(6, dtype=float)
+        for contact_id in np.where(active)[0]:
+            mj.mj_contactForce(
+                self.mj_model, self.mj_data, int(contact_id), contact_wrench
+            )
+            frame = contacts.frame[contact_id].reshape(3, 3)
+            world_force = frame.T @ contact_wrench[:3]
+
+            g1, g2 = int(geom1_arr[contact_id]), int(geom2_arr[contact_id])
+            if g1 in requested_geom_to_output:
+                forces[requested_geom_to_output[g1]] -= world_force
+            if g2 in requested_geom_to_output:
+                forces[requested_geom_to_output[g2]] += world_force
+
+        return forces
 
     def get_site_positions(self, fly_name: str) -> Float[np.ndarray, "n_sites 3"]:
         """Get global 3D positions of anatomical-joint sites.
@@ -290,8 +363,8 @@ class Simulation:
 
         Args:
             fly_name: Name of the fly.
-            leg_to_adhesion_state: Adhesion gain per leg, shape ``(6,)``, ordered as in
-                ``fly.get_legs_order()``. Values should be in the range ``[1, 100]``.
+            leg_to_adhesion_state: Adhesion control per leg, shape ``(6,)``, ordered as
+                in ``fly.get_legs_order()``. Values should be in the range ``[0, 1]``.
         """
         internal_ids = self._intern_adhesionactuatorids_by_fly[fly_name]
         if len(leg_to_adhesion_state) != len(internal_ids):
@@ -409,6 +482,35 @@ class Simulation:
             k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
         }
 
+    def _map_internal_geom_ids(self) -> None:
+        internal_geomids_by_bodyseg_by_fly = {}
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            internal_geomids_by_bodyseg_by_fly[fly_name] = {}
+            for bodyseg, mjcf_geom_element in fly.bodyseg_to_mjcfgeom.items():
+                internal_geom_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_GEOM,
+                    mjcf_geom_element.full_identifier,
+                )
+                internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = internal_geom_id
+
+        self._internal_geomid_by_bodyseg_by_fly = internal_geomids_by_bodyseg_by_fly
+
+    def _map_internal_ground_geom_ids(self) -> None:
+        internal_ground_geom_ids = []
+        for ground_geom in getattr(self.world, "ground_geoms", []):
+            internal_ground_geom_ids.append(
+                mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_GEOM,
+                    ground_geom.full_identifier,
+                )
+            )
+        self._internal_ground_geom_ids = np.array(
+            internal_ground_geom_ids, dtype=np.int32
+        )
+
     def _map_internal_jointids(self) -> None:
         internal_jointids_by_fly = defaultdict(list)
 
@@ -495,13 +597,18 @@ class Simulation:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:
             self._intern_groundcontactsensorids_by_fly = None
             return
-        else:
-            self._intern_groundcontactsensorids_by_fly = {}
+
+        self._intern_groundcontactsensorids_by_fly = {}
 
         for fly_name, fly in self.world.fly_lookup.items():
             indices_thisfly = []
+            sensors_by_leg = self.world.legpos_to_groundcontactsensors_by_fly.get(
+                fly_name, {}
+            )
             for leg in fly.get_legs_order():
-                sensor = self.world.legpos_to_groundcontactsensors_by_fly[fly_name][leg]
+                sensor = sensors_by_leg.get(leg)
+                if sensor is None:
+                    continue
                 internal_id = mj.mj_name2id(
                     self.mj_model, mj.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
                 )
