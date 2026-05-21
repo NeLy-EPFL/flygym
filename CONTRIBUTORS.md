@@ -1,3 +1,8 @@
+# Contributors
+
+If you find yourself missing from the following lists, please submit a PR with your name
+added.
+
 ## NeuroMechFly v1 (Lobato-Rios et al., 2022)
 - [Victor Lobato-Rios](https://www.linkedin.com/in/victor-lobato-rios-986756301/)
 - [Shravan Tata Ramalingasetty](https://www.linkedin.com/in/shravan-tata-ramalingasetty-90409359/)
@@ -15,6 +20,7 @@
 - [Femke Hurtak](https://www.linkedin.com/in/femke-hurtak/)
 - [Pavan Ramdya](https://www.epfl.ch/labs/ramdya-lab/)
 - [Dominic Dall’Osto](https://www.linkedin.com/in/dominicdallosto/)
+- [Evgeniy Stepanov](https://www.linkedin.com/in/stepanove)
 
 ## FlyGym v2.x.x (2026)
 - [Sibo Wang-Chen](https://sibocw.github.io/)

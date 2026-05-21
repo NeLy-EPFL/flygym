@@ -46,8 +46,7 @@ dev = [
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
     # Formatting and linting
-    "black>=26.1,<27.0",
-    "ruff==0.15.8",
+    "ruff==0.15.13",
     # PyPI publishing
     "build>=1.0,<2.0",
     "twine>=6.0,<7.0",

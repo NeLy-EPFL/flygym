@@ -38,4 +38,6 @@
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
 * [Changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md)
+* [Contributing to FlyGym](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTING.md)
+* [Contributors](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTORS.md)
 * [Citing NeuroMechFly](citation.md)
