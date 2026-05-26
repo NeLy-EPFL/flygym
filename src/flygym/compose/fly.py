@@ -493,6 +493,21 @@ class Fly(BaseCompositionElement):
         return return_dict
 
     def add_vision(self, draw_sensor_markers: bool = False):
+        """Add eye cameras to the fly. The cameras are defined in vision.yaml
+        in the assets directory.
+
+        Args:
+            draw_markers:
+                If True, add visible markers to indicate sensor locations.
+
+        Returns:
+            Dictionary mapping sensor names to MJCF sensor elements.
+        Raises:
+            ValueError: If eye cameras have already been added.
+        """
+        if len(self.eyecameraname_to_mjcfcamera) > 0:
+            raise ValueError("Eye cameras have already been added.")
+
         with open(assets_dir / "model/vision.yaml") as f:
             info = yaml.safe_load(f)
 

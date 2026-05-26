@@ -376,7 +376,7 @@ class Simulation:
                 f"expected {len(internal_ids)}, got {len(leg_to_adhesion_state)}"
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
-    
+
     def get_olfaction(
         self, fly_name: str, **kwargs
     ) -> Float[np.ndarray, "n_sensors n_odor_dimensions"]:
@@ -652,7 +652,7 @@ class Simulation:
         self._internal_siteids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_siteids_by_fly.items()
         }
-    
+
     def _map_internal_odor_sensor_ids(self) -> None:
         internal_odor_sensorids_by_fly = defaultdict(list)
 
@@ -666,7 +666,8 @@ class Simulation:
                 internal_odor_sensorids_by_fly[fly_name].append(internal_odor_sensor_id)
 
         self._intern_odor_sensorids_by_fly = {
-            k: np.array(v, dtype=np.int32) for k, v in internal_odor_sensorids_by_fly.items()
+            k: np.array(v, dtype=np.int32)
+            for k, v in internal_odor_sensorids_by_fly.items()
         }
 
     def _map_internal_eye_camera_ids(self):
