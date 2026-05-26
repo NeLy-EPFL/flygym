@@ -663,3 +663,90 @@ def _sort_legsegs_prox2dist(segments: list[BodySegment]) -> list[BodySegment]:
 
 def _format_name_number(value: float) -> str:
     return f"{value:.3f}".replace("-", "m").replace(".", "p")
+
+
+class OdorMixin:
+    mjcf_root: mjcf.RootElement
+    odor_positions: np.ndarray
+    peak_intensities: np.ndarray
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.odor_positions = np.empty((0, 3))
+        self.peak_intensities = np.empty((0, 0))
+
+    def add_odor_source(
+        self,
+        pos: Vec3,
+        peak_intensity=np.array([1.0]),
+        name=None,
+        marker_type: str = "capsule",
+        marker_size: float = (0.25, 0.25),
+        marker_rgba: tuple[float, float, float, float] = (1, 0, 0, 1),
+    ) -> None:
+        """
+        Add an odor source to the world.
+
+        Args:
+            pos:
+                The position of the odor source.
+            peak_intensity:
+                The peak intensity of the odor source.
+            name:
+                The name of the odor source.
+            marker_type:
+                The type of marker to use for the odor source.
+            marker_size:
+                The size of the marker.
+            marker_rgba:
+                The color of the marker.
+        """
+        if name is None:
+            name = f"odor_source_{len(self.odor_positions)}"
+
+        if self.peak_intensities.shape[0] == 0:
+            self.peak_intensities = np.array([peak_intensity])
+        else:
+            self.peak_intensities = np.vstack([self.peak_intensities, peak_intensity])
+
+        self.odor_positions = np.vstack([self.odor_positions, pos])
+
+        marker_body = self.mjcf_root.worldbody.add(
+            "body", name=name, pos=pos, mocap=True
+        )
+        marker_body.add(
+            "geom",
+            type=marker_type,
+            size=marker_size,
+            rgba=marker_rgba,
+        )
+
+    def get_olfaction(self, sensor_positions: np.ndarray):
+        """
+        Get the olfactory sensor readings based on the current positions of the odor sources
+        and the sensor positions.
+
+        Args:
+            sensor_positions:
+                An array of shape (n_sensors, 3) containing the positions of the olfactory sensors.
+
+        Returns:
+            An array of shape (n_sensors, n_odor_dimensions) containing the olfactory sensor readings.
+        """
+        from scipy.spatial.distance import cdist
+
+        # sensor_positions: (n_sensors, 3)
+        # odor_positions: (n_odor_sources, 3)
+        # distances: (n_sensors, n_odor_sources)
+        distances = cdist(sensor_positions, self.odor_positions)
+
+        # Assuming odor intensity follows an inverse square law with distance
+        inv_squared_distances = distances**-2
+
+        # Multiply each odor source's contribution by its peak intensity and
+        # sum contributions from all odor sources for each odor dimension.
+        # inv_squared_distances: (n_sensors, n_odor_sources)
+        # peak_intensities: (n_odor_sources, n_odor_dimensions)
+        # sensor_readings: (n_sensors, n_odor_dimensions)
+        sensor_readings = inv_squared_distances @ self.peak_intensities
+        return sensor_readings
