@@ -52,6 +52,7 @@ class Simulation:
         self._map_internal_jointids()
         self._map_internal_groundcontactsensor_ids()
         self._map_internal_site_ids()
+        self._map_internal_odor_sensor_ids()
         self._map_internal_eye_camera_ids()
 
         self.eye_renderer = None
@@ -375,6 +376,17 @@ class Simulation:
                 f"expected {len(internal_ids)}, got {len(leg_to_adhesion_state)}"
             )
         self.mj_data.ctrl[internal_ids] = leg_to_adhesion_state
+    
+    def get_olfaction(
+        self, fly_name: str, **kwargs
+    ) -> Float[np.ndarray, "n_sensors n_odor_dimensions"]:
+        if callable(getattr(self.world, "get_olfaction", None)):
+            internal_ids = self._intern_odor_sensorids_by_fly[fly_name]
+            indices = self.mj_model.sensor_adr[internal_ids][:, None] + np.arange(3)
+            sensor_positions = self.mj_data.sensordata[indices]
+            return getattr(self.world, "get_olfaction")(sensor_positions, **kwargs)
+        else:
+            raise NotImplementedError("The current world does not support olfaction.")
 
     def get_raw_vision(self, fly_name: str) -> Float[np.ndarray, "2 height width 3"]:
         """Render the fly's eye cameras and return fisheye-corrected frames.
@@ -639,6 +651,22 @@ class Simulation:
 
         self._internal_siteids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_siteids_by_fly.items()
+        }
+    
+    def _map_internal_odor_sensor_ids(self) -> None:
+        internal_odor_sensorids_by_fly = defaultdict(list)
+
+        for fly_name, fly in self.world.fly_lookup.items():
+            for odor_sensor_element in fly.odorsensorname_to_mjcfsensor.values():
+                internal_odor_sensor_id = mj.mj_name2id(
+                    self.mj_model,
+                    mj.mjtObj.mjOBJ_SENSOR,
+                    odor_sensor_element.full_identifier,
+                )
+                internal_odor_sensorids_by_fly[fly_name].append(internal_odor_sensor_id)
+
+        self._intern_odor_sensorids_by_fly = {
+            k: np.array(v, dtype=np.int32) for k, v in internal_odor_sensorids_by_fly.items()
         }
 
     def _map_internal_eye_camera_ids(self):

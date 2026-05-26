@@ -161,6 +161,7 @@ class Fly(BaseCompositionElement):
         self.anatomicaljoint_to_mjcfsites = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
+        self.odorsensorname_to_mjcfsensor = {}
         self.eyecameraname_to_mjcfcamera = {}
 
         self.jointdof_to_neutralangle = {}
@@ -441,6 +442,55 @@ class Fly(BaseCompositionElement):
                 ctrlrange=(0, 1),
             )
         return self.leg_to_adhesionactuator
+
+    def add_odor_sensors(self, draw_sensor_markers: bool = False):
+        """Add olfactory sensors to the fly. The sensors are defined in olfaction.yaml
+        in the assets directory.
+
+        Args:
+            draw_markers:
+                If True, add visible markers to indicate sensor locations.
+
+        Returns:
+            Dictionary mapping sensor names to MJCF sensor elements.
+        Raises:
+            ValueError: If odor sensors have already been added.
+        """
+        if len(self.odorsensorname_to_mjcfsensor) > 0:
+            raise ValueError("Odor sensors have already been added.")
+
+        with open(assets_dir / "model/olfaction.yaml") as f:
+            sensor_infos = yaml.safe_load(f)["sensors"]
+
+        return_dict = {}
+
+        for sensor_name, sensor_info in sensor_infos.items():
+            parent_body = self.mjcf_root.find("body", sensor_info["parent"])
+            sensor_body = parent_body.add(
+                "body", name=f"{sensor_name}_body", pos=sensor_info["rel_pos"]
+            )
+            sensor = self.mjcf_root.sensor.add(
+                "framepos",
+                name=f"{sensor_name}_pos_sensor",
+                objtype="body",
+                objname=f"{sensor_name}_body",
+            )
+            geom_group = 1 if draw_sensor_markers else 4
+            sensor_body.add(
+                "geom",
+                name=f"{sensor_name}_marker",
+                type="sphere",
+                size=[0.06],
+                rgba=sensor_info["marker_rgba"],
+                mass=0,
+                contype=0,
+                conaffinity=0,
+                group=geom_group,
+            )
+            return_dict[sensor.name] = sensor
+
+        self.odorsensorname_to_mjcfsensor.update(return_dict)
+        return return_dict
 
     def add_vision(self, draw_sensor_markers: bool = False):
         with open(assets_dir / "model/vision.yaml") as f:
