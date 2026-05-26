@@ -114,6 +114,40 @@ class BaseWorld(BaseCompositionElement, ABC):
             height=10,
         )
 
+    def add_camera(
+        self,
+        name: str = "birdeyecam",
+        mode: str = "fixed",
+        pos: Vec3 = (0, 0, 35),
+        rotation: Rotation3D = Rotation3D("euler", (0, 0, 0)),
+        fovy: float = 45,
+        **kwargs,
+    ):
+        """Add a camera to the world.
+
+        Args:
+            name: Camera name.
+            mode: MuJoCo camera tracking mode.
+            pos_offset: Camera position offset from the world in mm.
+            rotation: Camera orientation as a `Rotation3D`.
+            fovy: Vertical field of view in degrees.
+            **kwargs: Additional attributes passed to the MJCF camera element. See
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera).
+
+        Returns:
+            The created MJCF camera element.
+        """
+        camera = self.mjcf_root.worldbody.add(
+            "camera",
+            name=name,
+            mode=mode,
+            pos=pos,
+            fovy=fovy,
+            **rotation.as_kwargs(),
+            **kwargs,
+        )
+        return camera
+
     def add_fly(
         self,
         fly: Fly,
