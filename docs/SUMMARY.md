@@ -2,6 +2,7 @@
 * [Installation](installation.md)
 * [FlyGym v1 vs. v2 API](migration.md)
 * [Interactive Viewer](interactive.md)
+* [Muscle-Based Imitation Learning](imitation_muscle.md)
 * Tutorials
     * 1&#46; Composing models and scenes
         * [1a. Basic model composition](tutorials/1a_basic_model_composition.ipynb)
