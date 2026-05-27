@@ -41,10 +41,16 @@ warp = [
     "warp-lang>=1.12,<1.13",
     "mujoco_warp>=3.6,<3.7",
 ]
+imitation = [
+    "gymnasium>=1.0,<2.0",
+    "stable-baselines3>=2.0,<3.0",
+]
 dev = [
     # Testing
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
+    # Imitation-learning env (flygym.imitation) used by tests/core/test_imitation.py
+    "gymnasium>=1.0,<2.0",
     # Formatting and linting
     "ruff==0.15.13",
     # PyPI publishing
