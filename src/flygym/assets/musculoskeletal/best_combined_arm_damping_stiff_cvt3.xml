@@ -1,0 +1,548 @@
+<mujoco model="template">
+  <!-- This model has been converted from an OpenSim model. Model conversion by MyoConverter https://github.com/MyoHub/myoconverter. This model is licensed under Apache 2.0. -->
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="1e-04" gravity="0 0 -9801"/>
+  <size njmax="1000" nconmax="400" nkey="1" nuser_jnt="1"/>
+  <visual>
+    <scale framelength="0.5" framewidth="0.01"/>
+  </visual>
+  <statistic meansize="0.298677" extent="5.78307" center="-0.79295 0.00627929 2.89153"/>
+  <default class="main">
+    <joint limited="true" armature="0.0005" stiffness="0.4" damping="0.02"/>
+    <geom margin="0.001" rgba="0.8 0.6 0.4 1"/>
+    <site size="0.001 0.005 0.005"/>
+    <tendon limited="false" width="0.01" rgba="0.0 0.0 0.95 1"/>
+    <default class="muscle">
+      <general ctrllimited="true" ctrlrange="0 1" dyntype="muscle" gaintype="muscle" biastype="muscle" dynprm="0.01 0.04 0 0 0 0 0 0 0 0" gainprm="0.75 1.05 -1 200 0.5 1.6 1.5 1.3 1.2 0" biasprm="0.75 1.05 -1 200 0.5 1.6 1.5 1.3 1.2 0"/>
+    </default>
+    <default class="motor">
+      <general gainprm="5 0 0 0 0 0 0 0 0 0"/>
+    </default>
+  </default>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.1 0.1 0.1" rgb2="0 0 0" width="256" height="1536"/>
+    <mesh name="Thorax_geom_Thorax" file="./meshes/stl/Thorax.stl" scale="1000 1000 1000"/>
+    <mesh name="A1A2_geom_A1A2" file="./meshes/stl/A1A2.stl" scale="1000 1000 1000"/>
+    <mesh name="A3_geom_A3" file="./meshes/stl/A3.stl" scale="1000 1000 1000"/>
+    <mesh name="A4_geom_A4" file="./meshes/stl/A4.stl" scale="1000 1000 1000"/>
+    <mesh name="A5_geom_A5" file="./meshes/stl/A5.stl" scale="1000 1000 1000"/>
+    <mesh name="A6_geom_A6" file="./meshes/stl/A6.stl" scale="1000 1000 1000"/>
+    <mesh name="Head_geom_Head" file="./meshes/stl/Head.stl" scale="1000 1000 1000"/>
+    <mesh name="LEye_geom_LEye" file="./meshes/stl/LEye.stl" scale="1000 1000 1000"/>
+    <mesh name="LPedicel_geom_LPedicel" file="./meshes/stl/LPedicel.stl" scale="1000 1000 1000"/>
+    <mesh name="LFuniculus_geom_LFuniculus" file="./meshes/stl/LFuniculus.stl" scale="1000 1000 1000"/>
+    <mesh name="LArista_geom_LArista" file="./meshes/stl/LArista.stl" scale="1000 1000 1000"/>
+    <mesh name="REye_geom_REye" file="./meshes/stl/REye.stl" scale="1000 1000 1000"/>
+    <mesh name="RPedicel_geom_RPedicel" file="./meshes/stl/RPedicel.stl" scale="1000 1000 1000"/>
+    <mesh name="RFuniculus_geom_RFuniculus" file="./meshes/stl/RFuniculus.stl" scale="1000 1000 1000"/>
+    <mesh name="RArista_geom_RArista" file="./meshes/stl/RArista.stl" scale="1000 1000 1000"/>
+    <mesh name="Rostrum_geom_Rostrum" file="./meshes/stl/Rostrum.stl" scale="1000 1000 1000"/>
+    <mesh name="Haustellum_geom_Haustellum" file="./meshes/stl/Haustellum.stl" scale="1000 1000 1000"/>
+    <mesh name="LFCoxa_geom_LFCoxa" file="./meshes/stl/LFCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTrochanter_geom_LFTrochanter" file="./meshes/stl/LFTrochanter.stl" scale="1000 1000 1000"/>
+    <mesh name="LFFemur_geom_LFFemur" file="./meshes/stl/LFFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTibia_geom_LFTibia" file="./meshes/stl/LFTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTarsus1_geom_LFTarsus1" file="./meshes/stl/LFTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTarsus2_geom_LFTarsus2" file="./meshes/stl/LFTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTarsus3_geom_LFTarsus3" file="./meshes/stl/LFTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTarsus4_geom_LFTarsus4" file="./meshes/stl/LFTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="LFTarsus5_geom_LFTarsus5" file="./meshes/stl/LFTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="LHCoxa_geom_LHCoxa" file="./meshes/stl/LHCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="LHFemur_geom_LHFemur" file="./meshes/stl/LHFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTibia_geom_LHTibia" file="./meshes/stl/LHTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTarsus1_geom_LHTarsus1" file="./meshes/stl/LHTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTarsus2_geom_LHTarsus2" file="./meshes/stl/LHTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTarsus3_geom_LHTarsus3" file="./meshes/stl/LHTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTarsus4_geom_LHTarsus4" file="./meshes/stl/LHTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="LHTarsus5_geom_LHTarsus5" file="./meshes/stl/LHTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="LHaltere_geom_LHaltere" file="./meshes/stl/LHaltere.stl" scale="1000 1000 1000"/>
+    <mesh name="LMCoxa_geom_LMCoxa" file="./meshes/stl/LMCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="LMFemur_geom_LMFemur" file="./meshes/stl/LMFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTibia_geom_LMTibia" file="./meshes/stl/LMTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTarsus1_geom_LMTarsus1" file="./meshes/stl/LMTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTarsus2_geom_LMTarsus2" file="./meshes/stl/LMTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTarsus3_geom_LMTarsus3" file="./meshes/stl/LMTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTarsus4_geom_LMTarsus4" file="./meshes/stl/LMTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="LMTarsus5_geom_LMTarsus5" file="./meshes/stl/LMTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="LWing_geom_LWing" file="./meshes/stl/LWing.stl" scale="1000 1000 1000"/>
+    <mesh name="RFCoxa_geom_RFCoxa" file="./meshes/stl/RFCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTrochanter_geom_RFTrochanter" file="./meshes/stl/RFTrochanter.stl" scale="1000 1000 1000"/>
+    <mesh name="RFFemur_geom_RFFemur" file="./meshes/stl/RFFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTibia_geom_RFTibia" file="./meshes/stl/RFTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTarsus1_geom_RFTarsus1" file="./meshes/stl/RFTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTarsus2_geom_RFTarsus2" file="./meshes/stl/RFTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTarsus3_geom_RFTarsus3" file="./meshes/stl/RFTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTarsus4_geom_RFTarsus4" file="./meshes/stl/RFTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="RFTarsus5_geom_RFTarsus5" file="./meshes/stl/RFTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="RHCoxa_geom_RHCoxa" file="./meshes/stl/RHCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="RHFemur_geom_RHFemur" file="./meshes/stl/RHFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTibia_geom_RHTibia" file="./meshes/stl/RHTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTarsus1_geom_RHTarsus1" file="./meshes/stl/RHTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTarsus2_geom_RHTarsus2" file="./meshes/stl/RHTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTarsus3_geom_RHTarsus3" file="./meshes/stl/RHTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTarsus4_geom_RHTarsus4" file="./meshes/stl/RHTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="RHTarsus5_geom_RHTarsus5" file="./meshes/stl/RHTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="RHaltere_geom_RHaltere" file="./meshes/stl/RHaltere.stl" scale="1000 1000 1000"/>
+    <mesh name="RMCoxa_geom_RMCoxa" file="./meshes/stl/RMCoxa.stl" scale="1000 1000 1000"/>
+    <mesh name="RMFemur_geom_RMFemur" file="./meshes/stl/RMFemur.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTibia_geom_RMTibia" file="./meshes/stl/RMTibia.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTarsus1_geom_RMTarsus1" file="./meshes/stl/RMTarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTarsus2_geom_RMTarsus2" file="./meshes/stl/RMTarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTarsus3_geom_RMTarsus3" file="./meshes/stl/RMTarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTarsus4_geom_RMTarsus4" file="./meshes/stl/RMTarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="RMTarsus5_geom_RMTarsus5" file="./meshes/stl/RMTarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="RWing_geom_RWing" file="./meshes/stl/RWing.stl" scale="1000 1000 1000"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"></texture>
+    <material name="MatPlane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true"></material>
+  </asset>
+  <worldbody>
+    <geom name="floor" pos="0 0 0" size="10 10 0.125" type="plane" material="MatPlane" condim="3"></geom>
+    <light pos="0 0 0" dir="0 0 -1" directional="true"/>
+    <body name="ground" quat="0.707035 0.707179 0 0"/>
+    <body name="Thorax" pos="0 0 4" quat="1 0.00039815 0 0">
+      <inertial pos="-0.494322 0.00632413 -0.092333" quat="0.707107 0 0 0.707107" mass="0.000764745" diaginertia="0.000147879 0.000132741 0.000130565"/>
+      <geom name="Thorax_geom" type="mesh" rgba="0.54902 0.392157 0.117647 0.4" mesh="Thorax_geom_Thorax"/>
+      <site name="LFC_tergopleural_promotor_a_LFC_Miller28a_p1" pos="-0.114654 0.257882 -0.0767316"/>
+      <site name="LFC_tergopleural_promotor_a_LFC_Miller28a_p296" pos="-0.0536972 0.195885 -0.156875"/>
+      <site name="LFC_tergopleural_promotor_b_LFC_Miller28b_p1" pos="-0.0240142 0.173429 0.0948372"/>
+      <site name="LFC_tergopleural_promotor_b_LFC_Miller28b_p296" pos="-0.0488125 0.190386 -0.14598"/>
+      <site name="LFC_pleural_remotor_and_abductor_LFC_Miller29_p1" pos="-0.142657 0.360402 -0.0136161"/>
+      <site name="LFC_pleural_promotor_LFC_Miller30_p1" pos="-0.0711132 0.0949424 -0.189604"/>
+      <site name="LFC_sternal_anterior_rotator_LFC_Miller31_p1" pos="-0.115085 -0.00351255 -0.261577"/>
+      <site name="LFC_sternal_posterior_rotator_LFC_Miller32_p1" pos="-0.19309 0.155095 -0.212373"/>
+      <site name="LFC_sternal_adductor_LFC_Miller33_p1" pos="-0.224526 0.00517388 -0.283581"/>
+      <body name="A1A2" pos="-0.8331 0.003688 -0.1676">
+        <inertial pos="-0.24128 0.00311472 0.0148448" quat="0.707107 0.707107 0 0" mass="0.000213925" diaginertia="2.54273e-05 2.00535e-05 1.33312e-05"/>
+        <geom name="A1A2_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="A1A2_geom_A1A2"/>
+        <body name="A3" pos="-0.3565 1.131e-05 0.0006225">
+          <inertial pos="-0.0715831 0.00345898 -0.0502004" quat="0.707107 0.707107 0 0" mass="0.000186803" diaginertia="2.39895e-05 1.67418e-05 1.1667e-05"/>
+          <geom name="A3_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="A3_geom_A3"/>
+          <body name="A4" pos="-0.2376 7.636e-06 0.001245">
+            <inertial pos="-0.0908526 0.00344036 -0.0632832" quat="0.707107 0.707107 0 0" mass="0.000160204" diaginertia="1.96464e-05 1.42062e-05 8.61745e-06"/>
+            <geom name="A4_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="A4_geom_A4"/>
+            <body name="A5" pos="-0.2143 6.839e-06 0.0007057">
+              <inertial pos="-0.105531 0.00359672 -0.0687575" quat="0.707107 0.707107 0 0" mass="0.000172917" diaginertia="1.87016e-05 1.36745e-05 9.94377e-06"/>
+              <geom name="A5_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="A5_geom_A5"/>
+              <body name="A6" pos="-0.268 8.629e-06 0.001505">
+                <inertial pos="-0.161579 0.00335752 -0.0439147" quat="0.707107 0.707107 0 0" mass="0.000175666" diaginertia="1.35482e-05 1.2723e-05 1.07663e-05"/>
+                <geom name="A6_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="A6_geom_A6"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="Head" pos="0.02132 0.0007789 0.009236">
+        <inertial pos="0.255478 4.1764e-05 0.000543805" quat="0.707107 0.707107 0 0" mass="0.000222534" diaginertia="1.92885e-05 1.59947e-05 1.35827e-05"/>
+        <geom name="Head_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="Head_geom_Head"/>
+        <body name="LEye" pos="0.2549 0.003504 0.02267">
+          <inertial pos="-0.0274789 0.304692 -0.0266042" quat="0.707107 0 0 0.707107" mass="4.17671e-05" diaginertia="1.43734e-06 1.03674e-06 7.26012e-07"/>
+          <geom name="LEye_geom" type="mesh" rgba="0.67 0.21 0.12 0" mesh="LEye_geom_LEye"/>
+        </body>
+        <body name="LPedicel" pos="0.4451 0.08574 0.09248">
+          <inertial pos="0.0581497 0.00781413 -0.0246243" quat="0 0.707107 0 0.707107" mass="3.70423e-06" diaginertia="2.21575e-08 1.66688e-08 1.53325e-08"/>
+          <geom name="LPedicel_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="LPedicel_geom_LPedicel"/>
+          <body name="LFuniculus" pos="0.03883 -0.000308 -0.037">
+            <inertial pos="0.00696675 -0.00606963 -0.114734" mass="2.28746e-06" diaginertia="9.85951e-09 9.69762e-09 5.56069e-09"/>
+            <geom name="LFuniculus_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="LFuniculus_geom_LFuniculus"/>
+            <body name="LArista" pos="0.02065 0.04886 -0.0705">
+              <inertial pos="0.00595896 0.11696 0.00247718" quat="0.707107 0.707107 0 0" mass="1.82512e-06" diaginertia="1.3335e-08 1.10473e-08 3.45166e-09"/>
+              <geom name="LArista_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="LArista_geom_LArista"/>
+            </body>
+          </body>
+        </body>
+        <body name="REye" pos="0.2549 -0.004274 0.02267">
+          <inertial pos="-0.0373091 -0.295704 -0.0367505" quat="0.707107 0 0 0.707107" mass="4.65637e-05" diaginertia="1.63701e-06 1.18732e-06 8.76892e-07"/>
+          <geom name="REye_geom" type="mesh" rgba="0.67 0.21 0.12 0" mesh="REye_geom_REye"/>
+        </body>
+        <body name="RPedicel" pos="0.4451 -0.09396 0.09248">
+          <inertial pos="0.0557377 -0.00782174 -0.0272507" quat="0 0.707107 0 0.707107" mass="3.95677e-06" diaginertia="2.49749e-08 1.83245e-08 1.74009e-08"/>
+          <geom name="RPedicel_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="RPedicel_geom_RPedicel"/>
+          <body name="RFuniculus" pos="0.04458 0.0009634 -0.037">
+            <inertial pos="-0.000266105 0.0121457 -0.113255" mass="2.3598e-06" diaginertia="1.04373e-08 9.92513e-09 5.94119e-09"/>
+            <geom name="RFuniculus_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="RFuniculus_geom_RFuniculus"/>
+            <body name="RArista" pos="0.01495 -0.05104 -0.06929">
+              <inertial pos="0.00754415 -0.108724 0.0018316" quat="0.707107 0.707107 0 0" mass="2.00695e-06" diaginertia="1.46812e-08 1.21048e-08 4.06603e-09"/>
+              <geom name="RArista_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="RArista_geom_RArista"/>
+            </body>
+          </body>
+        </body>
+        <body name="Rostrum" pos="0.466 -0.01276 -0.2599">
+          <inertial pos="0.00656494 0.0181497 -0.171677" quat="0.5 0.5 0.5 0.5" mass="6.84514e-05" diaginertia="2.3845e-06 2.3382e-06 1.92715e-06"/>
+          <geom name="Rostrum_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="Rostrum_geom_Rostrum"/>
+          <body name="Haustellum" pos="0.03579 -0.0004681 -0.3697">
+            <inertial pos="0.152665 0.0228224 -0.00316751" quat="0 0.707107 0 0.707107" mass="2.34306e-05" diaginertia="4.98891e-07 3.72017e-07 3.24565e-07"/>
+            <geom name="Haustellum_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="Haustellum_geom_Haustellum"/>
+          </body>
+        </body>
+      </body>
+      <body name="LFCoxa" pos="-0.1306 0.1995 -0.2305">
+        <inertial pos="0.00455966 -0.0113278 -0.215003" quat="0.707107 0 0 0.707107" mass="9.73852e-06" diaginertia="1.82938e-07 1.82146e-07 3.66796e-08"/>
+        <joint name="joint_LFCoxa_yaw" pos="0 0 0" axis="1 0 0" limited="false" range="-0.597 0.2745" springref="-0.11"/>
+        <joint name="joint_LFCoxa_pitch" pos="0 0 0" axis="0 1 0" limited="false" range="-0.5783 0.7375" springref="0.35"/>
+        <joint name="joint_LFCoxa_roll" pos="0 0 0" axis="0 0 1" range="0.1436 0.6236" springref="0.5"/>
+        <geom name="LFCoxa_geom" type="mesh" rgba="0.670588 0.509804 0.196078 0.4" mesh="LFCoxa_geom_LFCoxa"/>
+        <site name="LFC_tergopleural_promotor_a_LFC_Miller28a_p396" pos="0.0245106 -0.0407481 0.0471896"/>
+        <site name="LFC_tergopleural_promotor_b_LFC_Miller28b_p396" pos="0.0143019 -0.0150923 0.00156441"/>
+        <site name="LFC_pleural_remotor_and_abductor_LFC_Miller29_p296" pos="-0.0146505 0.0607293 -0.00146763"/>
+        <site name="LFC_pleural_promotor_LFC_Miller30_p296" pos="0.0237058 -0.0286361 -0.0128408"/>
+        <site name="LFC_sternal_anterior_rotator_LFC_Miller31_p296" pos="-0.000252024 -0.0417953 -0.0781376"/>
+        <site name="LFC_sternal_posterior_rotator_LFC_Miller32_p296" pos="-0.0235126 0.0447151 -0.0653978"/>
+        <site name="LFC_sternal_adductor_LFC_Miller33_p296" pos="0.0171012 -0.0661154 -0.10726"/>
+        <site name="LFF_trochanter_flexor_b_lff_thco_flexb_p1" pos="0.0170207 -0.0595734 -0.149676"/>
+        <site name="LFF_trochanter_flexor_b_lff_thco_flexb_p222" pos="0.00538458 -0.000688346 -0.323979"/>
+        <site name="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p1" pos="-0.0259722 0.0507932 -0.138759"/>
+        <site name="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p222" pos="-0.0352248 0.0126312 -0.373938"/>
+        <site name="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p1" pos="-0.0208632 -0.0709668 -0.178621"/>
+        <site name="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p222" pos="-0.0389383 -0.00938934 -0.362884"/>
+        <site name="LFF_accesory_trochanter_flexor_LFF_roll_f_p1" pos="-0.0193081 0.0479785 -0.207105"/>
+        <site name="LFF_trochanter_extensor_LFF_roll_e_p1" pos="-0.0381487 0.0404632 -0.339836"/>
+        <site name="LFF_trochanter_flexor_a_LFF_flexa_p1" pos="0.0311254 0.014358 -0.0559144"/>
+        <site name="m_coxa_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+        <body name="LFTrochanter" pos="-0.002 0.015 -0.4402">
+          <inertial pos="-0.0136337 0.0341937 -0.0160004" quat="0.707107 0.707107 0 0" mass="1.70307e-06" diaginertia="4.86831e-09 4.75181e-09 3.4135e-09"/>
+          <joint name="joint_LFTrochanter_yaw" pos="0 0 0" axis="1 0 0" limited="false" range="-1.196 0.2745" springref="-0.1"/>
+          <joint name="joint_LFTrochanter_pitch" pos="0 0 0" axis="0 1 0" limited="false" range="-3.242 -1.217" springref="-2.8"/>
+          <joint name="joint_LFTrochanter_roll" pos="0 0 0" axis="0 0 1" limited="false" range="-0.2745 1.384" springref="0"/>
+          <geom name="LFTrochanter_geom" type="mesh" rgba="0.55 0.392 0.118 0.4" mesh="LFTrochanter_geom_LFTrochanter"/>
+          <site name="LFF_trochanter_flexor_b_lff_thco_flexb_p322" pos="-0.0170405 -0.00472335 -0.0228887"/>
+          <site name="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p322" pos="0.0222687 -0.00812877 0.0211095"/>
+          <site name="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p322" pos="0.00657561 -0.0279958 0.0341395"/>
+          <site name="LFF_accesory_trochanter_flexor_LFF_roll_f_p222" pos="-0.00549219 -0.0199954 -0.0253338"/>
+          <site name="LFF_trochanter_extensor_LFF_roll_e_p222" pos="0.0102047 0.013626 0.00768368"/>
+          <site name="LFF_trochanter_flexor_a_LFF_flexa_p222" pos="-0.0121828 -0.0117695 -0.0403746"/>
+          <site name="m_trochanter_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+          <body name="LFFemur" pos="-0.01994 0.07244 -0.06238">
+            <inertial pos="-0.00581711 0.0635589 -0.27996" mass="1.2483e-05" diaginertia="4.1473e-07 4.01495e-07 4.64816e-08"/>
+            <geom name="LFFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0.4" mesh="LFFemur_geom_LFFemur"/>
+            <site name="LFTibia_flex_93434_bifemlh_r-P1" pos="-0.0415201 0.0475376 -0.0877767"/>
+            <site name="LFTibia_flex_93434_bifemlh_r-P2" pos="-0.0151968 0.110902 -0.546627"/>
+            <site name="LFTibia_extensor_93932_bifemlh_r-P1" pos="0.0276828 0.0384591 -0.0895311"/>
+            <site name="LFTibia_extensor_93932_bifemlh_r-P2" pos="0.0267536 0.105256 -0.597078"/>
+            <site name="m_femur_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+            <body name="LFTibia" pos="-0.01982 0.1003 -0.5661">
+              <inertial pos="0.0289105 -0.00239717 -0.245561" quat="0.707107 0 0 0.707107" mass="4.51507e-06" diaginertia="1.24763e-07 1.24206e-07 6.26811e-09"/>
+              <joint name="joint_LFTibia_pitch" pos="0 0 0" axis="0 1 0" range="0.4789 2.502" springref="2"/>
+              <geom name="LFTibia_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTibia_geom_LFTibia"/>
+              <site name="LFTibia_flex_93434_pp21995" pos="-0.0108694 0.0114727 -0.0107331"/>
+              <site name="LFTibia_extensor_93932_pp21995" pos="0.035 0.002 0.000927515"/>
+              <site name="m_tibia_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+              <body name="LFTarsus1" pos="0.01915 -0.01293 -0.51">
+                <inertial pos="-0.00414801 -0.00898333 -0.116831" mass="1.19008e-06" diaginertia="6.25046e-09 6.09661e-09 1.04328e-09"/>
+                <geom name="LFTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTarsus1_geom_LFTarsus1"/>
+                <site name="m_tarsus1_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+                <body name="LFTarsus2" pos="-0.0002464 -0.0194 -0.2175">
+                  <inertial pos="-0.00616755 -0.00734805 -0.085785" mass="5.14227e-07" diaginertia="1.18427e-09 1.17926e-09 2.96167e-10"/>
+                  <geom name="LFTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTarsus2_geom_LFTarsus2"/>
+                  <site name="m_tarsus2_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+                  <body name="LFTarsus3" pos="-0.002981 -0.01951 -0.1549">
+                    <inertial pos="-0.00486664 -0.00132481 -0.0549736" quat="0.707107 0 0 0.707107" mass="2.45481e-07" diaginertia="2.89483e-10 2.89037e-10 9.657e-11"/>
+                    <geom name="LFTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTarsus3_geom_LFTarsus3"/>
+                    <site name="m_tarsus3_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+                    <body name="LFTarsus4" pos="-0.002051 -0.009805 -0.09654">
+                      <inertial pos="-0.000706051 -0.000287795 -0.0481465" quat="0.707107 0 0 0.707107" mass="1.70147e-07" diaginertia="1.54176e-10 1.54073e-10 5.30819e-11"/>
+                      <geom name="LFTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTarsus4_geom_LFTarsus4"/>
+                      <site name="m_tarsus4_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+                      <body name="LFTarsus5" pos="0.0007281 -0.009863 -0.08672">
+                        <inertial pos="-0.00519861 -0.00486737 -0.0478948" quat="0.707107 0 0 0.707107" mass="3.03069e-07" diaginertia="3.53043e-10 3.39673e-10 1.55482e-10"/>
+                        <geom name="LFTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 1" mesh="LFTarsus5_geom_LFTarsus5"/>
+                        <site name="m_tarsus5_marker" pos="0 0 0" size="0.01" group="4" rgba="1 0.1 0.5 0.5"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="LHCoxa" pos="-0.7523 0.09065 -0.5018">
+        <inertial pos="-0.0159643 0.0246478 -0.0933377" quat="0.707107 0 0 0.707107" mass="7.17586e-06" diaginertia="6.07932e-08 5.82668e-08 3.35992e-08"/>
+        <geom name="LHCoxa_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHCoxa_geom_LHCoxa"/>
+        <body name="LHFemur" pos="-0.0002747 -0.0001835 -0.1994">
+          <inertial pos="0.0232488 -0.0136841 -0.432001" quat="0.707107 0 0 0.707107" mass="2.38234e-05" diaginertia="1.57648e-06 1.57285e-06 1.12941e-07"/>
+          <geom name="LHFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHFemur_geom_LHFemur"/>
+          <body name="LHTibia" pos="0.0001354 -0.0001856 -0.8363">
+            <inertial pos="0.00626293 -0.00679071 -0.348891" quat="0.707107 0 0 0.707107" mass="1.12096e-05" diaginertia="5.56118e-07 5.52003e-07 2.90501e-08"/>
+            <geom name="LHTibia_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTibia_geom_LHTibia"/>
+            <body name="LHTarsus1" pos="0.00026 -0.0004872 -0.6845">
+              <inertial pos="-0.0234195 0.00908097 -0.186671" quat="0.707107 0 0 0.707107" mass="2.72417e-06" diaginertia="3.37474e-08 3.33087e-08 3.47703e-09"/>
+              <geom name="LHTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTarsus1_geom_LHTarsus1"/>
+              <body name="LHTarsus2" pos="-5.885e-05 0.0007204 -0.3527">
+                <inertial pos="-0.0153077 0.00886279 -0.0989871" quat="0.707107 0 0 0.707107" mass="9.42767e-07" diaginertia="3.51794e-09 3.34548e-09 8.06006e-10"/>
+                <geom name="LHTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTarsus2_geom_LHTarsus2"/>
+                <body name="LHTarsus3" pos="1.944e-05 -0.0009287 -0.1751">
+                  <inertial pos="-0.0146137 0.00750133 -0.0561808" quat="0.707107 0 0 0.707107" mass="2.45771e-07" diaginertia="2.9256e-10 2.81926e-10 9.7986e-11"/>
+                  <geom name="LHTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTarsus3_geom_LHTarsus3"/>
+                  <body name="LHTarsus4" pos="6.432e-06 0.0009783 -0.09671">
+                    <inertial pos="-0.0126492 0.00552585 -0.0440074" quat="0.707107 0 0 0.707107" mass="1.79619e-07" diaginertia="1.50072e-10 1.4687e-10 6.36462e-11"/>
+                    <geom name="LHTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTarsus4_geom_LHTarsus4"/>
+                    <body name="LHTarsus5" pos="7.186e-05 -0.0002378 -0.0733">
+                      <inertial pos="-0.0182454 0.00769578 -0.0539859" quat="0.707107 0 0 0.707107" mass="4.76484e-07" diaginertia="6.48977e-10 6.18323e-10 3.73471e-10"/>
+                      <geom name="LHTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LHTarsus5_geom_LHTarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="LHaltere" pos="-0.7774 0.2172 -0.1547">
+        <inertial pos="-0.0206905 0.165755 0.0117958" quat="0.707107 0.707107 0 0" mass="4.30889e-06" diaginertia="5.65926e-08 5.39717e-08 1.23612e-08"/>
+        <geom name="LHaltere_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="LHaltere_geom_LHaltere"/>
+      </body>
+      <body name="LMCoxa" pos="-0.5255 0.1286 -0.4854">
+        <inertial pos="-0.0036639 0.0120175 -0.0774512" mass="9.12358e-06" diaginertia="8.67904e-08 7.88228e-08 5.40376e-08"/>
+        <geom name="LMCoxa_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMCoxa_geom_LMCoxa"/>
+        <body name="LMFemur" pos="-0.0002159 0.0001284 -0.1814">
+          <inertial pos="0.0166108 0.00296276 -0.411691" quat="0.707107 0 0 0.707107" mass="1.51268e-05" diaginertia="9.07876e-07 9.01393e-07 4.80556e-08"/>
+          <geom name="LMFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMFemur_geom_LMFemur"/>
+          <body name="LMTibia" pos="-0.0009698 0.000251 -0.7837">
+            <inertial pos="0.01051 0.00463503 -0.357735" quat="0.707107 0 0 0.707107" mass="8.07649e-06" diaginertia="3.75226e-07 3.72299e-07 1.56622e-08"/>
+            <geom name="LMTibia_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTibia_geom_LMTibia"/>
+            <body name="LMTarsus1" pos="0.0002794 0.0002646 -0.6673">
+              <inertial pos="-0.013342 0.00505271 -0.170568" quat="0.707107 0 0 0.707107" mass="1.30946e-06" diaginertia="1.01435e-08 9.92324e-09 1.03363e-09"/>
+              <geom name="LMTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTarsus1_geom_LMTarsus1"/>
+              <body name="LMTarsus2" pos="0.0004465 -0.0006064 -0.2943">
+                <inertial pos="-0.00995194 0.00458387 -0.0979753" quat="0.707107 0 0 0.707107" mass="3.96462e-07" diaginertia="9.53082e-10 9.36129e-10 1.70349e-10"/>
+                <geom name="LMTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTarsus2_geom_LMTarsus2"/>
+                <body name="LMTarsus3" pos="-9.113e-05 -0.0001652 -0.1592">
+                  <inertial pos="-0.0085057 0.00554683 -0.0634284" quat="0.707107 0 0 0.707107" mass="2.79607e-07" diaginertia="3.44015e-10 3.194e-10 1.29386e-10"/>
+                  <geom name="LMTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTarsus3_geom_LMTarsus3"/>
+                  <body name="LMTarsus4" pos="0.0002296 -0.0001476 -0.08973">
+                    <inertial pos="-0.00660918 0.00459102 -0.0474418" quat="0.707107 0 0 0.707107" mass="1.29643e-07" diaginertia="7.77205e-11 7.13338e-11 4.20233e-11"/>
+                    <geom name="LMTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTarsus4_geom_LMTarsus4"/>
+                    <body name="LMTarsus5" pos="0.0001935 6.847e-05 -0.06328">
+                      <inertial pos="-0.00794868 0.00578132 -0.0583332" mass="3.78739e-07" diaginertia="4.66081e-10 4.64648e-10 2.38196e-10"/>
+                      <geom name="LMTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="LMTarsus5_geom_LMTarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="LWing" pos="-0.5184 0.3736 0.1782">
+        <inertial pos="-0.137186 1.09478 0.150103" quat="0.5 0.5 -0.5 0.5" mass="8.35992e-05" diaginertia="4.87563e-05 4.16941e-05 9.61943e-06"/>
+        <geom name="LWing_geom" type="mesh" rgba="0.91 0.96 0.97 0" mesh="LWing_geom_LWing"/>
+      </body>
+      <body name="RFCoxa" pos="-0.1336 -0.1825 -0.2281">
+        <inertial pos="0.0107711 0.0174502 -0.222084" quat="0.707107 0 0 0.707107" mass="9.00073e-06" diaginertia="1.62167e-07 1.61042e-07 3.20004e-08"/>
+        <joint name="joint_RFCoxa_roll" pos="0 0 0" axis="0 0 1" limited="false" range="-3.142 3.142"/>
+        <joint name="joint_RFCoxa_yaw" pos="0 0 0" axis="1 0 0" limited="false" range="-3.142 3.142"/>
+        <joint name="joint_RFCoxa_pitch" pos="0 0 0" axis="0 1 0" limited="false" range="-3.142 3.142"/>
+        <geom name="RFCoxa_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFCoxa_geom_RFCoxa"/>
+        <body name="RFTrochanter" pos="0.001 -0.015 -0.4427">
+          <inertial pos="-0.0140009 -0.0344029 -0.0151007" quat="0.707107 0.707107 0 0" mass="1.64287e-06" diaginertia="4.59801e-09 4.57527e-09 3.1706e-09"/>
+          <joint name="joint_RFTrochanter_yaw" pos="0 0 0" axis="1 0 0" limited="false" range="-3.142 3.142"/>
+          <joint name="joint_RFTrochanter_pitch" pos="0 0 0" axis="0 1 0" limited="false" range="-3.142 3.142"/>
+          <joint name="joint_RFTrochanter_roll" pos="0 0 0" axis="0 0 1" limited="false" range="-3.142 3.142"/>
+          <geom name="RFTrochanter_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="RFTrochanter_geom_RFTrochanter"/>
+          <body name="RFFemur" pos="-0.0181 -0.09073 -0.06337">
+            <inertial pos="-0.0100244 -0.0545158 -0.274426" mass="1.35699e-05" diaginertia="4.51484e-07 4.31157e-07 5.67644e-08"/>
+            <geom name="RFFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFFemur_geom_RFFemur"/>
+            <body name="RFTibia" pos="-0.02541 -0.1006 -0.5606">
+              <inertial pos="0.0235938 -0.0142791 -0.244049" quat="0.707107 0 0 0.707107" mass="4.39195e-06" diaginertia="1.21508e-07 1.20958e-07 5.9274e-09"/>
+              <joint name="joint_RFTibia_pitch" pos="0 0 0" axis="0 1 0" limited="false" range="-3.142 3.142"/>
+              <geom name="RFTibia_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTibia_geom_RFTibia"/>
+              <body name="RFTarsus1" pos="0.01583 -0.006302 -0.508">
+                <inertial pos="-0.00685961 0.00362345 -0.117137" mass="1.11772e-06" diaginertia="5.74516e-09 5.69392e-09 9.15659e-10"/>
+                <geom name="RFTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTarsus1_geom_RFTarsus1"/>
+                <body name="RFTarsus2" pos="0.001019 0.01109 -0.2183">
+                  <inertial pos="-0.00462343 0.00578611 -0.0868273" quat="0.707107 0 0 0.707107" mass="4.34122e-07" diaginertia="9.81001e-10 9.66897e-10 2.12098e-10"/>
+                  <geom name="RFTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTarsus2_geom_RFTarsus2"/>
+                  <body name="RFTarsus3" pos="0.003084 0.0132 -0.1543">
+                    <inertial pos="-0.00862887 0.000172087 -0.0569779" quat="0.707107 0 0 0.707107" mass="2.17147e-07" diaginertia="2.47214e-10 2.47006e-10 7.63214e-11"/>
+                    <geom name="RFTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTarsus3_geom_RFTarsus3"/>
+                    <body name="RFTarsus4" pos="-0.000449 0.007767 -0.09941">
+                      <inertial pos="-0.00578237 -0.00315933 -0.0465487" mass="1.62306e-07" diaginertia="1.48362e-10 1.46429e-10 4.80093e-11"/>
+                      <geom name="RFTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTarsus4_geom_RFTarsus4"/>
+                      <body name="RFTarsus5" pos="0.0007482 0.006685 -0.08619">
+                        <inertial pos="-0.00826077 -0.000218937 -0.0466678" quat="0.707107 0 0 0.707107" mass="2.56605e-07" diaginertia="2.89752e-10 2.86392e-10 1.09716e-10"/>
+                        <geom name="RFTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RFTarsus5_geom_RFTarsus5"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="RHCoxa" pos="-0.7523 -0.08334 -0.5018">
+        <inertial pos="-0.0158789 -0.0176177 -0.0933981" quat="0.707107 0 0 0.707107" mass="7.18009e-06" diaginertia="6.08522e-08 5.83084e-08 3.36375e-08"/>
+        <geom name="RHCoxa_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHCoxa_geom_RHCoxa"/>
+        <body name="RHFemur" pos="-7.832e-05 0.0002781 -0.1994">
+          <inertial pos="0.0232307 0.0201483 -0.43204" quat="0.707107 0 0 0.707107" mass="2.37809e-05" diaginertia="1.57363e-06 1.56982e-06 1.12545e-07"/>
+          <geom name="RHFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHFemur_geom_RHFemur"/>
+          <body name="RHTibia" pos="8.126e-05 -0.000745 -0.8363">
+            <inertial pos="0.0103751 0.0120256 -0.348886" quat="0.707107 0 0 0.707107" mass="1.08907e-05" diaginertia="5.41717e-07 5.34557e-07 2.80748e-08"/>
+            <geom name="RHTibia_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTibia_geom_RHTibia"/>
+            <body name="RHTarsus1" pos="-0.0002619 0.0001844 -0.6845">
+              <inertial pos="-0.0269022 0.00129052 -0.186714" quat="0.707107 0 0 0.707107" mass="2.62057e-06" diaginertia="3.28432e-08 3.16963e-08 3.39203e-09"/>
+              <geom name="RHTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTarsus1_geom_RHTarsus1"/>
+              <body name="RHTarsus2" pos="0.0002525 -0.000288 -0.3527">
+                <inertial pos="-0.0111198 0.00194023 -0.0990225" quat="0.707107 0 0 0.707107" mass="7.39725e-07" diaginertia="2.65134e-09 2.59828e-09 4.87131e-10"/>
+                <geom name="RHTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTarsus2_geom_RHTarsus2"/>
+                <body name="RHTarsus3" pos="0.0002274 -0.0004125 -0.1751">
+                  <inertial pos="-0.0141714 0.00440043 -0.0561416" quat="0.707107 0 0 0.707107" mass="2.69623e-07" diaginertia="3.2218e-10 3.16909e-10 1.17476e-10"/>
+                  <geom name="RHTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTarsus3_geom_RHTarsus3"/>
+                  <body name="RHTarsus4" pos="-0.0005174 0.0003203 -0.09671">
+                    <inertial pos="-0.01157 0.00507929 -0.0441676" quat="0.707107 0 0 0.707107" mass="2.05807e-07" diaginertia="1.77833e-10 1.74284e-10 8.32927e-11"/>
+                    <geom name="RHTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTarsus4_geom_RHTarsus4"/>
+                    <body name="RHTarsus5" pos="0.0003564 -0.0003526 -0.0733">
+                      <inertial pos="-0.011925 0.00492686 -0.0539625" mass="4.28226e-07" diaginertia="5.70362e-10 5.35856e-10 3.02537e-10"/>
+                      <geom name="RHTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RHTarsus5_geom_RHTarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="RHaltere" pos="-0.7774 -0.2099 -0.1546">
+        <inertial pos="-0.0214561 -0.160141 0.00780795" quat="0.707107 0.707107 0 0" mass="4.29315e-06" diaginertia="5.67028e-08 5.35462e-08 1.24003e-08"/>
+        <geom name="RHaltere_geom" type="mesh" rgba="0.55 0.392 0.118 0" mesh="RHaltere_geom_RHaltere"/>
+      </body>
+      <body name="RMCoxa" pos="-0.5255 -0.1212 -0.4854">
+        <inertial pos="-0.00367691 -0.00503822 -0.0774293" mass="9.12292e-06" diaginertia="8.67864e-08 7.88313e-08 5.40214e-08"/>
+        <geom name="RMCoxa_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMCoxa_geom_RMCoxa"/>
+        <body name="RMFemur" pos="-0.0002155 -0.0001745 -0.1814">
+          <inertial pos="0.0166013 0.00411586 -0.41168" quat="0.707107 0 0 0.707107" mass="1.51365e-05" diaginertia="9.08475e-07 9.02014e-07 4.81128e-08"/>
+          <geom name="RMFemur_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMFemur_geom_RMFemur"/>
+          <body name="RMTibia" pos="-0.0009719 0.000121 -0.7837">
+            <inertial pos="0.00282469 0.00224182 -0.374387" quat="0.707107 0 0 0.707107" mass="8.11191e-06" diaginertia="3.7696e-07 3.73841e-07 1.5833e-08"/>
+            <geom name="RMTibia_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTibia_geom_RMTibia"/>
+            <body name="RMTarsus1" pos="-0.0001478 0.000987 -0.6673">
+              <inertial pos="-0.0202324 0.000188998 -0.187121" quat="0.707107 0 0 0.707107" mass="1.33508e-06" diaginertia="1.03522e-08 1.01111e-08 1.07765e-09"/>
+              <geom name="RMTarsus1_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTarsus1_geom_RMTarsus1"/>
+              <body name="RMTarsus2" pos="0.0005783 -0.0004171 -0.29">
+                <inertial pos="-0.0153411 0.0026573 -0.118937" quat="0.707107 0 0 0.707107" mass="3.97007e-07" diaginertia="9.54232e-10 9.3742e-10 1.70818e-10"/>
+                <geom name="RMTarsus2_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTarsus2_geom_RMTarsus2"/>
+                <body name="RMTarsus3" pos="3.499e-05 0.0001364 -0.1602">
+                  <inertial pos="-0.0155518 -0.000163147 -0.0831933" quat="0.707107 0 0 0.707107" mass="2.84259e-07" diaginertia="3.50064e-10 3.21083e-10 1.35288e-10"/>
+                  <geom name="RMTarsus3_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTarsus3_geom_RMTarsus3"/>
+                  <body name="RMTarsus4" pos="-0.0004825 0.0002316 -0.09244">
+                    <inertial pos="-0.0135318 0.00154655 -0.0647043" quat="0.707107 0 0 0.707107" mass="1.30457e-07" diaginertia="7.73067e-11 7.12469e-11 4.28924e-11"/>
+                    <geom name="RMTarsus4_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTarsus4_geom_RMTarsus4"/>
+                    <body name="RMTarsus5" pos="0.00161 -0.0001304 -0.06372">
+                      <inertial pos="-0.0169772 8.7759e-05 -0.0751987" quat="0.707107 0 0 0.707107" mass="3.79268e-07" diaginertia="4.64696e-10 4.64456e-10 2.39527e-10"/>
+                      <geom name="RMTarsus5_geom" type="mesh" rgba="0.67 0.51 0.196 0" mesh="RMTarsus5_geom_RMTarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="RWing" pos="-0.5184 -0.3661 0.1783">
+        <inertial pos="-0.13382 -1.08923 0.154237" quat="0.5 0.5 -0.5 0.5" mass="8.46556e-05" diaginertia="4.93375e-05 4.22607e-05 9.74351e-06"/>
+        <geom name="RWing_geom" type="mesh" rgba="0.91 0.96 0.97 0" mesh="RWing_geom_RWing"/>
+      </body>
+    </body>
+    <camera pos="0 -5.0 3.8" euler="1.5 0 0"/>
+
+  </worldbody>
+
+  <equality>
+    <joint name="joint_RFCoxa_roll_locked" joint1="joint_RFCoxa_roll" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFCoxa_yaw_locked" joint1="joint_RFCoxa_yaw" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFCoxa_pitch_locked" joint1="joint_RFCoxa_pitch" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFTrochanter_yaw_locked" joint1="joint_RFTrochanter_yaw" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFTrochanter_pitch_locked" joint1="joint_RFTrochanter_pitch" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFTrochanter_roll_locked" joint1="joint_RFTrochanter_roll" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+    <joint name="joint_RFTibia_pitch_locked" joint1="joint_RFTibia_pitch" polycoef="0 0 0 0 0" solimp="0.9999 0.9999 0.001 0.5 2"/>
+  </equality>
+  <tendon>
+    <spatial name="LFC_tergopleural_promotor_a_tendon">
+      <site site="LFC_tergopleural_promotor_a_LFC_Miller28a_p1"/>
+      <site site="LFC_tergopleural_promotor_a_LFC_Miller28a_p296"/>
+      <site site="LFC_tergopleural_promotor_a_LFC_Miller28a_p396"/>
+    </spatial>
+    <spatial name="LFC_tergopleural_promotor_b_tendon">
+      <site site="LFC_tergopleural_promotor_b_LFC_Miller28b_p1"/>
+      <site site="LFC_tergopleural_promotor_b_LFC_Miller28b_p296"/>
+      <site site="LFC_tergopleural_promotor_b_LFC_Miller28b_p396"/>
+    </spatial>
+    <spatial name="LFC_pleural_remotor_and_abductor_tendon">
+      <site site="LFC_pleural_remotor_and_abductor_LFC_Miller29_p1"/>
+      <site site="LFC_pleural_remotor_and_abductor_LFC_Miller29_p296"/>
+    </spatial>
+    <spatial name="LFC_pleural_promotor_tendon">
+      <site site="LFC_pleural_promotor_LFC_Miller30_p1"/>
+      <site site="LFC_pleural_promotor_LFC_Miller30_p296"/>
+    </spatial>
+    <spatial name="LFC_sternal_anterior_rotator_tendon">
+      <site site="LFC_sternal_anterior_rotator_LFC_Miller31_p1"/>
+      <site site="LFC_sternal_anterior_rotator_LFC_Miller31_p296"/>
+    </spatial>
+    <spatial name="LFC_sternal_posterior_rotator_tendon">
+      <site site="LFC_sternal_posterior_rotator_LFC_Miller32_p1"/>
+      <site site="LFC_sternal_posterior_rotator_LFC_Miller32_p296"/>
+    </spatial>
+    <spatial name="LFC_sternal_adductor_tendon">
+      <site site="LFC_sternal_adductor_LFC_Miller33_p1"/>
+      <site site="LFC_sternal_adductor_LFC_Miller33_p296"/>
+    </spatial>
+    <spatial name="LFF_trochanter_flexor_b_tendon">
+      <site site="LFF_trochanter_flexor_b_lff_thco_flexb_p1"/>
+      <site site="LFF_trochanter_flexor_b_lff_thco_flexb_p222"/>
+      <site site="LFF_trochanter_flexor_b_lff_thco_flexb_p322"/>
+    </spatial>
+    <spatial name="LFF_sterno-tergo-trochanter_extensor_a_tendon">
+      <site site="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p1"/>
+      <site site="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p222"/>
+      <site site="LFF_sterno-tergo-trochanter_extensor_a_lff_thco_stta_p322"/>
+    </spatial>
+    <spatial name="LFF_sterno-tergo-trochanter_extensor_b_tendon">
+      <site site="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p1"/>
+      <site site="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p222"/>
+      <site site="LFF_sterno-tergo-trochanter_extensor_b_LFF_sterno-tergo-trochanter_extensor_b_p322"/>
+    </spatial>
+    <spatial name="LFF_accesory_trochanter_flexor_tendon">
+      <site site="LFF_accesory_trochanter_flexor_LFF_roll_f_p1"/>
+      <site site="LFF_accesory_trochanter_flexor_LFF_roll_f_p222"/>
+    </spatial>
+    <spatial name="LFF_trochanter_extensor_tendon">
+      <site site="LFF_trochanter_extensor_LFF_roll_e_p1"/>
+      <site site="LFF_trochanter_extensor_LFF_roll_e_p222"/>
+    </spatial>
+    <spatial name="LFF_trochanter_flexor_a_tendon">
+      <site site="LFF_trochanter_flexor_a_LFF_flexa_p1"/>
+      <site site="LFF_trochanter_flexor_a_LFF_flexa_p222"/>
+    </spatial>
+    <spatial name="LFTibia_flex_93434_tendon">
+      <site site="LFTibia_flex_93434_bifemlh_r-P1"/>
+      <site site="LFTibia_flex_93434_bifemlh_r-P2"/>
+      <site site="LFTibia_flex_93434_pp21995"/>
+    </spatial>
+    <spatial name="LFTibia_extensor_93932_tendon">
+      <site site="LFTibia_extensor_93932_bifemlh_r-P1"/>
+      <site site="LFTibia_extensor_93932_bifemlh_r-P2"/>
+      <site site="LFTibia_extensor_93932_pp21995"/>
+    </spatial>
+  </tendon>
+  <actuator>
+    <general name="LFC_tergopleural_promotor_a" class="muscle" tendon="LFC_tergopleural_promotor_a_tendon" ctrlrange="0.0001 1" lengthrange="0.157941 0.213637" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.774703 1.39095 14.2319 1 0 2 10 0.358728 1.4 0" biasprm="0.774703 1.39095 14.2319 1 0 2 10 0.358728 1.4 0"/>
+    <general name="LFC_tergopleural_promotor_b" class="muscle" tendon="LFC_tergopleural_promotor_b_tendon" ctrlrange="0.0001 1" lengthrange="0.339805 0.361902" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.944598 1.01483 67.764 1 0 2 10 4.08279 1.4 0" biasprm="0.944598 1.01483 67.764 1 0 2 10 4.08279 1.4 0"/>
+    <general name="LFC_pleural_remotor_and_abductor" class="muscle" tendon="LFC_pleural_remotor_and_abductor_tendon" ctrlrange="0.0001 1" lengthrange="0.216122 0.299608" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.743435 1.72008 28.7481 1 0 2 10 0.353216 1.4 0" biasprm="0.743435 1.72008 28.7481 1 0 2 10 0.353216 1.4 0"/>
+    <general name="LFC_pleural_promotor" class="muscle" tendon="LFC_pleural_promotor_tendon" ctrlrange="0.0001 1" lengthrange="0.0912448 0.135751" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.859265 1.59552 30.6427 1 0 2 10 0.283134 1.4 0" biasprm="0.859265 1.59552 30.6427 1 0 2 10 0.283134 1.4 0"/>
+    <general name="LFC_sternal_anterior_rotator" class="muscle" tendon="LFC_sternal_anterior_rotator_tendon" ctrlrange="0.0001 1" lengthrange="0.126048 0.202925" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.185296 1.73386 10.5807 1 0 2 10 3.11328 1.4 0" biasprm="0.185296 1.73386 10.5807 1 0 2 10 3.11328 1.4 0"/>
+    <general name="LFC_sternal_posterior_rotator" class="muscle" tendon="LFC_sternal_posterior_rotator_tendon" ctrlrange="0.0001 1" lengthrange="0.0715242 0.147229" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.610817 1.40821 157.429 1 0 2 10 0.0752654 1.4 0" biasprm="0.610817 1.40821 157.429 1 0 2 10 0.0752654 1.4 0"/>
+    <general name="LFC_sternal_adductor" class="muscle" tendon="LFC_sternal_adductor_tendon" ctrlrange="0.0001 1" lengthrange="0.0972302 0.259683" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.244283 1.48664 12.9 1 0 2 10 0.446817 1.4 0" biasprm="0.244283 1.48664 12.9 1 0 2 10 0.446817 1.4 0"/>
+    <general name="LFF_trochanter_flexor_b" class="muscle" tendon="LFF_trochanter_flexor_b_tendon" ctrlrange="0.0001 1" lengthrange="0.272991 0.32626" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.537008 1.04625 77.9856 1 0 2 10 2.85222 1.4 0" biasprm="0.537008 1.04625 77.9856 1 0 2 10 2.85222 1.4 0"/>
+    <general name="LFF_sterno-tergo-trochanter_extensor_a" class="muscle" tendon="LFF_sterno-tergo-trochanter_extensor_a_tendon" ctrlrange="0.0001 1" lengthrange="0.280895 0.337649" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.727951 1.5069 159.153 1 0 2 10 0.239629 1.4 0" biasprm="0.727951 1.5069 159.153 1 0 2 10 0.239629 1.4 0"/>
+    <general name="LFF_sterno-tergo-trochanter_extensor_b" class="muscle" tendon="LFF_sterno-tergo-trochanter_extensor_b_tendon" ctrlrange="0.0001 1" lengthrange="0.24007 0.320078" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.84831 1.43402 124.303 1 0 2 10 0.0988153 1.4 0" biasprm="0.84831 1.43402 124.303 1 0 2 10 0.0988153 1.4 0"/>
+    <general name="LFF_accesory_trochanter_flexor" class="muscle" tendon="LFF_accesory_trochanter_flexor_tendon" ctrlrange="0.0001 1" lengthrange="0.203418 0.262616" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.638661 1.51365 24.8598 1 0 2 10 0.210106 1.4 0" biasprm="0.638661 1.51365 24.8598 1 0 2 10 0.210106 1.4 0"/>
+    <general name="LFF_trochanter_extensor" class="muscle" tendon="LFF_trochanter_extensor_tendon" ctrlrange="0.0001 1" lengthrange="0.0912131 0.1283" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.90157 1.19258 40.5728 1 0 2 10 0.706553 1.4 0" biasprm="0.90157 1.19258 40.5728 1 0 2 10 0.706553 1.4 0"/>
+    <general name="LFF_trochanter_flexor_a" class="muscle" tendon="LFF_trochanter_flexor_a_tendon" ctrlrange="0.0001 1" lengthrange="0.34225 0.413396" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.830849 1.58829 46.8237 1 0 2 10 0.507633 1.4 0" biasprm="0.830849 1.58829 46.8237 1 0 2 10 0.507633 1.4 0"/>
+    <general name="LFTibia_flex_93434" class="muscle" tendon="LFTibia_flex_93434_tendon" ctrlrange="0.0001 1" lengthrange="0.468973 0.494701" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.958046 1.04136 68.1213 1 0 2 10 3.23161 1.4 0" biasprm="0.958046 1.04136 68.1213 1 0 2 10 3.23161 1.4 0"/>
+    <general name="LFTibia_extensor_93932" class="muscle" tendon="LFTibia_extensor_93932_tendon" ctrlrange="0.0001 1" lengthrange="0.533109 0.586674" dynprm="0.0001 0.0004 0 0 0 0 0 0 0 0" gainprm="0.906629 1.52523 303.877 1 0 2 10 0.183322 1.4 0" biasprm="0.906629 1.52523 303.877 1 0 2 10 0.183322 1.4 0"/>
+  </actuator>
+  <keyframe>
+    <key name="default-pose" qpos="0.1745 0.4357 0.2614 -0.4081 -2.388 0.1702 1.862 0 0 0 0 0 0 0"/>
+  </keyframe>
+</mujoco>
