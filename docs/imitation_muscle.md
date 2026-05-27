@@ -26,9 +26,7 @@ Each clip `{id}` provides four arrays:
 
 The 4 tracked bodies are `LFFemur`, `LFTibia`, `LFTarsus1`, `LFTarsus5` (claw).
 
-One clip ships with FlyGym — **`0002`** (225 frames, 7 joint DoFs), FlyMimic's
-own default. Its body trajectories match the bundled model, so the full reward
-range is available. Its 7 qpos columns map, in order, to:
+One clip ships with FlyGym — **`0002`** (225 frames, 7 joint DoFs), FlyMimic's own default. Its body trajectories match the bundled model, so the full reward range is available. Its 7 qpos columns map, in order, to: 
 
 | col | MJCF joint |
 | --- | --- |
@@ -40,10 +38,7 @@ range is available. Its 7 qpos columns map, in order, to:
 | 5 | `joint_LFTrochanter_roll` |
 | 6 | `joint_LFTibia_pitch` |
 
-The mapping is keyed by qpos width (`TRACKED_JOINT_NAMES_BY_NCOLS` in
-`flygym.imitation.data`) and `ImitationEnv` selects it from the clip's width,
-so observation/action shapes adapt automatically (the shipped clip → 45-dim
-obs).
+The mapping is keyed by qpos width (`TRACKED_JOINT_NAMES_BY_NCOLS` in `flygym.imitation.data`) and `ImitationEnv` selects it from the clip's width, so observation/action shapes adapt automatically (the shipped clip → 45-dim obs).
 
 ---
 
@@ -108,12 +103,17 @@ In training mode an episode ends early if the reward drops below `rew_threshold`
 
 ## 4. Results & reproducibility
 
-On the default clip `0002`, the reward ceiling is ~1.0 (at the recorded pose
-the joint and body terms are both near-perfect). A PPO policy
-(`stable-baselines3`, `MlpPolicy` `[512, 512, 256]`) trained on this clip
-learns to track the reference motion: the mean episode reward rises steadily
-and the trained policy clearly outperforms a random-activation baseline.
-Setting PPO `target_kl ≈ 0.05` keeps the long-run curve stable.
+We reproduced FlyMimic's imitation-learning result in FlyGym. Training a PPO
+policy on clip `0002` with FlyMimic's own hyperparameters (`stable-baselines3`,
+`lr = 1e-5`, `gamma = 0.99`, ReLU `[512, 512, 256]` actor/critic) drives the
+mean episode reward steadily upward, and the muscle-actuated LF leg learns to
+track the reference kinematics — the reward formula and weights match FlyMimic
+exactly (§3), and the reward ceiling on this clip is ~1.0.
+
+Per-step reward climbs from the random-activation baseline (~0.06) to ~0.21,
+with episode length growing in step (the policy both tracks better and holds
+the pose longer) and no collapse. The trained leg motion can be inspected by
+rendering a rollout from a checkpoint (see the example script).
 
 Reproduce:
 
@@ -123,12 +123,12 @@ python -m flygym_demo.muscle_imitation --no-train
 
 # train a policy (requires stable-baselines3)
 python -m flygym_demo.muscle_imitation \
-    --clip 0002 --total-timesteps 5000000 --learning-rate 1e-4
+    --clip 0002 --total-timesteps 30000000 --learning-rate 1e-5
 ```
 
-Training is CPU-only on most workstations (see §5 for the GPU path). For long
-runs, prefer `target_kl` early-stopping and keep the best checkpoint by
-periodic evaluation.
+Training is CPU-only on most workstations (see §5 for the GPU path). At higher
+learning rates, set PPO `target_kl ≈ 0.05` and keep the best checkpoint by
+periodic evaluation to avoid late instability.
 
 ---
 
@@ -178,34 +178,30 @@ check_mjwarp_compatibility()              # probe support (no-op without mujoco_
 sim, fly = build_muscle_gpu_simulation(n_worlds=4096)   # Linux + NVIDIA + [warp]
 ```
 
-`GPUSimulation` runs many worlds in parallel — the main speedup for RL.
-MuJoCo-Warp's support for muscle actuators, spatial tendons, and joint-equality
-constraints is version-dependent, so run `check_mjwarp_compatibility()` on the
-target machine first.
+`GPUSimulation` runs many worlds in parallel — the main speedup for RL. MuJoCo-Warp's support for muscle actuators, spatial tendons, and joint-equality constraints is version-dependent, so run `check_mjwarp_compatibility()` on the target machine first.
 
 ---
 
 ## 6. Future work
 
-* **More legs.** Only the LF leg is muscle-driven. The middle (LM) and hind
-  (LH) leg meshes are present; adding their muscle definitions would extend
-  imitation to a full half-body. The right-front (RF) leg exists but is locked
-  — unlocking and mirroring the LF muscles would add a second front leg.
-* **Meaningful ground contact.** With the thorax tethered and one active leg,
-  ground reaction forces are not yet behaviorally meaningful. Contact becomes
-  useful once multiple legs are actuated and the body is freed to support and
-  propel itself; per-leg contact sensors can then be added.
-* **Vision calibration.** Recalibrate the fisheye retina for the FlyMimic eye
-  geometry so ommatidia readouts are quantitatively correct.
+* **More legs.** Only the LF leg is muscle-driven. Muscle definitions for the
+  middle (LM) and hind (LH) legs exist in the original FlyMimic repository but
+  still need their parameters tuned and converted into the MuJoCo model.
+* **Meaningful ground contact.** With one active leg and the thorax tethered,
+  ground reaction forces are not yet behaviorally meaningful. This becomes
+  relevant once multiple legs are actuated — e.g. the muscle-driven leg
+  tracking while the others are position-controlled — and the body is free to
+  support itself.
 * **More behaviors.** Additional mocap clips would broaden the imitation
-  repertoire.
+  repertoire, ultimately enabling high-level task optimization of
+  muscle-driven behavior.
 * **GPU scaling.** Vectorized PPO over many `GPUSimulation` worlds.
 
 ---
 
 ## 7. Citation
 
-If you use the musculoskeletal model in your research, please cite our paper:
+If you use the musculoskeletal model in your research, please cite our paper in addition to FlyGym:
 
 ```bibtex
 @inproceedings{ozdil2026musculoskeletal,
