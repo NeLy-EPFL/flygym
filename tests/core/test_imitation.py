@@ -3,7 +3,11 @@
 import numpy as np
 import pytest
 
-from flygym.imitation import (
+# flygym.imitation.env imports gymnasium at module load; skip this whole module
+# cleanly (rather than erroring at collection) when the optional dep is absent.
+pytest.importorskip("gymnasium")
+
+from flygym.imitation import (  # noqa: E402
     ImitationConfig,
     ImitationEnv,
     MoCapDataset,
