@@ -86,7 +86,9 @@ class Renderer:
         if self.buffer_frames:
             self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
         else:
-            self.frames = None    
+            self.frames = None  
+
+        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5  # to avoid floating point issues when comparing times  
 
         
     def get_xmat_for_camera(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
@@ -125,8 +127,10 @@ class Renderer:
         Returns:
             True if frames were rendered, False otherwise.
         """
-        if mj_data.time >= self._last_render_time_sec + self._secs_between_renders:
-            self._last_render_time_sec = mj_data.time
+        min_next_render_time = (self._last_render_time_sec + \
+            self._secs_between_renders - self.rendering_rounding_tolerance)
+        if mj_data.time >= min_next_render_time:
+            self._last_render_time_sec = float(mj_data.time)
             for cam_name, internal_cam_id in self._cameras_names2id.items():
                 self.mj_renderer.update_scene(
                     mj_data, internal_cam_id, self.scene_option
