@@ -21,7 +21,7 @@ Original NeuroMechFly: Original biomechanical model, kinematic replay, CPG-based
 
 ---
 
-NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller, hybrid controller, complex terrain, preprogrammed steps, leg adhesion, vision, olfaction, RL-based navigation, Gym environment, updated biomechanical model:
+NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controller, hybrid controller, complex terrain, preprogrammed steps, vision, olfaction, RL-based navigation, Gym environment, updated biomechanical model:
 
 ```bibtex
 @article{WangChen2024,

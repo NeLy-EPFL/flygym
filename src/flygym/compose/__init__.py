@@ -1,5 +1,12 @@
 from .fly import Fly, ActuatorType, MeshType, GeomFittingOption
-from .world import BaseWorld, FlatGroundWorld, TetheredWorld
+from .world import (
+    BaseWorld,
+    BlocksTerrainWorld,
+    FlatGroundWorld,
+    GappedTerrainWorld,
+    MixedTerrainWorld,
+    TetheredWorld,
+)
 from .pose import KinematicPose, KinematicPosePreset
 from .physics import ContactParams
 
@@ -10,6 +17,9 @@ __all__ = [
     "GeomFittingOption",
     "BaseWorld",
     "FlatGroundWorld",
+    "GappedTerrainWorld",
+    "BlocksTerrainWorld",
+    "MixedTerrainWorld",
     "TetheredWorld",
     "KinematicPose",
     "KinematicPosePreset",

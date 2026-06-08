@@ -3,12 +3,28 @@
 import pytest
 import mujoco as mj
 
-import flygym
-from flygym.anatomy import ActuatedDOFPreset, ContactBodiesPreset, LEGS
+from flygym.anatomy import (
+    ActuatedDOFPreset,
+    ContactBodiesPreset,
+    LEGS,
+    AnatomicalJoint,
+    BodySegment,
+)
 from flygym.assets.model.flybody.anatomy_flybody import FlybodyContactBodiesPreset
-from flygym.compose.fly import Fly, FlybodyFly, ActuatorType, GeomFittingOption
-from flygym.compose.world import FlatGroundWorld, TetheredWorld
-from flygym.compose.pose import KinematicPose, KinematicPosePreset
+from flygym.compose.fly import (
+    Fly,
+    FlybodyFly,
+    ActuatorType,
+    GeomFittingOption
+)
+from flygym.compose.world import (
+    BlocksTerrainWorld,
+    FlatGroundWorld,
+    GappedTerrainWorld,
+    MixedTerrainWorld,
+    TetheredWorld,
+)
+from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
 
@@ -32,10 +48,13 @@ class TestFlyConstruction:
         # All body segments should have a corresponding MJCF body and geom
         assert len(fly.bodyseg_to_mjcfbody) > 0
         assert len(fly.bodyseg_to_mjcfgeom) > 0
-        assert set(fly.bodyseg_to_mjcfbody.keys()) == set(fly.bodyseg_to_mjcfgeom.keys())
+        assert set(fly.bodyseg_to_mjcfbody.keys()) == set(
+            fly.bodyseg_to_mjcfgeom.keys()
+        )
 
     def test_all_segment_names_present(self):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         fly = Fly()
         body_names = {seg.name for seg in fly.bodyseg_to_mjcfbody}
         assert set(ALL_SEGMENT_NAMES) == body_names
@@ -125,6 +144,48 @@ class TestFlyAddLegAdhesion:
         with pytest.raises(ValueError, match="already been added"):
             fly_with_adhesion.add_leg_adhesion()
 
+    def test_adhesion_control_range_is_normalized(self, fly_with_adhesion):
+        for actuator in fly_with_adhesion.leg_to_adhesionactuator.values():
+            assert list(actuator.ctrlrange) == pytest.approx([0.0, 1.0])
+
+
+class TestFlyAddJointSites:
+    def test_add_joint_sites_registers_sites(self):
+        fly = Fly(name="joint_sites_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        returned = fly.add_joint_sites(joints)
+        assert len(returned) == len(joints)
+        assert len(fly.anatomicaljoint_to_mjcfsites) == len(joints)
+
+    def test_add_joint_sites_duplicate_raises(self):
+        fly = Fly(name="joint_sites_dup_fly")
+        joint = AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa"))
+        fly.add_joint_sites([joint])
+        with pytest.raises(ValueError, match="already been added"):
+            fly.add_joint_sites([joint])
+
+    def test_add_joint_sites_compiles(self):
+        fly = Fly(name="joint_sites_compile_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        fly.add_joint_sites(joints)
+        mj_model, _ = fly.compile()
+        assert mj_model.nsite >= len(joints)
+
+    def test_get_sites_order_matches_add_order(self):
+        fly = Fly(name="joint_sites_order_fly")
+        joints = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        fly.add_joint_sites(joints)
+        assert fly.get_sites_order() == joints
+
 
 class TestFlyCompile:
     def test_compile_produces_mujoco_model(self, fly_with_joints):
@@ -141,6 +202,7 @@ class TestFlyCompile:
 
     def test_get_bodysegs_order_length(self, fly_with_joints):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         order = list(fly_with_joints.get_bodysegs_order())
         assert len(order) == len(ALL_SEGMENT_NAMES)
 
@@ -177,11 +239,17 @@ class TestFlatGroundWorld:
         fly_a = Fly(name="dupfly")
         fly_b = Fly(name="dupfly")
         world = TetheredWorld(name="dupworld")
-        world.add_fly(fly_a, spawn_position=[0, 0, 1.5],
-                      spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]))
+        world.add_fly(
+            fly_a,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
         with pytest.raises(ValueError, match="already exists"):
-            world.add_fly(fly_b, spawn_position=[1, 0, 1.5],
-                          spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]))
+            world.add_fly(
+                fly_b,
+                spawn_position=[1, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
 
     def test_spawn_rotation_must_be_quat(self):
         # Use a fresh, unattached fly so dm_control doesn't error first
@@ -228,6 +296,46 @@ class TestFlatGroundWorld:
         assert fly.name in world.fly_lookup
 
 
+class TestMixedTerrainWorld:
+    @pytest.mark.parametrize(
+        "world_cls",
+        [GappedTerrainWorld, BlocksTerrainWorld, MixedTerrainWorld],
+    )
+    def test_complex_terrain_construction(self, world_cls):
+        world = world_cls()
+        assert len(world.ground_geoms) > 1
+
+    def test_mixed_terrain_does_not_create_flat_ground_plane_attr(self):
+        world = MixedTerrainWorld()
+        assert not hasattr(world, "ground_geom")
+
+    def test_block_section_uses_v1_height_profile(self):
+        world = MixedTerrainWorld()
+        block_tops = [
+            float(geom.pos[2] + geom.size[2])
+            for geom in world.ground_geoms
+            if geom.name.startswith("ground_mixed_block")
+        ]
+        base_heights = [
+            float(geom.pos[2])
+            for geom in world.ground_geoms
+            if geom.name.startswith("ground_base")
+        ]
+
+        assert min(block_tops) == pytest.approx(-0.35)
+        assert max(block_tops) == pytest.approx(0.0)
+        assert base_heights == pytest.approx([-1.0, -1.0, -1.0])
+
+    def test_custom_ranges_are_used(self):
+        world = MixedTerrainWorld(x_ranges=((0, 9),), y_range=(-2, 2))
+        base_geoms = [
+            geom for geom in world.ground_geoms if geom.name.startswith("ground_base")
+        ]
+        assert len(base_geoms) == 1
+        assert float(base_geoms[0].pos[0]) == pytest.approx(4.5)
+        assert float(base_geoms[0].size[1]) == pytest.approx(2.0)
+
+
 class TestTetheredWorld:
     def test_construction(self):
         world = TetheredWorld()
@@ -250,7 +358,7 @@ class TestTetheredWorld:
 class TestFlyAddTrackingCamera:
     def test_camera_registered_in_lookup(self):
         fly = Fly(name="cam_fly")
-        cam = fly.add_tracking_camera(name="trackcam")
+        fly.add_tracking_camera(name="trackcam")
         assert "trackcam" in fly.cameraname_to_mjcfcamera
 
     def test_returns_mjcf_element(self):
@@ -284,7 +392,9 @@ class TestFlyAddTrackingCamera:
         mj_model, _ = world.compile()
         assert mj_model.ncam == 1
 
-    def test_camera_full_identifier_after_world_attachment(self, skeleton_ypr, neutral_pose):
+    def test_camera_full_identifier_after_world_attachment(
+        self, skeleton_ypr, neutral_pose
+    ):
         """After attaching to a world, the camera's full_identifier gets the fly's prefix."""
         fly = Fly(name="cam_fly6")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
@@ -461,19 +571,25 @@ class TestFlatGroundWorldContactOptions:
 class TestFlyConstructionOptions:
     def test_fullsize_mesh_type(self):
         from flygym.compose.fly import MeshType
+
         fly = Fly(name="fullsize_fly", mesh_type=MeshType.FULLSIZE)
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
     def test_claws_to_capsules_fitting(self):
-        fly = Fly(name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES)
+        fly = Fly(
+            name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES
+        )
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
     def test_all_to_capsules_fitting(self):
-        fly = Fly(name="all_capsule_fly", geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES)
+        fly = Fly(
+            name="all_capsule_fly",
+            geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES,
+        )
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
