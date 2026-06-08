@@ -16,7 +16,9 @@ def snippet():
 
 @pytest.fixture(scope="module")
 def fly_for_snippet():
-    neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+    neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+        AxisOrder.YAW_PITCH_ROLL
+    )
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,
@@ -75,9 +77,7 @@ class TestMotionSnippetConstruction:
         raw = MotionSnippet(angles_global2anatomical=False)
         converted = MotionSnippet(angles_global2anatomical=True)
 
-        right_leg_indices = [
-            i for i, leg in enumerate(raw.legs) if leg.startswith("r")
-        ]
+        right_leg_indices = [i for i, leg in enumerate(raw.legs) if leg.startswith("r")]
         mirror_dof_indices = [
             i
             for i, (_, _, axis) in enumerate(raw.dofs_per_leg)
@@ -101,7 +101,9 @@ class TestMotionSnippetConstruction:
 class TestMotionSnippetGetJointAngles:
     def test_output_shape(self, snippet, fly_for_snippet):
         sim_timestep = 1e-3  # 1 kHz (fast for testing)
-        dof_order = list(fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION))
+        dof_order = list(
+            fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION)
+        )
         angles = snippet.get_joint_angles(
             output_timestep=sim_timestep,
             output_dof_order=dof_order,
@@ -113,7 +115,9 @@ class TestMotionSnippetGetJointAngles:
         assert angles.shape[1] == len(dof_order)
 
     def test_output_is_finite(self, snippet, fly_for_snippet):
-        dof_order = list(fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION))
+        dof_order = list(
+            fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION)
+        )
         angles = snippet.get_joint_angles(
             output_timestep=1e-3,
             output_dof_order=dof_order,
@@ -122,7 +126,9 @@ class TestMotionSnippetGetJointAngles:
 
     def test_angles_roughly_in_radians(self, snippet, fly_for_snippet):
         """Biological leg angles should be within ±π radians."""
-        dof_order = list(fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION))
+        dof_order = list(
+            fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION)
+        )
         angles = snippet.get_joint_angles(
             output_timestep=1e-3,
             output_dof_order=dof_order,
@@ -131,7 +137,9 @@ class TestMotionSnippetGetJointAngles:
 
     def test_resampling_preserves_duration(self, snippet, fly_for_snippet):
         """Output at two different timesteps should cover approximately the same duration."""
-        dof_order = list(fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION))
+        dof_order = list(
+            fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION)
+        )
         dt_fast = 1e-3
         dt_slow = 5e-3
         angles_fast = snippet.get_joint_angles(dt_fast, dof_order)
@@ -143,7 +151,9 @@ class TestMotionSnippetGetJointAngles:
     def test_smoothing_reduces_high_frequency_noise(self, snippet, fly_for_snippet):
         """Heavily smoothed output should have lower mean absolute first-difference
         than a lightly smoothed output (at the same timestep)."""
-        dof_order = list(fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION))
+        dof_order = list(
+            fly_for_snippet.get_actuated_jointdofs_order(ActuatorType.POSITION)
+        )
         dt = 1 / snippet.data_fps  # output at native recording rate
 
         angles_heavy = snippet.get_joint_angles(

@@ -106,6 +106,7 @@ class ContactParams:
         return (
             self.solver_impedance_min,
             self.solver_impedance_max,
+            self.solver_impedance_min2max_width,
             self.solver_impedance_transitionmidpoint,
             self.solver_impedance_transitionsharpness,
         )

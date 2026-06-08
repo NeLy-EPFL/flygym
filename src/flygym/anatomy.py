@@ -345,6 +345,14 @@ class JointDOF:
     child: BodySegment
     axis: RotationAxis
 
+    def __post_init__(self):
+        if isinstance(self.parent, str):
+            self.parent = BodySegment(self.parent)
+        if isinstance(self.child, str):
+            self.child = BodySegment(self.child)
+        if isinstance(self.axis, str):
+            self.axis = RotationAxis(self.axis)
+
     @property
     def name(self) -> str:
         """Unique name following the pattern ``{parent}-{child}-{axis}``."""
@@ -372,11 +380,28 @@ class AnatomicalJoint:
     child: BodySegment
     axes: AxesSet = field(default_factory=lambda: AxesSet(RotationAxis))
 
+    def __post_init__(self):
+        if isinstance(self.parent, str):
+            self.parent = BodySegment(self.parent)
+        if isinstance(self.child, str):
+            self.child = BodySegment(self.child)
+        if not isinstance(self.axes, AxesSet):
+            self.axes = AxesSet(self.axes)
+
     def iter_dofs(self, axis_order: AxisOrder) -> Iterator[JointDOF]:
         """Iterate through the `JointDOF`s in the specified axis order."""
         for axis in axis_order.value:
             if axis in self.axes:
                 yield JointDOF(self.parent, self.child, axis)
+
+    @property
+    def name(self) -> str:
+        """Unique name for the anatomical joint following the pattern
+        `{parent}-{child}`."""
+        return f"{self.parent.name}-{self.child.name}"
+
+    def __hash__(self):
+        return hash((self.parent, self.child))
 
 
 class BaseJointPreset(Enum):

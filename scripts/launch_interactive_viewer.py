@@ -36,6 +36,8 @@ def main():
         ctrlrange=(-3.14, 3.14),
     )
 
+    fly.add_joint_sites(JointPreset.LEGS_ONLY.to_joint_list())
+
     fly.colorize()
     fly.add_tracking_camera(name="trackingcam")
 

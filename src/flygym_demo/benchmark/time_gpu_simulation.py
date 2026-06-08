@@ -119,7 +119,7 @@ def run_simulation(
     assert sim.mj_model.opt.timestep == timestep
 
     if enable_rendering:
-        renderer = sim.set_renderer(
+        sim.set_renderer(
             cam,
             playback_speed=0.2,
             output_fps=25,

@@ -11,6 +11,7 @@ import yaml
 from flygym import assets_dir
 from flygym.anatomy import (
     BodySegment,
+    AnatomicalJoint,
     JointDOF,
     Skeleton,
     RotationAxis,
@@ -78,7 +79,7 @@ class GeomFittingOption(Enum):
 
 class ActuatorType(Enum):
     """Actuator types supported by MuJoCo.
-    See `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+    See [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
     for details on each type."""
 
     MOTOR = "motor"
@@ -132,6 +133,8 @@ class Fly(BaseCompositionElement):
             Maps body segments to MJCF geometry elements.
         jointdof_to_mjcfjoint:
             Maps joint DOFs to MJCF joint elements.
+        anatomicaljoint_to_mjcfsites:
+            Maps anatomical joints to MJCF site elements.
         jointdof_to_mjcfactuator_by_type:
             Maps actuator type to a further dictionary, which maps joint DOFs to MJCF
             actuator elements (only if the actuator exists).
@@ -180,8 +183,10 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_mjcfjoint = {}
         self.jointdof_to_mjcfactuator_by_type = {ty: {} for ty in ActuatorType}
         self.leg_to_adhesionactuator = {}
+        self.anatomicaljoint_to_mjcfsites = {}
         self.sensorname_to_mjcfsensor = {}
         self.cameraname_to_mjcfcamera = {}
+        self.eyecameraname_to_mjcfcamera = {}
 
         self.jointdof_to_neutralangle = {}
         self.jointdof_to_neutralaction_by_type = {ty: {} for ty in ActuatorType}
@@ -251,6 +256,14 @@ class Fly(BaseCompositionElement):
                 "`KinematicPose` or `KinematicPosePreset`."
             )
 
+    def get_sites_order(self) -> list[AnatomicalJoint]:
+        """Get the canonical order of anatomical joints with associated MJCF sites.
+
+        This is the order used by simulation site-state readout methods such as
+        ``Simulation.get_site_positions``.
+        """
+        return list(self.anatomicaljoint_to_mjcfsites.keys())
+
     def add_joints(
         self,
         skeleton: Skeleton,
@@ -282,7 +295,7 @@ class Fly(BaseCompositionElement):
                 small enough to not affect dynamics.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
                 for details on supported attributes.
 
         Returns:
@@ -353,7 +366,7 @@ class Fly(BaseCompositionElement):
             **kwargs:
                 Additional arguments passed to MJCF actuator creation (e.g., kp for
                 position actuators, kv for velocity actuators). See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
                 for details on supported attributes.
 
         Returns:
@@ -392,13 +405,50 @@ class Fly(BaseCompositionElement):
         self._rebuild_neutral_keyframe()
         return return_dict
 
+    def add_joint_sites(
+        self, anatomical_joints: list[AnatomicalJoint]
+    ) -> dict[AnatomicalJoint, mjcf.Element]:
+        """Add MJCF sites at the origins of selected anatomical joints.
+
+        Each site is placed at ``(0, 0, 0)`` in the child body frame. Since body
+        origins are defined at their parent-child joint locations in this model,
+        these sites track anatomical joint positions in world coordinates during
+        simulation.
+
+        Args:
+            anatomical_joints: Anatomical joints to materialize as MJCF sites.
+
+        Returns:
+            Dictionary mapping each anatomical joint to its created MJCF site
+            element (same entries added into ``self.anatomicaljoint_to_mjcfsites``).
+
+        Raises:
+            ValueError: If a site for a requested anatomical joint already exists.
+        """
+        return_dict = {}
+        for joint in anatomical_joints:
+            if joint in self.anatomicaljoint_to_mjcfsites:
+                raise ValueError(
+                    f"A site has already been added for anatomical joint '{joint.name}'."
+                )
+            child_body_element = self.bodyseg_to_mjcfbody[joint.child]
+            site = child_body_element.add(
+                "site",
+                name=joint.name,
+                pos=(0, 0, 0),  # origin of child body is defined at joint to parent
+            )
+            return_dict[joint] = site
+        self.anatomicaljoint_to_mjcfsites.update(return_dict)
+        return return_dict
+
     def add_leg_adhesion(
         self, gain: float | dict[str, float] = 1.0
     ) -> dict[str, mjcf.Element]:
         """Add adhesion actuators to the tarsus5 segments of all legs.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
-        surfaces. The control input per leg ranges from 1 to 100.
+        surfaces. The control input per leg ranges from 0 to 1, where 0 fully
+        releases adhesion and 1 applies the configured gain.
 
         Args:
             gain: Adhesion actuator gain. Either a single float applied to all legs,
@@ -424,9 +474,55 @@ class Fly(BaseCompositionElement):
                 name=f"{tarsus5.name}-adhesion",
                 body=self.bodyseg_to_mjcfbody[tarsus5],
                 gain=gain_this_leg,
-                ctrlrange=(1, 100),
+                ctrlrange=(0, 1),
             )
         return self.leg_to_adhesionactuator
+
+    def add_vision(self, draw_sensor_markers: bool = False):
+        with open(assets_dir / "model/vision.yaml") as f:
+            info = yaml.safe_load(f)
+
+        return_dict = {}
+
+        for sensor_name, sensor_info in info["sensors"].items():
+            parent_body = self.mjcf_root.find("body", sensor_info["parent"])
+            sensor_body = parent_body.add(
+                "body",
+                name=f"{sensor_name}_body",
+                pos=sensor_info["rel_pos"],
+            )
+            cam = sensor_body.add(
+                "camera",
+                name=f"{sensor_name}_camera",
+                mode="fixed",
+                euler=sensor_info["orientation"],
+                fovy=info["fovy_per_eye"],
+            )
+
+            # Add visual markers indicating where the eye sensors are
+            # The MuJoCo renderer by default renders geoms of groups 0, 1, 2.
+            # By convention, group 0 is for main visual/collision bodies, group 1 is for
+            # helper/mocap geoms, and group 2 is for debug geoms. So if the user wants
+            # to draw sensor markers, we put them in group 1. Among the groups that are
+            # invisible by default, group 3 is often used for simplified physics geoms,
+            # and group 4 is often for additional stuff. So if the user doesn't want to
+            # draw sensor markers, we put them in group 4.
+            geom_group = 1 if draw_sensor_markers else 4
+            sensor_body.add(
+                "geom",
+                name=f"{sensor_name}_marker",
+                type="sphere",
+                size=[0.06],
+                rgba=sensor_info["marker_rgba"],
+                mass=0,
+                contype=0,
+                conaffinity=0,
+                group=geom_group,
+            )
+
+            return_dict[sensor_name] = cam
+
+        self.eyecameraname_to_mjcfcamera.update(return_dict)
 
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
@@ -476,8 +572,7 @@ class Fly(BaseCompositionElement):
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
             **kwargs: Additional attributes passed to the MJCF camera element. See
-                `MuJoCo XML reference
-                <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_.
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera).
 
         Returns:
             The created MJCF camera element.
@@ -549,11 +644,20 @@ class Fly(BaseCompositionElement):
         with open(rigging_config_path) as f:
             rigging_config = yaml.safe_load(f)
 
-        # Add root body and geom
-        body, geoms = self._add_one_body_and_geom(
+        # Load vision config to find out which geoms should be invisible to the eye
+        # cameras to avoid occlusion (e.g., the eye geoms themselves)
+        with open(assets_dir / "model/vision.yaml") as f:
+            info = yaml.safe_load(f)
+
+        # Add root body and geom. The root can also be hidden from eye cameras if
+        # requested in the vision config, so we apply the same group assignment rule
+        # used for all other body segments.
+        root_geom_group = 2 if self.root_segment.name in info["hidden_segments"] else 0
+        body, geom = self._add_one_body_and_geoms(
             self.mjcf_root.worldbody,
             self.root_segment,
             rigging_config[self.root_segment.name],
+            geom_group=root_geom_group,
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
         self.bodyseg_to_mjcfgeom[self.root_segment] = geoms
@@ -573,8 +677,19 @@ class Fly(BaseCompositionElement):
                 raise FlyGymInternalError(
                     f"Missing rigging config for body segment {jointdof.child.name}"
                 )
-            body, geoms = self._add_one_body_and_geom(
-                parent_body, jointdof.child, my_rigging_config
+
+            # If the geom should be invisible to eye cameras, we put it in group 2.
+            # Otherwise, it goes in group 0. The MuJoCo renderer renders geoms in groups
+            # 0, 1, 2 by default, so a default renderer renders all body geoms, but the
+            # eye cameras can be configured to ignore group 2 geoms to avoid visual
+            # occlusion. This makes the behavior of FlyGym less surprising to users who
+            # wish to add their own renderers manually. We avoid group 1 because it's by
+            # convention meant for mocap markers and helper geoms.
+            geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
+
+            # Actually add the body and geom to the MJCF model
+            body, geoms = self._add_one_body_and_geoms(
+                parent_body, jointdof.child, my_rigging_config, geom_group
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
             self.bodyseg_to_mjcfgeom[jointdof.child] = geoms
@@ -587,11 +702,12 @@ class Fly(BaseCompositionElement):
                 ):
                     mjcf_element.type = "capsule"
 
-    def _add_one_body_and_geom(
+    def _add_one_body_and_geoms(
         self,
         parent_body: mjcf.Element,
         segment: BodySegment,
         my_rigging_config: dict[str, Any],
+        geom_group: int,
     ) -> tuple[mjcf.Element, mjcf.Element]:
         body_element = parent_body.add(
             "body",
@@ -607,6 +723,7 @@ class Fly(BaseCompositionElement):
             mass=my_rigging_config["mass"],
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
+            group=geom_group,
         )
         return body_element, [geom_element]
     
@@ -813,7 +930,7 @@ class FlybodyFly(Fly):
     def _normalize_mjcf_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         return {k: cls._coerce_mjcf_value(v) for k, v in params.items()}
 
-    def _add_one_body_and_geom(
+    def _add_one_body_and_geoms(
         self,
         parent_body: mjcf.Element,
         segment: BodySegment,

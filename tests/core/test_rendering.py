@@ -32,7 +32,9 @@ from flygym.rendering import Renderer
 def compiled_model_with_camera():
     """TetheredWorld with one fly that has a tracking camera."""
     pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
-    skeleton = Skeleton(axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY)
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
+    )
     fly = Fly(name="render_fly")
     fly.add_joints(skeleton, neutral_pose=pose)
     fly.add_tracking_camera(name="trackcam")

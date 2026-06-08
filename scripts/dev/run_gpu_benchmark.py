@@ -6,7 +6,6 @@ import pandas as pd
 from flygym.warp.utils import check_gpu
 from flygym_demo.benchmark import run_benchmark
 
-
 if __name__ == "__main__":
     SIM_TIMESTEP = 1e-4
     OUTPUT_DIR = Path("gpu_benchmark_results/")

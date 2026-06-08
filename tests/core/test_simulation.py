@@ -5,14 +5,20 @@ import platform
 import pytest
 import numpy as np
 
-from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton, LEGS
+from flygym.anatomy import (
+    AxisOrder,
+    JointPreset,
+    ActuatedDOFPreset,
+    Skeleton,
+    LEGS,
+    AnatomicalJoint,
+    BodySegment,
+)
 from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
-from flygym.compose.pose import KinematicPose
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
-import flygym
 
 
 # ==============================================================================
@@ -35,10 +41,12 @@ class TestSimulationConstruction:
 
     def test_mj_model_accessible(self, simulation):
         import mujoco as mj
+
         assert isinstance(simulation.mj_model, mj.MjModel)
 
     def test_mj_data_accessible(self, simulation):
         import mujoco as mj
+
         assert isinstance(simulation.mj_data, mj.MjData)
 
 
@@ -140,6 +148,7 @@ class TestGetBodyPositions:
 
     def test_correct_number_of_bodies(self, simulation, fly_with_adhesion):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         simulation.reset()
         pos = simulation.get_body_positions(fly_with_adhesion.name)
         assert pos.shape[0] == len(ALL_SEGMENT_NAMES)
@@ -159,6 +168,7 @@ class TestGetBodyRotations:
 
     def test_correct_number_of_bodies(self, simulation, fly_with_adhesion):
         from flygym.anatomy import ALL_SEGMENT_NAMES
+
         simulation.reset()
         rots = simulation.get_body_rotations(fly_with_adhesion.name)
         assert rots.shape[0] == len(ALL_SEGMENT_NAMES)
@@ -173,15 +183,77 @@ class TestGetBodyRotations:
 
 
 # ==============================================================================
+# get_site_positions
+# ==============================================================================
+
+
+@pytest.fixture(scope="module")
+def simulation_with_joint_sites(neutral_pose, skeleton_ypr):
+    fly = Fly(name="sites_sim_fly")
+    fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+    fly.add_joint_sites(
+        [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+    )
+    world = TetheredWorld(name="sites_sim_world")
+    world.add_fly(
+        fly,
+        spawn_position=[0, 0, 1.5],
+        spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+    )
+    sim = Simulation(world)
+    sim.reset()
+    return sim, fly
+
+
+class TestGetSitePositions:
+    def test_returns_2d_array(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        sim.step()
+        positions = sim.get_site_positions(fly.name)
+        assert positions.ndim == 2
+        assert positions.shape[1] == 3
+
+    def test_matches_added_site_count(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        positions = sim.get_site_positions(fly.name)
+        assert positions.shape[0] == len(fly.get_sites_order())
+
+    def test_site_order_matches_add_order(self, simulation_with_joint_sites):
+        _, fly = simulation_with_joint_sites
+        expected = [
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
+            AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
+        ]
+        assert fly.get_sites_order() == expected
+
+    def test_matches_mujoco_site_xpos(self, simulation_with_joint_sites):
+        sim, fly = simulation_with_joint_sites
+        sim.reset()
+        sim.step()
+        expected = sim.mj_data.site_xpos[sim._internal_siteids_by_fly[fly.name], :]
+        actual = sim.get_site_positions(fly.name)
+        np.testing.assert_allclose(actual, expected, atol=1e-9)
+
+
+# ==============================================================================
 # set_actuator_inputs / get_actuator_forces
 # ==============================================================================
 
 
 class TestActuatorIO:
-    def test_set_and_get_actuator_forces(self, simulation, fly_with_adhesion, skeleton_ypr):
+    def test_set_and_get_actuator_forces(
+        self, simulation, fly_with_adhesion, skeleton_ypr
+    ):
         simulation.reset()
         n_actuators = len(
-            skeleton_ypr.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+            skeleton_ypr.get_actuated_dofs_from_preset(
+                ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+            )
         )
         target_inputs = np.zeros(n_actuators)
         simulation.set_actuator_inputs(
@@ -199,7 +271,9 @@ class TestActuatorIO:
     ):
         simulation.reset()
         n_actuators = len(
-            skeleton_ypr.get_actuated_dofs_from_preset(ActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+            skeleton_ypr.get_actuated_dofs_from_preset(
+                ActuatedDOFPreset.LEGS_ACTIVE_ONLY
+            )
         )
         bad_inputs = np.zeros(n_actuators + 5)
         with pytest.raises(ValueError):
@@ -249,15 +323,25 @@ class TestGroundContactInfo:
 
     def test_returns_six_tuples(self, flat_sim, fly_with_joints):
         flat_sim.reset()
-        contact_active, forces, torques, positions, normals, tangents = (
+        contact_found, forces, torques, positions, normals, tangents = (
             flat_sim.get_ground_contact_info(fly_with_joints.name)
         )
-        assert len(contact_active) == 6
+        assert len(contact_found) == 6
+        assert np.all(contact_found >= 0)
         assert forces.shape == (6, 3)
         assert torques.shape == (6, 3)
         assert positions.shape == (6, 3)
         assert normals.shape == (6, 3)
         assert tangents.shape == (6, 3)
+
+    def test_bodysegment_contact_forces_shape(self, flat_sim, fly_with_joints):
+        flat_sim.reset()
+        forces = flat_sim.get_bodysegment_contact_forces(
+            fly_with_joints.name,
+            [BodySegment("lf_tarsus5"), "rf_tarsus5"],
+        )
+        assert forces.shape == (2, 3)
+        assert np.all(np.isfinite(forces))
 
 
 # ==============================================================================
@@ -326,6 +410,43 @@ class TestProfilingMethods:
         assert "Physics" in captured.out
 
 
+class TestSimulationCloseMethods:
+    def test_close_no_renderers_is_noop(self, simulation):
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        # fresh simulation should have no renderers by default
+        assert fresh_simulation.renderer is None
+        assert fresh_simulation.eye_renderer is None
+        # calling close should be a no-op and not raise
+        fresh_simulation.close()
+
+    def test_close_closes_both_renderers_and_is_idempotent(self, simulation):
+        class _DummyRenderer:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        dummy_a = _DummyRenderer()
+        dummy_b = _DummyRenderer()
+        # Use a fresh Simulation so this mutation cannot leak into other tests that
+        # share the module-scoped fixture instance.
+        fresh_simulation = Simulation(simulation.world)
+        fresh_simulation.renderer = dummy_a
+        fresh_simulation.eye_renderer = dummy_b
+
+        fresh_simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+        # calling again should not raise and should leave state unchanged
+        fresh_simulation.close()
+        assert dummy_a.closed is True
+        assert dummy_b.closed is True
+
+
 # ==============================================================================
 # set_renderer
 # ==============================================================================
@@ -348,7 +469,9 @@ class TestSetRenderer:
         from flygym.compose.pose import KinematicPosePreset
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
 
-        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+            AxisOrder.YAW_PITCH_ROLL
+        )
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
@@ -357,7 +480,9 @@ class TestSetRenderer:
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
         )
-        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_actuators(
+            actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50
+        )
         fly.add_leg_adhesion()
         fly.add_tracking_camera(name="trackcam")
 
@@ -385,7 +510,9 @@ class TestSetRenderer:
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
         from flygym.simulation import Simulation
 
-        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+        pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
+            AxisOrder.YAW_PITCH_ROLL
+        )
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
@@ -394,7 +521,9 @@ class TestSetRenderer:
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
         )
-        fly.add_actuators(actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50)
+        fly.add_actuators(
+            actuated_dofs, ActuatorType.POSITION, neutral_input=pose, kp=50
+        )
         fly.add_leg_adhesion()
         fly.add_tracking_camera(name="trackcam")
 

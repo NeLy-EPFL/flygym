@@ -1,6 +1,6 @@
 [project]
 name = "flygym"
-version = "2.0.0"
+version = "2.0.3"
 description = "NeuroMechFly, a framework for simulating embodied sensorimotor control in adult Drosophila."
 requires-python = ">=3.12,<3.13"
 authors = [
@@ -33,6 +33,7 @@ dependencies = [
     "loguru==0.7.3",
     "pillow>=11,<13",
     "matplotlib>=3.10,<4.0",
+    "numba>=0.65.1",
 ]
 
 [project.optional-dependencies]
@@ -45,8 +46,7 @@ dev = [
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
     # Formatting and linting
-    "black>=26.1,<27.0",
-    "ruff==0.15.8",
+    "ruff==0.15.13",
     # PyPI publishing
     "build>=1.0,<2.0",
     "twine>=6.0,<7.0",
@@ -65,7 +65,8 @@ dev = [
     "networkx>=3.0,<4.0",
     "rtree>=1.0,<2.0",
     # Git pre-commit filter: strips output from ipynb notebooks
-    "nbstripout==0.9.0",
+    "nbstripout==0.9.1",
+    "rasterio>=1.5.0",
 ]
 examples = [
     "ipykernel>=7.1.0",
@@ -99,3 +100,19 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 flygym = ["assets/**"]
+flygym_demo = ["spotlight_data/assets/**", "complex_terrain/assets/**"]
+
+[tool.ruff.lint]
+# Disable the following ruff linting rules globally:
+ignore = [
+    "F722",  # some jaxtyping warp type hints break this rule on purpose
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow the following ruff linting rules in test files:
+"tests/**/*.py" = [
+    "F401",  # unused imports
+    "F841",  # unused variables
+    "F811",  # duplicated imports
+    "E402",  # module level import not at top of file
+]
