@@ -99,7 +99,9 @@ class BaseWorld(BaseCompositionElement, ABC):
         [`dm_control.mjcf` documentation](https://github.com/google-deepmind/dm_control/tree/main/dm_control/mjcf#attaching-models).
 
         Returns:
-            The free joint element created by the attachment.
+            Mapping from joint full_identifier to neutral state for any world-level
+            DoFs created by this attachment. Return an empty dict if the fly is
+            rigidly attached (no new DoFs).
         """
         pass
 
@@ -155,7 +157,7 @@ class BaseWorld(BaseCompositionElement, ABC):
 
         # Attach the fly's MJCF root to the world MJCF model with a free joint.
         # This is an abstract method that must be implemented by concrete world classes.
-        freejoint = self._attach_fly_mjcf(
+        new_dofs = self._attach_fly_mjcf(
             fly, spawn_position, spawn_rotation, *args, **kwargs
         )
 
@@ -166,9 +168,8 @@ class BaseWorld(BaseCompositionElement, ABC):
                 "Freejoint neutral rotation can only be specified in quaternion format "
                 f"for now. Got {spawn_rotation}."
             )
-        neutral_state = [*spawn_position, *spawn_rotation.values]
-        self.world_dof_neutral_states[freejoint.full_identifier] = neutral_state
-
+        
+        self.world_dof_neutral_states.update(new_dofs)
         self._rebuild_neutral_keyframe()
 
     def _rebuild_neutral_keyframe(self):
@@ -272,8 +273,10 @@ class _GroundContactMixin:
         )
         if add_ground_contact_sensors:
             self._add_ground_contact_sensors(fly, bodysegs_with_ground_contact)
-        return freejoint
-    
+
+        neutral_state = [*spawn_position, *spawn_rotation.values]
+
+        return {freejoint.full_identifier: neutral_state}    
 
     def _set_ground_contact(
         self,
@@ -288,8 +291,8 @@ class _GroundContactMixin:
                     self.mjcf_root.contact.add(
                         "pair",
                         geom1=body_geom,
-                        geom2=self.ground_geom,
-                        name=f"{geom_name}-ground",
+                        geom2=ground_geom,
+                        name=f"{geom_name}-{ground_geom.name}-ground",
                         friction=ground_contact_params.get_friction_tuple(),
                         solref=ground_contact_params.get_solref_tuple(),
                         solimp=ground_contact_params.get_solimp_tuple(),
@@ -626,17 +629,8 @@ class TetheredWorld(BaseWorld):
         spawn_site = self.mjcf_root.worldbody.add(
             "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
-        freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
-        self.mjcf_root.equality.add(
-            "weld",
-            body2="world",  # worldbody is called "world" in equality constraints
-            body1=fly.mjcf_root.find("body", fly.root_segment.name).full_identifier,
-            relpose=(*spawn_position, *spawn_rotation.values),
-            solref=(2e-4, 1.0),
-            solimp=(0.98, 0.99, 1e-5, 0.5, 3),
-        )
-        return freejoint
-
+        spawn_site.attach(fly.mjcf_root)
+        return {} 
 
 def _sort_legsegs_prox2dist(segments: list[BodySegment], leg_links: list[str]) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, leg_links.index(seg.link)) for seg in segments]

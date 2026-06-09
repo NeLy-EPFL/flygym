@@ -412,6 +412,7 @@ class FlybodySkeleton(Skeleton):
             [seg for nodes in self.joint_lookup.keys() for seg in nodes]
         )
         if isinstance(axis_order, AxisOrder):
+            print("Warning: using generic AxisOrder with FlybodySkeleton. Converting to FlybodyAxisOrder...")
             axis_order = axis_order.to_list_of_str()
         self.axis_order = FlybodyAxisOrder(axis_order)
 
