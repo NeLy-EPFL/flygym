@@ -38,6 +38,10 @@ class TestFlyConstruction:
     def test_fly_default_name(self):
         fly = Fly()
         assert fly.name == "nmf"
+    
+    def test_flybodyfly_default_name(self):
+        fly = FlybodyFly()
+        assert fly.name == "flybody"
 
     def test_fly_custom_name(self):
         fly = Fly(name="myfly")

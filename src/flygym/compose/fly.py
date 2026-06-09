@@ -653,7 +653,7 @@ class Fly(BaseCompositionElement):
         # requested in the vision config, so we apply the same group assignment rule
         # used for all other body segments.
         root_geom_group = 2 if self.root_segment.name in info["hidden_segments"] else 0
-        body, geom = self._add_one_body_and_geoms(
+        body, geoms = self._add_one_body_and_geoms(
             self.mjcf_root.worldbody,
             self.root_segment,
             rigging_config[self.root_segment.name],
@@ -830,7 +830,7 @@ class FlybodyFly(Fly):
 
     def __init__(
         self,
-        name: str = "nmf",
+        name: str = "flybody",
         *,
         rigging_config_path: PathLike = FLYBODY_RIGGING_CONFIG_PATH,
         mesh_basedir: PathLike = FLYBODY_MESH_DIR,
@@ -935,6 +935,7 @@ class FlybodyFly(Fly):
         parent_body: mjcf.Element,
         segment: BodySegment,
         my_rigging_config: dict[str, Any],
+        geom_group: int,
         ) -> tuple[mjcf.Element, mjcf.Element]:
 
         body_element = parent_body.add(
@@ -953,6 +954,7 @@ class FlybodyFly(Fly):
                 name=geom_name,
                 contype=0,  # contact pairs to be added explicitly later
                 conaffinity=0,  # contact pairs to be added explicitly later
+                group=geom_group,
                 **geom_config,
             )
             all_geom_elements.append(geom_element)
