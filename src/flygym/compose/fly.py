@@ -895,8 +895,12 @@ class FlybodyFly(Fly):
             resolved_params.update(per_joint_cfg)
 
         if not resolved_params:
-            raise ValueError(f"Joint {joint_name} not found in grouped joint config.")
-
+            print(f"Warning: no parameters resolved for joint {joint_name} from joint config using defaults.")
+            resolved_params = {"range": [-180, 180],
+                               "stiffness": 0.01,
+                               "damping": 0.0005,
+                               "limited": True,
+                               }            
         return resolved_params
 
     def _is_pitch(self, jointdof):
