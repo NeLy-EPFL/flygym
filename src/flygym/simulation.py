@@ -510,13 +510,14 @@ class Simulation:
 
         for fly_name, fly in self.world.fly_lookup.items():
             internal_geomids_by_bodyseg_by_fly[fly_name] = {}
-            for bodyseg, mjcf_geom_element in fly.bodyseg_to_mjcfgeom.items():
-                internal_geom_id = mj.mj_name2id(
-                    self.mj_model,
-                    mj.mjtObj.mjOBJ_GEOM,
-                    mjcf_geom_element.full_identifier,
-                )
-                internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = internal_geom_id
+            for bodyseg, mjcf_geom_elements in fly.bodyseg_to_mjcfgeom.items():
+                for mjcf_geom_element in mjcf_geom_elements:
+                    internal_geom_id = mj.mj_name2id(
+                        self.mj_model,
+                        mj.mjtObj.mjOBJ_GEOM,
+                        mjcf_geom_element.full_identifier,
+                    )
+                    internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = internal_geom_id
 
         self._internal_geomid_by_bodyseg_by_fly = internal_geomids_by_bodyseg_by_fly
 

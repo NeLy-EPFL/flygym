@@ -7,6 +7,7 @@ import dm_control.mjcf as mjcf
 import numpy as np
 
 from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment, LEG_LINKS
+from flygym.assets.model.flybody import FlybodyContactBodiesPreset
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
@@ -247,9 +248,24 @@ class _GroundContactMixin:
         )
         freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
 
-        if isinstance(bodysegs_with_ground_contact, ContactBodiesPreset | str):
-            preset = ContactBodiesPreset(bodysegs_with_ground_contact)
+        if isinstance(bodysegs_with_ground_contact, BaseContactBodiesPreset):
+            bodysegs_with_ground_contact = (
+                bodysegs_with_ground_contact.to_body_segments_list()
+            )
+        elif isinstance(bodysegs_with_ground_contact, str):
+            if fly.name == "nmf":
+                preset = ContactBodiesPreset(bodysegs_with_ground_contact)
+            elif fly.name == "flybody":
+                preset = FlybodyContactBodiesPreset(bodysegs_with_ground_contact)
+            else:
+                # warning could not find preset matching fly name, defaulting to ContactBodiesPreset with a warning
+                preset = ContactBodiesPreset(bodysegs_with_ground_contact)
+                print(
+                    f"Warning: could not find contact bodies preset matching fly name '{fly.name}'. "
+                    f"Defaulting to ContactBodiesPreset with preset name '{bodysegs_with_ground_contact}'."
+                )
             bodysegs_with_ground_contact = preset.to_body_segments_list()
+
 
         self._set_ground_contact(
             fly, bodysegs_with_ground_contact, ground_contact_params
