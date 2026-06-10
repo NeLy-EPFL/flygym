@@ -7,7 +7,7 @@ import dm_control.mjcf as mjcf
 import numpy as np
 
 from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
-from flygym.assets.model.flybody import FlybodyContactBodiesPreset
+from flygym.flybody.anatomy_flybody import FlybodyContactBodiesPreset
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams

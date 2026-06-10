@@ -2,7 +2,7 @@
 
 This module contains model-agnostic and default-model anatomy definitions.
 Flybody-specific anatomy is defined in
-``flygym.assets.model.flybody.anatomy_flybody``.
+``flygym.flybody.anatomy_flybody``.
 """
 
 from dataclasses import dataclass, field

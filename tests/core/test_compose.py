@@ -10,7 +10,7 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.assets.model.flybody.anatomy_flybody import FlybodyContactBodiesPreset
+from flygym.flybody.anatomy_flybody import FlybodyContactBodiesPreset
 from flygym.compose.fly import (
     Fly,
     FlybodyFly,

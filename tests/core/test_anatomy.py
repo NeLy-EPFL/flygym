@@ -24,7 +24,7 @@ from flygym.anatomy import (
     ALL_CONNECTED_SEGMENT_PAIRS,
     ALL_SEGMENT_NAMES,
 )
-from flygym.assets.model.flybody.anatomy_flybody import (
+from flygym.flybody.anatomy_flybody import (
     FlybodyRotationAxis,
     WingFlybodyRotationAxis,
     FlybodyAxesSet,
@@ -539,7 +539,7 @@ class TestSkeleton:
 
 # ##############################################################################
 # Flybody duplicates: same tests as above but for the FlybodyFly anatomy types
-# (defined in flygym.assets.model.flybody.anatomy_flybody and used by
+# (defined in flygym.flybody.anatomy_flybody and used by
 # flygym.compose.fly.FlybodyFly).
 # ##############################################################################
 
