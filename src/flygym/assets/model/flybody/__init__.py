@@ -1,2 +1,3 @@
-from flygym.assets.model.flybody.anatomy_flybody import *
+from . import anatomy_flybody
 
+__all__ = ["anatomy_flybody"]
