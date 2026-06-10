@@ -20,11 +20,11 @@ hidden_segments:
 sensors:
   l_eye_cam:
     parent: c_head
-    rel_pos: [0.201, 0.38 , 0.017]
-    orientation: [1.57, 0.00, -0.47]
+    rel_pos: [-0.4, 0.175 , 0.005]
+    orientation: [1.683515, -0.219400, 1.088280]
     marker_rgba: [0.07, 0.45, 0.35, 1]
   r_eye_cam:
     parent: c_head
-    rel_pos: [0.201, -0.38, 0.017]
-    orientation: [-1.57, 3.14, 0.47]
+    rel_pos: [0.4, 0.175 , 0.005]
+    orientation: [1.685148,  0.220983, -1.088095]
     marker_rgba: [0.07, 0.45, 0.35, 1]
