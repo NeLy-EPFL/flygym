@@ -188,3 +188,109 @@ class PreprogrammedSteps:
     def default_pose(self) -> np.ndarray:
         """Default pose ordered like the default v2 active leg actuators."""
         return self.default_pose_by_dof_order()
+
+class FlybodyPreprogrammedSteps(PreprogrammedSteps):
+    """Preprogrammed single-leg steps tailored to the Flybody anatomy.
+
+    Provenance
+    ----------
+    The underlying joint-angle trajectories come from
+    ``src/flygym_demo/ball_flybody_data/assets/ball_flybody_clip.npz`` -- a
+    1-second snippet (100 frames @ 100 fps) of a fly walking on an air-supported
+    ball, taken from the original NeuroMechFly v1 dataset and reconstructed
+    into per-joint anatomical angles via a SeqIKPy-based inverse-kinematics
+    pipeline. The clip is loaded through
+    ``flygym_demo.spotlight_data.MotionSnippet``.
+
+    Pipeline (see ``flybody_step_extraction.py``)
+    ----------------------------------------------------------------
+    1. Replay the clip's joint angles on a *tethered* ``FlybodyFly`` (LEGS_ONLY
+       joints, position actuators, passive tendons, no ground); record the
+       world-frame position of each claw (tarsus5) and the thorax at every
+       sim step.
+    2. Project each claw's position onto the thorax frame to obtain
+       body-frame ``(anteroposterior, lateral, vertical)`` coordinates.
+    3. Segment cycles at the **anterior extreme position (AEP)** -- local
+       maxima of the body-frame anteroposterior trace, one cycle per
+       AEP-to-AEP interval.
+    4. Per cycle: resample the 7 leg DOFs onto a common phase grid; estimate
+       swing fraction as the fraction of timesteps where the body-frame claw
+       z exceeds the cycle's z-midpoint.
+    5. Average cycles per leg into one canonical ``(7, n_phase_bins)``
+       trajectory and one scalar swing fraction.
+
+    Conventions
+    -----------
+    Phase 0 corresponds to the AEP (start of swing). ``swing_period[leg] =
+    [0, 2π * swing_fraction[leg]]`` carves swing out of the front of the
+    cycle; the remainder is stance. The DOF axis matches
+    ``_DOFS_PER_LEG`` (the parent class layout): no DOF reshuffling is
+    needed compared to ``PreprogrammedSteps``.
+
+    The pickled asset embeds the full provenance under ``meta["description"]``
+    and ``meta["source_clip"]``; inspect it with ``pickle.load`` if you need to
+    audit a specific build.
+    """
+
+    # Nominal step duration kept around so `step_cycle_frequency_hz` stays
+    # meaningful for callers that pick CPG intrinsic frequencies from it. Not
+    # used to map phase to time anywhere in this class.
+    _NOMINAL_CYCLE_DURATION_S = 1.0 / 12.0
+
+    def __init__(
+        self,
+        path=None,
+        neutral_pose_phases: tuple[float, float, float, float, float, float] = (
+            np.pi,
+            np.pi,
+            np.pi,
+            np.pi,
+            np.pi,
+            np.pi,
+        ),
+    ) -> None:
+        if path is None:
+            path = (
+                files("flygym_demo.complex_terrain")
+                / "assets/single_steps_flybody.pkl"
+            )
+        if hasattr(path, "open"):
+            with path.open("rb") as f:
+                data = pickle.load(f)
+        else:
+            with open(path, "rb") as f:
+                data = pickle.load(f)
+
+        joint_angles = data["joint_angles"]  # dict: leg -> (7, n_phase_bins)
+        swing_fractions = data["swing_fractions"]
+        self._length = int(data["meta"]["n_phase_bins"])
+        self.duration = self._NOMINAL_CYCLE_DURATION_S
+        self._timestep = self.duration / self._length
+
+        # CubicSpline with periodic BC requires the last sample to coincide
+        # with the first. The asset stores cycles with `endpoint=False`, so
+        # wrap the first sample back onto 2π before fitting.
+        phase_inner = np.linspace(0, 2 * np.pi, self._length, endpoint=False)
+        phase_grid = np.concatenate([phase_inner, [2 * np.pi]])
+        self._psi_funcs = {}
+        for leg in self.legs:
+            angles = joint_angles[leg]  # (7, n_phase_bins)
+            angles_periodic = np.concatenate([angles, angles[:, :1]], axis=1)
+            self._psi_funcs[leg] = CubicSpline(
+                phase_grid, angles_periodic, axis=1, bc_type="periodic"
+            )
+
+        self.neutral_pos = {
+            leg: self._psi_funcs[leg](theta_neutral)[:, np.newaxis]
+            for leg, theta_neutral in zip(self.legs, neutral_pose_phases)
+        }
+
+        # Phase 0 is AEP, so the cycle is laid out as
+        #   [0, swing_end]  -> swing  (leg in air)
+        #   [swing_end, 2π] -> stance (leg planted)
+        self.swing_period = {
+            leg: np.array(
+                [0.0, float(swing_fractions[leg]) * 2 * np.pi], dtype=float
+            )
+            for leg in self.legs
+        }
