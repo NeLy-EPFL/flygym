@@ -32,7 +32,6 @@ from flygym.assets.model.flybody.anatomy_flybody import (
     WingFlybodyRotationAxis,
     FlybodyJointDOF,
     FlybodyAxisOrder,
-    WingFlybodyAxisOrder,
 )
 
 from flygym.compose.base import BaseCompositionElement
@@ -959,6 +958,8 @@ class FlybodyFly(Fly):
 
         all_geom_elements = []
         for geom_name, geom_config in my_rigging_config["geoms"].items():
+            if geom_group == 2:
+                print(f"Geom {geom_name} on body segment {segment.name} will be invisible to eye cameras based on vision config.")
             geom_element = body_element.add(
                 "geom",
                 type="mesh",
@@ -1316,8 +1317,7 @@ class FlybodyFly(Fly):
             if actuator_type == ActuatorType.POSITION:
                 has_kp = "kp" in kwargs
                 has_kv = "kv" in kwargs
-                has_timeconst = "timeconst" in kwargs
-                warning_str = f"WARNING: actuator type is POSITION but "
+                warning_str = "WARNING: actuator type is POSITION but "
                 has_missing_param = False
                 for param, has_it in [("kp", has_kp)]:#, ("kv", has_kv), ("timeconst", has_timeconst)]:
                     if not has_it:
@@ -1328,7 +1328,7 @@ class FlybodyFly(Fly):
                 
             elif actuator_type == ActuatorType.VELOCITY:
                 has_kv = "kv" in kwargs
-                warning_str = f"WARNING: actuator type is VELOCITY but "
+                warning_str = "WARNING: actuator type is VELOCITY but "
                 if not has_kv:
                     warning_str += "kv not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
                     print(warning_str)

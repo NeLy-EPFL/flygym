@@ -35,17 +35,15 @@ from scipy.spatial.transform import Rotation as R
 from flygym import Simulation
 from flygym.compose import (
     KinematicPosePreset,
-    ActuatorType,
     FlatGroundWorld,
     Fly,
 )
 from flygym.compose.fly import FlybodyFly
-from flygym.anatomy import Skeleton, AxisOrder, JointPreset, ActuatedDOFPreset
+from flygym.anatomy import Skeleton, AxisOrder, JointPreset
 from flygym.assets.model.flybody.anatomy_flybody import (
     FlybodySkeleton,
     FlybodyJointPreset,
     FlybodyAxisOrder,
-    FlybodyActuatedDOFPreset,
     FlybodyContactBodiesPreset,
 )
 from flygym.utils.math import Rotation3D

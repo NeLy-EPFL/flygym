@@ -209,9 +209,9 @@ def parse_xml_to_rig(xml_path, yaml_path):
             for k, v in body.attrib.items()
             if k in ["pos", "quat"]
         }
-        if not "pos" in selected_data:
+        if "pos" not in selected_data:
             selected_data["pos"] = _parse_and_scale_attr("pos", "0 0 0")
-        if not "quat" in selected_data:
+        if "quat" not in selected_data:
             selected_data["quat"] = _parse_and_scale_attr("quat", "1 0 0 0")
 
         selected_data["geoms"] = {}

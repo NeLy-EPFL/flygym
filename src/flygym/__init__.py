@@ -7,7 +7,7 @@ assets_dir = _Path(str(_importlib_resources_files("flygym") / "assets"))
 
 from . import anatomy  # noqa: E402
 from . import compose  # noqa: E402
-from . import flybody
+from . import flybody  # noqa: E402
 from .simulation import Simulation  # noqa: E402
 from .rendering import Renderer, launch_interactive_viewer, preview_model  # noqa: E402
 

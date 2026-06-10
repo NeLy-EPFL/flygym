@@ -380,7 +380,7 @@ class Simulation:
     def set_tendon_actuator_inputs(
         self,
         fly_name: str,
-        inputs: Float[np.ndarray, "n_tendon_actuators"],
+        inputs: Float[np.ndarray, "n_tendon_actuators"],  # noqa: F821
     ) -> None:
         """Set control inputs for tendon actuators.
 
