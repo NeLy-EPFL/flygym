@@ -1,8 +1,9 @@
 compiler:
   autolimits: 'true'
   angle: radian
+  eulerseq: XYZ
   meshdir: assets
-  fusestatic: 'true'
+  fusestatic: 'false'
 option:
   timestep: '0.0001'
   gravity: ['0', '0', '-981']
@@ -21,3 +22,6 @@ visual:
     ambient: 0.5 0.5 0.5
     diffuse: 0.6 0.6 0.6
     specular: 0. 0. 0.
+global:
+  offwidth: 2048
+  offheight: 2048
