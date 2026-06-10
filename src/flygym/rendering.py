@@ -302,7 +302,7 @@ class Renderer:
                 _, cam_name = self._resolve_camera_id_and_name(cam_spec)
                 if cam_name not in self._cameras_names2id:
                     raise ValueError(
-                        f"Cqamera '{cam_name}' in output_path is not available. "
+                        f"Camera '{cam_name}' in output_path is not available. "
                         f"Available cameras: {list(self._cameras_names2id.keys())}"
                     )
                 result[cam_name] = Path(path)
