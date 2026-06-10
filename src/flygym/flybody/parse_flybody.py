@@ -759,17 +759,23 @@ def parse_globals(xml_path, yaml_path):
 
     parsed_globals["compiler"]["fusestatic"] = "true"
     parsed_globals["statistic"] = {"extent": "5"}
-    parsed_globals["visual"] = {"headlight":{
-        "ambient": "0.5 0.5 0.5",
-        "diffuse": "0.6 0.6 0.6",
-        "specular": "0. 0. 0.",
-    }}
+    parsed_globals["visual"] = {
+        "headlight": {
+            "ambient": "0.5 0.5 0.5",
+            "diffuse": "0.6 0.6 0.6",
+            "specular": "0. 0. 0.",
+        },
+        "global": {
+            "offwidth": 2048,
+            "offheight": 2048,
+        },
+    }
 
     _write_yaml_file(yaml_path, parsed_globals)
 
 if __name__ == "__main__":
     out_dir = Path("src/flygym/assets/model/flybody")
-    flybody_xml = Path("/Users/stimpfli/Desktop/mujoco_menagerie/flybody/fruitfly.xml")
+    flybody_xml = Path("src/flygym/assets/model/flybody/fruitfly.xml")
 
     rigging_flybody_yaml = out_dir / "flybody_rigging.yaml"
     parse_xml_to_rig(flybody_xml, rigging_flybody_yaml)
