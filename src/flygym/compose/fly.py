@@ -22,7 +22,7 @@ from flygym.anatomy import (
     LEG_LINKS,
     )
 
-from flygym.assets.model.flybody.anatomy_flybody import (
+from flygym.flybody.anatomy_flybody import (
     FLYBODY_ALL_SEGMENT_NAMES,
     FLYBODY_LEG_LINKS,
     FlybodyJointPreset,
