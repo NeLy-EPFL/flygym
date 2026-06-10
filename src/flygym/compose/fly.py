@@ -48,6 +48,7 @@ DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
 DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
 DEFAULT_MESH_DIR = assets_dir / "model/meshes/"
 DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
+DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/vision.yaml"
 
 
 class MeshType(Enum):
@@ -170,6 +171,7 @@ class Fly(BaseCompositionElement):
         mirror_left2right: bool = True,
         mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
+        vision_config_path: PathLike = DEFAULT_VISION_CONFIG_PATH,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -200,7 +202,8 @@ class Fly(BaseCompositionElement):
         )
 
         self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
-        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option)
+        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option, vision_config_path)
+        self.vision_config_path = vision_config_path
 
     @override
     @property
@@ -478,8 +481,8 @@ class Fly(BaseCompositionElement):
             )
         return self.leg_to_adhesionactuator
 
-    def add_vision(self, draw_sensor_markers: bool = False):
-        with open(assets_dir / "model/vision.yaml") as f:
+    def add_vision(self, draw_sensor_markers: bool = False) -> None:
+        with open(self.vision_config_path) as f:
             info = yaml.safe_load(f)
 
         return_dict = {}
@@ -638,7 +641,8 @@ class Fly(BaseCompositionElement):
         return jointdof.axis == RotationAxis.PITCH
 
     def _add_bodies_and_geoms(
-        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption
+        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption,
+        vision_config_path: PathLike,
     ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
@@ -646,9 +650,9 @@ class Fly(BaseCompositionElement):
 
         # Load vision config to find out which geoms should be invisible to the eye
         # cameras to avoid occlusion (e.g., the eye geoms themselves)
-        with open(assets_dir / "model/vision.yaml") as f:
+        with open(vision_config_path) as f:
             info = yaml.safe_load(f)
-
+        
         # Add root body and geom. The root can also be hidden from eye cameras if
         # requested in the vision config, so we apply the same group assignment rule
         # used for all other body segments.
@@ -685,6 +689,7 @@ class Fly(BaseCompositionElement):
             # occlusion. This makes the behavior of FlyGym less surprising to users who
             # wish to add their own renderers manually. We avoid group 1 because it's by
             # convention meant for mocap markers and helper geoms.
+            # Geom group is based on parent body segment name because it's more intuitive to specify the entire segment
             geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
 
             # Actually add the body and geom to the MJCF model
@@ -802,6 +807,7 @@ FLYBODY_VISUALS_CONFIG_PATH = assets_dir / "model/flybody/flybody_visuals.yaml"
 FLYBODY_ALL_GEOM_SUFFIXES_PATH = assets_dir / "model/flybody/flybody_all_geom_suffixes.yaml"
 FLYBODY_JOINT_CONFIG_PATH = assets_dir / "model/flybody/flybody_joints.yaml"
 FLYBODY_ACTUATOR_CONFIG_PATH = assets_dir / "model/flybody/flybody_actuators.yaml"
+FLYBODY_DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/flybody/flybody_vision.yaml"
 
 
 class FlybodyFly(Fly):
@@ -842,6 +848,7 @@ class FlybodyFly(Fly):
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
         joint_config_path: PathLike = FLYBODY_JOINT_CONFIG_PATH,
         actuator_config_path: PathLike = FLYBODY_ACTUATOR_CONFIG_PATH,
+        vision_config_path: PathLike = FLYBODY_DEFAULT_VISION_CONFIG_PATH,
     ) -> None:
         with open(all_geom_suffixes_path) as f:
             self.multi_geom_lookup = yaml.safe_load(f)
@@ -861,6 +868,7 @@ class FlybodyFly(Fly):
             mirror_left2right=mirror_left2right,
             mesh_type=mesh_type,
             geom_fitting_option=geom_fitting_option,
+            vision_config_path=vision_config_path,
         )
 
         self.jointdof_to_mjcftendon = {}
@@ -951,7 +959,6 @@ class FlybodyFly(Fly):
 
         all_geom_elements = []
         for geom_name, geom_config in my_rigging_config["geoms"].items():
-
             geom_element = body_element.add(
                 "geom",
                 type="mesh",
@@ -1221,6 +1228,7 @@ class FlybodyFly(Fly):
         self,
         jointdofs: Iterable[JointDOF],
         actuator_type: "ActuatorType | str",
+        neutral_input: "dict[str, float] | KinematicPose | KinematicPosePreset | None" = None,
         *,
         forcelimited: bool = False,
         forcerange: tuple[float, float] = (-0.3, 0.3),
@@ -1236,6 +1244,11 @@ class FlybodyFly(Fly):
                 Joint DOFs to actuate.
             actuator_type:
                 Type of actuator (motor, position, velocity, etc.).
+            neutral_input:
+                Default actuator inputs. Accepts a ``dict`` mapping DoF names to
+                values, a `KinematicPose`, or a `KinematicPosePreset`. If None,
+                defaults to 0 for all actuators. For position actuators the values
+                are joint angles and must match the skeleton axis order.
             forcelimited:
                 If True, actuators cannot exceed set forcerange otherwise uses
                 default forcerange if specified in actuator_config.yaml.
@@ -1254,6 +1267,16 @@ class FlybodyFly(Fly):
         """
         actuator_type = ActuatorType(actuator_type)
 
+        if actuator_type == ActuatorType.POSITION:
+            neutral_input = self.get_pose_lookup(neutral_input)
+        else:
+            if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
+                raise ValueError(
+                    "When actuator_type is not POSITION, neutral_input cannot be a "
+                    "KinematicPose or KinematicPosePreset since those specify joint "
+                    "angles, not actuator inputs."
+                )
+            neutral_input = {} if neutral_input is None else neutral_input
 
         remove_ctrl_limits = False
         if (actuator_type == ActuatorType.MOTOR or actuator_type == ActuatorType.VELOCITY):
@@ -1264,7 +1287,9 @@ class FlybodyFly(Fly):
 
         return_dict = {}
         for jointdof in jointdofs:
-            self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = 0.0
+            self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = (
+                neutral_input.get(jointdof.name, 0.0)
+            )
 
             default_actuator_params = {}
             for _, val in self.actuator_config.items():
@@ -1488,3 +1513,6 @@ class FlybodyFly(Fly):
                 mjcf_body.quat = tuple(new_quat)
             else:
                 raise ValueError(f"Expected wing body segment {wing_bodyseg} not found in model, cannot apply wing default pose correction.")
+    
+    def add_vision(self, draw_sensor_markers: bool = False) -> None:
+        super().add_vision(draw_sensor_markers)
