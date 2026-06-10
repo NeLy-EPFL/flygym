@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from flygym.anatomy import BodySegment, JointDOF, LEGS
+from flygym.anatomy import JointDOF, LEGS
 from flygym_demo.complex_terrain.common import (
     LocomotionAction,
     dof_spec_to_jointdof,
@@ -27,6 +27,81 @@ _DETECTED_STUMBLING_LINKS = ("tibia", "tarsus1", "tarsus2")
 
 
 @dataclass
+class HybridControllerObservation:
+    """Sensory inputs that `HybridController.step` needs to evaluate one tick.
+
+    Attributes:
+        thorax_z:
+            World-frame z-coordinate of the thorax (mm). Used by the retraction rule
+            to detect a leg hanging in the air.
+        tarsus5_z:
+            World-frame z-coordinate of each tarsus5 (mm), shape ``(6,)``, ordered
+            by the controller's ``legs`` tuple.
+        stumbling_contact_forces:
+            Contact forces on the stumbling-detection links, shape
+            ``(6, n_stumbling_links, 3)``, ordered by ``(leg, link, xyz)``.
+        fly_heading:
+            Unit heading vector of the thorax in world frame, shape ``(3,)``
+            (typically the x-column of the thorax rotation matrix).
+    """
+
+    thorax_z: float
+    tarsus5_z: np.ndarray
+    stumbling_contact_forces: np.ndarray
+    fly_heading: np.ndarray
+
+    @classmethod
+    def from_sim(
+        cls,
+        sim: Simulation,
+        fly_name: str,
+        *,
+        legs: tuple[str, ...] = tuple(LEGS),
+        stumbling_links: tuple[str, ...] = _DETECTED_STUMBLING_LINKS,
+    ) -> "HybridControllerObservation":
+        """Extract a controller observation from a running `Simulation`.
+
+        Uses the fly's own ``BODY_SEGMENT_CLASS`` so the segment-name lookups work
+        for any fly (nmf, flybody, …) regardless of which concrete `BodySegment`
+        subclass it uses.
+        """
+        fly = sim.world.fly_lookup[fly_name]
+        bodyseg_cls = type(fly).BODY_SEGMENT_CLASS
+
+        body_order = fly.get_bodysegs_order()
+        positions = sim.get_body_positions(fly_name)
+
+        thorax_idx = body_order.index(bodyseg_cls("c_thorax"))
+        thorax_z = float(positions[thorax_idx, 2])
+        tarsus5_z = np.array(
+            [
+                positions[body_order.index(bodyseg_cls(f"{leg}_tarsus5")), 2]
+                for leg in legs
+            ],
+            dtype=float,
+        )
+
+        detected_segments = [
+            bodyseg_cls(f"{leg}_{link}")
+            for leg in legs
+            for link in stumbling_links
+        ]
+        stumbling_contact_forces = sim.get_bodysegment_contact_forces(
+            fly_name, detected_segments, ground_only=True
+        ).reshape(len(legs), len(stumbling_links), 3)
+
+        thorax_body_id = sim._internal_bodyids_by_fly[fly_name][thorax_idx]
+        fly_heading = sim.mj_data.xmat[thorax_body_id].reshape(3, 3)[:, 0].copy()
+
+        return cls(
+            thorax_z=thorax_z,
+            tarsus5_z=tarsus5_z,
+            stumbling_contact_forces=stumbling_contact_forces,
+            fly_heading=fly_heading,
+        )
+
+
+@dataclass
 class HybridController:
     """CPG walking controller with retraction and stumbling corrections."""
 
@@ -42,6 +117,7 @@ class HybridController:
     swing_extension: float = np.pi / 4
     retraction_persistence_steps: int = 20
     retraction_persistence_initiation_threshold: float = 20.0
+    enable_adhesion: bool = True
 
     legs: tuple[str, ...] = tuple(LEGS)
 
@@ -73,9 +149,14 @@ class HybridController:
         self.retraction_persistence_counter[:] = 0
         self.last_info = {}
 
-    def step(self, sim: Simulation, fly_name: str) -> LocomotionAction:
-        """Advance controller state using the current simulation state."""
-        leg_to_correct_retraction = self._select_retraction_leg(sim, fly_name)
+    def step(self, obs: HybridControllerObservation) -> LocomotionAction:
+        """Advance controller state using a pre-extracted observation.
+
+        See :class:`HybridControllerObservation` for the expected shape of ``obs``,
+        and ``HybridControllerObservation.from_sim`` for the standard way to build
+        one from a running ``Simulation``.
+        """
+        leg_to_correct_retraction = self._select_retraction_leg(obs)
         if leg_to_correct_retraction is not None:
             if (
                 self.retraction_correction[leg_to_correct_retraction]
@@ -85,7 +166,7 @@ class HybridController:
 
         self._update_persistence_counter()
 
-        stumbling_mask = self._get_stumbling_mask(sim, fly_name)
+        stumbling_mask = self._get_stumbling_mask(obs)
         self.cpg_network.step()
 
         joint_angles_by_dof = {}
@@ -123,7 +204,10 @@ class HybridController:
             for dof_idx, dof_spec in enumerate(self.preprogrammed_steps.dofs_per_leg):
                 jointdof = dof_spec_to_jointdof(leg, dof_spec)
                 joint_angles_by_dof[jointdof] = leg_angles[dof_idx]
-            adhesion_onoff.append(self._get_adhesion_onoff(leg, phase))
+            if self.enable_adhesion:
+                adhesion_onoff.append(self._get_adhesion_onoff(leg, phase))
+            else:
+                adhesion_onoff.append(False)
 
         if self.output_dof_order is None:
             output_dof_order = get_default_locomotion_dof_order()
@@ -145,35 +229,20 @@ class HybridController:
             joint_angles=joint_angles, adhesion_onoff=adhesion_onoff
         )
 
-    def _select_retraction_leg(self, sim: Simulation, fly_name: str) -> int | None:
-        fly = sim.world.fly_lookup[fly_name]
-        body_order = fly.get_bodysegs_order()
-        positions = sim.get_body_positions(fly_name)
-        thorax_z = positions[body_order.index(BodySegment("c_thorax")), 2]
-        tarsus_z = np.array(
-            [
-                positions[body_order.index(BodySegment(f"{leg}_tarsus5")), 2]
-                for leg in self.legs
-            ]
-        )
-        end_effector_z_pos = thorax_z - tarsus_z
+    def _select_retraction_leg(
+        self, obs: HybridControllerObservation
+    ) -> int | None:
+        end_effector_z_pos = obs.thorax_z - obs.tarsus5_z
         sorted_idx = np.argsort(end_effector_z_pos)
         sorted_vals = end_effector_z_pos[sorted_idx]
         if sorted_vals[-1] > sorted_vals[-3] + self.retraction_height_threshold:
             return int(sorted_idx[-1])
         return None
 
-    def _get_stumbling_mask(self, sim: Simulation, fly_name: str) -> np.ndarray:
-        detected_segments = [
-            BodySegment(f"{leg}_{link}")
-            for leg in self.legs
-            for link in _DETECTED_STUMBLING_LINKS
-        ]
-        contact_forces = sim.get_bodysegment_contact_forces(
-            fly_name, detected_segments, ground_only=True
-        ).reshape(len(self.legs), len(_DETECTED_STUMBLING_LINKS), 3)
-        heading = _get_fly_heading(sim, fly_name)
-        force_proj = np.dot(contact_forces, heading)
+    def _get_stumbling_mask(
+        self, obs: HybridControllerObservation
+    ) -> np.ndarray:
+        force_proj = np.dot(obs.stumbling_contact_forces, obs.fly_heading)
         return (force_proj < self.stumbling_force_threshold).any(axis=1)
 
     def _update_persistence_counter(self) -> None:
@@ -217,14 +286,6 @@ class HybridController:
                 self.stumbling_correction[leg_idx]
                 - self.stumbling_rates[1] * self.timestep,
             )
-
-
-def _get_fly_heading(sim: Simulation, fly_name: str) -> np.ndarray:
-    fly = sim.world.fly_lookup[fly_name]
-    thorax_idx = fly.get_bodysegs_order().index(BodySegment("c_thorax"))
-    thorax_body_id = sim._internal_bodyids_by_fly[fly_name][thorax_idx]
-    thorax_xmat = sim.mj_data.xmat[thorax_body_id].reshape(3, 3)
-    return thorax_xmat[:, 0]
 
 
 def _step_phase_gain(
