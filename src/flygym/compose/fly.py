@@ -1026,49 +1026,9 @@ class FlybodyFly(Fly):
             scale=(self.SCALE, self.SCALE, self.SCALE))
         )
     
-    def colorize(self, visuals_config_path = FLYBODY_VISUALS_CONFIG_PATH):
+    def colorize(self, visuals_config_path=FLYBODY_VISUALS_CONFIG_PATH):
         return super().colorize(visuals_config_path)
-    
-    # def colorize(
-    #     self, visuals_config_path: PathLike = FLYBODY_VISUALS_CONFIG_PATH
-    # ) -> None:
-    #     """Apply colors and textures to the fly model.
 
-    #     Args:
-    #         visuals_config_path: Path to the YAML file defining per-segment material
-    #             and texture assignments.
-    #     """
-    #     if len(self.bodyseg_to_mjcfgeom) == 0:
-    #         raise ValueError("Must first add geoms via `_add_bodies_and_geoms`.")
-
-    #     with open(visuals_config_path) as f:
-    #         vis_config = yaml.safe_load(f)
-
-    #     for vis_set_name, params in vis_config.items():
-    #         material = self.mjcf_root.asset.add(
-    #             "material", name=vis_set_name, **params["material"]
-    #         )
-    #         if texture_params := params.get("texture"):
-    #             texture = self.mjcf_root.asset.add(
-    #                 "texture", name=vis_set_name, **texture_params
-    #             )
-    #             material.texture = texture
-
-    #     for _, geoms in self.bodyseg_to_mjcfgeom.items():
-    #         for geom in geoms:
-    #             found_match = False
-    #             for mat_name in vis_config.keys():
-    #                 if geom.name.endswith(mat_name):
-    #                     geom.set_attributes(material=mat_name)
-    #                     found_match = True
-    #                     break
-    #             if not found_match:
-    #                 if "tarsus5" in geom.name:
-    #                     geom.set_attributes(material="brown")
-    #                 else:
-    #                     geom.set_attributes(material="body")
-
-        
     def add_joints(
         self,
         skeleton: Skeleton,
@@ -1493,7 +1453,7 @@ class FlybodyFly(Fly):
 
         return self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]
     
-    def _correct_wing_default_pose(self) -> float:
+    def _correct_wing_default_pose(self) -> None:
         """
             In flybody the wings are put in place by the spring property of the joint
             As they use general actuators an input of 0 means no forces leading to the wings
@@ -1513,6 +1473,3 @@ class FlybodyFly(Fly):
                 mjcf_body.quat = tuple(new_quat)
             else:
                 raise ValueError(f"Expected wing body segment {wing_bodyseg} not found in model, cannot apply wing default pose correction.")
-    
-    def add_vision(self, draw_sensor_markers: bool = False) -> None:
-        super().add_vision(draw_sensor_markers)
