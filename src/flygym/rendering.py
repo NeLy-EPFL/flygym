@@ -240,7 +240,6 @@ class Renderer:
         no_max_frame = self.frames[cam_name][0][self.frames[cam_name][0] != max_val] # not perfect if suddenly becomes much more distant in next frames more than 0.2
         max_no_max_val = np.max(no_max_frame)
         min_val = np.min(self.frames[cam_name])
-        print(f"Depth frame scaling for camera '{cam_name}': max={max_val}, second_max={max_no_max_val}, min={min_val}")
         for i in range(len(self.frames[cam_name])):
             frame = self.frames[cam_name][i]
             frame_norm = np.clip((frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1)

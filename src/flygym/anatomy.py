@@ -265,7 +265,7 @@ ALL_SEGMENT_NAMES: list[str] = orderedset(
 class BodySegment:
     """Represents a body segment in the fly anatomy.
 
-    See `flygym.anatomy_base.ALL_SEGMENT_NAMES` for all possible names.
+    See `flygym.anatomy.ALL_SEGMENT_NAMES` for all possible names.
 
     Attributes:
         name:

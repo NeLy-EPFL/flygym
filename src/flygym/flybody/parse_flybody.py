@@ -1,3 +1,4 @@
+import warnings
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import yaml
@@ -276,8 +277,6 @@ def parse_xml_to_rig(xml_path, yaml_path):
     worldbody = root.find("worldbody")
     for top_level_body in worldbody.findall("body"):
         parse_body_recursive(top_level_body, None)
-    
-    # print(rigging_parsed)
 
     _write_yaml_file(yaml_path, rigging_parsed)
 
@@ -300,7 +299,7 @@ def parse_meshes(flybody_mesh_dir, mesh_dir):
         mesh_name = mesh_path.stem
         new_mesh_name = translate_mesh_name(mesh_name)
         if "None" in new_mesh_name:
-            print(f"Warning: mesh {mesh_name} has no suffix, skipping")
+            warnings.warn(f"Mesh {mesh_name} has no suffix; skipping.")
             continue
         target_path = mesh_dir / f"{new_mesh_name}.obj"
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -622,7 +621,7 @@ def get_flygym_jointname(parent_body, child_body, joint):
         if axis is not None:
             assert axis == "1 0 0", f"Expected joint axis '1 0 0' for default dof inference, got '{axis}' for joint '{joint_name}' between '{parent_body.get('name')}' and '{child_body.get('name')}'. Please specify a dof explicitly in the XML or ensure the axis is correct for inference."
         else:
-            print(f"Warning: No axis specified for joint '{joint_name}' between '{parent_body.get('name')}' and '{child_body.get('name')}'. Defaulting to '1 0 0' for pitch dof inference. Check manually in defaults that axis is 1 0 0.")
+            warnings.warn(f"No axis specified for joint '{joint_name}' between '{parent_body.get('name')}' and '{child_body.get('name')}'. Defaulting to '1 0 0' for pitch dof inference; verify the axis is '1 0 0' in the defaults.")
     flygym_jointname = f"{parent_flygym_bn}-{child_flygym_bn}-{dof}"
     return flygym_jointname
 

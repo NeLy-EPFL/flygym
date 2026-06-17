@@ -1,10 +1,11 @@
 """Flybody-specific anatomical definitions.
 
-This module extends the default anatomy types from ``flygym.anatomy_base``.
+This module extends the default anatomy types from ``flygym.anatomy``.
 """
 
 from __future__ import annotations
 
+import warnings
 from typing import Iterator
 from enum import Enum
 
@@ -412,7 +413,10 @@ class FlybodySkeleton(Skeleton):
             [seg for nodes in self.joint_lookup.keys() for seg in nodes]
         )
         if isinstance(axis_order, AxisOrder):
-            print("Warning: using generic AxisOrder with FlybodySkeleton. Converting to FlybodyAxisOrder...")
+            warnings.warn(
+                "Using a generic AxisOrder with FlybodySkeleton; "
+                "converting to FlybodyAxisOrder."
+            )
             axis_order = axis_order.to_list_of_str()
         self.axis_order = FlybodyAxisOrder(axis_order)
 

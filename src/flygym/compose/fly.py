@@ -1,3 +1,4 @@
+import warnings
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
@@ -906,7 +907,7 @@ class FlybodyFly(Fly):
             resolved_params.update(per_joint_cfg)
 
         if not resolved_params:
-            print(f"Warning: no parameters resolved for joint {joint_name} from joint config using defaults.")
+            warnings.warn(f"No parameters resolved for joint {joint_name} from joint config; using defaults.")
             resolved_params = {"range": [-180, 180],
                                "stiffness": 0.01,
                                "damping": 0.0005,
@@ -962,8 +963,6 @@ class FlybodyFly(Fly):
 
         all_geom_elements = []
         for geom_name, geom_config in my_rigging_config["geoms"].items():
-            if geom_group == 2:
-                print(f"Geom {geom_name} on body segment {segment.name} will be invisible to eye cameras based on vision config.")
             geom_element = body_element.add(
                 "geom",
                 type="mesh",
@@ -999,12 +998,11 @@ class FlybodyFly(Fly):
                 if suffix:
                     mesh_name = f"{mesh_to_use}_{suffix}"
                 else:
-                    print(f"Warning: no mesh suffix found for segment {mesh_to_use}, using segment name as mesh name")
+                    warnings.warn(f"No mesh suffix found for segment {mesh_to_use}; using segment name as mesh name.")
                     mesh_name = mesh_to_use
                 mesh_path = (mesh_dir / f"{mesh_name}.obj").resolve()
                 if not mesh_path.exists():
                     mesh_path = (mesh_fallback_dir / f"{mesh_name}.obj").resolve()
-                    print(mesh_path)
                     if not mesh_path.exists():
                         raise FileNotFoundError(
                             f"Mesh file not found for segment {segment_name}: "
@@ -1113,7 +1111,7 @@ class FlybodyFly(Fly):
                 gainprm_parsed = _parse_param_values(gainprm, "gainprm")
                 kp = gainprm_parsed[0]
                 if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
-                    print("WARNING: gainprm has more than one value and non-zero values after the first one, but only the first value is used as kp for position actuators according to MuJoCo docs.")
+                    warnings.warn("gainprm has more than one value with non-zero entries after the first; only the first value is used as kp for position actuators (per MuJoCo docs).")
             else:
                 kp = 1.0
             if "biasprm" in general_params:
@@ -1125,7 +1123,7 @@ class FlybodyFly(Fly):
                 else:
                     kv = 0.0 # default for position according to mujoco
                 if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
-                    print("WARNING: biasprm has more than three values and non-zero values after the third one, but only the first three values are used as biasprm for position actuators according to MuJoCo docs.")
+                    warnings.warn("biasprm has non-zero entries after the third; only the first three values are used as biasprm for position actuators (per MuJoCo docs).")
             else:
                 kv = 0.0
             if "dynprm" in general_params:
@@ -1133,7 +1131,7 @@ class FlybodyFly(Fly):
                 dynprm_parsed = _parse_param_values(dynprm, "dynprm")
                 timeconst = dynprm_parsed[0]
                 if len(dynprm_parsed) > 1 and np.sum(dynprm_parsed[1:]) != 0:
-                    print("WARNING: dynprm has more than one value and non-zero values after the first one, but only the first value is used as timeconst for position actuators according to MuJoCo docs.")
+                    warnings.warn("dynprm has non-zero entries after the first; only the first value is used as timeconst for position actuators (per MuJoCo docs).")
             else:
                 timeconst = 1.0 # default for general according to mujoco
             specific_params = {
@@ -1148,7 +1146,7 @@ class FlybodyFly(Fly):
                 gainprm_parsed = _parse_param_values(gainprm, "gainprm")
                 kv = gainprm_parsed[0]
                 if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
-                    print("WARNING: gainprm has more than one value and non-zero values after the first one, but only the first value is used as kv for velocity actuators according to MuJoCo docs.")
+                    warnings.warn("gainprm has non-zero entries after the first; only the first value is used as kv for velocity actuators (per MuJoCo docs).")
             else:
                 kv = 1.0
             if "biasprm" in general_params:
@@ -1156,20 +1154,20 @@ class FlybodyFly(Fly):
                 biasprm_parsed = _parse_param_values(biasprm, "biasprm")
                 assert len(biasprm_parsed) >= 3 and biasprm_parsed[0] == 0.0 and biasprm_parsed[1] == 0.0 and biasprm_parsed[2] == -1*kv, "Conflicting kvs: according to MuJoCo docs biasprm is [0, 0, -kv]"
                 if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
-                    print("WARNING: biasprm has more than four values and non-zero values after the fourth one, but only the first four values are used as biasprm for velocity actuators according to MuJoCo docs.")
+                    warnings.warn("biasprm has non-zero entries after the fourth; only the first four values are used as biasprm for velocity actuators (per MuJoCo docs).")
             if "dynprm" in general_params:
-                print("WARNING: dynprm is not used for velocity actuators according to MuJoCo docs, but dynprm is specified in the general actuator config. Ignoring dynprm values.")
+                warnings.warn("dynprm is not used for velocity actuators (per MuJoCo docs); ignoring the dynprm values from the general actuator config.")
             specific_params = {
                 "kv": kv,
             }            
         elif actuator_type == ActuatorType.MOTOR:
             # Setting parameters values according to https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-motor
             if "gainprm" in general_params:
-                print("WARNING: ignoring default gainprm as it is not used in classical motor actuators according to MuJoCo docs, but gainprm is specified in the general actuator config.")
+                warnings.warn("Ignoring default gainprm: it is not used by classical motor actuators (per MuJoCo docs).")
             if "biasprm" in general_params:
-                print("WARNING: ignoring default biasprm as it is not used in classical motor actuators according to MuJoCo docs, but biasprm is specified in the general actuator config.") 
+                warnings.warn("Ignoring default biasprm: it is not used by classical motor actuators (per MuJoCo docs).")
             if "dynprm" in general_params:
-                print("WARNING: ignoring default dynprm as it is not used in classical motor actuators according to MuJoCo docs, but dynprm is specified in the general actuator config.")
+                warnings.warn("Ignoring default dynprm: it is not used by classical motor actuators (per MuJoCo docs).")
             specific_params = {}
         else:
             raise ValueError(f"Unsupported actuator type: {actuator_type}")
@@ -1245,10 +1243,10 @@ class FlybodyFly(Fly):
 
         remove_ctrl_limits = False
         if (actuator_type == ActuatorType.MOTOR or actuator_type == ActuatorType.VELOCITY):
-            print("WARNING: setting ctrllimit to false for MOTOR and VELOCITY actuators, as flybody as limits are ment for POSITION actuators.")
+            warnings.warn("Setting ctrllimited=False for MOTOR and VELOCITY actuators; flybody ctrl limits are meant for POSITION actuators.")
             remove_ctrl_limits = True
             if not forcelimited:
-                print("WARNING: without ctrl limits, MOTOR and VELOCITY actuators can generate extreme forces for stability you might want to use force limits (e.g set forcelimited to TRUE).")
+                warnings.warn("Without ctrl limits, MOTOR and VELOCITY actuators can generate extreme forces; consider setting forcelimited=True for stability.")
 
         return_dict = {}
         for jointdof in jointdofs:
@@ -1262,7 +1260,7 @@ class FlybodyFly(Fly):
                     default_actuator_params = val["general"]
                     break
             if not default_actuator_params:
-                print(f"WARNING: no actuator config found for joint {jointdof.name}")
+                warnings.warn(f"No actuator config found for joint {jointdof.name}.")
             
             default_actuator_params_specific = self.translate_generaljointparams_to_specificjointparams_simplified(default_actuator_params, actuator_type)
     
@@ -1288,14 +1286,14 @@ class FlybodyFly(Fly):
                         warning_str += f"{param} not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
                         has_missing_param = True
                 if has_missing_param:
-                    print(warning_str)
+                    warnings.warn(warning_str)
                 
             elif actuator_type == ActuatorType.VELOCITY:
                 has_kv = "kv" in kwargs
                 warning_str = "WARNING: actuator type is VELOCITY but "
                 if not has_kv:
                     warning_str += "kv not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
-                    print(warning_str)
+                    warnings.warn(warning_str)
                 
             default_actuator_params_specific.update(kwargs)
 
@@ -1392,12 +1390,12 @@ class FlybodyFly(Fly):
                             self.jointdof_to_mjcftendon[joint] = tendon
                             added_tendon = True
         else:
-            print("Warning: abdomen1 not found in skeleton, skipping abdomen tendon creation.")
+            warnings.warn("abdomen1 not found in skeleton; skipping abdomen tendon creation.")
         
         for leg in LEGS:
             tarsus_bodyseg = FlybodyBodySegment(f"{leg}_tarsus1")
             if tarsus_bodyseg not in self.skeleton.body_segments:
-                print(f"Warning: {tarsus_bodyseg} not found in skeleton, skipping tendon creation for {tarsus_bodyseg}.")
+                warnings.warn(f"{tarsus_bodyseg} not found in skeleton; skipping tendon creation for it.")
                 continue
             else:
                 joints = self.skeleton.iter_jointdofs(tarsus_bodyseg)
@@ -1440,7 +1438,7 @@ class FlybodyFly(Fly):
                 }
 
             if jointdof.name in kwargs:
-                print(f"WARNING: overriding default tendon actuator params for joint {jointdof.name} with params provided in kwargs.")
+                warnings.warn(f"Overriding default tendon actuator params for joint {jointdof.name} with kwargs.")
                 default_params.update(kwargs[jointdof.name])
             else:
                 default_params.update(kwargs)
@@ -1466,7 +1464,6 @@ class FlybodyFly(Fly):
             For that reason we position the wings bodies"
         """
         from scipy.spatial.transform import Rotation as R
-        print("Applying wing default pose correction.")
         for side in ["l", "r"]:
             wing_bodyseg = FlybodyBodySegment(f"{side}_wing")
             if wing_bodyseg in self.bodyseg_to_mjcfbody:
