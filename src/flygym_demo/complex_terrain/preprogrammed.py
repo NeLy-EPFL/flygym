@@ -210,18 +210,20 @@ class FlybodyPreprogrammedSteps(PreprogrammedSteps):
        sim step.
     2. Project each claw's position onto the thorax frame to obtain
        body-frame ``(anteroposterior, lateral, vertical)`` coordinates.
-    3. Segment cycles at the **anterior extreme position (AEP)** -- local
-       maxima of the body-frame anteroposterior trace, one cycle per
-       AEP-to-AEP interval.
-    4. Per cycle: resample the 7 leg DOFs onto a common phase grid; estimate
-       swing fraction as the fraction of timesteps where the body-frame claw
-       z exceeds the cycle's z-midpoint.
-    5. Average cycles per leg into one canonical ``(7, n_phase_bins)``
-       trajectory and one scalar swing fraction.
+    3. For each leg position (F / M / H), hand-pick one step bounded by two
+       consecutive **posterior extreme positions (PEPs)** -- local minima of
+       the body-frame anteroposterior trace -- so the cycle starts with swing.
+    4. Resample the picked slice's 7 leg DOFs onto a common phase grid (with
+       end-of-cycle closure for a smooth loop); estimate swing fraction as the
+       fraction of timesteps where the body-frame anteroposterior velocity is
+       positive (``np.diff(claw_ap) > 0``).
+    5. Keep the picked side's trajectory verbatim and fill the opposite side by
+       mirroring it across the sagittal plane, giving one canonical
+       ``(7, n_phase_bins)`` trajectory and one scalar swing fraction per leg.
 
     Conventions
     -----------
-    Phase 0 corresponds to the AEP (start of swing). ``swing_period[leg] =
+    Phase 0 corresponds to the PEP (start of swing). ``swing_period[leg] =
     [0, 2π * swing_fraction[leg]]`` carves swing out of the front of the
     cycle; the remainder is stance. The DOF axis matches
     ``_DOFS_PER_LEG`` (the parent class layout): no DOF reshuffling is
