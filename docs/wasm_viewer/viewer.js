@@ -508,7 +508,7 @@ function setupPerturb(ctx) {
   for (let b = 0; b < model.nbody; b++) {
     const name = model.body(b).name;
     if (/abdomen|head/.test(name)) bodyPerturbScale[b] = 1 / 3;
-    else if (/thorax/.test(name)) bodyPerturbScale[b] = 1 / 5;
+    else if (/thorax/.test(name)) bodyPerturbScale[b] = 1 / 8;
   }
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
