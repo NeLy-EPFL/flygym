@@ -32,6 +32,26 @@ if [ -d "$BUILD_DIR" ]; then
     rm -rf "$BUILD_DIR"
 fi
 
+# The interactive (WASM) viewer's generated assets (the 39 STL meshes and
+# model_meta.json) are gitignored and only ever published to the gh-pages branch,
+# so make sure they exist -- and offer to regenerate them from the live model --
+# before mkdocs bundles them into the site.
+WASM_DIR="docs/wasm_viewer"
+if [ ! -f "$WASM_DIR/assets/model/fly.xml" ]; then
+    echo "Interactive viewer assets not found; generating them now..."
+    REGEN_ASSETS="y"
+else
+    read -p "Regenerate the interactive viewer assets (mesh files etc.)? (y/n) " REGEN_ASSETS
+fi
+if [[ $REGEN_ASSETS == "y" ]]; then
+    uv run python scripts/build_wasm_viewer_assets.py
+fi
+if [ ! -f "$WASM_DIR/vendor/mujoco/mujoco.wasm" ]; then
+    echo "ERROR: $WASM_DIR/vendor is missing (MuJoCo-WASM + three.js)."
+    echo "See $WASM_DIR/README.md for how to vendor them."
+    exit 1
+fi
+
 # Build the documentation
 echo "Building documentation..."
 mkdocs build
