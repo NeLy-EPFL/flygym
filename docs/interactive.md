@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # Interactive viewer
 
 The NeuroMechFly model runs entirely in your browser — no install required. The
