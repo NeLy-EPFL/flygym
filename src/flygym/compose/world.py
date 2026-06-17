@@ -7,7 +7,6 @@ import dm_control.mjcf as mjcf
 import numpy as np
 
 from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
-from flygym.flybody.anatomy_flybody import FlybodyContactBodiesPreset
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import Fly
 from flygym.compose.physics import ContactParams
@@ -254,17 +253,11 @@ class _GroundContactMixin:
                 bodysegs_with_ground_contact.to_body_segments_list()
             )
         elif isinstance(bodysegs_with_ground_contact, str):
-            if fly.name == "nmf":
-                preset = ContactBodiesPreset(bodysegs_with_ground_contact)
-            elif fly.name == "flybody":
-                preset = FlybodyContactBodiesPreset(bodysegs_with_ground_contact)
-            else:
-                # warning could not find preset matching fly name, defaulting to ContactBodiesPreset with a warning
-                preset = ContactBodiesPreset(bodysegs_with_ground_contact)
-                print(
-                    f"Warning: could not find contact bodies preset matching fly name '{fly.name}'. "
-                    f"Defaulting to ContactBodiesPreset with preset name '{bodysegs_with_ground_contact}'."
-                )
+            # Resolve the string against the fly's own contact-bodies preset enum
+            # so each Fly subclass (nmf, flybody, ...) selects the right segments.
+            preset = type(fly).CONTACT_BODIES_PRESET_CLASS(
+                bodysegs_with_ground_contact
+            )
             bodysegs_with_ground_contact = preset.to_body_segments_list()
 
 

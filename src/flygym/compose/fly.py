@@ -17,6 +17,7 @@ from flygym.anatomy import (
     RotationAxis,
     AxisOrder,
     JointPreset,
+    ContactBodiesPreset,
     ALL_SEGMENT_NAMES,
     LEGS,
     LEG_LINKS,
@@ -32,6 +33,7 @@ from flygym.flybody.anatomy_flybody import (
     WingFlybodyRotationAxis,
     FlybodyJointDOF,
     FlybodyAxisOrder,
+    FlybodyContactBodiesPreset,
 )
 
 from flygym.compose.base import BaseCompositionElement
@@ -157,6 +159,7 @@ class Fly(BaseCompositionElement):
     JOINT_DOF_CLASS = JointDOF
     AXIS_ORDER_CLASS = AxisOrder
     BASE_SKELETON_CLASS = Skeleton
+    CONTACT_BODIES_PRESET_CLASS = ContactBodiesPreset
     LEG_LINKS = LEG_LINKS
 
     def __init__(
@@ -827,6 +830,7 @@ class FlybodyFly(Fly):
     JOINT_DOF_CLASS = FlybodyJointDOF
     AXIS_ORDER_CLASS = FlybodyAxisOrder
     BASE_SKELETON_CLASS = FlybodySkeleton
+    CONTACT_BODIES_PRESET_CLASS = FlybodyContactBodiesPreset
     LEG_LINKS = FLYBODY_LEG_LINKS
 
     def _all_possible_joint_preset(self):
