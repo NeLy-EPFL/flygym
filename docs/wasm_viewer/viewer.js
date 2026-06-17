@@ -143,6 +143,7 @@ function buildApp(mj, model, data, meta) {
     meta.stat.extent * meta.map.force / (meta.stat.meanmass * gnorm);
 
   const viz = buildVisualizers(scene, forceScale, meta.cone);
+  buildPhysicsSliders(mj, model);
   const sliders = buildSliders(meta, data);
   const sim = { paused: false };
 
@@ -635,6 +636,57 @@ function setupPerturb(ctx) {
   }
 
   return { apply, updateGizmo, clear };
+}
+
+// --- physics parameter sliders: global multipliers for stiffness / damping / kp ---
+function buildPhysicsSliders(mj, model) {
+  const container = document.getElementById('physics-params');
+  const NGAIN = mj.mjNGAIN; // entries per actuator in gainprm / biasprm (10)
+
+  // Snapshot original model values so the slider multiplies from the baseline.
+  const nj = model.njnt, nd = model.nv, nu = model.nu;
+  const origStiffness = new Float64Array(nj);
+  const origDamping = new Float64Array(nd);
+  const origGainprm = new Float64Array(nu);  // gainprm[0] = kp
+  const origBiasprm = new Float64Array(nu);  // biasprm[1] = -kp (affine position bias)
+  for (let j = 0; j < nj; j++) origStiffness[j] = model.jnt_stiffness[j];
+  for (let d = 0; d < nd; d++) origDamping[d] = model.dof_damping[d];
+  for (let u = 0; u < nu; u++) {
+    origGainprm[u] = model.actuator_gainprm[u * NGAIN];
+    origBiasprm[u] = model.actuator_biasprm[u * NGAIN + 1];
+  }
+
+  const makeSlider = (label, onChange) => {
+    const row = document.createElement('div'); row.className = 'param-row';
+    const header = document.createElement('div'); header.className = 'param-header';
+    const lbl = document.createElement('span'); lbl.textContent = label;
+    const valEl = document.createElement('span'); valEl.className = 'val'; valEl.textContent = '1.00×';
+    header.append(lbl, valEl);
+    const input = document.createElement('input');
+    input.type = 'range'; input.min = 0; input.max = 5; input.step = 0.01; input.value = 1;
+    input.addEventListener('input', () => {
+      const v = parseFloat(input.value);
+      valEl.textContent = v.toFixed(2) + '×';
+      onChange(v);
+    });
+    row.append(header, input);
+    container.appendChild(row);
+  };
+
+  makeSlider('Joint stiffness', (mult) => {
+    for (let j = 0; j < nj; j++) model.jnt_stiffness[j] = origStiffness[j] * mult;
+  });
+
+  makeSlider('Joint damping', (mult) => {
+    for (let d = 0; d < nd; d++) model.dof_damping[d] = origDamping[d] * mult;
+  });
+
+  makeSlider('Actuator kp', (mult) => {
+    for (let u = 0; u < nu; u++) {
+      model.actuator_gainprm[u * NGAIN] = origGainprm[u] * mult;
+      model.actuator_biasprm[u * NGAIN + 1] = origBiasprm[u] * mult;
+    }
+  });
 }
 
 // --- control panel: one slider (+ live joint bar) per position actuator -----
