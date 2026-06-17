@@ -91,8 +91,13 @@ class Renderer:
         self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5  # to avoid floating point issues when comparing times  
 
         
-    def get_xmat_for_camera(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
-        """Get the camera's orientation matrix (xmat) from the current MJData."""
+    def get_camera_matrix(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
+        """Get the 3x4 camera projection matrix from the current MjData.
+
+        The returned matrix maps homogeneous world coordinates to homogeneous
+        image (pixel) coordinates, following the standard MuJoCo
+        ``image @ focal @ rotation @ translation`` composition.
+        """
         internal_cam_id, _ = self._resolve_camera_id_and_name(camera)
         # update the scene to get the latest camera position and orientation
         self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
