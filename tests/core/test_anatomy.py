@@ -791,18 +791,35 @@ class TestFlybodyBodySegment:
 
 
 class TestFlybodyJointDOF:
-    # Note: from_name tests are NOT duplicated. FlybodyJointDOF.from_name is
-    # currently broken — it is defined as a regular method (missing the
-    # @classmethod decorator) and splits the name on "_" instead of "-",
-    # which conflicts with segment names like "c_thorax" that contain "_".
-    # Adding round-trip tests here would fail. Once from_name is fixed, the
-    # equivalent of TestJointDOF.test_from_name_* should be added.
-
     def test_name_property(self):
         parent = FlybodyBodySegment("c_thorax")
         child = FlybodyBodySegment("lf_coxa")
         dof = FlybodyJointDOF(parent, child, FlybodyRotationAxis.YAW)
         assert dof.name == "c_thorax-lf_coxa-yaw"
+
+    def test_from_name_roundtrip(self):
+        # Segment names contain "_", so from_name must split on "-".
+        name = "c_thorax-lf_coxa-pitch"
+        dof = FlybodyJointDOF.from_name(name)
+        assert isinstance(dof, FlybodyJointDOF)
+        assert dof.parent == FlybodyBodySegment("c_thorax")
+        assert dof.child == FlybodyBodySegment("lf_coxa")
+        assert dof.axis is FlybodyRotationAxis.PITCH
+        assert dof.name == name
+
+    def test_from_name_all_axes(self):
+        for axis_str in ("yaw", "pitch", "roll"):
+            dof = FlybodyJointDOF.from_name(f"c_thorax-lf_coxa-{axis_str}")
+            assert dof.axis.value == axis_str
+
+    def test_from_name_wing_uses_wing_axis(self):
+        # Wing children use the WingFlybody axis convention.
+        dof = FlybodyJointDOF.from_name("c_thorax-l_wing-pitch")
+        assert dof.axis is WingFlybodyRotationAxis.PITCH
+
+    def test_from_name_invalid_raises(self):
+        with pytest.raises(ValueError):
+            FlybodyJointDOF.from_name("not-a-valid-joint-dof-name-xyz")
 
     def test_frozen_dataclass(self):
         dof = FlybodyJointDOF(
