@@ -257,10 +257,11 @@ class FlybodyBodySegment(BodySegment):
 class FlybodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""
 
+    @classmethod
     def from_name(cls, name: str) -> "FlybodyJointDOF":
-        """Create a FlybodyJointDOF from a name of the form 'parent_child_axis'."""
+        """Create a FlybodyJointDOF from a name of the form 'parent-child-axis'."""
         try:
-            parent, child, axis = name.split("_")
+            parent, child, axis = name.split("-")
             # check if child is wing
             bs_child = FlybodyBodySegment(child)
             return cls(
