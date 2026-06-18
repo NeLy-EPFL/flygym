@@ -167,7 +167,7 @@ class BaseWorld(BaseCompositionElement, ABC):
                 "Freejoint neutral rotation can only be specified in quaternion format "
                 f"for now. Got {spawn_rotation}."
             )
-        
+
         self.world_dof_neutral_states.update(new_dofs)
         self._rebuild_neutral_keyframe()
 
@@ -269,7 +269,7 @@ class _GroundContactMixin:
 
         neutral_state = [*spawn_position, *spawn_rotation.values]
 
-        return {freejoint.full_identifier: neutral_state}    
+        return {freejoint.full_identifier: neutral_state}
 
     def _set_ground_contact(
         self,
@@ -370,7 +370,7 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
             conaffinity=0,
         )
         self.ground_geoms = [self.ground_geom]
-    
+
 
 class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
     """Base for terrain worlds built from explicit ground geoms.
@@ -454,7 +454,7 @@ class GappedTerrainWorld(_ComplexTerrainWorld):
         gap_depth: float = 2.0,
         ground_alpha: float = 1.0,
     ) -> None:
-        
+
         super().__init__(name=name)
         y_halfwidth = (y_range[1] - y_range[0]) / 2
         block_centers = np.arange(
@@ -623,7 +623,7 @@ class TetheredWorld(BaseWorld):
             "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
         spawn_site.attach(fly.mjcf_root)
-        return {} 
+        return {}
 
 def _sort_legsegs_prox2dist(segments: list[BodySegment], leg_links: list[str]) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, leg_links.index(seg.link)) for seg in segments]

@@ -51,7 +51,7 @@ class Renderer:
         self.camera_res = camera_res
         nrows, ncols = camera_res
         self.buffer_frames = buffer_frames
-        
+
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
         self.render_depth = render_depth
         if self.render_depth:
@@ -86,11 +86,11 @@ class Renderer:
         if self.buffer_frames:
             self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
         else:
-            self.frames = None  
+            self.frames = None
 
-        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5  # to avoid floating point issues when comparing times  
+        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5  # to avoid floating point issues when comparing times
 
-        
+
     def get_camera_matrix(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
         """Get the 3x4 camera projection matrix from the current MjData.
 
@@ -227,7 +227,7 @@ class Renderer:
                 quality=8,
                 **kwargs
             )
-    
+
     def _depth_frames_2uint8(self, cam_name: str) -> None:
         """
         Convert depth frames from uint32 to uint8. 
@@ -244,7 +244,7 @@ class Renderer:
             frame = self.frames[cam_name][i]
             frame_norm = np.clip((frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1)
             self.frames[cam_name][i] = (frame_norm*255).astype(np.uint8)
-    
+
 
     def _normalize_camera_spec(
         self,

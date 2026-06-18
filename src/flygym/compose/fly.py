@@ -154,7 +154,7 @@ class Fly(BaseCompositionElement):
     """
 
     # For numerical reasons, we simulate length in mm, not m. This changes the units
-    # of other quantities as well, for example acceleration is now in mm/s^2.    
+    # of other quantities as well, for example acceleration is now in mm/s^2.
     SCALE = 1000
     BODY_SEGMENT_CLASS = BodySegment
     JOINT_DOF_CLASS = JointDOF
@@ -241,7 +241,7 @@ class Fly(BaseCompositionElement):
     def get_legs_order(self) -> list[str]:
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
-    
+
     def get_pose_lookup(self, neutral_pose: KinematicPose | KinematicPosePreset | None) -> dict[str, float]:
         """Get a lookup dictionary mapping joint DOF names to neutral angles for a given
         neutral pose."""
@@ -599,7 +599,7 @@ class Fly(BaseCompositionElement):
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
     ) -> None:
-    
+
         # Decide which folder to load mesh files from
         mesh_dir = mesh_basedir / mesh_type.value
         mesh_fallback_dir = mesh_basedir / MeshType.FULLSIZE.value
@@ -630,7 +630,7 @@ class Fly(BaseCompositionElement):
                 file=str(mesh_path),
                 scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
             )
-    
+
     def _all_possible_joint_preset(self):
         return JointPreset.ALL_POSSIBLE
 
@@ -639,7 +639,7 @@ class Fly(BaseCompositionElement):
             joint_preset=self._all_possible_joint_preset(),
             axis_order=self.AXIS_ORDER_CLASS.DONTCARE,
         )
-    
+
     def _is_pitch(self, jointdof: JointDOF) -> bool:
         return jointdof.axis == RotationAxis.PITCH
 
@@ -655,7 +655,7 @@ class Fly(BaseCompositionElement):
         # cameras to avoid occlusion (e.g., the eye geoms themselves)
         with open(vision_config_path) as f:
             info = yaml.safe_load(f)
-        
+
         # Add root body and geom. The root can also be hidden from eye cameras if
         # requested in the vision config, so we apply the same group assignment rule
         # used for all other body segments.
@@ -734,7 +734,7 @@ class Fly(BaseCompositionElement):
             group=geom_group,
         )
         return body_element, [geom_element]
-    
+
     def _parse_visuals_config(
         self,
         visuals_config_path: PathLike,
@@ -801,7 +801,7 @@ class Fly(BaseCompositionElement):
                 neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
                 neutral_ctrl[internal_actuatorid] = neutral_input
         return neutral_ctrl
-    
+
 
 FLYBODY_RIGGING_CONFIG_PATH = assets_dir / "model/flybody/flybody_rigging.yaml"
 FLYBODY_MUJOCO_GLOBALS_PATH = assets_dir / "model/flybody/flybody_mujoco_globals.yaml"
@@ -826,7 +826,7 @@ class FlybodyFly(Fly):
     # BUT in the original xml meshes are scaled by 0.1
     # Therefore we need to adjust all other length-realteed quantities by 10 to keep units consitant.
     # density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
-    # see parsing script 
+    # see parsing script
     BODY_SEGMENT_CLASS = FlybodyBodySegment
     JOINT_DOF_CLASS = FlybodyJointDOF
     AXIS_ORDER_CLASS = FlybodyAxisOrder
@@ -856,13 +856,13 @@ class FlybodyFly(Fly):
     ) -> None:
         with open(all_geom_suffixes_path) as f:
             self.multi_geom_lookup = yaml.safe_load(f)
-        
+
         with open(joint_config_path) as f:
             self.joint_config = yaml.safe_load(f)
 
         with open(actuator_config_path) as f:
             self.actuator_config = yaml.safe_load(f)
-        
+
         super().__init__(
             name=name,
             rigging_config_path=rigging_config_path,
@@ -912,7 +912,7 @@ class FlybodyFly(Fly):
                                "stiffness": 0.01,
                                "damping": 0.0005,
                                "limited": True,
-                               }            
+                               }
         return resolved_params
 
     def _is_pitch(self, jointdof):
@@ -978,7 +978,7 @@ class FlybodyFly(Fly):
 
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
-        ) -> None:    
+        ) -> None:
 
         # Decide which folder to load mesh files from
         mesh_dir = mesh_basedir / mesh_type.value
@@ -1008,7 +1008,7 @@ class FlybodyFly(Fly):
                             f"Mesh file not found for segment {segment_name}: "
                             f"tried {mesh_dir} and {mesh_fallback_dir}."
                         )
-                    
+
                 mesh = self.mjcf_root.asset.add(
                     "mesh",
                     name=mesh_name,
@@ -1019,7 +1019,7 @@ class FlybodyFly(Fly):
                     self.bodyseg_to_mjcfmesh[segment_name] = [mesh]
                 else:
                     self.bodyseg_to_mjcfmesh[segment_name].append(mesh)
-        
+
         # add abdomen8 mesh (just a mesh connected to c_abdomen7)
         self.bodyseg_to_mjcfmesh["c_abdomen7"].append(self.mjcf_root.asset.add(
             "mesh",
@@ -1027,7 +1027,7 @@ class FlybodyFly(Fly):
             file=str(mesh_dir / "c_abdomen8_body.obj"),
             scale=(self.SCALE, self.SCALE, self.SCALE))
         )
-    
+
     def colorize(self, visuals_config_path=FLYBODY_VISUALS_CONFIG_PATH):
         return super().colorize(visuals_config_path)
 
@@ -1073,7 +1073,7 @@ class FlybodyFly(Fly):
             })# override default springref with neutral pose value if provided
             joint_params.update(kwargs) # override any joint config values with values provided in kwargs
             joint_params = self._normalize_mjcf_params(joint_params)
-            
+
             return_dict[jointdof] = child_body.add(
                 "joint",
                 name=jointdof.name,
@@ -1082,10 +1082,10 @@ class FlybodyFly(Fly):
                 **joint_params,
             )
 
-        self.jointdof_to_mjcfjoint.update(return_dict)        
-        self._rebuild_neutral_keyframe()        
+        self.jointdof_to_mjcfjoint.update(return_dict)
+        self._rebuild_neutral_keyframe()
         return return_dict
-    
+
     def translate_generalactparams_to_specificactparams(self, general_params: dict[str, Any],
                                                          actuator_type: ActuatorType) -> dict[str, Any]:
         def _parse_param_values(raw_value: Any, name: str) -> list[float]:
@@ -1159,7 +1159,7 @@ class FlybodyFly(Fly):
                 warnings.warn("dynprm is not used for velocity actuators (per MuJoCo docs); ignoring the dynprm values from the general actuator config.")
             specific_params = {
                 "kv": kv,
-            }            
+            }
         elif actuator_type == ActuatorType.MOTOR:
             # Setting parameters values according to https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-motor
             if "gainprm" in general_params:
@@ -1171,14 +1171,14 @@ class FlybodyFly(Fly):
             specific_params = {}
         else:
             raise ValueError(f"Unsupported actuator type: {actuator_type}")
-        
+
         for params in ["gainprm", "biasprm", "dynprm"]:
             if params in specific_params:
                 # remove them from specific params
                 specific_params.pop(params)
 
         return specific_params
-    
+
     def translate_generaljointparams_to_specificjointparams_simplified(self, general_params: dict[str, Any], actuator_type: ActuatorType) -> dict[str, Any]:
         if actuator_type == ActuatorType.POSITION:
             return {
@@ -1261,9 +1261,9 @@ class FlybodyFly(Fly):
                     break
             if not default_actuator_params:
                 warnings.warn(f"No actuator config found for joint {jointdof.name}.")
-            
+
             default_actuator_params_specific = self.translate_generaljointparams_to_specificjointparams_simplified(default_actuator_params, actuator_type)
-    
+
             if remove_ctrl_limits:
                 default_actuator_params_specific["ctrllimited"] = False
             else:
@@ -1271,11 +1271,11 @@ class FlybodyFly(Fly):
                 jnt = self.jointdof_to_mjcfjoint[jointdof]
                 assert jnt.range is not None, f"Joint {jointdof.name} must have range specified in order to use default ctrlrange for its actuator."
                 default_actuator_params_specific["ctrlrange"] = jnt.range
-            
+
             if forcelimited:
                 default_actuator_params_specific["forcelimited"] = forcelimited
                 default_actuator_params_specific["forcerange"] = forcerange
-        
+
             if actuator_type == ActuatorType.POSITION:
                 has_kp = "kp" in kwargs
                 has_kv = "kv" in kwargs
@@ -1287,14 +1287,14 @@ class FlybodyFly(Fly):
                         has_missing_param = True
                 if has_missing_param:
                     warnings.warn(warning_str)
-                
+
             elif actuator_type == ActuatorType.VELOCITY:
                 has_kv = "kv" in kwargs
                 warning_str = "WARNING: actuator type is VELOCITY but "
                 if not has_kv:
                     warning_str += "kv not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
                     warnings.warn(warning_str)
-                
+
             default_actuator_params_specific.update(kwargs)
 
             actuator = self.mjcf_root.actuator.add(
@@ -1308,8 +1308,8 @@ class FlybodyFly(Fly):
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
         return return_dict
- 
-    
+
+
     def add_leg_adhesion(
         self, gain: float | dict[str, float] = 0.985, add_labrum: bool = True,
         labrum_gain: float = 1.0
@@ -1357,7 +1357,7 @@ class FlybodyFly(Fly):
                     ctrlrange=(0, 1),
                 )
         return self.leg_to_adhesionactuator
-    
+
     def add_tendons(self, coef: float| dict[str, float]| None = None) -> dict[JointDOF, mjcf.Element]:
         # check joints have been added
         if len(self.jointdof_to_mjcfjoint) == 0:
@@ -1391,7 +1391,7 @@ class FlybodyFly(Fly):
                             added_tendon = True
         else:
             warnings.warn("abdomen1 not found in skeleton; skipping abdomen tendon creation.")
-        
+
         for leg in LEGS:
             tarsus_bodyseg = FlybodyBodySegment(f"{leg}_tarsus1")
             if tarsus_bodyseg not in self.skeleton.body_segments:
@@ -1415,13 +1415,13 @@ class FlybodyFly(Fly):
                                 joint=self.jointdof_to_mjcfjoint[joint],
                                 coef=coef_to_use
                                 )
-                    
+
     def add_tendon_actuators(self, **kwargs: Any) -> dict[JointDOF, mjcf.Element]:
         if len(self.jointdof_to_mjcftendon) == 0:
             raise ValueError("Must first add tendons via `add_tendons` before adding tendon actuators.")
         if len(self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]) > 0:
             raise ValueError("Tendon actuators have already been added, cannot add tendon actuators as MOTOR actuators are used for tendons in this implementation.")
-        
+
         for jointdof, tendon in self.jointdof_to_mjcftendon.items():
             if "abdomen" in jointdof.name:
                 if jointdof.axis == FlybodyRotationAxis.PITCH:
@@ -1449,12 +1449,12 @@ class FlybodyFly(Fly):
                 tendon=tendon,
                 **default_params
             )
-            
+
             self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON][jointdof] = actuator
-            self.jointdof_to_neutralaction_by_type[ActuatorType.TENDON][jointdof] = 0.0 
+            self.jointdof_to_neutralaction_by_type[ActuatorType.TENDON][jointdof] = 0.0
 
         return self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]
-    
+
     def _correct_wing_default_pose(self) -> None:
         """
             In flybody the wings are put in place by the spring property of the joint

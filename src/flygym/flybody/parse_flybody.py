@@ -264,7 +264,7 @@ def parse_xml_to_rig(xml_path, yaml_path):
                 geom_selected_data.pop("density", None)
 
             all_geom_mesh_names.append(geom_name)
-            
+
             flygym_geom_name = translate_mesh_name(geom_name)
             selected_data["geoms"][flygym_geom_name] = geom_selected_data
 
@@ -321,7 +321,7 @@ def parse_visuals(xml_path, yaml_path):
         }
         parsed_visuals[material_name]["apply_to"] = f"*_{material_name}"
         parsed_visuals[material_name]["material"] = material_params
-    
+
     _write_yaml_file(yaml_path, parsed_visuals)
 
 
@@ -639,22 +639,22 @@ def recursive_accumulation_joint_params(
     for child_body in parent_body.findall("body"):
         # 1. Create a copy so sibling branches don't pollute each other's parameters
         current_accumulated = accumulated_params.copy()
-        
+
         child_class = child_body.get("childclass")
         if child_class is not None:
             # Overwrite with childclass defaults
             add_class_params(default_lookup, "joint", child_class, current_accumulated)
-            
+
         for joint in child_body.findall("joint"):
             # 2. Start from the accumulated parameters (inherited from childclasses)
             joint_params = current_accumulated.copy()
-            
+
             # Add defaults from the explicit joint class, if present
             if joint.get("class") is not None:
                 add_class_params(
                     default_lookup, "joint", joint.get("class"), joint_params
                 )
-            # 3. Finally, apply explicit joint attributes. This ensures they have 
+            # 3. Finally, apply explicit joint attributes. This ensures they have
             # highest priority and overwrite class defaults.
             selected_joint_attribs = {k: v for k, v in joint.attrib.items() if k not in ["name", "class"]}
             selected_joint_attribs = {
@@ -662,16 +662,16 @@ def recursive_accumulation_joint_params(
                 for k, v in selected_joint_attribs.items()
             }
             joint_params.update(selected_joint_attribs)
-            
+
             flygym_jointname = get_flygym_jointname(parent_body, child_body, joint)
             all_joints[flygym_jointname] = joint_params
-            
+
         # Traverse deeper using the correctly scoped parameters
         child_joints = recursive_accumulation_joint_params(
             child_body, current_accumulated, default_lookup
         )
         all_joints.update(child_joints)
-        
+
     return all_joints
 
 
@@ -737,11 +737,11 @@ def parse_joints(xml_path, joint_yaml_path, pose_yaml_path, kin_order):
             springref = _first_or_value(joint_params["springref"])
             if springref is not None:
                 neutral_pose_parsed["joint_angles"][joint_name] = float(springref)
-    
+
     _write_yaml_file(joint_yaml_path, grouped_joints_parsed)
 
     _write_yaml_file(pose_yaml_path, neutral_pose_parsed)
-    
+
     return
 
 def parse_globals(xml_path, yaml_path):
@@ -778,17 +778,17 @@ if __name__ == "__main__":
 
     rigging_flybody_yaml = out_dir / "flybody_rigging.yaml"
     parse_xml_to_rig(flybody_xml, rigging_flybody_yaml)
-    
+
     visuals_flybody_yaml = out_dir / "flybody_visuals.yaml"
     parse_visuals(flybody_xml, visuals_flybody_yaml)
 
     actuators_flybody_yaml = out_dir / "flybody_actuators.yaml"
     parse_actuators(flybody_xml, actuators_flybody_yaml)
-    
+
     flybody_meshes_dir = flybody_xml.parent / "assets"
     meshes_out_dir = out_dir / "meshes/fullsize"
     parse_meshes(flybody_meshes_dir, meshes_out_dir)
-    
+
     joint_yaml_path = out_dir / "flybody_joints.yaml"
     kin_order = "yaw_roll_pitch"
     flight_pose_path = out_dir / f"pose/flight/{kin_order}.yaml"
