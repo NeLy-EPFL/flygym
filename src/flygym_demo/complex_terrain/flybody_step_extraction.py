@@ -245,33 +245,6 @@ def _validate_selection(selection: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Left <-> right mirroring
-# ---------------------------------------------------------------------------
-
-def mirror_leg_joint_angles(angles: np.ndarray) -> np.ndarray:
-    """Mirror a 7-DOF leg trajectory across the body's sagittal plane.
-
-    The clip stores joint angles in the SeqIKPy / global convention where
-    symmetric left/right motion has opposite roll and yaw signs. Mirroring is
-    therefore: copy pitch DOFs verbatim, flip roll and yaw signs.
-
-    Args:
-        angles: ``(7, n_phase_bins)`` array ordered as ``_DOFS_PER_LEG``.
-    Returns:
-        Same-shape mirrored array. The function is its own inverse.
-    """
-    if angles.shape[0] != len(_DOFS_PER_LEG):
-        raise ValueError(
-            f"Expected first axis of length {len(_DOFS_PER_LEG)}, got {angles.shape}."
-        )
-    mirrored = angles.copy()
-    for dof_idx, (_, _, axis) in enumerate(_DOFS_PER_LEG):
-        if axis in ("roll", "yaw"):
-            mirrored[dof_idx] *= 1
-    return mirrored
-
-
-# ---------------------------------------------------------------------------
 # Asset construction
 # ---------------------------------------------------------------------------
 
@@ -338,7 +311,9 @@ def build_asset_from_selection(
     """Assemble the per-leg cycle dict from the user's picks.
 
     Each leg position (F/M/H) contributes one canonical cycle. The picked side
-    keeps its data verbatim; the opposite side is filled by mirroring.
+    keeps its data verbatim; the opposite side reuses the same cycle. No
+    mirroring is needed because the flybody joint axes are already symmetric
+    across the sagittal plane.
     """
     _validate_selection(selection)
     joint_angles_per_leg: dict[str, np.ndarray] = {}
@@ -357,7 +332,7 @@ def build_asset_from_selection(
         swing_frac = _swing_fraction_from_diff(claw_y)
 
         joint_angles_per_leg[picked_leg] = picked_cycle
-        joint_angles_per_leg[opposite_leg] = mirror_leg_joint_angles(picked_cycle)
+        joint_angles_per_leg[opposite_leg] = picked_cycle.copy()
         swing_fractions[picked_leg] = swing_frac
         swing_fractions[opposite_leg] = swing_frac
         cycle_lengths[picked_leg] = end - start
