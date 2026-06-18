@@ -396,7 +396,7 @@ class Simulation:
                 f"{len(inputs)}"
             )
         self.mj_data.ctrl[internal_ids] = inputs
-        
+
     def get_raw_vision(self, fly_name: str) -> Float[np.ndarray, "2 height width 3"]:
         """Render the fly's eye cameras and return fisheye-corrected frames.
 
@@ -633,7 +633,7 @@ class Simulation:
             fly_name: np.array(ids, dtype=np.int32)
             for fly_name, ids in internal_adhesionactuatorids_by_fly.items()
         }
-        
+
 
     def _map_internal_groundcontactsensor_ids(self) -> None:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:

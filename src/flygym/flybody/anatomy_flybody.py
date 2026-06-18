@@ -253,7 +253,7 @@ class FlybodyBodySegment(BodySegment):
     def is_abdomen(self) -> bool:
         """Return True if this segment belongs to the abdomen."""
         return self.link in FLYBODY_ABDOMEN_LINKS
-    
+
 class FlybodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""
 
@@ -275,7 +275,7 @@ class FlybodyJointDOF(JointDOF):
 
 class FlybodyAnatomicalJoint(AnatomicalJoint):
     """Anatomical joint specific to the flybody model."""
-    
+
     def iter_dofs(self, axis_order: AxisOrder) -> Iterator[FlybodyJointDOF]:
         """Iterate through the DOFs of this joint in the specified axis order."""
         if self.child.is_wing():
@@ -331,7 +331,7 @@ class FlybodyJointPreset(BaseJointPreset):
                 )
             )
         return all_possible_joints
-    
+
     @classmethod
     def _get_all_biological_joints(cls) -> list[FlybodyAnatomicalJoint]:
         joints = cls._get_all_possible_joints()
