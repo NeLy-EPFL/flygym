@@ -538,9 +538,9 @@ class TestSkeleton:
 
 
 # ##############################################################################
-# Flybody duplicates: same tests as above but for the FlybodyFly anatomy types
+# Flybody duplicates: same tests as above but for the FlyBody anatomy types
 # (defined in flygym.flybody.anatomy_flybody and used by
-# flygym.compose.fly.FlybodyFly).
+# flygym.compose.fly.FlyBody).
 # ##############################################################################
 
 

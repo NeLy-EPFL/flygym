@@ -7,7 +7,7 @@ from loguru import logger
 
 from flygym.warp import GPUSimulation
 from flygym.compose import (
-    Fly,
+    NeuroMechFly,
     ActuatorType,
     FlatGroundWorld,
     KinematicPosePreset,
@@ -32,7 +32,7 @@ def make_model(
         geom_fitting_option = GeomFittingOption.ALL_TO_CAPSULES
     else:
         geom_fitting_option = GeomFittingOption.UNMODIFIED
-    fly = Fly(geom_fitting_option=geom_fitting_option)
+    fly = NeuroMechFly(geom_fitting_option=geom_fitting_option)
     axis_order = AxisOrder.YAW_PITCH_ROLL
 
     # Add joints

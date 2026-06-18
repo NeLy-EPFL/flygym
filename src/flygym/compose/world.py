@@ -8,7 +8,7 @@ import numpy as np
 
 from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
 from flygym.compose.base import BaseCompositionElement
-from flygym.compose.fly import Fly
+from flygym.compose.fly import BaseFly
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D, Vec3
 from flygym.utils.exceptions import FlyGymInternalError
@@ -58,7 +58,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         it sets up a few essential attributes.
         """
         self._mjcf_root = mjcf.RootElement(model=name)
-        self._fly_lookup: dict[str, Fly] = {}
+        self._fly_lookup: dict[str, BaseFly] = {}
         self.ground_geoms: list = []
         self.legpos_to_groundcontactsensors_by_fly = None
         self.world_dof_neutral_states = {}
@@ -73,14 +73,14 @@ class BaseWorld(BaseCompositionElement, ABC):
         return self._mjcf_root
 
     @property
-    def fly_lookup(self) -> dict[str, Fly]:
+    def fly_lookup(self) -> dict[str, BaseFly]:
         """Lookup for `Fly` objects in the world, keyed by fly name."""
         return self._fly_lookup
 
     @abstractmethod
     def _attach_fly_mjcf(
         self,
-        fly: Fly,
+        fly: BaseFly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D,
         *args,
@@ -118,7 +118,7 @@ class BaseWorld(BaseCompositionElement, ABC):
 
     def add_fly(
         self,
-        fly: Fly,
+        fly: BaseFly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D,
         *args: Any,
@@ -233,7 +233,7 @@ class BaseWorld(BaseCompositionElement, ABC):
 class _GroundContactMixin:
     def _attach_fly_mjcf(
         self,
-        fly: Fly,
+        fly: BaseFly,
         spawn_position: Vec3,
         spawn_rotation: Rotation3D,
         *,
@@ -273,7 +273,7 @@ class _GroundContactMixin:
 
     def _set_ground_contact(
         self,
-        fly: Fly,
+        fly: BaseFly,
         bodysegs_with_ground_contact: list[BodySegment],
         ground_contact_params: ContactParams,
     ) -> None:
@@ -293,7 +293,7 @@ class _GroundContactMixin:
                     )
 
     def _add_ground_contact_sensors(
-        self, fly: Fly, bodysegs_with_ground_contact: list[BodySegment]
+        self, fly: BaseFly, bodysegs_with_ground_contact: list[BodySegment]
     ) -> None:
         if len(self.ground_geoms) != 1:
             self.legpos_to_groundcontactsensors_by_fly = None

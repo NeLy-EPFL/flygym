@@ -8,7 +8,7 @@ The notebook drives the full two-step pipeline:
 1. **Replay & select.** Replay
    ``src/flygym_demo/ball_flybody_data/assets/ball_flybody_clip.npz`` (1 s at
    100 fps from the NeuroMechFly v1 walking-on-ball dataset, joint angles
-   reconstructed by a SeqIKPy-based IK pipeline) on a tethered ``FlybodyFly``,
+   reconstructed by a SeqIKPy-based IK pipeline) on a tethered ``FlyBody``,
    then pick one step per leg position (F / M / H) bounded by two consecutive
    posterior extreme positions (PEPs) of the claw -- so the cycle starts with
    swing.
@@ -37,7 +37,7 @@ from tqdm import trange
 
 from flygym import Simulation
 from flygym.compose import ActuatorType
-from flygym.compose.fly import FlybodyFly
+from flygym.compose.fly import FlyBody
 from flygym.flybody import FlybodyBodySegment
 from flygym_demo.complex_terrain.preprogrammed import _DOFS_PER_LEG
 from flygym_demo.spotlight_data import MotionSnippet
@@ -78,11 +78,11 @@ def _dof_name(dof) -> str:
 def replay_clip(
     clip_path: Path | str,
     *,
-    fly: FlybodyFly,
+    fly: FlyBody,
     sim: Simulation,
     warmup_sec: float = WARMUP_SEC_DEFAULT,
     show_progress: bool = True,
-) -> tuple[ReplayRecording, FlybodyFly, Simulation]:
+) -> tuple[ReplayRecording, FlyBody, Simulation]:
     """Replay the clip on a tethered Flybody and record claw + thorax kinematics.
 
     The caller is responsible for building the fly + sim (so it can set up
