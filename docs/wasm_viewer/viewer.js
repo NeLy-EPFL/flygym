@@ -120,7 +120,7 @@ function buildApp(mj, model, data, meta) {
   camera.up.set(0, 0, 1);
 
   const center = new THREE.Vector3(0, 0, 0.9);
-  camera.position.set(5.5, -5.5, 3.5);
+  camera.position.set(4.5, -4.5, 3.0);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.copy(center);
   controls.minDistance = 1.2;
@@ -143,7 +143,7 @@ function buildApp(mj, model, data, meta) {
     meta.stat.extent * meta.map.force / (meta.stat.meanmass * gnorm);
 
   const viz = buildVisualizers(scene, forceScale, meta.cone);
-  buildPhysicsSliders(mj, model);
+  const physicsSliders = buildPhysicsSliders(mj, model);
   const sliders = buildSliders(meta, data);
   const sim = { paused: false };
 
@@ -169,15 +169,6 @@ function buildApp(mj, model, data, meta) {
   bind('t-forces', 'forces');
   bind('t-joints', 'joints');
   bind('t-actuators', 'actuators');
-  document.getElementById('t-transparent').addEventListener('change', (e) => {
-    for (const { mesh, baseOpacity } of meshGroup.userData.items) {
-      const o = e.target.checked ? Math.min(baseOpacity, MESH_OPACITY_T) : baseOpacity;
-      mesh.material.opacity = o;
-      mesh.material.transparent = o < 1;
-      mesh.material.depthWrite = o >= 1;
-    }
-  });
-
   // --- camera reset ---
   const home = { pos: camera.position.clone(), target: controls.target.clone() };
   document.getElementById('reset-view').addEventListener('click', () => {
@@ -185,6 +176,7 @@ function buildApp(mj, model, data, meta) {
     controls.target.copy(home.target);
     controls.update();
   });
+  document.getElementById('reset-physics').addEventListener('click', () => physicsSliders.reset());
 
   const perturb = setupPerturb({
     renderer, camera, controls, meshGroup, model, data, scene,
@@ -656,6 +648,7 @@ function buildPhysicsSliders(mj, model) {
     origBiasprm[u] = model.actuator_biasprm[u * NGAIN + 1];
   }
 
+  const allInputs = [];
   const makeSlider = (label, onChange) => {
     const row = document.createElement('div'); row.className = 'param-row';
     const header = document.createElement('div'); header.className = 'param-header';
@@ -671,6 +664,7 @@ function buildPhysicsSliders(mj, model) {
     });
     row.append(header, input);
     container.appendChild(row);
+    allInputs.push(input);
   };
 
   makeSlider('Joint stiffness', (mult) => {
@@ -687,6 +681,15 @@ function buildPhysicsSliders(mj, model) {
       model.actuator_biasprm[u * NGAIN + 1] = origBiasprm[u] * mult;
     }
   });
+
+  return {
+    reset() {
+      for (const inp of allInputs) {
+        inp.value = 1;
+        inp.dispatchEvent(new Event('input'));
+      }
+    },
+  };
 }
 
 // --- control panel: one slider (+ live joint bar) per position actuator -----

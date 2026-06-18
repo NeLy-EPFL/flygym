@@ -13,7 +13,40 @@ For more information, see our [NeuroMechFly v2 paper](https://www.nature.com/art
   <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/overview_video.gif" alt="overview" />
 </p>
 
-NeuroMechFly consists of the following components:
+
+## Interact with NeuroMechFly
+
+<iframe src="../wasm_viewer/viewer.html" title="Interactive NeuroMechFly viewer"
+        style="width:100%;height:640px;border:1px solid var(--md-default-fg-color--lightest);border-radius:8px;">
+</iframe>
+
+<div style="text-align:center;margin:1.2em 0;">
+<a href="../wasm_viewer/viewer.html" target="_blank" rel="noopener"
+   style="display:inline-block;padding:0.75em 2.2em;font-size:1.1em;font-weight:700;background:var(--md-primary-fg-color);color:var(--md-primary-bg-color);border-radius:6px;text-decoration:none;">
+Open viewer in full-screen ↗</a>
+</div>
+
+??? note "Run locally with the native MuJoCo viewer"
+
+    If you have the `flygym` repository cloned, you can launch the native desktop
+    MuJoCo viewer instead — useful for faster-than-real-time playback and
+    full-resolution rendering:
+
+    ```sh
+    uv run python scripts/launch_interactive_viewer.py
+    ```
+
+    <p align="center">
+      <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/mujoco_interactive_viewer.mp4" controls autoplay muted playsinline>
+        MuJoCo interactive viewer (video not supported by your browser).
+      </video>
+    </p>
+
+    The browser viewer's static assets are regenerated from the same model with
+    `python scripts/build_wasm_viewer_assets.py`.
+
+
+## Key features
 
 - **Biomechanical model:** The biomechanical model is based on a micro-CT scan of a real adult female fly (see our original NeuroMechFly publication). We have adjusted several body segments (in particular in the antennae) to better reflect the biological reality.
 - **Vision:** The fly has compound eyes consisting of individual units called ommatidia arranged on a hexagonal lattice. We have simulated the visual inputs on the fly’s retinas.

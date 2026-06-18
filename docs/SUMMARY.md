@@ -1,5 +1,4 @@
 * [Home](index.md)
-* [Interactive Viewer](interactive.md)
 * [Installation](installation.md)
 * [FlyGym v1 vs. v2 API](migration.md)
 * Tutorials
