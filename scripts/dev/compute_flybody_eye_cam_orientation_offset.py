@@ -21,7 +21,7 @@ the *nmf* parent's frame (nmf has no head body, so its cam is parented to the
 thorax root). That frame is NOT the same as flybody's c_head frame because the
 flybody head has a default pitch relative to its thorax. Fixing that here.
 
-MuJoCo's `eulerseq` (set to `XYZ` in flybody_mujoco_globals.yaml) is verified
+MuJoCo's `eulerseq` (set to `XYZ` in flybody/mujoco_globals.yaml) is verified
 empirically to behave as scipy EXTRINSIC `xyz` (lowercase), not intrinsic
 `XYZ` (uppercase). The MuJoCo-compiled cam_quat matches
 `R.from_euler("xyz", yaml_vals).as_quat(...)` exactly. So when emitting the
@@ -166,7 +166,7 @@ def main():
 
         yaml_suggestion[side] = yaml_euler
 
-    print("Drop these straight into flybody_vision.yaml (rad, MuJoCo eulerseq=XYZ "
+    print("Drop these straight into flybody/vision.yaml (rad, MuJoCo eulerseq=XYZ "
           "== scipy extrinsic xyz):")
     for side, vals in yaml_suggestion.items():
         print(f"  {side}_eye_cam.orientation: [{vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}]")

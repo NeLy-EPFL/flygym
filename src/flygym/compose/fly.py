@@ -46,11 +46,11 @@ from flygym.utils.exceptions import FlyGymInternalError
 __all__ = ["Fly", "ActuatorType", "MeshType", "GeomFittingOption"]
 
 
-DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
-DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
-DEFAULT_MESH_DIR = assets_dir / "model/meshes/"
-DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
-DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/vision.yaml"
+DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/neuromechfly/rigging.yaml"
+DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/neuromechfly/mujoco_globals.yaml"
+DEFAULT_MESH_DIR = assets_dir / "model/neuromechfly/meshes/"
+DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/neuromechfly/visuals.yaml"
+DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/neuromechfly/vision.yaml"
 
 
 class MeshType(Enum):
@@ -842,14 +842,14 @@ class NeuroMechFly(BaseFly):
         )
 
 
-FLYBODY_RIGGING_CONFIG_PATH = assets_dir / "model/flybody/flybody_rigging.yaml"
-FLYBODY_MUJOCO_GLOBALS_PATH = assets_dir / "model/flybody/flybody_mujoco_globals.yaml"
+FLYBODY_RIGGING_CONFIG_PATH = assets_dir / "model/flybody/rigging.yaml"
+FLYBODY_MUJOCO_GLOBALS_PATH = assets_dir / "model/flybody/mujoco_globals.yaml"
 FLYBODY_MESH_DIR = assets_dir / "model/flybody/meshes/"
-FLYBODY_VISUALS_CONFIG_PATH = assets_dir / "model/flybody/flybody_visuals.yaml"
-FLYBODY_ALL_GEOM_SUFFIXES_PATH = assets_dir / "model/flybody/flybody_all_geom_suffixes.yaml"
-FLYBODY_JOINT_CONFIG_PATH = assets_dir / "model/flybody/flybody_joints.yaml"
-FLYBODY_ACTUATOR_CONFIG_PATH = assets_dir / "model/flybody/flybody_actuators.yaml"
-FLYBODY_DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/flybody/flybody_vision.yaml"
+FLYBODY_VISUALS_CONFIG_PATH = assets_dir / "model/flybody/visuals.yaml"
+FLYBODY_ALL_GEOM_SUFFIXES_PATH = assets_dir / "model/flybody/all_geom_suffixes.yaml"
+FLYBODY_JOINT_CONFIG_PATH = assets_dir / "model/flybody/joints.yaml"
+FLYBODY_ACTUATOR_CONFIG_PATH = assets_dir / "model/flybody/actuators.yaml"
+FLYBODY_DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/flybody/vision.yaml"
 
 
 class FlyBody(BaseFly):

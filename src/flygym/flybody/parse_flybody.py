@@ -281,7 +281,7 @@ def parse_xml_to_rig(xml_path, yaml_path):
     _write_yaml_file(yaml_path, rigging_parsed)
 
     all_geom_suffixes = collect_segment_suffixes(all_geom_mesh_names)
-    _write_yaml_file(yaml_path.with_name("flybody_all_geom_suffixes.yaml"), all_geom_suffixes)
+    _write_yaml_file(yaml_path.with_name("all_geom_suffixes.yaml"), all_geom_suffixes)
 
 def translate_mesh_name(mesh_name):
     bname, full_suffix = _extract_mesh_base_and_suffix(mesh_name)
@@ -776,20 +776,20 @@ if __name__ == "__main__":
     out_dir = Path("src/flygym/assets/model/flybody")
     flybody_xml = Path("src/flygym/assets/model/flybody/fruitfly.xml")
 
-    rigging_flybody_yaml = out_dir / "flybody_rigging.yaml"
+    rigging_flybody_yaml = out_dir / "rigging.yaml"
     parse_xml_to_rig(flybody_xml, rigging_flybody_yaml)
 
-    visuals_flybody_yaml = out_dir / "flybody_visuals.yaml"
+    visuals_flybody_yaml = out_dir / "visuals.yaml"
     parse_visuals(flybody_xml, visuals_flybody_yaml)
 
-    actuators_flybody_yaml = out_dir / "flybody_actuators.yaml"
+    actuators_flybody_yaml = out_dir / "actuators.yaml"
     parse_actuators(flybody_xml, actuators_flybody_yaml)
 
     flybody_meshes_dir = flybody_xml.parent / "assets"
     meshes_out_dir = out_dir / "meshes/fullsize"
     parse_meshes(flybody_meshes_dir, meshes_out_dir)
 
-    joint_yaml_path = out_dir / "flybody_joints.yaml"
+    joint_yaml_path = out_dir / "joints.yaml"
     kin_order = "yaw_roll_pitch"
     flight_pose_path = out_dir / f"pose/flight/{kin_order}.yaml"
     # the neutral pose is actually set for flight (real neutral pose is all 0)
@@ -805,5 +805,5 @@ if __name__ == "__main__":
     }
     _write_yaml_file(neutral_pose_path, neutral_pose_parsed)
 
-    globals_flybody_yaml = out_dir / "flybody_mujoco_globals.yaml"
+    globals_flybody_yaml = out_dir / "mujoco_globals.yaml"
     parse_globals(flybody_xml, globals_flybody_yaml)

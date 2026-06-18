@@ -140,9 +140,9 @@ def mesh_similarity(
 
 
 if __name__ == "__main__":
-    MESH_DIR_FULLSIZE = assets_dir / "model/meshes/fullsize/"
+    MESH_DIR_FULLSIZE = assets_dir / "model/neuromechfly/meshes/fullsize/"
     MAX_FACES = 2000
-    MESH_DIR_REDUCED = assets_dir / f"model/meshes/simplified_max{MAX_FACES}faces/"
+    MESH_DIR_REDUCED = assets_dir / f"model/neuromechfly/meshes/simplified_max{MAX_FACES}faces/"
 
     MESH_DIR_REDUCED.mkdir(exist_ok=True, parents=True)
 

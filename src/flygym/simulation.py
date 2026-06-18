@@ -401,7 +401,7 @@ class Simulation:
         """Render the fly's eye cameras and return fisheye-corrected frames.
 
         Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
-        configured in `flygym/assets/model/vision.yaml`. These geoms are assigned to
+        configured in `flygym/assets/model/neuromechfly/vision.yaml`. These geoms are assigned to
         geom group 2, which _is_ rendered by the MuJoCo renderer by default, but the eye
         renderer within FlyGym is configured to ignore this geom group.
 
