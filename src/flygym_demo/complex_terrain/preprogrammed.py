@@ -204,7 +204,7 @@ class FlybodyPreprogrammedSteps(PreprogrammedSteps):
 
     Pipeline (see ``flybody_step_extraction.py``)
     ----------------------------------------------------------------
-    1. Replay the clip's joint angles on a *tethered* ``FlybodyFly`` (LEGS_ONLY
+    1. Replay the clip's joint angles on a *tethered* ``FlyBody`` (LEGS_ONLY
        joints, position actuators, passive tendons, no ground); record the
        world-frame position of each claw (tarsus5) and the thorax at every
        sim step.

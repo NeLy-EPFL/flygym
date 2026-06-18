@@ -96,8 +96,15 @@ class ActuatorType(Enum):
     TENDON = "tendon"
 
 
-class Fly(BaseCompositionElement):
-    """Represents a complete fly with body segments, joints, actuators, sensors, and
+class BaseFly(BaseCompositionElement):
+    """Abstract base for all fly models (e.g. `NeuroMechFly`, `FlyBody`).
+
+    Holds the model-agnostic composition logic shared by every fly. Concrete
+    subclasses supply the model identity (asset paths, anatomy classes, scale)
+    and may override individual build steps. It is not meant to be instantiated
+    directly — use a concrete subclass.
+
+    Represents a complete fly with body segments, joints, actuators, sensors, and
     cameras. The fly is built from mesh assets and configured via config files that
     define rigging (joint positions), visuals (colors/textures), and global MuJoCo
     parameters.
@@ -165,16 +172,16 @@ class Fly(BaseCompositionElement):
 
     def __init__(
         self,
-        name: str = "nmf",
+        name: str = "fly",
         *,
-        rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
-        mesh_basedir: PathLike = DEFAULT_MESH_DIR,
-        mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
+        rigging_config_path: PathLike,
+        mesh_basedir: PathLike,
+        mujoco_globals_path: PathLike,
+        mirror_left2right: bool,
+        mesh_type: MeshType,
+        vision_config_path: PathLike,
         root_segment: BodySegment | str = "c_thorax",
-        mirror_left2right: bool = True,
-        mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
-        vision_config_path: PathLike = DEFAULT_VISION_CONFIG_PATH,
     ) -> None:
         self._name = name
         self._mjcf_root = mjcf.RootElement(model=name)
@@ -803,6 +810,38 @@ class Fly(BaseCompositionElement):
         return neutral_ctrl
 
 
+class NeuroMechFly(BaseFly):
+    """The default NeuroMechFly model.
+
+    Uses the base anatomy classes and the NeuroMechFly mesh/config assets.
+    """
+
+    def __init__(
+        self,
+        name: str = "nmf",
+        *,
+        rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
+        mesh_basedir: PathLike = DEFAULT_MESH_DIR,
+        mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
+        root_segment: BodySegment | str = "c_thorax",
+        mirror_left2right: bool = True,
+        mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
+        geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
+        vision_config_path: PathLike = DEFAULT_VISION_CONFIG_PATH,
+    ) -> None:
+        super().__init__(
+            name=name,
+            rigging_config_path=rigging_config_path,
+            mesh_basedir=mesh_basedir,
+            mujoco_globals_path=mujoco_globals_path,
+            root_segment=root_segment,
+            mirror_left2right=mirror_left2right,
+            mesh_type=mesh_type,
+            geom_fitting_option=geom_fitting_option,
+            vision_config_path=vision_config_path,
+        )
+
+
 FLYBODY_RIGGING_CONFIG_PATH = assets_dir / "model/flybody/flybody_rigging.yaml"
 FLYBODY_MUJOCO_GLOBALS_PATH = assets_dir / "model/flybody/flybody_mujoco_globals.yaml"
 FLYBODY_MESH_DIR = assets_dir / "model/flybody/meshes/"
@@ -813,9 +852,9 @@ FLYBODY_ACTUATOR_CONFIG_PATH = assets_dir / "model/flybody/flybody_actuators.yam
 FLYBODY_DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/flybody/flybody_vision.yaml"
 
 
-class FlybodyFly(Fly):
+class FlyBody(BaseFly):
     """
-    Specialized Fly class that uses the flybody XML structure from the turaga lab
+    Specialized fly model that uses the flybody XML structure from the turaga lab
     In particular this handles:
         - default classes
         - different naming
@@ -925,9 +964,9 @@ class FlybodyFly(Fly):
     def _coerce_mjcf_value(value: Any) -> Any:
         """Convert YAML-loaded values to MJCF-friendly python types."""
         if isinstance(value, list):
-            return tuple(FlybodyFly._coerce_mjcf_value(v) for v in value)
+            return tuple(FlyBody._coerce_mjcf_value(v) for v in value)
         if isinstance(value, tuple):
-            return tuple(FlybodyFly._coerce_mjcf_value(v) for v in value)
+            return tuple(FlyBody._coerce_mjcf_value(v) for v in value)
         if not isinstance(value, str):
             return value
 
@@ -1474,3 +1513,29 @@ class FlybodyFly(Fly):
                 mjcf_body.quat = tuple(new_quat)
             else:
                 raise ValueError(f"Expected wing body segment {wing_bodyseg} not found in model, cannot apply wing default pose correction.")
+
+
+class Fly(NeuroMechFly):
+    """Deprecated alias for `NeuroMechFly`. Will be removed in a future release."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        warnings.warn(
+            "`Fly` is deprecated and will be removed in a future release; "
+            "use `NeuroMechFly` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class FlybodyFly(FlyBody):
+    """Deprecated alias for `FlyBody`. Will be removed in a future release."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        warnings.warn(
+            "`FlybodyFly` is deprecated and will be removed in a future release; "
+            "use `FlyBody` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
