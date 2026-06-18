@@ -50,8 +50,17 @@ uv run python scripts/build_wasm_viewer_assets.py
 The script mirrors the body configuration in
 `scripts/launch_interactive_viewer.py`. Keep the two in sync.
 
-Everything else here — `viewer.html`, `viewer.js`, this README, and `vendor/`
-(static, rarely-changing third-party libraries) — *is* committed to `main`.
+`viewer.html`, `viewer.js`, and this README are committed to `main`. `vendor/`
+is **not** committed — it is downloaded automatically by the MkDocs hook in
+`scripts/dev/mkdocs_hooks.py` when you run `mkdocs serve` or `mkdocs build`
+for the first time. You can also fetch it manually:
+
+```sh
+uv run python scripts/dev/mkdocs_hooks.py
+```
+
+The hook downloads `@mujoco/mujoco@3.9.0` and `three@0.169.0` from the npm
+registry and extracts the relevant files into `vendor/`.
 
 ## Deploying
 
