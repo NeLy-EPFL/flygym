@@ -36,12 +36,12 @@ from flygym.vision.retina import Retina
 
 @pytest.fixture(scope="module")
 def vision_config():
-    with open(assets_dir / "model/vision.yaml") as f:
+    with open(assets_dir / "model/neuromechfly/vision.yaml") as f:
         return yaml.safe_load(f)
     
 @pytest.fixture(scope="module")
 def flybody_vision_config():
-    with open(assets_dir / "model/flybody/flybody_vision.yaml") as f:
+    with open(assets_dir / "model/flybody/vision.yaml") as f:
         return yaml.safe_load(f)
 
 

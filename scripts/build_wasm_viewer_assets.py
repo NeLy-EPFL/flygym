@@ -245,7 +245,7 @@ def segment_colors() -> dict[str, list[float]]:
     wings keep their 0.3 transparency). Wildcards in ``apply_to`` match segment
     names as in flygym.colorize().
     """
-    with open(assets_dir / "model/visuals.yaml") as fh:
+    with open(assets_dir / "model/neuromechfly/visuals.yaml") as fh:
         vis = yaml.safe_load(fh)
     colors: dict[str, list[float]] = {}
     for params in vis.values():
