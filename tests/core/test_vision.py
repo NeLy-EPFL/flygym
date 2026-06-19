@@ -449,7 +449,7 @@ def flybody_skeleton():
     )
 
 
-class TestFlybodyFlyAddVision:
+class TestFlyBodyAddVision:
     def test_eye_cameras_registered(self):
         fly = FlyBody(name="flybody_vision_basic")
         fly.add_vision()

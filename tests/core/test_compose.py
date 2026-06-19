@@ -18,7 +18,6 @@ from flygym.compose.fly import (
     NeuroMechFly,
     FlyBody,
     Fly,
-    FlybodyFly,
     ActuatorType,
     GeomFittingOption,
 )
@@ -53,13 +52,6 @@ class TestFlyHierarchy:
             fly = Fly()
         assert isinstance(fly, NeuroMechFly)
         assert fly.name == "nmf"
-
-    def test_flybodyfly_is_deprecated_alias_for_flybody(self):
-        assert issubclass(FlybodyFly, FlyBody)
-        with pytest.warns(DeprecationWarning, match="FlyBody"):
-            fly = FlybodyFly()
-        assert isinstance(fly, FlyBody)
-        assert fly.name == "flybody"
 
     def test_new_names_do_not_warn(self):
         with warnings.catch_warnings():
