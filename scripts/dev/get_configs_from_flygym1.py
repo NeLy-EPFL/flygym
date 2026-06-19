@@ -55,8 +55,8 @@ def save_pretty_yaml(data_to_save: dict, output_path: Path):
 
 if __name__ == "__main__":
     model_dir = flygym.assets_dir / "model"
-    ref_mjcf_path = model_dir / "neuromechfly/legacy/flygym1_deepfly3d_rollyawpitch.xml"
-    output_path = model_dir / "neuromechfly/rigging.yaml"
+    ref_mjcf_path = model_dir / "legacy/flygym1_deepfly3d_rollyawpitch.xml"
+    output_path = model_dir / "rigging.yaml"
 
     physical_params_by_body = get_physical_params_from_legacy_mjcf(ref_mjcf_path)
     assert set(physical_params_by_body.keys()) == BODY_NAMES_OLD2NEW.keys()
