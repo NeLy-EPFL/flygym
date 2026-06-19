@@ -144,29 +144,12 @@ class BaseAxisOrder:
         if isinstance(value, str) and len((split_values := value.split("_"))) == 3:
             value = split_values
 
-        if isinstance(value, list) and len(value) == 3:
-            try:
-                normalized = []
-                for x in value:
-                    if isinstance(x, Enum):
-                        normalized.append(axis_enum_cls(x.value))
-                    else:
-                        normalized.append(axis_enum_cls(x))
-                return cls(tuple(normalized))
-            except Exception as e:
-                raise e
-
-        if isinstance(value, tuple) and len(value) == 3:
-            try:
-                normalized = []
-                for x in value:
-                    if isinstance(x, Enum):
-                        normalized.append(axis_enum_cls(x.value))
-                    else:
-                        normalized.append(axis_enum_cls(x))
-                return cls(tuple(normalized))
-            except Exception as e:
-                raise e
+        if isinstance(value, (list, tuple)) and len(value) == 3:
+            normalized = [
+                axis_enum_cls(x.value) if isinstance(x, Enum) else axis_enum_cls(x)
+                for x in value
+            ]
+            return cls(tuple(normalized))
 
         return super()._missing_(value)
 
