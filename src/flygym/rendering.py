@@ -104,7 +104,7 @@ class Renderer:
         pos = mj_data.cam_xpos[internal_cam_id]
         rot = mj_data.cam_xmat[internal_cam_id].reshape(3, 3)
         fov = mj_model.cam_fovy[internal_cam_id]
-        width, height = self.camera_res
+        height, width = self.camera_res
 
 
         # Translation matrix (4x4).
