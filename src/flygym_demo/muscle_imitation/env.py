@@ -3,8 +3,8 @@
 All tracked quantities (joint qpos/qvel addresses, body ids, muscle actuator
 ids) are resolved directly from the compiled MuJoCo model by name via
 ``mj_name2id``, so the env is decoupled from any particular fly wrapper. It
-works with `flygym.muscle.MuscleFly` out of the box and with any other model
-that exposes the same MJCF element names.
+works with `flygym.compose.MusculoskeletalFly` out of the box and with any other
+model that exposes the same MJCF element names.
 """
 
 from dataclasses import dataclass, field
@@ -18,18 +18,19 @@ try:
     from gymnasium import spaces
 except ImportError as e:  # pragma: no cover - clearer error than the import trace
     raise ImportError(
-        "flygym.imitation.env requires the optional dependency 'gymnasium'. "
-        "Install with `pip install gymnasium`."
+        "flygym_demo.muscle_imitation.env requires the optional dependency "
+        "'gymnasium'. Install with `pip install gymnasium`."
     ) from e
 
 from flygym.compose.fly import ActuatorType
-from flygym.imitation.data import (
+from flygym.simulation import Simulation
+
+from flygym_demo.muscle_imitation.data import (
     MoCapClip,
     MoCapDataset,
     TRACKED_BODY_NAMES,
     tracked_joint_names_for_ncols,
 )
-from flygym.simulation import Simulation
 
 
 @dataclass
@@ -121,7 +122,8 @@ class ImitationEnv(gym.Env):
         if not self.muscle_names:
             raise ValueError(
                 f"Fly '{fly_name}' has no muscle actuators; build it from the "
-                "musculoskeletal model (flygym.muscle) before making the env."
+                "musculoskeletal model (flygym.compose.MusculoskeletalFly) "
+                "before making the env."
             )
         muscle_ids = []
         for mname in self.muscle_names:

@@ -1,13 +1,16 @@
-"""Tests for the flygym.imitation subpackage."""
+"""Tests for the flygym_demo.muscle_imitation subpackage."""
+
+import importlib
 
 import numpy as np
 import pytest
 
-# flygym.imitation.env imports gymnasium at module load; skip this whole module
+# muscle_imitation.env imports gymnasium at module load; skip this whole module
 # cleanly (rather than erroring at collection) when the optional dep is absent.
 pytest.importorskip("gymnasium")
 
-from flygym.imitation import (  # noqa: E402
+from flygym_demo.muscle_imitation import (  # noqa: E402
+    DEFAULT_MOCAP_DIR,
     ImitationConfig,
     ImitationEnv,
     MoCapDataset,
@@ -15,6 +18,39 @@ from flygym.imitation import (  # noqa: E402
     TRACKED_JOINT_NAMES,
     tracked_joint_names_for_ncols,
 )
+
+
+# -----------------------------------------------------------------------------
+# Asset/code location: mocap + IL stack live in flygym_demo, NOT in core
+# -----------------------------------------------------------------------------
+
+
+def test_mocap_dir_lives_under_the_demo_package_not_core_assets():
+    # The clips moved out of flygym/assets/model into this demo's own assets/.
+    assert DEFAULT_MOCAP_DIR.exists()
+    parts = DEFAULT_MOCAP_DIR.parts
+    assert "flygym_demo" in parts and "muscle_imitation" in parts
+    assert "assets" in parts and "mocap" in parts
+    # And specifically not under flygym's core model assets.
+    assert "assets/model/musculoskeletal/mocap" not in DEFAULT_MOCAP_DIR.as_posix()
+
+
+def test_mocap_clips_are_bundled_at_the_demo_location():
+    for sub in ("qpos", "qvel", "xipos", "xivel"):
+        assert (DEFAULT_MOCAP_DIR / sub / "0002.npy").exists()
+
+
+def test_mocap_clips_are_gone_from_core_model_assets():
+    from flygym import assets_dir
+
+    assert not (assets_dir / "model/musculoskeletal/mocap").exists()
+
+
+def test_legacy_flygym_imitation_module_is_removed():
+    # The IL stack moved entirely into flygym_demo.muscle_imitation; the old
+    # core import path must no longer exist.
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("flygym.imitation")
 
 
 # -----------------------------------------------------------------------------

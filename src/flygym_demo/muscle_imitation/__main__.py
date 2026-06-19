@@ -16,7 +16,8 @@ import sys
 
 import numpy as np
 
-from flygym.imitation import ImitationConfig, MoCapDataset
+from flygym_demo.muscle_imitation.data import MoCapDataset
+from flygym_demo.muscle_imitation.env import ImitationConfig
 from flygym_demo.muscle_imitation.fly import make_imitation_env
 
 
