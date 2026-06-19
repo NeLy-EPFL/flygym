@@ -11,16 +11,19 @@ ceiling is ~1.0.
 """
 
 from dataclasses import dataclass
+from importlib.resources import files
 from os import PathLike
 from pathlib import Path
 
 import numpy as np
 
-from flygym import assets_dir
 
+DEFAULT_MOCAP_DIR = Path(str(files("flygym_demo.muscle_imitation") / "assets/mocap"))
+"""Directory where this demo's bundled FlyMimic mocap clips live.
 
-DEFAULT_MOCAP_DIR = assets_dir / "mocap"
-"""Directory where bundled FlyMimic mocap clips live."""
+The clips ship with the demo (not with FlyGym's core model assets) since they
+are imitation-learning training data, not part of the body model itself.
+"""
 
 # The clip's 7 qpos columns map to these MJCF joints, in order (recovered by
 # matching each column's observed range against the per-joint limits in

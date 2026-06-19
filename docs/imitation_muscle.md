@@ -1,19 +1,20 @@
 # Muscle-Based Imitation Learning
 
-FlyGym can drive the left-front (LF) leg of the fly with biomechanical **muscles** and learn to reproduce recorded leg movements via imitation learning. When muscle actuation is selected, FlyGym uses [FlyMimic's](https://github.com/gizemozd/FlyMimic) musculoskeletal model in place of the default rigid-body model, while keeping FlyGym's `Simulation` and sensor APIs. The integration lives in two packages:
+FlyGym can drive the left-front (LF) leg of the fly with biomechanical **muscles** and learn to reproduce recorded leg movements via imitation learning. When muscle actuation is selected, FlyGym uses [FlyMimic's](https://github.com/gizemozd/FlyMimic) musculoskeletal model in place of the default rigid-body model, while keeping FlyGym's `Simulation` and sensor APIs. The musculoskeletal body model follows the same composition convention as `NeuroMechFly` and `FlyBody` — the fly and world classes live in `flygym.compose`:
 
-| Package | What it provides |
+| Component | What it provides |
 | --- | --- |
-| `flygym.muscle` | The musculoskeletal fly/world (`MuscleFly`, `MuscleWorld`, `build_muscle_simulation`) plus optional GPU/MuJoCo-Warp helpers. |
-| `flygym.imitation` | Mocap dataset loader (`MoCapDataset`) and a Gymnasium environment (`ImitationEnv`) with the FlyMimic tracking reward. |
+| `flygym.compose.MusculoskeletalFly` / `MusculoskeletalWorld` | The musculoskeletal fly + world, used exactly like `NeuroMechFly`/`FlatGroundWorld`. |
+| `flygym.compose.build_musculoskeletal_simulation` | One-call factory (plus the guarded GPU/MuJoCo-Warp helpers `check_mjwarp_compatibility` and `build_musculoskeletal_gpu_simulation`). |
+| `flygym_demo.muscle_imitation` | The imitation-learning stack: mocap clips (bundled under `assets/mocap/`), the dataset loader (`MoCapDataset`), and a Gymnasium environment (`ImitationEnv`) with the FlyMimic tracking reward. |
 
-A runnable example lives in `flygym_demo.muscle_imitation`.
+FlyGym's core only ships the musculoskeletal **body model**; the mocap clips and the imitation-learning code live entirely in the `flygym_demo.muscle_imitation` demo submodule, which is also the runnable example.
 
 ---
 
 ## 1. Dataset
 
-The motion-capture clips in `flygym/assets/mocap/` are recorded *Drosophila* left-front-leg kinematics, stored as NumPy arrays at a 500 Hz control rate.
+The motion-capture clips in `flygym_demo/muscle_imitation/assets/mocap/` are recorded *Drosophila* left-front-leg kinematics, stored as NumPy arrays at a 500 Hz control rate.
 
 Each clip `{id}` provides four arrays:
 
@@ -38,13 +39,13 @@ One clip ships with FlyGym — **`0002`** (225 frames, 7 joint DoFs), FlyMimic's
 | 5 | `joint_LFTrochanter_roll` |
 | 6 | `joint_LFTibia_pitch` |
 
-The mapping is keyed by qpos width (`TRACKED_JOINT_NAMES_BY_NCOLS` in `flygym.imitation.data`) and `ImitationEnv` selects it from the clip's width, so observation/action shapes adapt automatically (the shipped clip → 45-dim obs).
+The mapping is keyed by qpos width (`TRACKED_JOINT_NAMES_BY_NCOLS` in `flygym_demo.muscle_imitation.data`) and `ImitationEnv` selects it from the clip's width, so observation/action shapes adapt automatically (the shipped clip → 45-dim obs).
 
 ---
 
 ## 2. The musculoskeletal model
 
-The model is `assets/musculoskeletal/best_combined_arm_damping_stiff_cvt3.xml` (+ STL meshes), converted from an OpenSim model with [MyoConverter](https://github.com/MyoHub/myoconverter). It has 73 bodies, **15 Hill-type muscle actuators** on the LF leg, and **15 spatial tendons**.
+The model is `assets/model/musculoskeletal/best_combined_arm_damping_stiff_cvt3.xml` (+ STL meshes), converted from an OpenSim model with [MyoConverter](https://github.com/MyoHub/myoconverter). It has 73 bodies, **15 Hill-type muscle actuators** on the LF leg, and **15 spatial tendons**.
 
 Each muscle is a MuJoCo `general` actuator (`dyntype/gaintype/biastype = muscle`) acting through a spatial tendon routed via attachment sites on the thorax and LF-leg segments.
 
@@ -59,13 +60,13 @@ How it differs from FlyGym's default rigid-body fly:
 | Base | thorax free-floating | thorax tethered (anchored to world) |
 | Sensors | vision, contact, proprioception | proprioception + body kinematics; vision optional (see §3) |
 
-`build_muscle_simulation()` loads this model and returns a standard `flygym.Simulation`, so the rest of FlyGym works against it unchanged.
+`build_musculoskeletal_simulation()` loads this model and returns a standard `flygym.Simulation`, so the rest of FlyGym works against it unchanged.
 
 ---
 
 ## 3. Environment, reward, and sensors
 
-### Environment — `flygym.imitation.ImitationEnv`
+### Environment — `flygym_demo.muscle_imitation.ImitationEnv`
 
 A Gymnasium environment wrapping the muscle simulation:
 
@@ -93,7 +94,7 @@ In training mode an episode ends early if the reward drops below `rew_threshold`
 | --- | --- |
 | Proprioception (`get_joint_angles` / `get_joint_velocities`) | ✅ |
 | Body kinematics (`get_body_positions` / `get_body_rotations`) | ✅ |
-| Compound-eye vision (`get_ommatidia_readouts`) | ⚠️ via `MuscleFly.add_vision()`; approximate (retina calibrated for FlyGym's eyes) |
+| Compound-eye vision (`get_ommatidia_readouts`) | ⚠️ via `MusculoskeletalFly.add_vision()`; approximate (retina calibrated for FlyGym's eyes) |
 | Per-leg ground contact (`get_ground_contact_info`) | ❌ not available |
 | Body contact forces (`get_bodysegment_contact_forces`) | ✅ against the floor |
 
@@ -135,10 +136,10 @@ periodic evaluation to avoid late instability.
 ## 5. API
 
 ```python
-from flygym.muscle import build_muscle_simulation
-from flygym.imitation import ImitationConfig, ImitationEnv, MoCapDataset
+from flygym.compose import build_musculoskeletal_simulation
+from flygym_demo.muscle_imitation import ImitationConfig, ImitationEnv, MoCapDataset
 
-sim, fly = build_muscle_simulation()      # Simulation backed by the muscle model
+sim, fly = build_musculoskeletal_simulation()  # Simulation backed by the muscle model
 env = ImitationEnv(
     sim, fly_name=fly.name,
     dataset=MoCapDataset.default(),
@@ -151,6 +152,18 @@ for _ in range(200):
     obs, reward, terminated, truncated, info = env.step(action)
 ```
 
+`build_musculoskeletal_simulation()` is a convenience wrapper over the standard
+FlyGym composition flow, identical to how you'd build a `NeuroMechFly` scene:
+
+```python
+from flygym import Simulation
+from flygym.compose import MusculoskeletalFly, MusculoskeletalWorld
+
+fly = MusculoskeletalFly()
+world = MusculoskeletalWorld(fly)
+sim = Simulation(world)
+```
+
 Build the environment in one call:
 
 ```python
@@ -161,21 +174,24 @@ env = make_imitation_env(config=ImitationConfig(clip="0002"))
 Inspect or drive the model directly:
 
 ```python
-sim, fly = build_muscle_simulation(add_vision=True)
+sim, fly = build_musculoskeletal_simulation(add_vision=True)
 fly.muscle_names                 # the 15 muscle actuator names
 sim.get_joint_angles(fly.name)   # proprioception, body kinematics, ...
 ```
 
 ### GPU (MuJoCo-Warp)
 
-`flygym.muscle` includes helpers for the GPU path, safe to import anywhere and
+`flygym.compose` includes helpers for the GPU path, safe to import anywhere and
 only requiring a CUDA GPU when used:
 
 ```python
-from flygym.muscle import check_mjwarp_compatibility, build_muscle_gpu_simulation
+from flygym.compose import (
+    check_mjwarp_compatibility,
+    build_musculoskeletal_gpu_simulation,
+)
 
 check_mjwarp_compatibility()              # probe support (no-op without mujoco_warp)
-sim, fly = build_muscle_gpu_simulation(n_worlds=4096)   # Linux + NVIDIA + [warp]
+sim, fly = build_musculoskeletal_gpu_simulation(n_worlds=4096)  # Linux + NVIDIA + [warp]
 ```
 
 `GPUSimulation` runs many worlds in parallel — the main speedup for RL. MuJoCo-Warp's support for muscle actuators, spatial tendons, and joint-equality constraints is version-dependent, so run `check_mjwarp_compatibility()` on the target machine first.

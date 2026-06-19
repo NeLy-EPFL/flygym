@@ -46,11 +46,11 @@ imitation = [
     "stable-baselines3>=2.0,<3.0",
 ]
 dev = [
+    # Imitation-learning env (flygym_demo.muscle_imitation) used by its tests
+    "flygym[imitation]",
     # Testing
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
-    # Imitation-learning env (flygym.imitation) used by tests/core/test_imitation.py
-    "gymnasium>=1.0,<2.0",
     # Formatting and linting
     "ruff==0.15.13",
     # PyPI publishing
@@ -106,7 +106,11 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 flygym = ["assets/**"]
-flygym_demo = ["spotlight_data/assets/**", "complex_terrain/assets/**"]
+flygym_demo = [
+    "spotlight_data/assets/**",
+    "complex_terrain/assets/**",
+    "muscle_imitation/assets/**",
+]
 
 [tool.ruff.lint]
 # Disable the following ruff linting rules globally:
