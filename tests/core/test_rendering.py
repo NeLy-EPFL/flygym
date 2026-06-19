@@ -16,7 +16,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 from flygym.anatomy import AxisOrder, JointPreset, Skeleton
-from flygym.compose.fly import NeuroMechFly
+from flygym.compose.fly import Fly
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
 from flygym.utils.math import Rotation3D
@@ -35,7 +35,7 @@ def compiled_model_with_camera():
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
     )
-    fly = NeuroMechFly(name="render_fly")
+    fly = Fly(name="render_fly")
     fly.add_joints(skeleton, neutral_pose=pose)
     fly.add_tracking_camera(name="trackcam")
     world = TetheredWorld(name="render_world")

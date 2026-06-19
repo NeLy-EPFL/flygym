@@ -32,21 +32,6 @@ if [ -d "$BUILD_DIR" ]; then
     rm -rf "$BUILD_DIR"
 fi
 
-# Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
-# needed. Also offer to regenerate the MJCF/STL assets from the live model.
-WASM_DIR="docs/wasm_viewer"
-uv run python scripts/dev/mkdocs_hooks.py --vendor-only
-if [ ! -f "$WASM_DIR/assets/model/fly.xml" ]; then
-    echo "Interactive viewer assets not found; generating them now..."
-    REGEN_ASSETS="y"
-else
-    read -p "Regenerate the interactive viewer assets (mesh files etc.)? (y/n) " REGEN_ASSETS
-fi
-if [[ $REGEN_ASSETS == "y" ]]; then
-    uv run python scripts/dev/build_wasm_viewer_assets.py
-fi
-uv run python scripts/dev/mkdocs_hooks.py --vendor-only
-
 # Build the documentation
 echo "Building documentation..."
 mkdocs build

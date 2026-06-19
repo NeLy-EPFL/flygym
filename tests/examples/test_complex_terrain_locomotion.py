@@ -10,7 +10,6 @@ from flygym_demo.complex_terrain import (
     CPGController,
     CPGNetwork,
     HybridController,
-    HybridControllerObservation,
     HybridTurningController,
     PreprogrammedSteps,
     RuleBasedController,
@@ -104,8 +103,7 @@ class TestHybridControllers:
             timestep=sim.mj_model.opt.timestep,
             preprogrammed_steps=preprogrammed_steps,
         )
-        obs = HybridControllerObservation.from_sim(sim, fly.name)
-        action = controller.step(obs)
+        action = controller.step(sim, fly.name)
         apply_locomotion_action(sim, fly.name, action)
         assert action.joint_angles.shape == (42,)
         assert action.adhesion_onoff.dtype == np.dtype(bool)
@@ -119,8 +117,7 @@ class TestHybridControllers:
             preprogrammed_steps=preprogrammed_steps,
         )
         base_freqs = controller.cpg_network.intrinsic_freqs.copy()
-        obs = HybridControllerObservation.from_sim(sim, fly.name)
-        controller.step(np.zeros(2), obs)
+        controller.step(np.zeros(2), sim, fly.name)
         np.testing.assert_array_equal(
             controller.cpg_network.intrinsic_freqs,
             base_freqs,

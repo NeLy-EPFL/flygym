@@ -1,8 +1,5 @@
 # Changelog
 
-## Version 2.0.3 (ongoing development, unreleased)
-TODO
-
 ## Version 2.0.2
 > [!CAUTION]
 > ### API-breaking changes
