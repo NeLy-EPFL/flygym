@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
-from flygym.compose.fly import NeuroMechFly, ActuatorType
+from flygym.compose.fly import Fly, ActuatorType
 from flygym.compose.pose import KinematicPosePreset
 from flygym_demo.spotlight_data.preprocessing import MotionSnippet
 
@@ -23,7 +23,7 @@ def fly_for_snippet():
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,
     )
-    fly = NeuroMechFly(name="snippet_fly")
+    fly = Fly(name="snippet_fly")
     fly.add_joints(skeleton, neutral_pose=neutral_pose)
     actuated_dofs = skeleton.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
