@@ -1,0 +1,20 @@
+{
+  "picks": {
+    "F": {
+      "side": "r",
+      "start": 7736,
+      "end": 9363
+    },
+    "M": {
+      "side": "l",
+      "start": 3421,
+      "end": 5047
+    },
+    "H": {
+      "side": "l",
+      "start": 4558,
+      "end": 6058
+    }
+  },
+  "notes": "Edit the start/end indices to match the AEP candidates printed above. Either side is fine; the other side is mirrored automatically."
+}
