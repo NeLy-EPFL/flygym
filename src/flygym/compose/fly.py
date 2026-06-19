@@ -1127,6 +1127,13 @@ class FlyBody(BaseFly):
 
     def translate_generalactparams_to_specificactparams(self, general_params: dict[str, Any],
                                                          actuator_type: ActuatorType) -> dict[str, Any]:
+        """Full gainprm/biasprm/dynprm -> kp/kv/timeconst translation.
+
+        NOTE: This is currently dead code. `add_actuators` uses the simplified
+        `translate_generaljointparams_to_specificjointparams_simplified` instead.
+        It is kept for now as the intended complete implementation. See #272 for
+        details.
+        """
         def _parse_param_values(raw_value: Any, name: str) -> list[float]:
             if isinstance(raw_value, str):
                 tokens = raw_value.split()
