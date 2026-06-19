@@ -1,11 +1,11 @@
 import warnings
 
 from flygym.flybody.anatomy_flybody import (
-    FlybodyJointPreset,
-    FlybodyAxisOrder,
-    FlybodySkeleton,
-    FlybodyContactBodiesPreset,
-    FlybodyActuatedDOFPreset,
+    FlyBodyJointPreset,
+    FlyBodyAxisOrder,
+    FlyBodySkeleton,
+    FlyBodyContactBodiesPreset,
+    FlyBodyActuatedDOFPreset,
 )
 
 from flygym.compose import ActuatorType, FlatGroundWorld, KinematicPosePreset
@@ -19,12 +19,12 @@ warnings.warn(
     stacklevel=1,
 )
 
-joint_preset = FlybodyJointPreset.ALL_BIOLOGICAL
-axis_order = FlybodyAxisOrder.YAW_ROLL_PITCH
-actuated_dofs = FlybodyActuatedDOFPreset.ALL
+joint_preset = FlyBodyJointPreset.ALL_BIOLOGICAL
+axis_order = FlyBodyAxisOrder.YAW_ROLL_PITCH
+actuated_dofs = FlyBodyActuatedDOFPreset.ALL
 actuator_type = ActuatorType.POSITION
 neutral_pose = KinematicPosePreset.FLYBODY_NEUTRAL
-bodysegs_with_ground_contact = FlybodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD
+bodysegs_with_ground_contact = FlyBodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD
 spawn_position = (0, 0, 0.8)  # xyz in mm
 spawn_rotation = Rotation3D("quat", (1, 0, 0, 0))  # wxyz in quaternion
 run_async = False  # might need to change to True if launched from a notebook
@@ -33,7 +33,7 @@ run_async = False  # might need to change to True if launched from a notebook
 def main():
     fly = FlyBody()
 
-    skeleton = FlybodySkeleton(joint_preset=joint_preset, axis_order=axis_order)
+    skeleton = FlyBodySkeleton(joint_preset=joint_preset, axis_order=axis_order)
     fly.add_joints(skeleton, neutral_pose)
 
     actuated_dofs_list = skeleton.get_actuated_dofs_from_preset(actuated_dofs)

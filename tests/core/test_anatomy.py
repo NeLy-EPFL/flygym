@@ -25,19 +25,19 @@ from flygym.anatomy import (
     ALL_SEGMENT_NAMES,
 )
 from flygym.flybody.anatomy_flybody import (
-    FlybodyRotationAxis,
-    WingFlybodyRotationAxis,
-    FlybodyAxesSet,
-    WingFlybodyAxesSet,
-    FlybodyAxisOrder,
-    WingFlybodyAxisOrder,
-    FlybodyBodySegment,
-    FlybodyJointDOF,
-    FlybodyAnatomicalJoint,
-    FlybodyJointPreset,
-    FlybodyActuatedDOFPreset,
-    FlybodyContactBodiesPreset,
-    FlybodySkeleton,
+    FlyBodyRotationAxis,
+    WingFlyBodyRotationAxis,
+    FlyBodyAxesSet,
+    WingFlyBodyAxesSet,
+    FlyBodyAxisOrder,
+    WingFlyBodyAxisOrder,
+    FlyBodyBodySegment,
+    FlyBodyJointDOF,
+    FlyBodyAnatomicalJoint,
+    FlyBodyJointPreset,
+    FlyBodyActuatedDOFPreset,
+    FlyBodyContactBodiesPreset,
+    FlyBodySkeleton,
     FLYBODY_ALL_SEGMENT_NAMES,
     FLYBODY_LEG_LINKS,
     FLYBODY_PASSIVE_TARSAL_LINKS,
@@ -428,20 +428,20 @@ class TestContactBodiesPreset:
         assert ContactBodiesPreset("legs_only") is ContactBodiesPreset.LEGS_ONLY
 
 
-class TestFlybodyContactBodiesPreset:
+class TestFlyBodyContactBodiesPreset:
     def test_all_returns_all_segments(self):
-        segs = FlybodyContactBodiesPreset.ALL.to_body_segments_list()
+        segs = FlyBodyContactBodiesPreset.ALL.to_body_segments_list()
         assert len(segs) == len(FLYBODY_ALL_SEGMENT_NAMES)
 
     def test_legs_only_returns_only_leg_segs(self):
-        segs = FlybodyContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
+        segs = FlyBodyContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
         for seg in segs:
             assert seg.is_leg()
 
     def test_from_string(self):
         assert (
-            FlybodyContactBodiesPreset("legs_only")
-            is FlybodyContactBodiesPreset.LEGS_ONLY
+            FlyBodyContactBodiesPreset("legs_only")
+            is FlyBodyContactBodiesPreset.LEGS_ONLY
         )
 
 
@@ -538,18 +538,18 @@ class TestSkeleton:
 
 
 # ##############################################################################
-# Flybody duplicates: same tests as above but for the FlyBody anatomy types
+# FlyBody duplicates: same tests as above but for the FlyBody anatomy types
 # (defined in flygym.flybody.anatomy_flybody and used by
 # flygym.compose.fly.FlyBody).
 # ##############################################################################
 
 
 # ==============================================================================
-# Flybody Constants
+# FlyBody Constants
 # ==============================================================================
 
 
-class TestFlybodyConstants:
+class TestFlyBodyConstants:
     # Note: test_sides and test_legs are NOT duplicated because flybody reuses
     # SIDES and LEGS from the base anatomy module (already covered above).
     # Note: test_body_positions_contains_center_and_sides_and_legs is NOT
@@ -581,152 +581,152 @@ class TestFlybodyConstants:
 
 
 # ==============================================================================
-# FlybodyAxesSet / WingFlybodyAxesSet
+# FlyBodyAxesSet / WingFlyBodyAxesSet
 # ==============================================================================
 
 
-class TestFlybodyAxesSet:
+class TestFlyBodyAxesSet:
     def test_construction_from_strings(self):
-        axes = FlybodyAxesSet(["pitch", "roll", "yaw"])
-        assert FlybodyRotationAxis.PITCH in axes
-        assert FlybodyRotationAxis.ROLL in axes
-        assert FlybodyRotationAxis.YAW in axes
+        axes = FlyBodyAxesSet(["pitch", "roll", "yaw"])
+        assert FlyBodyRotationAxis.PITCH in axes
+        assert FlyBodyRotationAxis.ROLL in axes
+        assert FlyBodyRotationAxis.YAW in axes
 
     def test_construction_from_enum(self):
-        axes = FlybodyAxesSet([FlybodyRotationAxis.PITCH, FlybodyRotationAxis.YAW])
-        assert FlybodyRotationAxis.PITCH in axes
-        assert FlybodyRotationAxis.YAW in axes
-        assert FlybodyRotationAxis.ROLL not in axes
+        axes = FlyBodyAxesSet([FlyBodyRotationAxis.PITCH, FlyBodyRotationAxis.YAW])
+        assert FlyBodyRotationAxis.PITCH in axes
+        assert FlyBodyRotationAxis.YAW in axes
+        assert FlyBodyRotationAxis.ROLL not in axes
 
     def test_empty_construction(self):
-        axes = FlybodyAxesSet()
+        axes = FlyBodyAxesSet()
         assert len(axes) == 0
 
     def test_add_string(self):
-        axes = FlybodyAxesSet()
+        axes = FlyBodyAxesSet()
         axes.add("pitch")
-        assert FlybodyRotationAxis.PITCH in axes
+        assert FlyBodyRotationAxis.PITCH in axes
 
     def test_remove_string(self):
-        axes = FlybodyAxesSet(["pitch", "roll"])
+        axes = FlyBodyAxesSet(["pitch", "roll"])
         axes.remove("pitch")
-        assert FlybodyRotationAxis.PITCH not in axes
-        assert FlybodyRotationAxis.ROLL in axes
+        assert FlyBodyRotationAxis.PITCH not in axes
+        assert FlyBodyRotationAxis.ROLL in axes
 
     def test_construction_from_all_enum_values(self):
-        axes = FlybodyAxesSet(FlybodyRotationAxis)
+        axes = FlyBodyAxesSet(FlyBodyRotationAxis)
         assert len(axes) == 3
 
 
-class TestWingFlybodyAxesSet:
+class TestWingFlyBodyAxesSet:
     def test_construction_from_strings(self):
-        axes = WingFlybodyAxesSet(["pitch", "roll", "yaw"])
-        assert WingFlybodyRotationAxis.PITCH in axes
-        assert WingFlybodyRotationAxis.ROLL in axes
-        assert WingFlybodyRotationAxis.YAW in axes
+        axes = WingFlyBodyAxesSet(["pitch", "roll", "yaw"])
+        assert WingFlyBodyRotationAxis.PITCH in axes
+        assert WingFlyBodyRotationAxis.ROLL in axes
+        assert WingFlyBodyRotationAxis.YAW in axes
 
     def test_construction_from_enum(self):
-        axes = WingFlybodyAxesSet(
-            [WingFlybodyRotationAxis.PITCH, WingFlybodyRotationAxis.YAW]
+        axes = WingFlyBodyAxesSet(
+            [WingFlyBodyRotationAxis.PITCH, WingFlyBodyRotationAxis.YAW]
         )
-        assert WingFlybodyRotationAxis.PITCH in axes
-        assert WingFlybodyRotationAxis.YAW in axes
-        assert WingFlybodyRotationAxis.ROLL not in axes
+        assert WingFlyBodyRotationAxis.PITCH in axes
+        assert WingFlyBodyRotationAxis.YAW in axes
+        assert WingFlyBodyRotationAxis.ROLL not in axes
 
     def test_construction_from_all_enum_values(self):
-        axes = WingFlybodyAxesSet(WingFlybodyRotationAxis)
+        axes = WingFlyBodyAxesSet(WingFlyBodyRotationAxis)
         assert len(axes) == 3
 
 
 # ==============================================================================
-# FlybodyAxisOrder / WingFlybodyAxisOrder
+# FlyBodyAxisOrder / WingFlyBodyAxisOrder
 # ==============================================================================
 
 
-class TestFlybodyAxisOrder:
+class TestFlyBodyAxisOrder:
     def test_aliases(self):
-        assert FlybodyAxisOrder.YPR is FlybodyAxisOrder.YAW_PITCH_ROLL
-        assert FlybodyAxisOrder.PRY is FlybodyAxisOrder.PITCH_ROLL_YAW
-        assert FlybodyAxisOrder.DONTCARE is FlybodyAxisOrder.PITCH_ROLL_YAW
+        assert FlyBodyAxisOrder.YPR is FlyBodyAxisOrder.YAW_PITCH_ROLL
+        assert FlyBodyAxisOrder.PRY is FlyBodyAxisOrder.PITCH_ROLL_YAW
+        assert FlyBodyAxisOrder.DONTCARE is FlyBodyAxisOrder.PITCH_ROLL_YAW
 
     def test_missing_from_string(self):
-        ao = FlybodyAxisOrder("yaw_pitch_roll")
-        assert ao is FlybodyAxisOrder.YAW_PITCH_ROLL
+        ao = FlyBodyAxisOrder("yaw_pitch_roll")
+        assert ao is FlyBodyAxisOrder.YAW_PITCH_ROLL
 
     def test_missing_from_sequence(self):
-        ao = FlybodyAxisOrder(["yaw", "pitch", "roll"])
-        assert ao is FlybodyAxisOrder.YAW_PITCH_ROLL
+        ao = FlyBodyAxisOrder(["yaw", "pitch", "roll"])
+        assert ao is FlyBodyAxisOrder.YAW_PITCH_ROLL
 
     def test_missing_from_rotation_axis_sequence(self):
-        ao = FlybodyAxisOrder(
+        ao = FlyBodyAxisOrder(
             (
-                FlybodyRotationAxis.YAW,
-                FlybodyRotationAxis.PITCH,
-                FlybodyRotationAxis.ROLL,
+                FlyBodyRotationAxis.YAW,
+                FlyBodyRotationAxis.PITCH,
+                FlyBodyRotationAxis.ROLL,
             )
         )
-        assert ao is FlybodyAxisOrder.YAW_PITCH_ROLL
+        assert ao is FlyBodyAxisOrder.YAW_PITCH_ROLL
 
     def test_to_letters_xyz(self):
-        # Flybody convention: PITCH=x, ROLL=y, YAW=z
-        assert FlybodyAxisOrder.PITCH_ROLL_YAW.to_letters_xyz() == "xyz"
-        assert FlybodyAxisOrder.YAW_PITCH_ROLL.to_letters_xyz() == "zxy"
-        assert FlybodyAxisOrder.ROLL_PITCH_YAW.to_letters_xyz() == "yxz"
+        # FlyBody convention: PITCH=x, ROLL=y, YAW=z
+        assert FlyBodyAxisOrder.PITCH_ROLL_YAW.to_letters_xyz() == "xyz"
+        assert FlyBodyAxisOrder.YAW_PITCH_ROLL.to_letters_xyz() == "zxy"
+        assert FlyBodyAxisOrder.ROLL_PITCH_YAW.to_letters_xyz() == "yxz"
 
     def test_all_six_permutations_are_distinct(self):
         all_orders = [
-            FlybodyAxisOrder.PITCH_ROLL_YAW,
-            FlybodyAxisOrder.PITCH_YAW_ROLL,
-            FlybodyAxisOrder.ROLL_PITCH_YAW,
-            FlybodyAxisOrder.ROLL_YAW_PITCH,
-            FlybodyAxisOrder.YAW_PITCH_ROLL,
-            FlybodyAxisOrder.YAW_ROLL_PITCH,
+            FlyBodyAxisOrder.PITCH_ROLL_YAW,
+            FlyBodyAxisOrder.PITCH_YAW_ROLL,
+            FlyBodyAxisOrder.ROLL_PITCH_YAW,
+            FlyBodyAxisOrder.ROLL_YAW_PITCH,
+            FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            FlyBodyAxisOrder.YAW_ROLL_PITCH,
         ]
         assert len(set(ao.to_letters_xyz() for ao in all_orders)) == 6
 
 
-class TestWingFlybodyAxisOrder:
+class TestWingFlyBodyAxisOrder:
     def test_aliases(self):
-        assert WingFlybodyAxisOrder.YPR is WingFlybodyAxisOrder.YAW_PITCH_ROLL
-        assert WingFlybodyAxisOrder.PRY is WingFlybodyAxisOrder.PITCH_ROLL_YAW
-        assert WingFlybodyAxisOrder.DONTCARE is WingFlybodyAxisOrder.PITCH_ROLL_YAW
+        assert WingFlyBodyAxisOrder.YPR is WingFlyBodyAxisOrder.YAW_PITCH_ROLL
+        assert WingFlyBodyAxisOrder.PRY is WingFlyBodyAxisOrder.PITCH_ROLL_YAW
+        assert WingFlyBodyAxisOrder.DONTCARE is WingFlyBodyAxisOrder.PITCH_ROLL_YAW
 
     def test_to_letters_xyz(self):
-        # WingFlybody convention: PITCH=y, ROLL=x, YAW=z
-        assert WingFlybodyAxisOrder.PITCH_ROLL_YAW.to_letters_xyz() == "yxz"
-        assert WingFlybodyAxisOrder.YAW_PITCH_ROLL.to_letters_xyz() == "zyx"
-        assert WingFlybodyAxisOrder.ROLL_PITCH_YAW.to_letters_xyz() == "xyz"
+        # WingFlyBody convention: PITCH=y, ROLL=x, YAW=z
+        assert WingFlyBodyAxisOrder.PITCH_ROLL_YAW.to_letters_xyz() == "yxz"
+        assert WingFlyBodyAxisOrder.YAW_PITCH_ROLL.to_letters_xyz() == "zyx"
+        assert WingFlyBodyAxisOrder.ROLL_PITCH_YAW.to_letters_xyz() == "xyz"
 
     def test_all_six_permutations_are_distinct(self):
         all_orders = [
-            WingFlybodyAxisOrder.PITCH_ROLL_YAW,
-            WingFlybodyAxisOrder.PITCH_YAW_ROLL,
-            WingFlybodyAxisOrder.ROLL_PITCH_YAW,
-            WingFlybodyAxisOrder.ROLL_YAW_PITCH,
-            WingFlybodyAxisOrder.YAW_PITCH_ROLL,
-            WingFlybodyAxisOrder.YAW_ROLL_PITCH,
+            WingFlyBodyAxisOrder.PITCH_ROLL_YAW,
+            WingFlyBodyAxisOrder.PITCH_YAW_ROLL,
+            WingFlyBodyAxisOrder.ROLL_PITCH_YAW,
+            WingFlyBodyAxisOrder.ROLL_YAW_PITCH,
+            WingFlyBodyAxisOrder.YAW_PITCH_ROLL,
+            WingFlyBodyAxisOrder.YAW_ROLL_PITCH,
         ]
         assert len(set(ao.to_letters_xyz() for ao in all_orders)) == 6
 
 
 # ==============================================================================
-# FlybodyBodySegment
+# FlyBodyBodySegment
 # ==============================================================================
 
 
-class TestFlybodyBodySegment:
+class TestFlyBodyBodySegment:
     # Note: test_eye_predicates is NOT duplicated — the flybody model has no
-    # separate eye segments (FlybodyBodySegment.is_eye always returns False,
+    # separate eye segments (FlyBodyBodySegment.is_eye always returns False,
     # and "l_eye"/"r_eye" are not in FLYBODY_ALL_SEGMENT_NAMES).
 
     def test_valid_segment(self):
-        seg = FlybodyBodySegment("c_thorax")
+        seg = FlyBodyBodySegment("c_thorax")
         assert seg.name == "c_thorax"
         assert seg.pos == "c"
         assert seg.link == "thorax"
 
     def test_left_front_coxa(self):
-        seg = FlybodyBodySegment("lf_coxa")
+        seg = FlyBodyBodySegment("lf_coxa")
         assert seg.pos == "lf"
         assert seg.link == "coxa"
         assert seg.is_leg()
@@ -734,187 +734,187 @@ class TestFlybodyBodySegment:
         assert not seg.is_head()
 
     def test_thorax_predicates(self):
-        seg = FlybodyBodySegment("c_thorax")
+        seg = FlyBodyBodySegment("c_thorax")
         assert seg.is_thorax()
         assert not seg.is_leg()
         assert not seg.is_head()
 
     def test_head_predicates(self):
-        seg = FlybodyBodySegment("c_head")
+        seg = FlyBodyBodySegment("c_head")
         assert seg.is_head()
         assert not seg.is_thorax()
         assert not seg.is_leg()
 
     def test_wing_predicates(self):
-        seg = FlybodyBodySegment("l_wing")
+        seg = FlyBodyBodySegment("l_wing")
         assert seg.is_wing()
         assert not seg.is_leg()
 
     def test_abdomen_predicates(self):
         # In the flybody model, abdomen segments are c_abdomen1..c_abdomen7.
-        seg = FlybodyBodySegment("c_abdomen1")
+        seg = FlyBodyBodySegment("c_abdomen1")
         assert seg.is_abdomen()
 
     def test_antenna_predicates(self):
         # In the flybody model, each antenna is a single segment named
         # "{side}_antenna" (no pedicel/funiculus/arista split).
-        seg = FlybodyBodySegment("l_antenna")
+        seg = FlyBodyBodySegment("l_antenna")
         assert seg.is_antenna()
 
     def test_proboscis_predicates(self):
-        seg = FlybodyBodySegment("c_rostrum")
+        seg = FlyBodyBodySegment("c_rostrum")
         assert seg.is_proboscis()
 
     def test_labrum_is_proboscis(self):
-        # Flybody-specific: labrum is part of the proboscis chain.
-        seg = FlybodyBodySegment("l_labrum")
+        # FlyBody-specific: labrum is part of the proboscis chain.
+        seg = FlyBodyBodySegment("l_labrum")
         assert seg.is_proboscis()
 
     def test_all_legs_classified_as_leg(self):
         for leg in LEGS:
-            seg = FlybodyBodySegment(f"{leg}_coxa")
+            seg = FlyBodyBodySegment(f"{leg}_coxa")
             assert seg.is_leg(), f"{leg}_coxa should be a leg segment"
 
     def test_invalid_name_raises(self):
         with pytest.raises(ValueError, match="Invalid body segment name"):
-            FlybodyBodySegment("invalid_segment")
+            FlyBodyBodySegment("invalid_segment")
 
     def test_frozen_dataclass(self):
-        seg = FlybodyBodySegment("c_thorax")
+        seg = FlyBodyBodySegment("c_thorax")
         with pytest.raises((AttributeError, TypeError)):
             seg.name = "something_else"
 
 
 # ==============================================================================
-# FlybodyJointDOF
+# FlyBodyJointDOF
 # ==============================================================================
 
 
-class TestFlybodyJointDOF:
+class TestFlyBodyJointDOF:
     def test_name_property(self):
-        parent = FlybodyBodySegment("c_thorax")
-        child = FlybodyBodySegment("lf_coxa")
-        dof = FlybodyJointDOF(parent, child, FlybodyRotationAxis.YAW)
+        parent = FlyBodyBodySegment("c_thorax")
+        child = FlyBodyBodySegment("lf_coxa")
+        dof = FlyBodyJointDOF(parent, child, FlyBodyRotationAxis.YAW)
         assert dof.name == "c_thorax-lf_coxa-yaw"
 
     def test_from_name_roundtrip(self):
         # Segment names contain "_", so from_name must split on "-".
         name = "c_thorax-lf_coxa-pitch"
-        dof = FlybodyJointDOF.from_name(name)
-        assert isinstance(dof, FlybodyJointDOF)
-        assert dof.parent == FlybodyBodySegment("c_thorax")
-        assert dof.child == FlybodyBodySegment("lf_coxa")
-        assert dof.axis is FlybodyRotationAxis.PITCH
+        dof = FlyBodyJointDOF.from_name(name)
+        assert isinstance(dof, FlyBodyJointDOF)
+        assert dof.parent == FlyBodyBodySegment("c_thorax")
+        assert dof.child == FlyBodyBodySegment("lf_coxa")
+        assert dof.axis is FlyBodyRotationAxis.PITCH
         assert dof.name == name
 
     def test_from_name_all_axes(self):
         for axis_str in ("yaw", "pitch", "roll"):
-            dof = FlybodyJointDOF.from_name(f"c_thorax-lf_coxa-{axis_str}")
+            dof = FlyBodyJointDOF.from_name(f"c_thorax-lf_coxa-{axis_str}")
             assert dof.axis.value == axis_str
 
     def test_from_name_wing_uses_wing_axis(self):
-        # Wing children use the WingFlybody axis convention.
-        dof = FlybodyJointDOF.from_name("c_thorax-l_wing-pitch")
-        assert dof.axis is WingFlybodyRotationAxis.PITCH
+        # Wing children use the WingFlyBody axis convention.
+        dof = FlyBodyJointDOF.from_name("c_thorax-l_wing-pitch")
+        assert dof.axis is WingFlyBodyRotationAxis.PITCH
 
     def test_from_name_invalid_raises(self):
         with pytest.raises(ValueError):
-            FlybodyJointDOF.from_name("not-a-valid-joint-dof-name-xyz")
+            FlyBodyJointDOF.from_name("not-a-valid-joint-dof-name-xyz")
 
     def test_frozen_dataclass(self):
-        dof = FlybodyJointDOF(
-            FlybodyBodySegment("c_thorax"),
-            FlybodyBodySegment("lf_coxa"),
-            FlybodyRotationAxis.PITCH,
+        dof = FlyBodyJointDOF(
+            FlyBodyBodySegment("c_thorax"),
+            FlyBodyBodySegment("lf_coxa"),
+            FlyBodyRotationAxis.PITCH,
         )
         with pytest.raises((AttributeError, TypeError)):
-            dof.axis = FlybodyRotationAxis.YAW
+            dof.axis = FlyBodyRotationAxis.YAW
 
 
 # ==============================================================================
-# FlybodyAnatomicalJoint
+# FlyBodyAnatomicalJoint
 # ==============================================================================
 
 
-class TestFlybodyAnatomicalJoint:
+class TestFlyBodyAnatomicalJoint:
     def test_iter_dofs_all_three(self):
-        joint = FlybodyAnatomicalJoint(
-            FlybodyBodySegment("c_thorax"),
-            FlybodyBodySegment("lf_coxa"),
-            FlybodyAxesSet(
+        joint = FlyBodyAnatomicalJoint(
+            FlyBodyBodySegment("c_thorax"),
+            FlyBodyBodySegment("lf_coxa"),
+            FlyBodyAxesSet(
                 [
-                    FlybodyRotationAxis.PITCH,
-                    FlybodyRotationAxis.ROLL,
-                    FlybodyRotationAxis.YAW,
+                    FlyBodyRotationAxis.PITCH,
+                    FlyBodyRotationAxis.ROLL,
+                    FlyBodyRotationAxis.YAW,
                 ]
             ),
         )
-        dofs = list(joint.iter_dofs(FlybodyAxisOrder.YAW_PITCH_ROLL))
+        dofs = list(joint.iter_dofs(FlyBodyAxisOrder.YAW_PITCH_ROLL))
         assert len(dofs) == 3
-        assert dofs[0].axis is FlybodyRotationAxis.YAW
-        assert dofs[1].axis is FlybodyRotationAxis.PITCH
-        assert dofs[2].axis is FlybodyRotationAxis.ROLL
+        assert dofs[0].axis is FlyBodyRotationAxis.YAW
+        assert dofs[1].axis is FlyBodyRotationAxis.PITCH
+        assert dofs[2].axis is FlyBodyRotationAxis.ROLL
 
     def test_iter_dofs_subset(self):
-        joint = FlybodyAnatomicalJoint(
-            FlybodyBodySegment("c_thorax"),
-            FlybodyBodySegment("lf_coxa"),
-            FlybodyAxesSet([FlybodyRotationAxis.PITCH]),
+        joint = FlyBodyAnatomicalJoint(
+            FlyBodyBodySegment("c_thorax"),
+            FlyBodyBodySegment("lf_coxa"),
+            FlyBodyAxesSet([FlyBodyRotationAxis.PITCH]),
         )
-        dofs = list(joint.iter_dofs(FlybodyAxisOrder.YAW_PITCH_ROLL))
+        dofs = list(joint.iter_dofs(FlyBodyAxisOrder.YAW_PITCH_ROLL))
         assert len(dofs) == 1
-        assert dofs[0].axis is FlybodyRotationAxis.PITCH
+        assert dofs[0].axis is FlyBodyRotationAxis.PITCH
 
     def test_iter_dofs_empty(self):
-        joint = FlybodyAnatomicalJoint(
-            FlybodyBodySegment("c_thorax"),
-            FlybodyBodySegment("lf_coxa"),
-            FlybodyAxesSet(),
+        joint = FlyBodyAnatomicalJoint(
+            FlyBodyBodySegment("c_thorax"),
+            FlyBodyBodySegment("lf_coxa"),
+            FlyBodyAxesSet(),
         )
-        dofs = list(joint.iter_dofs(FlybodyAxisOrder.YAW_PITCH_ROLL))
+        dofs = list(joint.iter_dofs(FlyBodyAxisOrder.YAW_PITCH_ROLL))
         assert len(dofs) == 0
 
     def test_iter_dofs_wing_uses_wing_axis_order(self):
-        # Flybody-specific: wing joints internally use WingFlybodyAxisOrder so
-        # axes resolve to WingFlybodyRotationAxis (not FlybodyRotationAxis).
-        joint = FlybodyAnatomicalJoint(
-            FlybodyBodySegment("c_thorax"),
-            FlybodyBodySegment("l_wing"),
-            WingFlybodyAxesSet(WingFlybodyRotationAxis),
+        # FlyBody-specific: wing joints internally use WingFlyBodyAxisOrder so
+        # axes resolve to WingFlyBodyRotationAxis (not FlyBodyRotationAxis).
+        joint = FlyBodyAnatomicalJoint(
+            FlyBodyBodySegment("c_thorax"),
+            FlyBodyBodySegment("l_wing"),
+            WingFlyBodyAxesSet(WingFlyBodyRotationAxis),
         )
-        dofs = list(joint.iter_dofs(FlybodyAxisOrder.YAW_PITCH_ROLL))
+        dofs = list(joint.iter_dofs(FlyBodyAxisOrder.YAW_PITCH_ROLL))
         assert len(dofs) == 3
         for dof in dofs:
-            assert isinstance(dof.axis, WingFlybodyRotationAxis)
+            assert isinstance(dof.axis, WingFlyBodyRotationAxis)
 
 
 # ==============================================================================
-# FlybodyJointPreset
+# FlyBodyJointPreset
 # ==============================================================================
 
 
-class TestFlybodyJointPreset:
+class TestFlyBodyJointPreset:
     def test_all_possible_returns_joints_for_all_pairs(self):
-        joints = FlybodyJointPreset.ALL_POSSIBLE.to_joint_list()
+        joints = FlyBodyJointPreset.ALL_POSSIBLE.to_joint_list()
         assert len(joints) == len(FLYBODY_ALL_CONNECTED_SEGMENT_PAIRS)
         for joint in joints:
             assert len(joint.axes) == 3
 
     def test_all_biological_has_fewer_dofs_than_all_possible(self):
-        all_possible = FlybodyJointPreset.ALL_POSSIBLE.to_joint_list()
-        biological = FlybodyJointPreset.ALL_BIOLOGICAL.to_joint_list()
+        all_possible = FlyBodyJointPreset.ALL_POSSIBLE.to_joint_list()
+        biological = FlyBodyJointPreset.ALL_BIOLOGICAL.to_joint_list()
         assert len(biological) == len(all_possible)
         total_possible_dofs = sum(len(j.axes) for j in all_possible)
         total_biological_dofs = sum(len(j.axes) for j in biological)
         assert total_biological_dofs < total_possible_dofs
 
     def test_legs_only_excludes_non_leg_joints(self):
-        joints = FlybodyJointPreset.LEGS_ONLY.to_joint_list()
+        joints = FlyBodyJointPreset.LEGS_ONLY.to_joint_list()
         for joint in joints:
             assert joint.child.is_leg(), f"{joint.child.name} should be a leg segment"
 
     def test_legs_active_only_excludes_passive_tarsal(self):
-        joints = FlybodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
+        joints = FlyBodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
         for joint in joints:
             assert joint.child.link not in FLYBODY_PASSIVE_TARSAL_LINKS, (
                 f"{joint.child.link} should not be in legs_active_only"
@@ -922,102 +922,102 @@ class TestFlybodyJointPreset:
 
     def test_legs_active_only_subset_of_legs_only(self):
         legs_only_children = {
-            j.child.name for j in FlybodyJointPreset.LEGS_ONLY.to_joint_list()
+            j.child.name for j in FlyBodyJointPreset.LEGS_ONLY.to_joint_list()
         }
         legs_active_children = {
-            j.child.name for j in FlybodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
+            j.child.name for j in FlyBodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
         }
         assert legs_active_children.issubset(legs_only_children)
         assert legs_only_children != legs_active_children
 
     def test_from_string(self):
-        assert FlybodyJointPreset("legs_only") is FlybodyJointPreset.LEGS_ONLY
+        assert FlyBodyJointPreset("legs_only") is FlyBodyJointPreset.LEGS_ONLY
 
 
 # ==============================================================================
-# FlybodyActuatedDOFPreset
+# FlyBodyActuatedDOFPreset
 # ==============================================================================
 
 
-class TestFlybodyActuatedDOFPreset:
+class TestFlyBodyActuatedDOFPreset:
     @pytest.fixture
     def all_bio_dofs(self):
-        skeleton = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
+        skeleton = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.ALL_BIOLOGICAL,
         )
         return list(skeleton.iter_jointdofs())
 
     def test_all_returns_everything(self, all_bio_dofs):
-        filtered = FlybodyActuatedDOFPreset.ALL.filter(all_bio_dofs)
+        filtered = FlyBodyActuatedDOFPreset.ALL.filter(all_bio_dofs)
         assert len(filtered) == len(all_bio_dofs)
 
     def test_legs_only_returns_only_leg_dofs(self, all_bio_dofs):
-        filtered = FlybodyActuatedDOFPreset.LEGS_ONLY.filter(all_bio_dofs)
+        filtered = FlyBodyActuatedDOFPreset.LEGS_ONLY.filter(all_bio_dofs)
         for dof in filtered:
             assert dof.child.is_leg()
 
     def test_legs_active_only_excludes_passive_tarsals(self, all_bio_dofs):
-        filtered = FlybodyActuatedDOFPreset.LEGS_ACTIVE_ONLY.filter(all_bio_dofs)
+        filtered = FlyBodyActuatedDOFPreset.LEGS_ACTIVE_ONLY.filter(all_bio_dofs)
         for dof in filtered:
             assert dof.child.link not in FLYBODY_PASSIVE_TARSAL_LINKS
 
     def test_from_string(self):
         assert (
-            FlybodyActuatedDOFPreset("legs_only") is FlybodyActuatedDOFPreset.LEGS_ONLY
+            FlyBodyActuatedDOFPreset("legs_only") is FlyBodyActuatedDOFPreset.LEGS_ONLY
         )
 
 
 # ==============================================================================
-# FlybodyContactBodiesPreset
+# FlyBodyContactBodiesPreset
 # ==============================================================================
 #
-# Note: a minimal TestFlybodyContactBodiesPreset class already exists higher in
+# Note: a minimal TestFlyBodyContactBodiesPreset class already exists higher in
 # this file (covering ALL, LEGS_ONLY, and from_string). The class below extends
 # it with the remaining tests mirroring TestContactBodiesPreset.
 
 
-class TestFlybodyContactBodiesPresetExtras:
+class TestFlyBodyContactBodiesPresetExtras:
     def test_tibia_tarsus_only_is_subset_of_legs_only(self):
         tibia_tarsus = {
             s.name
-            for s in FlybodyContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
+            for s in FlyBodyContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
         }
         legs_only = {
-            s.name for s in FlybodyContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
+            s.name for s in FlyBodyContactBodiesPreset.LEGS_ONLY.to_body_segments_list()
         }
         assert tibia_tarsus.issubset(legs_only)
 
     def test_tibia_tarsus_only_contains_tibia_and_tarsus(self):
-        segs = FlybodyContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
+        segs = FlyBodyContactBodiesPreset.TIBIA_TARSUS_ONLY.to_body_segments_list()
         for seg in segs:
             assert seg.link == "tibia" or seg.link.startswith("tarsus")
 
     def test_legs_thorax_abdomen_head_contains_thorax(self):
         segs = (
-            FlybodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD.to_body_segments_list()
+            FlyBodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD.to_body_segments_list()
         )
         seg_names = {s.name for s in segs}
         assert "c_thorax" in seg_names
 
 
 # ==============================================================================
-# FlybodySkeleton
+# FlyBodySkeleton
 # ==============================================================================
 
 
-class TestFlybodySkeleton:
+class TestFlyBodySkeleton:
     def test_construction_from_preset(self):
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.LEGS_ONLY,
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.LEGS_ONLY,
         )
-        assert skel.axis_order is FlybodyAxisOrder.YAW_PITCH_ROLL
+        assert skel.axis_order is FlyBodyAxisOrder.YAW_PITCH_ROLL
 
     def test_construction_from_anatomical_joints(self):
-        joints = FlybodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
+        joints = FlyBodyJointPreset.LEGS_ACTIVE_ONLY.to_joint_list()
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
             anatomical_joints=joints,
         )
         dofs = list(skel.iter_jointdofs())
@@ -1025,47 +1025,47 @@ class TestFlybodySkeleton:
 
     def test_must_provide_exactly_one_of_preset_or_joints(self):
         with pytest.raises(ValueError):
-            FlybodySkeleton(axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL)  # neither
+            FlyBodySkeleton(axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL)  # neither
 
-        joints = FlybodyJointPreset.LEGS_ONLY.to_joint_list()
+        joints = FlyBodyJointPreset.LEGS_ONLY.to_joint_list()
         with pytest.raises(ValueError):
-            FlybodySkeleton(
-                axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-                joint_preset=FlybodyJointPreset.LEGS_ONLY,
+            FlyBodySkeleton(
+                axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+                joint_preset=FlyBodyJointPreset.LEGS_ONLY,
                 anatomical_joints=joints,
             )  # both
 
     def test_iter_jointdofs_returns_joint_dof_objects(self):
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.LEGS_ONLY,
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.LEGS_ONLY,
         )
         dofs = list(skel.iter_jointdofs())
-        assert all(isinstance(d, FlybodyJointDOF) for d in dofs)
+        assert all(isinstance(d, FlyBodyJointDOF) for d in dofs)
 
     def test_iter_jointdofs_respects_axis_order(self):
         """For the coxa (3-DoF ball joint), dofs should be in YAW-PITCH-ROLL order."""
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.LEGS_ONLY,
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.LEGS_ONLY,
         )
         dofs = list(skel.iter_jointdofs())
         thorax_coxa_dofs = [
             d for d in dofs if d.parent.name == "c_thorax" and d.child.name == "lf_coxa"
         ]
         assert len(thorax_coxa_dofs) == 3
-        assert thorax_coxa_dofs[0].axis is FlybodyRotationAxis.YAW
-        assert thorax_coxa_dofs[1].axis is FlybodyRotationAxis.PITCH
-        assert thorax_coxa_dofs[2].axis is FlybodyRotationAxis.ROLL
+        assert thorax_coxa_dofs[0].axis is FlyBodyRotationAxis.YAW
+        assert thorax_coxa_dofs[1].axis is FlyBodyRotationAxis.PITCH
+        assert thorax_coxa_dofs[2].axis is FlyBodyRotationAxis.ROLL
 
     def test_iter_jointdofs_different_axis_orders_give_different_names(self):
-        skel_ypr = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.LEGS_ONLY,
+        skel_ypr = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.LEGS_ONLY,
         )
-        skel_pry = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.PITCH_ROLL_YAW,
-            joint_preset=FlybodyJointPreset.LEGS_ONLY,
+        skel_pry = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.PITCH_ROLL_YAW,
+            joint_preset=FlyBodyJointPreset.LEGS_ONLY,
         )
         dofs_ypr = [d.name for d in skel_ypr.iter_jointdofs()]
         dofs_pry = [d.name for d in skel_pry.iter_jointdofs()]
@@ -1073,21 +1073,21 @@ class TestFlybodySkeleton:
         assert dofs_ypr != dofs_pry
 
     def test_get_actuated_dofs_from_preset_legs_active_only(self):
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.ALL_BIOLOGICAL,
         )
         dofs = skel.get_actuated_dofs_from_preset(
-            FlybodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
+            FlyBodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
         )
         for dof in dofs:
             assert dof.child.is_leg()
             assert dof.child.link not in FLYBODY_PASSIVE_TARSAL_LINKS
 
     def test_get_tree_is_valid(self):
-        skel = FlybodySkeleton(
-            axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
-            joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
+        skel = FlyBodySkeleton(
+            axis_order=FlyBodyAxisOrder.YAW_PITCH_ROLL,
+            joint_preset=FlyBodyJointPreset.ALL_BIOLOGICAL,
         )
         tree = skel.get_tree()
         assert tree is not None

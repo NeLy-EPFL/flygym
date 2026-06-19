@@ -1,7 +1,7 @@
 """Base anatomical definitions for the default fly model.
 
 This module contains model-agnostic and default-model anatomy definitions.
-Flybody-specific anatomy is defined in
+FlyBody-specific anatomy is defined in
 ``flygym.flybody.anatomy_flybody``.
 """
 

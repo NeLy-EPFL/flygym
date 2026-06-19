@@ -41,10 +41,10 @@ from flygym.compose import (
 )
 from flygym.anatomy import Skeleton, AxisOrder, JointPreset
 from flygym.flybody.anatomy_flybody import (
-    FlybodySkeleton,
-    FlybodyJointPreset,
-    FlybodyAxisOrder,
-    FlybodyContactBodiesPreset,
+    FlyBodySkeleton,
+    FlyBodyJointPreset,
+    FlyBodyAxisOrder,
+    FlyBodyContactBodiesPreset,
 )
 from flygym.utils.math import Rotation3D
 
@@ -55,9 +55,9 @@ FLYBODY_HEAD_BODY = "flybody/c_head"
 
 def _build_flybody_sim():
     fly = FlyBody()
-    skeleton = FlybodySkeleton(
-        axis_order=FlybodyAxisOrder.YAW_ROLL_PITCH,
-        joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
+    skeleton = FlyBodySkeleton(
+        axis_order=FlyBodyAxisOrder.YAW_ROLL_PITCH,
+        joint_preset=FlyBodyJointPreset.ALL_BIOLOGICAL,
     )
     fly.add_joints(skeleton, KinematicPosePreset.FLYBODY_NEUTRAL)
     fly.add_tracking_camera()
@@ -68,7 +68,7 @@ def _build_flybody_sim():
         fly,
         (0, 0, 10.0),
         Rotation3D("quat", (1, 0, 0, 0)),
-        bodysegs_with_ground_contact=FlybodyContactBodiesPreset.LEGS_ONLY,
+        bodysegs_with_ground_contact=FlyBodyContactBodiesPreset.LEGS_ONLY,
     )
     return Simulation(world)
 
