@@ -8,7 +8,7 @@ Chain (both flies spawned at world identity rotation):
                          = R_c_head_global @ R_yaml
 
 (the marker body `l_eye_cam_body` is created with `pos=rel_pos` only, no
-quat/euler, see flygym/compose/fly.py::add_vision -> so R_marker_local = I.)
+quat/euler, see flygym/compose/fly/base_fly.py::add_vision -> so R_marker_local = I.)
 
 We want R_cam_global(flybody) == R_cam_global(nmf), so:
 
@@ -36,11 +36,11 @@ from flygym import Simulation
 from flygym.compose import (
     KinematicPosePreset,
     FlatGroundWorld,
-    Fly,
+    NeuroMechFly,
+    FlyBody,
 )
-from flygym.compose.fly import FlybodyFly
 from flygym.anatomy import Skeleton, AxisOrder, JointPreset
-from flygym.assets.model.flybody.anatomy_flybody import (
+from flygym.flybody.anatomy_flybody import (
     FlybodySkeleton,
     FlybodyJointPreset,
     FlybodyAxisOrder,
@@ -54,7 +54,7 @@ FLYBODY_HEAD_BODY = "flybody/c_head"
 
 
 def _build_flybody_sim():
-    fly = FlybodyFly()
+    fly = FlyBody()
     skeleton = FlybodySkeleton(
         axis_order=FlybodyAxisOrder.YAW_ROLL_PITCH,
         joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
@@ -74,7 +74,7 @@ def _build_flybody_sim():
 
 
 def _build_nmf_sim():
-    fly = Fly()
+    fly = NeuroMechFly()
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,

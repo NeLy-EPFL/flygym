@@ -1,4 +1,6 @@
-from flygym.assets.model.flybody.anatomy_flybody import (
+import warnings
+
+from flygym.flybody.anatomy_flybody import (
     FlybodyJointPreset,
     FlybodyAxisOrder,
     FlybodySkeleton,
@@ -7,15 +9,20 @@ from flygym.assets.model.flybody.anatomy_flybody import (
 )
 
 from flygym.compose import ActuatorType, FlatGroundWorld, KinematicPosePreset
-from flygym.compose.fly import FlybodyFly
+from flygym.compose.fly import FlyBody
 from flygym.rendering import launch_interactive_viewer
 from flygym.utils.math import Rotation3D
+
+warnings.warn(
+    "FlyBody support is experimental. The API may change in future releases, "
+    "and not all NeuroMechFly features are currently supported.",
+    stacklevel=1,
+)
 
 joint_preset = FlybodyJointPreset.ALL_BIOLOGICAL
 axis_order = FlybodyAxisOrder.YAW_ROLL_PITCH
 actuated_dofs = FlybodyActuatedDOFPreset.ALL
 actuator_type = ActuatorType.POSITION
-# actuator_position_gain = 50.0
 neutral_pose = KinematicPosePreset.FLYBODY_NEUTRAL
 bodysegs_with_ground_contact = FlybodyContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD
 spawn_position = (0, 0, 0.8)  # xyz in mm
@@ -24,7 +31,7 @@ run_async = False  # might need to change to True if launched from a notebook
 
 
 def main():
-    fly = FlybodyFly()
+    fly = FlyBody()
 
     skeleton = FlybodySkeleton(joint_preset=joint_preset, axis_order=axis_order)
     fly.add_joints(skeleton, neutral_pose)
