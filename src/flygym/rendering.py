@@ -145,7 +145,11 @@ class Renderer:
                     if self.render_segmentation:
                         # segmentation renders 2 channels one is body the other is fly vs background
                         frame = frame[:, :, 0]
-                        assert np.all(frame<=255), "More than 255 bodies not supported"
+                        if not np.all(frame <= 255):
+                            raise ValueError(
+                                "Segmentation rendering supports at most 255 bodies "
+                                "(uint8 frames); the scene exceeds this."
+                            )
                         frame = frame.astype(np.uint8)
                     self.frames[cam_name].append(frame)
             return True
@@ -233,13 +237,17 @@ class Renderer:
         Convert depth frames from uint32 to uint8. 
         This is necessary because depth frames are rendered as 32-bit floats, but
         we want to save them as 8-bit videos.
-        We will find the max value (background) and scale from the second biggest value to the min value (0-255)
+        We treat the global maximum depth (over all frames) as the background and
+        scale from the largest non-background value down to the global minimum
+        (mapped to 0-255).
         """
 
-        max_val = np.max(self.frames[cam_name][0]) # first frame should contain background
-        no_max_frame = self.frames[cam_name][0][self.frames[cam_name][0] != max_val] # not perfect if suddenly becomes much more distant in next frames more than 0.2
-        max_no_max_val = np.max(no_max_frame)
-        min_val = np.min(self.frames[cam_name])
+        all_frames = np.stack(self.frames[cam_name])
+        max_val = np.max(all_frames)  # background depth (far plane)
+        non_background = all_frames[all_frames != max_val]
+        # If every pixel is at the background depth, there is nothing to scale.
+        max_no_max_val = np.max(non_background) if non_background.size else max_val
+        min_val = np.min(all_frames)
         for i in range(len(self.frames[cam_name])):
             frame = self.frames[cam_name][i]
             frame_norm = np.clip((frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1)
