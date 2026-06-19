@@ -127,9 +127,9 @@ function buildApp(mj, model, data, meta) {
   controls.maxDistance = 40;
   controls.enablePan = true;
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const key = new THREE.DirectionalLight(0xffffff, 0.85); key.position.set(4, -6, 8);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-6, 4, 2);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(4, -6, 8);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.45); fill.position.set(-6, 4, 2);
   scene.add(key, fill);
   addGround(scene);
 
