@@ -1,4 +1,12 @@
-from .fly import Fly, ActuatorType, MeshType, GeomFittingOption
+from .fly import (
+    BaseFly,
+    NeuroMechFly,
+    FlyBody,
+    Fly,
+    ActuatorType,
+    MeshType,
+    GeomFittingOption,
+)
 from .world import (
     BaseWorld,
     BlocksTerrainWorld,
@@ -11,6 +19,9 @@ from .pose import KinematicPose, KinematicPosePreset
 from .physics import ContactParams
 
 __all__ = [
+    "BaseFly",
+    "NeuroMechFly",
+    "FlyBody",
     "Fly",
     "ActuatorType",
     "MeshType",
