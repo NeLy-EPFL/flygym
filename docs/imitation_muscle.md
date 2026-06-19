@@ -122,10 +122,30 @@ Reproduce:
 # quick check: random-policy rollout (no training dependencies)
 python -m flygym_demo.muscle_imitation --no-train
 
-# train a policy (requires stable-baselines3)
+# train a policy with logging + checkpointing, then record a video of it
 python -m flygym_demo.muscle_imitation \
-    --clip 0002 --total-timesteps 30000000 --learning-rate 1e-5
+    --clip 0002 --total-timesteps 30000000 --learning-rate 1e-5 \
+    --log-dir runs/0002 --video-path runs/0002/rollout.mp4
+
+# render a previously-saved policy without retraining
+python -m flygym_demo.muscle_imitation --no-train \
+    --model-path runs/0002/final_model.zip --video-path rollout.mp4
 ```
+
+Training writes all artifacts under `--log-dir` (default `runs/<clip>`):
+
+| Artifact | Contents |
+| --- | --- |
+| `monitor.csv` | Per-episode reward + length (`stable_baselines3` `Monitor`; read with `pandas`). |
+| `tb/` | TensorBoard event files — view with `tensorboard --logdir runs/<clip>/tb` (`rollout/ep_rew_mean`, `ep_len_mean`, …). TensorBoard is optional; without it the CSV is still written. |
+| `checkpoints/ppo_muscle_*_steps.zip` | Periodic checkpoints (`--checkpoint-freq`, default every 50k steps; `0` disables). |
+| `final_model.zip` | The policy at the end of training. |
+
+To watch the learned behaviour, `--video-path` runs a deterministic rollout in
+test mode (full clip, no early termination), rendering FlyMimic's world camera
+(`--camera`, default `scene`; `--camera-res H W`) to an mp4. The same env can be
+driven from Python via `flygym_demo.muscle_imitation.record_rollout` /
+`load_policy`.
 
 Training is CPU-only on most workstations (see §5 for the GPU path). At higher
 learning rates, set PPO `target_kl ≈ 0.05` and keep the best checkpoint by
@@ -169,6 +189,22 @@ Build the environment in one call:
 ```python
 from flygym_demo.muscle_imitation import make_imitation_env
 env = make_imitation_env(config=ImitationConfig(clip="0002"))
+```
+
+Train (logging + checkpointing) and record a video programmatically:
+
+```python
+from flygym_demo.muscle_imitation import (
+    TrainConfig, train, make_imitation_env, load_policy, record_rollout,
+)
+
+# Writes monitor.csv, tb/, checkpoints/, final_model.zip under runs/0002
+model, final_path = train("runs/0002", config=TrainConfig(clip="0002",
+                                                          total_timesteps=200_000))
+
+# Roll the trained policy out and save an mp4 (test mode = full clip)
+env = make_imitation_env(config=ImitationConfig(clip="0002", test=True))
+record_rollout(env, load_policy(final_path), "rollout.mp4")
 ```
 
 Inspect or drive the model directly:
