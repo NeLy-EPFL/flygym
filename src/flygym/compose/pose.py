@@ -49,7 +49,8 @@ class KinematicPose:
                     "When initializing from `joint_angles_rad_dict`, axis_order must "
                     "also be provided."
                 )
-            axis_order = AxisOrder(axis_order)
+            if isinstance(axis_order, str) or isinstance(axis_order, list):
+                axis_order = AxisOrder(axis_order)
         elif path is not None and joint_angles_rad_dict is None:
             if axis_order is not None:
                 raise ValueError(
@@ -136,11 +137,14 @@ class KinematicPosePreset(Enum):
     """
 
     NEUTRAL = "neutral"
+    FLYBODY_NEUTRAL = "flybody_neutral"
 
     def get_dir(self) -> Path:
         match self:
             case KinematicPosePreset.NEUTRAL:
-                return assets_dir / "model/pose/neutral/"
+                return assets_dir / "model/neuromechfly/pose/neutral/"
+            case KinematicPosePreset.FLYBODY_NEUTRAL:
+                return assets_dir / "model/flybody/pose/neutral/"
             case _:
                 raise ValueError(f"Unsupported KinematicPosePreset: {self.value}")
 
