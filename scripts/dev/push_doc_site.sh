@@ -43,8 +43,9 @@ else
     read -p "Regenerate the interactive viewer assets (mesh files etc.)? (y/n) " REGEN_ASSETS
 fi
 if [[ $REGEN_ASSETS == "y" ]]; then
-    uv run python scripts/build_wasm_viewer_assets.py
+    uv run python scripts/dev/build_wasm_viewer_assets.py
 fi
+uv run python scripts/dev/mkdocs_hooks.py --vendor-only
 
 # Build the documentation
 echo "Building documentation..."

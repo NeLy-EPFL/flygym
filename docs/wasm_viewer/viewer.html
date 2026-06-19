@@ -50,7 +50,7 @@
   .swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
   /* One actuator row: label + numeric value on top, then a slider whose track
      carries a thin "actual joint angle" bar drawn behind the thumb. */
-  .joint { padding: 5px 10px 8px; }
+  .joint { padding: 3px 10px 6px; }
   .joint .row { display: flex; justify-content: space-between; font-size: 11px;
         color: var(--muted); margin-bottom: 1px; }
   .joint .row .val { font-variant-numeric: tabular-nums; }
@@ -82,8 +82,8 @@
         border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   #overlay .err { color: #ff8a80; max-width: 460px; }
-  .param-row { padding: 4px 0; }
-  .param-row + .param-row { padding-top: 8px; }
+  .param-row { padding: 2px 0; }
+  .param-row + .param-row { padding-top: 5px; }
   .param-header { display: flex; justify-content: space-between; font-size: 11px;
         color: var(--muted); margin-bottom: 2px; }
   .param-row input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -104,11 +104,6 @@
     <div id="hint">Drag to orbit · scroll to zoom · right-drag to pan · <b>Shift</b>+drag a body to push it</div>
   </div>
   <aside id="panel">
-    <h1>FlyGym interactive viewer</h1>
-    <p class="sub">The NeuroMechFly biomechanical model, simulated live in your
-       browser with MuJoCo (WebAssembly). Move a slider to set a leg position
-       actuator's target; the green tick over each slider shows where that joint
-       actually is. Same model as <code>scripts/launch_interactive_viewer.py</code>.</p>
 
     <section class="section">
       <h2>Simulation</h2>
@@ -125,20 +120,22 @@
         <label class="toggle"><input type="checkbox" id="t-forces"> Contact forces</label>
         <label class="toggle"><input type="checkbox" id="t-joints"> Joints</label>
         <label class="toggle"><input type="checkbox" id="t-actuators"> Actuators</label>
-      </div>
-      <div class="controls">
-        <label class="toggle"><input type="checkbox" id="t-transparent"> Transparent</label>
         <button id="reset-view" title="Reset the camera to its default framing">Reset view</button>
       </div>
     </section>
 
     <section class="section">
       <h2>Physics parameters</h2>
+      <p class="sub" style="margin-bottom: 6px;">Global multipliers applied on top of the model defaults.</p>
       <div id="physics-params"></div>
+      <div class="controls" style="margin-top: 6px;">
+        <button id="reset-physics" title="Reset physics parameters to defaults">Reset</button>
+      </div>
     </section>
 
     <section class="section">
       <h2>Position actuator targets</h2>
+      <p class="sub" style="margin-bottom: 6px;">Move a slider to set a joint target; the green tick shows the actual angle.</p>
       <div class="legendline">
         <span><span class="dot" style="background:var(--target)"></span>target (slider)</span>
         <span><span class="dot" style="background:var(--actual)"></span>actual joint angle</span>

@@ -1,0 +1,6 @@
+angle_unit: radian
+axis_order: [yaw, roll, pitch]
+joint_angles:
+  c_thorax-l_wing-yaw: 1.5
+  c_thorax-l_wing-roll: 0.7
+  c_thorax-l_wing-pitch: -1.0

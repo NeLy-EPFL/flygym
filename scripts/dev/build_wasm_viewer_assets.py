@@ -15,7 +15,7 @@ files under ``docs/wasm_viewer/``). It is therefore run *by hand* whenever the
 model or its viewer config changes. It needs ``flygym`` + ``mujoco``, e.g.::
 
     uv run --with flygym --with mujoco --python 3.12 \
-        python scripts/build_wasm_viewer_assets.py
+        python scripts/dev/build_wasm_viewer_assets.py
 
 Outputs (all under ``docs/wasm_viewer/assets/``):
 
@@ -43,7 +43,6 @@ import shutil
 from pathlib import Path
 
 import mujoco as mj
-import numpy as np
 import yaml
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -134,7 +133,11 @@ def build_model() -> mj.MjModel:
     for pair in world.mjcf_root.contact.all_children():
         if pair.tag != "pair":
             continue
-        fr = list(pair.friction) if pair.friction is not None else [1, 1, 2e-2, 1e-4, 1e-4]
+        fr = (
+            list(pair.friction)
+            if pair.friction is not None
+            else [1, 1, 2e-2, 1e-4, 1e-4]
+        )
         fr[0] = fr[1] = SLIDING_FRICTION  # tangential (x2)
         pair.friction = fr
 
@@ -245,7 +248,7 @@ def segment_colors() -> dict[str, list[float]]:
     wings keep their 0.3 transparency). Wildcards in ``apply_to`` match segment
     names as in flygym.colorize().
     """
-    with open(assets_dir / "model/visuals.yaml") as fh:
+    with open(assets_dir / "model/neuromechfly/visuals.yaml") as fh:
         vis = yaml.safe_load(fh)
     colors: dict[str, list[float]] = {}
     for params in vis.values():

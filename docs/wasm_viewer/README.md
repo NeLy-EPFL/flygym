@@ -44,7 +44,7 @@ Regenerate it whenever the model or its viewer config changes (also needed once
 to preview locally with `mkdocs serve`):
 
 ```sh
-uv run python scripts/build_wasm_viewer_assets.py
+uv run python scripts/dev/build_wasm_viewer_assets.py
 ```
 
 The script mirrors the body configuration in
