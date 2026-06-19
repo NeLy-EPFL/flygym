@@ -19,10 +19,16 @@
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
         * [base](api_reference/flygym/compose/base.md)
-        * [fly](api_reference/flygym/compose/fly.md)
+        * fly
+            * [base_fly](api_reference/flygym/compose/fly/base_fly.md)
+            * [flybody](api_reference/flygym/compose/fly/flybody.md)
+            * [neuromechfly](api_reference/flygym/compose/fly/neuromechfly.md)
         * [physics](api_reference/flygym/compose/physics.md)
         * [pose](api_reference/flygym/compose/pose.md)
-        * [world](api_reference/flygym/compose/world.md)
+        * world
+            * [base_world](api_reference/flygym/compose/world/base_world.md)
+            * [complex_terrain](api_reference/flygym/compose/world/complex_terrain.md)
+            * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils

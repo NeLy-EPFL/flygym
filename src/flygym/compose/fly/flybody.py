@@ -59,7 +59,7 @@ class FlyBody(BaseFly):
     parameters, and integrates with the FlyGym API for scene composition,
     simulation, and control.
 
-    .. warning::
+    !!! warning
 
         Support for the FlyBody body model is **experimental**. The API may
         change in future releases, and not all features available for the

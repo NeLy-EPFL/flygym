@@ -27,7 +27,7 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
     Contact-pair generation is handled automatically by ``_GroundContactMixin``
     when ``add_fly`` is called.
 
-    .. warning::
+    !!! warning
 
         Per-leg ground contact sensors are **not** added for multi-geom worlds as is,
         even when ``add_fly(..., add_ground_contact_sensors=True)`` is requested.
