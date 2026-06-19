@@ -5,10 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from flygym_demo.complex_terrain.common import LocomotionAction
-from flygym_demo.complex_terrain.hybrid_controller import (
-    HybridController,
-    HybridControllerObservation,
-)
+from flygym_demo.complex_terrain.hybrid_controller import HybridController
+from flygym.simulation import Simulation
 
 
 @dataclass
@@ -16,9 +14,7 @@ class HybridTurningController(HybridController):
     """Hybrid walking controller with side-specific CPG modulation."""
 
     def step(
-        self,
-        descending_signal: np.ndarray,
-        obs: HybridControllerObservation,
+        self, descending_signal: np.ndarray, sim: Simulation, fly_name: str
     ) -> LocomotionAction:
         descending_signal = np.asarray(descending_signal, dtype=float)
         if descending_signal.shape != (2,):
@@ -33,4 +29,4 @@ class HybridTurningController(HybridController):
         intrinsic_freqs[3:] *= 1 if descending_signal[1] >= 0 else -1
         self.cpg_network.intrinsic_freqs = intrinsic_freqs
 
-        return super().step(obs)
+        return super().step(sim, fly_name)

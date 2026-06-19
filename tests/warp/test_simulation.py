@@ -6,12 +6,7 @@ import numpy as np
 import warp as wp
 
 from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder
-from flygym.compose import (
-    NeuroMechFly,
-    ActuatorType,
-    FlatGroundWorld,
-    KinematicPosePreset,
-)
+from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 from flygym.warp.rendering import WarpCPURenderer
@@ -72,7 +67,7 @@ class TestGPUSimulationConstruction:
 
     def test_noslip_iterations_stripped(self):
         """_strip_unsupported_options_for_mjwarp should zero out noslip_iterations."""
-        fly = NeuroMechFly(name="noslip_fly")
+        fly = Fly(name="noslip_fly")
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL,
             joint_preset=JointPreset.LEGS_ONLY,
