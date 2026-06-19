@@ -15,7 +15,7 @@ files under ``docs/wasm_viewer/``). It is therefore run *by hand* whenever the
 model or its viewer config changes. It needs ``flygym`` + ``mujoco``, e.g.::
 
     uv run --with flygym --with mujoco --python 3.12 \
-        python scripts/build_wasm_viewer_assets.py
+        python scripts/dev/build_wasm_viewer_assets.py
 
 Outputs (all under ``docs/wasm_viewer/assets/``):
 

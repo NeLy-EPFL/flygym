@@ -44,13 +44,9 @@ else
     read -p "Regenerate the interactive viewer assets (mesh files etc.)? (y/n) " REGEN_ASSETS
 fi
 if [[ $REGEN_ASSETS == "y" ]]; then
-    uv run python scripts/build_wasm_viewer_assets.py
+    uv run python scripts/dev/build_wasm_viewer_assets.py
 fi
-if [ ! -f "$WASM_DIR/vendor/mujoco/mujoco.wasm" ]; then
-    echo "ERROR: $WASM_DIR/vendor is missing (MuJoCo-WASM + three.js)."
-    echo "See $WASM_DIR/README.md for how to vendor them."
-    exit 1
-fi
+uv run python scripts/dev/mkdocs_hooks.py --vendor-only
 
 # Build the documentation
 echo "Building documentation..."

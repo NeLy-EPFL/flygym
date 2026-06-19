@@ -43,7 +43,7 @@ Open viewer in full-screen ↗</a>
     </p>
 
     The browser viewer's static assets are regenerated from the same model with
-    `python scripts/build_wasm_viewer_assets.py`.
+    `python scripts/dev/build_wasm_viewer_assets.py`.
 
 
 ## Key features
