@@ -18,11 +18,11 @@ from flygym.compose.fly import NeuroMechFly, FlyBody, ActuatorType
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
 from flygym.flybody import (
-    FlybodyActuatedDOFPreset,
-    FlybodyAxisOrder,
-    FlybodyJointPreset,
-    FlybodySkeleton,
-    FlybodyBodySegment,
+    FlyBodyActuatedDOFPreset,
+    FlyBodyAxisOrder,
+    FlyBodyJointPreset,
+    FlyBodySkeleton,
+    FlyBodyBodySegment,
 )
 from flygym.simulation import Simulation
 from flygym.utils.math import Rotation3D
@@ -427,7 +427,7 @@ class TestSimulationGetOmmatidiaReadouts:
 
 
 # ==============================================================================
-# Flybody vision: add_vision and Simulation hookup on the FlyBody variant.
+# FlyBody vision: add_vision and Simulation hookup on the FlyBody variant.
 # The vision config (vision.yaml) is written against the flybody segment naming
 # (c_thorax, c_head, l_eye, l_pedicel, ...), so it should work on FlyBody
 # without any model-specific adjustments. These tests verify that.
@@ -437,15 +437,15 @@ class TestSimulationGetOmmatidiaReadouts:
 @pytest.fixture(scope="module")
 def flybody_neutral_pose():
     return KinematicPosePreset.FLYBODY_NEUTRAL.get_pose_by_axis_order(
-        FlybodyAxisOrder.YAW_ROLL_PITCH
+        FlyBodyAxisOrder.YAW_ROLL_PITCH
     )
 
 
 @pytest.fixture(scope="module")
 def flybody_skeleton():
-    return FlybodySkeleton(
-        axis_order=FlybodyAxisOrder.YAW_ROLL_PITCH,
-        joint_preset=FlybodyJointPreset.LEGS_ONLY,
+    return FlyBodySkeleton(
+        axis_order=FlyBodyAxisOrder.YAW_ROLL_PITCH,
+        joint_preset=FlyBodyJointPreset.LEGS_ONLY,
     )
 
 
@@ -493,7 +493,7 @@ class TestFlyBodyAddVision:
         fly.add_vision(draw_sensor_markers=False)
         mj_model, _ = fly.compile()
         for segname in flybody_vision_config["hidden_segments"]:
-            fbody_seg = FlybodyBodySegment(segname)
+            fbody_seg = FlyBodyBodySegment(segname)
             for geom in fly.bodyseg_to_mjcfgeom[fbody_seg]:
                 geom_name = geom.name
                 geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, geom_name)
@@ -526,7 +526,7 @@ def flybody_fly_with_vision(flybody_neutral_pose, flybody_skeleton):
     fly = FlyBody(name="flybody_vision_sim_fly")
     fly.add_joints(flybody_skeleton, neutral_pose=flybody_neutral_pose)
     actuated_dofs = fly.skeleton.get_actuated_dofs_from_preset(
-        FlybodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
+        FlyBodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
     )
     fly.add_actuators(
         actuated_dofs, ActuatorType.POSITION, neutral_input=flybody_neutral_pose, kp=50
@@ -548,7 +548,7 @@ def flybody_simulation_with_vision(flybody_fly_with_vision):
     return sim
 
 
-class TestFlybodySimulationVisionIDMapping:
+class TestFlyBodySimulationVisionIDMapping:
     def test_eye_camera_ids_present(
         self, flybody_simulation_with_vision, flybody_fly_with_vision
     ):
@@ -580,7 +580,7 @@ class TestFlybodySimulationVisionIDMapping:
         "neither works headlessly in CI without a GPU"
     ),
 )
-class TestFlybodySimulationGetRawVision:
+class TestFlyBodySimulationGetRawVision:
     def test_returns_shape_and_type(
         self, flybody_simulation_with_vision, flybody_fly_with_vision
     ):

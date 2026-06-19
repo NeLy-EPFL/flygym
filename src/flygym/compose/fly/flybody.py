@@ -13,14 +13,14 @@ from flygym.anatomy import JointDOF, Skeleton, LEGS
 from flygym.flybody.anatomy_flybody import (
     FLYBODY_ALL_SEGMENT_NAMES,
     FLYBODY_LEG_LINKS,
-    FlybodyJointPreset,
-    FlybodySkeleton,
-    FlybodyBodySegment,
-    FlybodyRotationAxis,
-    WingFlybodyRotationAxis,
-    FlybodyJointDOF,
-    FlybodyAxisOrder,
-    FlybodyContactBodiesPreset,
+    FlyBodyJointPreset,
+    FlyBodySkeleton,
+    FlyBodyBodySegment,
+    FlyBodyRotationAxis,
+    WingFlyBodyRotationAxis,
+    FlyBodyJointDOF,
+    FlyBodyAxisOrder,
+    FlyBodyContactBodiesPreset,
 )
 from flygym.compose.fly.base_fly import (
     BaseFly,
@@ -103,15 +103,15 @@ class FlyBody(BaseFly):
     # biasprm*=10, etc. See parsing script.
     SCALE = 1.0
 
-    BODY_SEGMENT_CLASS = FlybodyBodySegment
-    JOINT_DOF_CLASS = FlybodyJointDOF
-    AXIS_ORDER_CLASS = FlybodyAxisOrder
-    BASE_SKELETON_CLASS = FlybodySkeleton
-    CONTACT_BODIES_PRESET_CLASS = FlybodyContactBodiesPreset
+    BODY_SEGMENT_CLASS = FlyBodyBodySegment
+    JOINT_DOF_CLASS = FlyBodyJointDOF
+    AXIS_ORDER_CLASS = FlyBodyAxisOrder
+    BASE_SKELETON_CLASS = FlyBodySkeleton
+    CONTACT_BODIES_PRESET_CLASS = FlyBodyContactBodiesPreset
     LEG_LINKS = FLYBODY_LEG_LINKS
 
     def _all_possible_joint_preset(self):
-        return FlybodyJointPreset.ALL_POSSIBLE
+        return FlyBodyJointPreset.ALL_POSSIBLE
 
     def __init__(
         self,
@@ -122,7 +122,7 @@ class FlyBody(BaseFly):
         mujoco_globals_path: PathLike = FLYBODY_MUJOCO_GLOBALS_PATH,
         all_geom_suffixes_path: PathLike = FLYBODY_ALL_GEOM_SUFFIXES_PATH,
         mirror_left2right: bool = False,
-        root_segment: FlybodyBodySegment | str = "c_thorax",
+        root_segment: FlyBodyBodySegment | str = "c_thorax",
         mesh_type: MeshType = MeshType.FULLSIZE,
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
         joint_config_path: PathLike = FLYBODY_JOINT_CONFIG_PATH,
@@ -196,9 +196,9 @@ class FlyBody(BaseFly):
 
     def _is_pitch(self, jointdof):
         if jointdof.child.is_wing():
-            return jointdof.axis == WingFlybodyRotationAxis.PITCH
+            return jointdof.axis == WingFlyBodyRotationAxis.PITCH
         else:
-            return jointdof.axis == FlybodyRotationAxis.PITCH
+            return jointdof.axis == FlyBodyRotationAxis.PITCH
 
     @staticmethod
     def _coerce_mjcf_value(value: Any) -> Any:
@@ -710,7 +710,7 @@ class FlyBody(BaseFly):
         if len(self.leg_to_adhesionactuator) > 0:
             raise ValueError("Leg adhesion actuators have already been added.")
         for leg in LEGS:
-            tarsus5_segment = FlybodyBodySegment(f"{leg}_tarsus5")
+            tarsus5_segment = FlyBodyBodySegment(f"{leg}_tarsus5")
             if isinstance(gain, dict):
                 gain_this_leg = gain[leg]
             else:
@@ -724,7 +724,7 @@ class FlyBody(BaseFly):
             )
         if add_labrum:
             for s in "lr":
-                labrum = FlybodyBodySegment(f"{s}_labrum")
+                labrum = FlyBodyBodySegment(f"{s}_labrum")
                 self.leg_to_adhesionactuator[f"{s}_labrum"] = (
                     self.mjcf_root.actuator.add(
                         "adhesion",
@@ -755,15 +755,15 @@ class FlyBody(BaseFly):
             else:
                 return coef
 
-        abd_bodyseg = FlybodyBodySegment("c_abdomen1")
+        abd_bodyseg = FlyBodyBodySegment("c_abdomen1")
         if abd_bodyseg in self.skeleton.body_segments:
             tree = self.skeleton.get_tree()
-            for axis in [FlybodyRotationAxis.PITCH, FlybodyRotationAxis.YAW]:
+            for axis in [FlyBodyRotationAxis.PITCH, FlyBodyRotationAxis.YAW]:
                 tendon_name = f"abdomen_{axis.name.lower()}"
                 tendon = self.mjcf_root.tendon.add("fixed", name=tendon_name)
                 added_tendon = False
                 for parent, child in tree.dfs_edges(abd_bodyseg):
-                    joint = FlybodyJointDOF(parent=parent, child=child, axis=axis)
+                    joint = FlyBodyJointDOF(parent=parent, child=child, axis=axis)
                     tendon.add(
                         "joint",
                         joint=self.jointdof_to_mjcfjoint[joint],
@@ -778,7 +778,7 @@ class FlyBody(BaseFly):
             )
 
         for leg in LEGS:
-            tarsus_bodyseg = FlybodyBodySegment(f"{leg}_tarsus1")
+            tarsus_bodyseg = FlyBodyBodySegment(f"{leg}_tarsus1")
             if tarsus_bodyseg not in self.skeleton.body_segments:
                 warnings.warn(
                     f"{tarsus_bodyseg} not found in skeleton; "
@@ -820,9 +820,9 @@ class FlyBody(BaseFly):
         for jointdof, tendon in self.jointdof_to_mjcftendon.items():
             default_params = {}
             if "abdomen" in jointdof.name:
-                if jointdof.axis == FlybodyRotationAxis.PITCH:
+                if jointdof.axis == FlyBodyRotationAxis.PITCH:
                     default_params = {"ctrlrange": [-1.05, 0.7]}
-                elif jointdof.axis == FlybodyRotationAxis.YAW:
+                elif jointdof.axis == FlyBodyRotationAxis.YAW:
                     default_params = {"ctrlrange": [-0.7, 0.7]}
                 else:
                     warnings.warn(
@@ -866,7 +866,7 @@ class FlyBody(BaseFly):
         For that reason we position the wings bodies"
         """
         for side in ["l", "r"]:
-            wing_bodyseg = FlybodyBodySegment(f"{side}_wing")
+            wing_bodyseg = FlyBodyBodySegment(f"{side}_wing")
             if wing_bodyseg in self.bodyseg_to_mjcfbody:
                 mjcf_body = self.bodyseg_to_mjcfbody[wing_bodyseg]
                 bquat = R.from_quat(mjcf_body.quat, scalar_first=True)

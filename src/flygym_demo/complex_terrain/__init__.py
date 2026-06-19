@@ -7,7 +7,7 @@ from .common import (
     get_default_locomotion_dof_order,
     make_locomotion_fly,
 )
-from .preprogrammed import FlybodyPreprogrammedSteps, PreprogrammedSteps
+from .preprogrammed import FlyBodyPreprogrammedSteps, PreprogrammedSteps
 from .cpg_controller import (
     CPGController,
     CPGNetwork,
@@ -26,7 +26,7 @@ __all__ = [
     "get_default_locomotion_dof_order",
     "make_locomotion_fly",
     "PreprogrammedSteps",
-    "FlybodyPreprogrammedSteps",
+    "FlyBodyPreprogrammedSteps",
     "CPGController",
     "CPGNetwork",
     "calculate_ddt",

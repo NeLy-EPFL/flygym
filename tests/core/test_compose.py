@@ -12,7 +12,7 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.flybody.anatomy_flybody import FlybodyContactBodiesPreset
+from flygym.flybody.anatomy_flybody import FlyBodyContactBodiesPreset
 from flygym.compose.fly import (
     BaseFly,
     NeuroMechFly,
@@ -325,7 +325,7 @@ class TestFlatGroundWorld:
             fly,
             spawn_position=[0, 0, 1.5],
             spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
-            bodysegs_with_ground_contact=FlybodyContactBodiesPreset.LEGS_ONLY,
+            bodysegs_with_ground_contact=FlyBodyContactBodiesPreset.LEGS_ONLY,
             add_ground_contact_sensors=False,
         )
         assert fly.name in world.fly_lookup

@@ -1,4 +1,4 @@
-"""Flybody-specific anatomical definitions.
+"""FlyBody-specific anatomical definitions.
 
 This module extends the default anatomy types from ``flygym.anatomy``.
 """
@@ -33,22 +33,22 @@ from flygym.anatomy import (
 from flygym.utils.math import orderedset
 
 __all__ = [
-    "FlybodyRotationAxis",
-    "WingFlybodyRotationAxis",
-    "FlybodyAxesSet",
-    "FlybodyAxisOrder",
-    "WingFlybodyAxisOrder",
-    "FlybodyBodySegment",
-    "FlybodyJointPreset",
-    "FlybodyActuatedDOFPreset",
-    "FlybodyContactBodiesPreset",
-    "FlybodySkeleton",
-    "FlybodyJointDOF",
+    "FlyBodyRotationAxis",
+    "WingFlyBodyRotationAxis",
+    "FlyBodyAxesSet",
+    "FlyBodyAxisOrder",
+    "WingFlyBodyAxisOrder",
+    "FlyBodyBodySegment",
+    "FlyBodyJointPreset",
+    "FlyBodyActuatedDOFPreset",
+    "FlyBodyContactBodiesPreset",
+    "FlyBodySkeleton",
+    "FlyBodyJointDOF",
 ]
 
 
-class FlybodyRotationAxis(BaseRotationAxis):
-    """Flybody axis convention.
+class FlyBodyRotationAxis(BaseRotationAxis):
+    """FlyBody axis convention.
 
     yaw -> z, pitch -> x, roll -> y.
     """
@@ -69,10 +69,10 @@ class FlybodyRotationAxis(BaseRotationAxis):
         }
 
 
-class WingFlybodyRotationAxis(BaseRotationAxis):
-    """Flybody wing axis convention.
+class WingFlyBodyRotationAxis(BaseRotationAxis):
+    """FlyBody wing axis convention.
 
-    Same as Flybody except pitch/roll are swapped:
+    Same as FlyBody except pitch/roll are swapped:
     yaw -> z, pitch -> y, roll -> x.
     """
 
@@ -92,106 +92,106 @@ class WingFlybodyRotationAxis(BaseRotationAxis):
         }
 
 
-class FlybodyAxesSet(AxesSet):
-    """Set of rotation axes using Flybody's axis convention."""
+class FlyBodyAxesSet(AxesSet):
+    """Set of rotation axes using FlyBody's axis convention."""
 
-    rotation_axis_class = FlybodyRotationAxis
-
-
-class WingFlybodyAxesSet(AxesSet):
-    """Set of rotation axes for wings using WingFlybody's axis convention."""
-
-    rotation_axis_class = WingFlybodyRotationAxis
+    rotation_axis_class = FlyBodyRotationAxis
 
 
-class FlybodyAxisOrder(BaseAxisOrder, Enum):
-    """Axis order enum based on FlybodyRotationAxis."""
+class WingFlyBodyAxesSet(AxesSet):
+    """Set of rotation axes for wings using WingFlyBody's axis convention."""
+
+    rotation_axis_class = WingFlyBodyRotationAxis
+
+
+class FlyBodyAxisOrder(BaseAxisOrder, Enum):
+    """Axis order enum based on FlyBodyRotationAxis."""
 
     @classmethod
     def _axis_enum_cls(cls):
-        return FlybodyRotationAxis
+        return FlyBodyRotationAxis
 
     PITCH_ROLL_YAW = (
-        FlybodyRotationAxis.PITCH,
-        FlybodyRotationAxis.ROLL,
-        FlybodyRotationAxis.YAW,
+        FlyBodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.YAW,
     )
     PRY = PITCH_ROLL_YAW
     PITCH_YAW_ROLL = (
-        FlybodyRotationAxis.PITCH,
-        FlybodyRotationAxis.YAW,
-        FlybodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.YAW,
+        FlyBodyRotationAxis.ROLL,
     )
     PYR = PITCH_YAW_ROLL
     ROLL_PITCH_YAW = (
-        FlybodyRotationAxis.ROLL,
-        FlybodyRotationAxis.PITCH,
-        FlybodyRotationAxis.YAW,
+        FlyBodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.YAW,
     )
     RPY = ROLL_PITCH_YAW
     ROLL_YAW_PITCH = (
-        FlybodyRotationAxis.ROLL,
-        FlybodyRotationAxis.YAW,
-        FlybodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.YAW,
+        FlyBodyRotationAxis.PITCH,
     )
     RYP = ROLL_YAW_PITCH
     YAW_PITCH_ROLL = (
-        FlybodyRotationAxis.YAW,
-        FlybodyRotationAxis.PITCH,
-        FlybodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.YAW,
+        FlyBodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.ROLL,
     )
     YPR = YAW_PITCH_ROLL
     YAW_ROLL_PITCH = (
-        FlybodyRotationAxis.YAW,
-        FlybodyRotationAxis.ROLL,
-        FlybodyRotationAxis.PITCH,
+        FlyBodyRotationAxis.YAW,
+        FlyBodyRotationAxis.ROLL,
+        FlyBodyRotationAxis.PITCH,
     )
     YRP = YAW_ROLL_PITCH
 
     DONTCARE = PITCH_ROLL_YAW
 
 
-class WingFlybodyAxisOrder(BaseAxisOrder, Enum):
-    """Axis order enum based on WingFlybodyRotationAxis."""
+class WingFlyBodyAxisOrder(BaseAxisOrder, Enum):
+    """Axis order enum based on WingFlyBodyRotationAxis."""
 
     @classmethod
     def _axis_enum_cls(cls):
-        return WingFlybodyRotationAxis
+        return WingFlyBodyRotationAxis
 
     PITCH_ROLL_YAW = (
-        WingFlybodyRotationAxis.PITCH,
-        WingFlybodyRotationAxis.ROLL,
-        WingFlybodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.YAW,
     )
     PRY = PITCH_ROLL_YAW
     PITCH_YAW_ROLL = (
-        WingFlybodyRotationAxis.PITCH,
-        WingFlybodyRotationAxis.YAW,
-        WingFlybodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.ROLL,
     )
     PYR = PITCH_YAW_ROLL
     ROLL_PITCH_YAW = (
-        WingFlybodyRotationAxis.ROLL,
-        WingFlybodyRotationAxis.PITCH,
-        WingFlybodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.YAW,
     )
     RPY = ROLL_PITCH_YAW
     ROLL_YAW_PITCH = (
-        WingFlybodyRotationAxis.ROLL,
-        WingFlybodyRotationAxis.YAW,
-        WingFlybodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.PITCH,
     )
     RYP = ROLL_YAW_PITCH
     YAW_PITCH_ROLL = (
-        WingFlybodyRotationAxis.YAW,
-        WingFlybodyRotationAxis.PITCH,
-        WingFlybodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.ROLL,
     )
     YPR = YAW_PITCH_ROLL
     YAW_ROLL_PITCH = (
-        WingFlybodyRotationAxis.YAW,
-        WingFlybodyRotationAxis.ROLL,
-        WingFlybodyRotationAxis.PITCH,
+        WingFlyBodyRotationAxis.YAW,
+        WingFlyBodyRotationAxis.ROLL,
+        WingFlyBodyRotationAxis.PITCH,
     )
     YRP = YAW_ROLL_PITCH
 
@@ -229,8 +229,8 @@ FLYBODY_ALL_SEGMENT_NAMES: list[str] = orderedset(
 )
 
 
-class FlybodyBodySegment(BodySegment):
-    """Flybody-specific body segment class."""
+class FlyBodyBodySegment(BodySegment):
+    """FlyBody-specific body segment class."""
 
     def __post_init__(self):
         if self.name not in FLYBODY_ALL_SEGMENT_NAMES:
@@ -260,39 +260,39 @@ class FlybodyBodySegment(BodySegment):
         return self.link in FLYBODY_ABDOMEN_LINKS
 
 
-class FlybodyJointDOF(JointDOF):
+class FlyBodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""
 
     @classmethod
-    def from_name(cls, name: str) -> "FlybodyJointDOF":
-        """Create a FlybodyJointDOF from a name of the form 'parent-child-axis'."""
+    def from_name(cls, name: str) -> "FlyBodyJointDOF":
+        """Create a FlyBodyJointDOF from a name of the form 'parent-child-axis'."""
         try:
             parent, child, axis = name.split("-")
             # check if child is wing
-            bs_child = FlybodyBodySegment(child)
+            bs_child = FlyBodyBodySegment(child)
             return cls(
-                parent=FlybodyBodySegment(parent),
+                parent=FlyBodyBodySegment(parent),
                 child=bs_child,
-                axis=FlybodyRotationAxis(axis)
+                axis=FlyBodyRotationAxis(axis)
                 if not bs_child.is_wing()
-                else WingFlybodyRotationAxis(axis),
+                else WingFlyBodyRotationAxis(axis),
             )
         except ValueError:
             raise ValueError(f"Invalid joint DOF name: {name}. ")
 
 
-class FlybodyAnatomicalJoint(AnatomicalJoint):
+class FlyBodyAnatomicalJoint(AnatomicalJoint):
     """Anatomical joint specific to the flybody model."""
 
-    def iter_dofs(self, axis_order: AxisOrder) -> Iterator[FlybodyJointDOF]:
+    def iter_dofs(self, axis_order: AxisOrder) -> Iterator[FlyBodyJointDOF]:
         """Iterate through the DOFs of this joint in the specified axis order."""
         if self.child.is_wing():
-            wing_axis_order = WingFlybodyAxisOrder(
+            wing_axis_order = WingFlyBodyAxisOrder(
                 [axis.value for axis in axis_order.value]
             )
             for axis in wing_axis_order.value:
                 if axis in self.axes:
-                    yield FlybodyJointDOF(
+                    yield FlyBodyJointDOF(
                         parent=self.parent,
                         child=self.child,
                         axis=axis,
@@ -301,14 +301,14 @@ class FlybodyAnatomicalJoint(AnatomicalJoint):
 
         for axis in axis_order.value:
             if axis in self.axes:
-                yield FlybodyJointDOF(
+                yield FlyBodyJointDOF(
                     parent=self.parent,
                     child=self.child,
                     axis=axis,
                 )
 
 
-class FlybodyJointPreset(BaseJointPreset):
+class FlyBodyJointPreset(BaseJointPreset):
     ALL_POSSIBLE = "all_possible"
     ALL_BIOLOGICAL = "all_biological"
     LEGS_ONLY = "legs_only"
@@ -323,17 +323,17 @@ class FlybodyJointPreset(BaseJointPreset):
         return FLYBODY_PASSIVE_TARSAL_LINKS
 
     @classmethod
-    def _get_all_possible_joints(cls) -> list[FlybodyAnatomicalJoint]:
+    def _get_all_possible_joints(cls) -> list[FlyBodyAnatomicalJoint]:
         all_possible_joints = []
         for parent, child in cls._get_connected_segment_pairs():
-            parent_bs = FlybodyBodySegment(parent)
-            child_bs = FlybodyBodySegment(child)
+            parent_bs = FlyBodyBodySegment(parent)
+            child_bs = FlyBodyBodySegment(child)
             if child_bs.is_wing():
-                axes = WingFlybodyAxesSet(WingFlybodyRotationAxis)
+                axes = WingFlyBodyAxesSet(WingFlyBodyRotationAxis)
             else:
-                axes = FlybodyAxesSet(FlybodyRotationAxis)
+                axes = FlyBodyAxesSet(FlyBodyRotationAxis)
             all_possible_joints.append(
-                FlybodyAnatomicalJoint(
+                FlyBodyAnatomicalJoint(
                     parent=parent_bs,
                     child=child_bs,
                     axes=axes,
@@ -342,7 +342,7 @@ class FlybodyJointPreset(BaseJointPreset):
         return all_possible_joints
 
     @classmethod
-    def _get_all_biological_joints(cls) -> list[FlybodyAnatomicalJoint]:
+    def _get_all_biological_joints(cls) -> list[FlyBodyAnatomicalJoint]:
         joints = cls._get_all_possible_joints()
         for joint in joints:
             if joint.child.is_leg():
@@ -372,7 +372,7 @@ class FlybodyJointPreset(BaseJointPreset):
         return joints
 
 
-class FlybodyActuatedDOFPreset(BaseActuatedDOFPreset):
+class FlyBodyActuatedDOFPreset(BaseActuatedDOFPreset):
     """Presets for which flybody joint DoFs should be actuated."""
 
     ALL = "all"
@@ -384,7 +384,7 @@ class FlybodyActuatedDOFPreset(BaseActuatedDOFPreset):
         return FLYBODY_PASSIVE_TARSAL_LINKS
 
 
-class FlybodyContactBodiesPreset(BaseContactBodiesPreset):
+class FlyBodyContactBodiesPreset(BaseContactBodiesPreset):
     """Presets for flybody body segments that should be able to collide with the ground."""
 
     ALL = "all"
@@ -394,21 +394,21 @@ class FlybodyContactBodiesPreset(BaseContactBodiesPreset):
 
     @classmethod
     def _get_all_segments(cls):
-        return [FlybodyBodySegment(segname) for segname in FLYBODY_ALL_SEGMENT_NAMES]
+        return [FlyBodyBodySegment(segname) for segname in FLYBODY_ALL_SEGMENT_NAMES]
 
 
-class FlybodySkeleton(Skeleton):
+class FlyBodySkeleton(Skeleton):
     """Skeleton specific to the flybody model."""
 
     def __init__(
         self,
         *,
-        axis_order: FlybodyAxisOrder
-        | WingFlybodyAxisOrder
+        axis_order: FlyBodyAxisOrder
+        | WingFlyBodyAxisOrder
         | AxisOrder
-        | list[RotationAxis | FlybodyRotationAxis | WingFlybodyRotationAxis | str],
-        joint_preset: "FlybodyJointPreset | str | None" = None,
-        anatomical_joints: list[FlybodyAnatomicalJoint] | None = None,
+        | list[RotationAxis | FlyBodyRotationAxis | WingFlyBodyRotationAxis | str],
+        joint_preset: "FlyBodyJointPreset | str | None" = None,
+        anatomical_joints: list[FlyBodyAnatomicalJoint] | None = None,
     ) -> None:
         if not (joint_preset is None) ^ (anatomical_joints is None):
             raise ValueError(
@@ -417,7 +417,7 @@ class FlybodySkeleton(Skeleton):
             )
 
         if joint_preset is not None:
-            anatomical_joints = FlybodyJointPreset(joint_preset).to_joint_list()
+            anatomical_joints = FlyBodyJointPreset(joint_preset).to_joint_list()
         self.anatomical_joints = anatomical_joints
 
         self.joint_lookup = {(j.parent, j.child): j for j in anatomical_joints}
@@ -426,19 +426,19 @@ class FlybodySkeleton(Skeleton):
         )
         if isinstance(axis_order, AxisOrder):
             warnings.warn(
-                "Using a generic AxisOrder with FlybodySkeleton; "
-                "converting to FlybodyAxisOrder."
+                "Using a generic AxisOrder with FlyBodySkeleton; "
+                "converting to FlyBodyAxisOrder."
             )
             axis_order = axis_order.to_list_of_str()
-        self.axis_order = FlybodyAxisOrder(axis_order)
+        self.axis_order = FlyBodyAxisOrder(axis_order)
 
     def iter_jointdofs(
         self,
-        root: FlybodyBodySegment | str = "c_thorax",
-    ) -> Iterator[FlybodyJointDOF]:
+        root: FlyBodyBodySegment | str = "c_thorax",
+    ) -> Iterator[FlyBodyJointDOF]:
         """Iterate through joint DOFs in depth-first order starting from the root."""
         if isinstance(root, str):
-            root = FlybodyBodySegment(root)
+            root = FlyBodyBodySegment(root)
         tree = self.get_tree()
         for parent, child in tree.dfs_edges(root):
             anatomical_joint = self.joint_lookup[(parent, child)]
@@ -446,11 +446,11 @@ class FlybodySkeleton(Skeleton):
                 yield jointdof
 
     def get_actuated_dofs_from_preset(
-        self, preset: FlybodyActuatedDOFPreset | str
-    ) -> list[FlybodyJointDOF]:
+        self, preset: FlyBodyActuatedDOFPreset | str
+    ) -> list[FlyBodyJointDOF]:
         """Given a flybody preset of actuated DoFs, return an explicit list of joints."""
         if isinstance(preset, BaseActuatedDOFPreset):
-            preset = FlybodyActuatedDOFPreset(preset.value)
+            preset = FlyBodyActuatedDOFPreset(preset.value)
         else:
-            preset = FlybodyActuatedDOFPreset(preset)
+            preset = FlyBodyActuatedDOFPreset(preset)
         return preset.filter(list(self.iter_jointdofs()))

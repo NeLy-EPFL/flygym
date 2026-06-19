@@ -190,8 +190,8 @@ class PreprogrammedSteps:
         return self.default_pose_by_dof_order()
 
 
-class FlybodyPreprogrammedSteps(PreprogrammedSteps):
-    """Preprogrammed single-leg steps tailored to the Flybody anatomy.
+class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
+    """Preprogrammed single-leg steps tailored to the FlyBody anatomy.
 
     Provenance
     ----------

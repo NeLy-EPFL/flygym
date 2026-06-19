@@ -38,7 +38,7 @@ from tqdm import trange
 from flygym import Simulation
 from flygym.compose import ActuatorType
 from flygym.compose.fly import FlyBody
-from flygym.flybody import FlybodyBodySegment
+from flygym.flybody import FlyBodyBodySegment
 from flygym_demo.complex_terrain.preprogrammed import _DOFS_PER_LEG
 from flygym_demo.spotlight_data import MotionSnippet
 
@@ -84,7 +84,7 @@ def replay_clip(
     warmup_sec: float = WARMUP_SEC_DEFAULT,
     show_progress: bool = True,
 ) -> tuple[ReplayRecording, FlyBody, Simulation]:
-    """Replay the clip on a tethered Flybody and record claw + thorax kinematics.
+    """Replay the clip on a tethered FlyBody and record claw + thorax kinematics.
 
     The caller is responsible for building the fly + sim (so it can set up
     cameras, renderers, etc. to taste); we only drive the replay loop.
@@ -105,9 +105,9 @@ def replay_clip(
     zero_tendon = np.zeros(n_tendon, dtype=np.float32)
 
     body_order = fly.get_bodysegs_order()
-    thorax_idx = body_order.index(FlybodyBodySegment("c_thorax"))
+    thorax_idx = body_order.index(FlyBodyBodySegment("c_thorax"))
     claw_idx = np.array(
-        [body_order.index(FlybodyBodySegment(f"{leg}_tarsus5")) for leg in LEGS],
+        [body_order.index(FlyBodyBodySegment(f"{leg}_tarsus5")) for leg in LEGS],
         dtype=np.int64,
     )
 
@@ -341,7 +341,7 @@ def build_asset_from_selection(
         cycle_lengths[opposite_leg] = end - start
 
     description = (
-        "Three hand-picked steps (one per leg position) from a tethered Flybody "
+        "Three hand-picked steps (one per leg position) from a tethered FlyBody "
         "replay of the NeuroMechFly v1 walking-on-ball clip "
         f"({Path(recording.clip_path).name}, 100 frames @ 100 fps, anatomical-"
         "convention joint angles via SeqIKPy IK). Each pick supplies the chosen "
