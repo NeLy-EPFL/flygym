@@ -1467,6 +1467,7 @@ class FlyBody(BaseFly):
             raise ValueError("Tendon actuators have already been added, cannot add tendon actuators as MOTOR actuators are used for tendons in this implementation.")
 
         for jointdof, tendon in self.jointdof_to_mjcftendon.items():
+            default_params = {}
             if "abdomen" in jointdof.name:
                 if jointdof.axis == FlybodyRotationAxis.PITCH:
                     default_params = {
@@ -1476,10 +1477,14 @@ class FlyBody(BaseFly):
                     default_params = {
                         "ctrlrange": [-0.7, 0.7]
                     }
+                else:
+                    warnings.warn(f"No default ctrlrange for abdomen tendon joint {jointdof.name} with axis {jointdof.axis}; using no defaults.")
             elif "tarsus" in jointdof.name:
                 default_params = {
                     "ctrlrange": [-0.9, 0.9]
                 }
+            else:
+                warnings.warn(f"No default tendon actuator params for joint {jointdof.name}; using no defaults.")
 
             if jointdof.name in kwargs:
                 warnings.warn(f"Overriding default tendon actuator params for joint {jointdof.name} with kwargs.")
