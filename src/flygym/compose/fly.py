@@ -8,6 +8,7 @@ import mujoco as mj
 import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
+from scipy.spatial.transform import Rotation as R
 
 from flygym import assets_dir
 from flygym.anatomy import (
@@ -22,7 +23,7 @@ from flygym.anatomy import (
     ALL_SEGMENT_NAMES,
     LEGS,
     LEG_LINKS,
-    )
+)
 
 from flygym.flybody.anatomy_flybody import (
     FLYBODY_ALL_SEGMENT_NAMES,
@@ -212,7 +213,9 @@ class BaseFly(BaseCompositionElement):
         )
 
         self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
-        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option, vision_config_path)
+        self._add_bodies_and_geoms(
+            rigging_config_path, geom_fitting_option, vision_config_path
+        )
         self.vision_config_path = vision_config_path
 
     @override
@@ -249,7 +252,9 @@ class BaseFly(BaseCompositionElement):
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
 
-    def get_pose_lookup(self, neutral_pose: KinematicPose | KinematicPosePreset | None) -> dict[str, float]:
+    def get_pose_lookup(
+        self, neutral_pose: KinematicPose | KinematicPosePreset | None
+    ) -> dict[str, float]:
         """Get a lookup dictionary mapping joint DOF names to neutral angles for a given
         neutral pose."""
 
@@ -317,7 +322,6 @@ class BaseFly(BaseCompositionElement):
 
         self.skeleton = skeleton
         neutral_angle_lookup = self.get_pose_lookup(neutral_pose)
-
 
         return_dict = {}
         for jointdof in skeleton.iter_jointdofs(self.root_segment):
@@ -651,7 +655,9 @@ class BaseFly(BaseCompositionElement):
         return jointdof.axis == RotationAxis.PITCH
 
     def _add_bodies_and_geoms(
-        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption,
+        self,
+        rigging_config_path: PathLike,
+        geom_fitting_option: GeomFittingOption,
         vision_config_path: PathLike,
     ) -> None:
         # Load rigging config
@@ -699,7 +705,8 @@ class BaseFly(BaseCompositionElement):
             # occlusion. This makes the behavior of FlyGym less surprising to users who
             # wish to add their own renderers manually. We avoid group 1 because it's by
             # convention meant for mocap markers and helper geoms.
-            # Geom group is based on parent body segment name because it's more intuitive to specify the entire segment
+            # Geom group is based on parent body segment name because it's more
+            # intuitive to specify the entire segment.
             geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
 
             # Actually add the body and geom to the MJCF model
@@ -713,7 +720,8 @@ class BaseFly(BaseCompositionElement):
         for bodyseg, mjcf_elements in self.bodyseg_to_mjcfgeom.items():
             for mjcf_element in mjcf_elements:
                 if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
-                    bodyseg.is_claw() and geom_fitting_option == GeomFittingOption.CLAWS_TO_CAPSULES
+                    bodyseg.is_claw()
+                    and geom_fitting_option == GeomFittingOption.CLAWS_TO_CAPSULES
                 ):
                     mjcf_element.type = "capsule"
 
@@ -747,7 +755,9 @@ class BaseFly(BaseCompositionElement):
         visuals_config_path: PathLike,
     ) -> tuple[dict[str, dict], dict[BodySegment, dict]]:
         # Load visuals config and assign vis sets to geometry name
-        all_geom_names = [geom.name for geoms in self.bodyseg_to_mjcfgeom.values() for geom in geoms]
+        all_geom_names = [
+            geom.name for geoms in self.bodyseg_to_mjcfgeom.values() for geom in geoms
+        ]
         with open(visuals_config_path) as f:
             vis_set_params_all = yaml.safe_load(f)
         all_matches_by_geomname = {k: [] for k in all_geom_names}
@@ -859,13 +869,16 @@ class FlyBody(BaseFly):
         - default classes
         - different naming
         - different joint definitions
-        
+
     """
-    SCALE = 1.0  # The flybody XML is already in mm units, so no scaling is needed
-    # BUT in the original xml meshes are scaled by 0.1
-    # Therefore we need to adjust all other length-realteed quantities by 10 to keep units consitant.
-    # density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
-    # see parsing script
+
+    # The flybody XML is already in mm units, so no scaling is needed, BUT in the
+    # original xml meshes are scaled by 0.1. Therefore, we need to adjust all other
+    # length-realteed quantities by 10 to keep units consitant.
+    # density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10,
+    # biasprm*=10, etc. See parsing script.
+    SCALE = 1.0
+
     BODY_SEGMENT_CLASS = FlybodyBodySegment
     JOINT_DOF_CLASS = FlybodyJointDOF
     AXIS_ORDER_CLASS = FlybodyAxisOrder
@@ -875,7 +888,6 @@ class FlyBody(BaseFly):
 
     def _all_possible_joint_preset(self):
         return FlybodyJointPreset.ALL_POSSIBLE
-
 
     def __init__(
         self,
@@ -946,12 +958,16 @@ class FlyBody(BaseFly):
             resolved_params.update(per_joint_cfg)
 
         if not resolved_params:
-            warnings.warn(f"No parameters resolved for joint {joint_name} from joint config; using defaults.")
-            resolved_params = {"range": [-180, 180],
-                               "stiffness": 0.01,
-                               "damping": 0.0005,
-                               "limited": True,
-                               }
+            warnings.warn(
+                f"No parameters resolved for joint {joint_name} from joint config; "
+                "using defaults."
+            )
+            resolved_params = {
+                "range": [-180, 180],
+                "stiffness": 0.01,
+                "damping": 0.0005,
+                "limited": True,
+            }
         return resolved_params
 
     def _is_pitch(self, jointdof):
@@ -991,7 +1007,7 @@ class FlyBody(BaseFly):
         segment: BodySegment,
         my_rigging_config: dict[str, Any],
         geom_group: int,
-        ) -> tuple[mjcf.Element, mjcf.Element]:
+    ) -> tuple[mjcf.Element, mjcf.Element]:
 
         body_element = parent_body.add(
             "body",
@@ -1017,7 +1033,7 @@ class FlyBody(BaseFly):
 
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
-        ) -> None:
+    ) -> None:
 
         # Decide which folder to load mesh files from
         mesh_dir = mesh_basedir / mesh_type.value
@@ -1037,7 +1053,10 @@ class FlyBody(BaseFly):
                 if suffix:
                     mesh_name = f"{mesh_to_use}_{suffix}"
                 else:
-                    warnings.warn(f"No mesh suffix found for segment {mesh_to_use}; using segment name as mesh name.")
+                    warnings.warn(
+                        f"No mesh suffix found for segment {mesh_to_use}; "
+                        "using segment name as mesh name."
+                    )
                     mesh_name = mesh_to_use
                 mesh_path = (mesh_dir / f"{mesh_name}.obj").resolve()
                 if not mesh_path.exists():
@@ -1059,12 +1078,14 @@ class FlyBody(BaseFly):
                 else:
                     self.bodyseg_to_mjcfmesh[segment_name].append(mesh)
 
-        # add abdomen8 mesh (just a mesh connected to c_abdomen7)
-        self.bodyseg_to_mjcfmesh["c_abdomen7"].append(self.mjcf_root.asset.add(
-            "mesh",
-            name="c_abdomen8_body",
-            file=str(mesh_dir / "c_abdomen8_body.obj"),
-            scale=(self.SCALE, self.SCALE, self.SCALE))
+        # add abdomen8 mesh (just a mesh connected to c_abdomen7)
+        self.bodyseg_to_mjcfmesh["c_abdomen7"].append(
+            self.mjcf_root.asset.add(
+                "mesh",
+                name="c_abdomen8_body",
+                file=str(mesh_dir / "c_abdomen8_body.obj"),
+                scale=(self.SCALE, self.SCALE, self.SCALE),
+            )
         )
 
     def colorize(self, visuals_config_path=FLYBODY_VISUALS_CONFIG_PATH):
@@ -1088,8 +1109,8 @@ class FlyBody(BaseFly):
             neutral_pose:
                 Resting angles for joints. If provided, must match skeleton's axis
                 order. If not provided, all neutral angles default to 0.
-                Will be used to set the springref attribute of the joints, which defines the angle at
-                which the passive spring forces are zero.
+                Will be used to set the springref attribute of the joints, which defines
+                the angle at which the passive spring forces are zero.
             **kwargs:
                 Additional arguments passed to MJCF joint creation. See
                 `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
@@ -1107,17 +1128,19 @@ class FlyBody(BaseFly):
             child_body = self.bodyseg_to_mjcfbody[jointdof.child]
             joint_params = self._resolve_joint_params(jointdof.name)
 
-            joint_params.update({
-                "springref": neutral_pose_lookup.get(jointdof.name, 0.0)
-            })# override default springref with neutral pose value if provided
-            joint_params.update(kwargs) # override any joint config values with values provided in kwargs
+            # Override default springref with neutral pose value if provided
+            joint_params.update(
+                {"springref": neutral_pose_lookup.get(jointdof.name, 0.0)}
+            )
+            # Override any joint config values with values provided in kwargs
+            joint_params.update(kwargs)
             joint_params = self._normalize_mjcf_params(joint_params)
 
             return_dict[jointdof] = child_body.add(
                 "joint",
                 name=jointdof.name,
                 type="hinge",
-                axis = jointdof.axis.to_vector(),
+                axis=jointdof.axis.to_vector(),
                 **joint_params,
             )
 
@@ -1125,8 +1148,9 @@ class FlyBody(BaseFly):
         self._rebuild_neutral_keyframe()
         return return_dict
 
-    def translate_generalactparams_to_specificactparams(self, general_params: dict[str, Any],
-                                                         actuator_type: ActuatorType) -> dict[str, Any]:
+    def translate_generalactparams_to_specificactparams(
+        self, general_params: dict[str, Any], actuator_type: ActuatorType
+    ) -> dict[str, Any]:
         """Full gainprm/biasprm/dynprm -> kp/kv/timeconst translation.
 
         NOTE: This is currently dead code. `add_actuators` uses the simplified
@@ -1134,6 +1158,7 @@ class FlyBody(BaseFly):
         It is kept for now as the intended complete implementation. See #272 for
         details.
         """
+
         def _parse_param_values(raw_value: Any, name: str) -> list[float]:
             if isinstance(raw_value, str):
                 tokens = raw_value.split()
@@ -1151,25 +1176,38 @@ class FlyBody(BaseFly):
 
         specific_params = general_params.copy()
         if actuator_type == ActuatorType.POSITION:
-            # set kp and kv from gainprm, biasprm and dynprm as specified here: https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-position
+            # Set kp and kv from gainprm, biasprm and dynprm as specified here:
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-position
             if "gainprm" in general_params:
                 gainprm = general_params["gainprm"]
                 gainprm_parsed = _parse_param_values(gainprm, "gainprm")
                 kp = gainprm_parsed[0]
                 if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
-                    warnings.warn("gainprm has more than one value with non-zero entries after the first; only the first value is used as kp for position actuators (per MuJoCo docs).")
+                    warnings.warn(
+                        "gainprm has more than one value with non-zero entries after "
+                        "the first; only the first value is used as kp for position "
+                        "actuators (per MuJoCo docs)."
+                    )
             else:
                 kp = 1.0
             if "biasprm" in general_params:
                 biasprm = general_params["biasprm"]
                 biasprm_parsed = _parse_param_values(biasprm, "biasprm")
-                assert len(biasprm_parsed) >= 2 and biasprm_parsed[0] == 0.0 and biasprm_parsed[1] == -1*kp, "Conflicting kp: according to MuJoCo docs biasprm is [0, -kp, -kv]"
+                assert (
+                    len(biasprm_parsed) >= 2
+                    and biasprm_parsed[0] == 0.0
+                    and biasprm_parsed[1] == -1 * kp
+                ), "Conflicting kp: according to MuJoCo docs biasprm is [0, -kp, -kv]"
                 if len(biasprm_parsed) > 2:
                     kv = -biasprm_parsed[2]
                 else:
-                    kv = 0.0 # default for position according to mujoco
+                    kv = 0.0  # default for position according to mujoco
                 if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
-                    warnings.warn("biasprm has non-zero entries after the third; only the first three values are used as biasprm for position actuators (per MuJoCo docs).")
+                    warnings.warn(
+                        "biasprm has non-zero entries after the third; only the first "
+                        "three values are used as biasprm for position actuators "
+                        "(per MuJoCo docs)."
+                    )
             else:
                 kv = 0.0
             if "dynprm" in general_params:
@@ -1177,55 +1215,87 @@ class FlyBody(BaseFly):
                 dynprm_parsed = _parse_param_values(dynprm, "dynprm")
                 timeconst = dynprm_parsed[0]
                 if len(dynprm_parsed) > 1 and np.sum(dynprm_parsed[1:]) != 0:
-                    warnings.warn("dynprm has non-zero entries after the first; only the first value is used as timeconst for position actuators (per MuJoCo docs).")
+                    warnings.warn(
+                        "dynprm has non-zero entries after the first; only the first "
+                        "value is used as timeconst for position actuators "
+                        "(per MuJoCo docs)."
+                    )
             else:
-                timeconst = 1.0 # default for general according to mujoco
+                timeconst = 1.0  # default for general according to mujoco
             specific_params = {
                 "kp": kp,
                 "kv": kv,
                 "timeconst": timeconst,
             }
         elif actuator_type == ActuatorType.VELOCITY:
-            # Setting parameters values according to https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-velocity
+            # Setting parameters values according to
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-velocity
             if "gainprm" in general_params:
                 gainprm = general_params["gainprm"]
                 gainprm_parsed = _parse_param_values(gainprm, "gainprm")
                 kv = gainprm_parsed[0]
                 if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
-                    warnings.warn("gainprm has non-zero entries after the first; only the first value is used as kv for velocity actuators (per MuJoCo docs).")
+                    warnings.warn(
+                        "gainprm has non-zero entries after the first; only the first "
+                        "value is used as kv for velocity actuators (per MuJoCo docs)."
+                    )
             else:
                 kv = 1.0
             if "biasprm" in general_params:
                 biasprm = general_params["biasprm"]
                 biasprm_parsed = _parse_param_values(biasprm, "biasprm")
-                assert len(biasprm_parsed) >= 3 and biasprm_parsed[0] == 0.0 and biasprm_parsed[1] == 0.0 and biasprm_parsed[2] == -1*kv, "Conflicting kvs: according to MuJoCo docs biasprm is [0, 0, -kv]"
+                assert (
+                    len(biasprm_parsed) >= 3
+                    and biasprm_parsed[0] == 0.0
+                    and biasprm_parsed[1] == 0.0
+                    and biasprm_parsed[2] == -1 * kv
+                ), "Conflicting kvs: according to MuJoCo docs biasprm is [0, 0, -kv]"
                 if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
-                    warnings.warn("biasprm has non-zero entries after the fourth; only the first four values are used as biasprm for velocity actuators (per MuJoCo docs).")
+                    warnings.warn(
+                        "biasprm has non-zero entries after the fourth; only the first "
+                        "four values are used as biasprm for velocity actuators "
+                        "(per MuJoCo docs)."
+                    )
             if "dynprm" in general_params:
-                warnings.warn("dynprm is not used for velocity actuators (per MuJoCo docs); ignoring the dynprm values from the general actuator config.")
+                warnings.warn(
+                    "dynprm is not used for velocity actuators (per MuJoCo docs); "
+                    "ignoring the dynprm values from the general actuator config."
+                )
             specific_params = {
                 "kv": kv,
             }
         elif actuator_type == ActuatorType.MOTOR:
-            # Setting parameters values according to https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-motor
+            # Setting parameters values according to
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-motor
             if "gainprm" in general_params:
-                warnings.warn("Ignoring default gainprm: it is not used by classical motor actuators (per MuJoCo docs).")
+                warnings.warn(
+                    "Ignoring default gainprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
             if "biasprm" in general_params:
-                warnings.warn("Ignoring default biasprm: it is not used by classical motor actuators (per MuJoCo docs).")
+                warnings.warn(
+                    "Ignoring default biasprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
             if "dynprm" in general_params:
-                warnings.warn("Ignoring default dynprm: it is not used by classical motor actuators (per MuJoCo docs).")
+                warnings.warn(
+                    "Ignoring default dynprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
             specific_params = {}
         else:
             raise ValueError(f"Unsupported actuator type: {actuator_type}")
 
         for params in ["gainprm", "biasprm", "dynprm"]:
             if params in specific_params:
-                # remove them from specific params
+                # remove them from specific params
                 specific_params.pop(params)
 
         return specific_params
 
-    def translate_generaljointparams_to_specificjointparams_simplified(self, general_params: dict[str, Any], actuator_type: ActuatorType) -> dict[str, Any]:
+    def translate_generaljointparams_to_specificjointparams_simplified(
+        self, general_params: dict[str, Any], actuator_type: ActuatorType
+    ) -> dict[str, Any]:
         if actuator_type == ActuatorType.POSITION:
             # gainprm comes from YAML as a string (e.g. '30') or list of strings;
             # coerce to a numeric type and use the first entry as kp (per MuJoCo,
@@ -1293,11 +1363,20 @@ class FlyBody(BaseFly):
             neutral_input = {} if neutral_input is None else neutral_input
 
         remove_ctrl_limits = False
-        if (actuator_type == ActuatorType.MOTOR or actuator_type == ActuatorType.VELOCITY):
-            warnings.warn("Setting ctrllimited=False for MOTOR and VELOCITY actuators; flybody ctrl limits are meant for POSITION actuators.")
+        if (
+            actuator_type == ActuatorType.MOTOR
+            or actuator_type == ActuatorType.VELOCITY
+        ):
+            warnings.warn(
+                "Setting ctrllimited=False for MOTOR and VELOCITY actuators; "
+                "flybody ctrl limits are meant for POSITION actuators."
+            )
             remove_ctrl_limits = True
             if not forcelimited:
-                warnings.warn("Without ctrl limits, MOTOR and VELOCITY actuators can generate extreme forces; consider setting forcelimited=True for stability.")
+                warnings.warn(
+                    "Without ctrl limits, MOTOR and VELOCITY actuators can generate "
+                    "extreme forces; consider setting forcelimited=True for stability."
+                )
 
         return_dict = {}
         for jointdof in jointdofs:
@@ -1313,14 +1392,21 @@ class FlyBody(BaseFly):
             if not default_actuator_params:
                 warnings.warn(f"No actuator config found for joint {jointdof.name}.")
 
-            default_actuator_params_specific = self.translate_generaljointparams_to_specificjointparams_simplified(default_actuator_params, actuator_type)
+            default_actuator_params_specific = (
+                self.translate_generaljointparams_to_specificjointparams_simplified(
+                    default_actuator_params, actuator_type
+                )
+            )
 
             if remove_ctrl_limits:
                 default_actuator_params_specific["ctrllimited"] = False
             else:
                 # recover ctrllimits from joint limits
                 jnt = self.jointdof_to_mjcfjoint[jointdof]
-                assert jnt.range is not None, f"Joint {jointdof.name} must have range specified in order to use default ctrlrange for its actuator."
+                assert jnt.range is not None, (
+                    f"Joint {jointdof.name} must have range specified in order to use "
+                    "default ctrlrange for its actuator."
+                )
                 default_actuator_params_specific["ctrlrange"] = jnt.range
 
             if forcelimited:
@@ -1332,9 +1418,13 @@ class FlyBody(BaseFly):
                 has_kv = "kv" in kwargs
                 warning_str = "WARNING: actuator type is POSITION but "
                 has_missing_param = False
-                for param, has_it in [("kp", has_kp)]:#, ("kv", has_kv), ("timeconst", has_timeconst)]:
+                for param, has_it in [
+                    ("kp", has_kp)
+                ]:  # , ("kv", has_kv), ("timeconst", has_timeconst)]:
                     if not has_it:
-                        warning_str += f"{param} not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
+                        warning_str += f"{param} not specified, using default value "
+                        "from general actuator config if specified there, otherwise "
+                        "using MuJoCo default. "
                         has_missing_param = True
                 if has_missing_param:
                     warnings.warn(warning_str)
@@ -1343,7 +1433,10 @@ class FlyBody(BaseFly):
                 has_kv = "kv" in kwargs
                 warning_str = "WARNING: actuator type is VELOCITY but "
                 if not has_kv:
-                    warning_str += "kv not specified, using default value from general actuator config if specified there, otherwise using MuJoCo default. "
+                    warning_str += (
+                        "kv not specified, using default value from general actuator "
+                        "config if specified there, otherwise using MuJoCo default."
+                    )
                     warnings.warn(warning_str)
 
             default_actuator_params_specific.update(kwargs)
@@ -1360,11 +1453,12 @@ class FlyBody(BaseFly):
         self._rebuild_neutral_keyframe()
         return return_dict
 
-
     def add_leg_adhesion(
-        self, gain: float | dict[str, float] = 0.985, add_labrum: bool = True,
-        labrum_gain: float = 1.0
-        ) -> dict[str, mjcf.Element]:
+        self,
+        gain: float | dict[str, float] = 0.985,
+        add_labrum: bool = True,
+        labrum_gain: float = 1.0,
+    ) -> dict[str, mjcf.Element]:
         """Add adhesion actuators to the tarsus5 segments of all legs and optionally to the labrum.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
@@ -1400,25 +1494,31 @@ class FlyBody(BaseFly):
         if add_labrum:
             for s in "lr":
                 labrum = FlybodyBodySegment(f"{s}_labrum")
-                self.leg_to_adhesionactuator[f"{s}_labrum"] = self.mjcf_root.actuator.add(
-                    "adhesion",
-                    name=f"{labrum.name}-adhesion",
-                    body=self.bodyseg_to_mjcfbody[labrum],
-                    gain=labrum_gain,
-                    ctrlrange=(0, 1),
+                self.leg_to_adhesionactuator[f"{s}_labrum"] = (
+                    self.mjcf_root.actuator.add(
+                        "adhesion",
+                        name=f"{labrum.name}-adhesion",
+                        body=self.bodyseg_to_mjcfbody[labrum],
+                        gain=labrum_gain,
+                        ctrlrange=(0, 1),
+                    )
                 )
         return self.leg_to_adhesionactuator
 
-    def add_tendons(self, coef: float| dict[str, float]| None = None) -> dict[JointDOF, mjcf.Element]:
+    def add_tendons(
+        self, coef: float | dict[str, float] | None = None
+    ) -> dict[JointDOF, mjcf.Element]:
         # check joints have been added
         if len(self.jointdof_to_mjcfjoint) == 0:
-            raise ValueError("Must first add joints via `add_joints` before adding tendons.")
+            raise ValueError(
+                "Must first add joints via `add_joints` before adding tendons."
+            )
         if len(self.jointdof_to_mjcftendon) > 0:
             raise ValueError("Tendons have already been added.")
 
         def get_coef_for_joint(joint: JointDOF) -> float:
             if coef is None or (isinstance(coef, dict) and joint.name not in coef):
-                return 1.0 # default in flybody
+                return 1.0  # default in flybody
             elif isinstance(coef, dict):
                 return coef[joint.name]
             else:
@@ -1432,104 +1532,123 @@ class FlyBody(BaseFly):
                 tendon = self.mjcf_root.tendon.add("fixed", name=tendon_name)
                 added_tendon = False
                 for parent, child in tree.dfs_edges(abd_bodyseg):
-                        joint = FlybodyJointDOF(parent=parent, child=child, axis=axis)
-                        tendon.add("joint",
-                                    joint=self.jointdof_to_mjcfjoint[joint],
-                                    coef=get_coef_for_joint(joint)
-                                    )
-                        if not added_tendon:
-                            self.jointdof_to_mjcftendon[joint] = tendon
-                            added_tendon = True
+                    joint = FlybodyJointDOF(parent=parent, child=child, axis=axis)
+                    tendon.add(
+                        "joint",
+                        joint=self.jointdof_to_mjcfjoint[joint],
+                        coef=get_coef_for_joint(joint),
+                    )
+                    if not added_tendon:
+                        self.jointdof_to_mjcftendon[joint] = tendon
+                        added_tendon = True
         else:
-            warnings.warn("abdomen1 not found in skeleton; skipping abdomen tendon creation.")
+            warnings.warn(
+                "abdomen1 not found in skeleton; skipping abdomen tendon creation."
+            )
 
         for leg in LEGS:
             tarsus_bodyseg = FlybodyBodySegment(f"{leg}_tarsus1")
             if tarsus_bodyseg not in self.skeleton.body_segments:
-                warnings.warn(f"{tarsus_bodyseg} not found in skeleton; skipping tendon creation for it.")
+                warnings.warn(
+                    f"{tarsus_bodyseg} not found in skeleton; "
+                    "skipping tendon creation for it."
+                )
                 continue
             else:
                 joints = self.skeleton.iter_jointdofs(tarsus_bodyseg)
                 first_joint = next(joints)
                 tendon_name = f"{leg}_tarsus"
-                tendon = self.mjcf_root.tendon.add("fixed",
-                                                    name=tendon_name)
+                tendon = self.mjcf_root.tendon.add("fixed", name=tendon_name)
                 self.jointdof_to_mjcftendon[first_joint] = tendon
                 coef_to_use = get_coef_for_joint(first_joint)
-                tendon.add("joint",
-                            joint=self.jointdof_to_mjcfjoint[first_joint],
-                            coef=coef_to_use
-                            )
+                tendon.add(
+                    "joint",
+                    joint=self.jointdof_to_mjcfjoint[first_joint],
+                    coef=coef_to_use,
+                )
                 for joint in joints:
                     coef_to_use = get_coef_for_joint(joint)
-                    tendon.add("joint",
-                                joint=self.jointdof_to_mjcfjoint[joint],
-                                coef=coef_to_use
-                                )
+                    tendon.add(
+                        "joint",
+                        joint=self.jointdof_to_mjcfjoint[joint],
+                        coef=coef_to_use,
+                    )
 
     def add_tendon_actuators(self, **kwargs: Any) -> dict[JointDOF, mjcf.Element]:
         if len(self.jointdof_to_mjcftendon) == 0:
-            raise ValueError("Must first add tendons via `add_tendons` before adding tendon actuators.")
+            raise ValueError(
+                "Must first add tendons via `add_tendons` "
+                "before adding tendon actuators."
+            )
         if len(self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]) > 0:
-            raise ValueError("Tendon actuators have already been added, cannot add tendon actuators as MOTOR actuators are used for tendons in this implementation.")
+            raise ValueError(
+                "Tendon actuators have already been added, cannot add tendon actuators "
+                "as MOTOR actuators are used for tendons in this implementation."
+            )
 
         for jointdof, tendon in self.jointdof_to_mjcftendon.items():
             default_params = {}
             if "abdomen" in jointdof.name:
                 if jointdof.axis == FlybodyRotationAxis.PITCH:
-                    default_params = {
-                        "ctrlrange": [-1.05, 0.7]
-                    }
+                    default_params = {"ctrlrange": [-1.05, 0.7]}
                 elif jointdof.axis == FlybodyRotationAxis.YAW:
-                    default_params = {
-                        "ctrlrange": [-0.7, 0.7]
-                    }
+                    default_params = {"ctrlrange": [-0.7, 0.7]}
                 else:
-                    warnings.warn(f"No default ctrlrange for abdomen tendon joint {jointdof.name} with axis {jointdof.axis}; using no defaults.")
+                    warnings.warn(
+                        "No default ctrlrange for abdomen tendon joint "
+                        f"{jointdof.name} with axis {jointdof.axis}; using no defaults."
+                    )
             elif "tarsus" in jointdof.name:
-                default_params = {
-                    "ctrlrange": [-0.9, 0.9]
-                }
+                default_params = {"ctrlrange": [-0.9, 0.9]}
             else:
-                warnings.warn(f"No default tendon actuator params for joint {jointdof.name}; using no defaults.")
+                warnings.warn(
+                    f"No default tendon actuator params for joint {jointdof.name}; "
+                    "using no defaults."
+                )
 
             if jointdof.name in kwargs:
-                warnings.warn(f"Overriding default tendon actuator params for joint {jointdof.name} with kwargs.")
+                warnings.warn(
+                    "Overriding default tendon actuator params for "
+                    f"joint {jointdof.name} with kwargs."
+                )
                 default_params.update(kwargs[jointdof.name])
             else:
                 default_params.update(kwargs)
 
             actuator = self.mjcf_root.actuator.add(
-                "general",
-                name=f"{tendon.name}-tendon",
-                tendon=tendon,
-                **default_params
+                "general", name=f"{tendon.name}-tendon", tendon=tendon, **default_params
             )
 
-            self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON][jointdof] = actuator
+            self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON][jointdof] = (
+                actuator
+            )
             self.jointdof_to_neutralaction_by_type[ActuatorType.TENDON][jointdof] = 0.0
 
         return self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]
 
     def _correct_wing_default_pose(self) -> None:
         """
-            In flybody the wings are put in place by the spring property of the joint
-            As they use general actuators an input of 0 means no forces leading to the wings
-            going to their default pose. For us with position actuators, this does not happen.
+        In flybody the wings are put in place by the spring property of the joint
+        As they use general actuators an input of 0 means no forces leading to the wings
+        going to their default pose. With position actuators, this does not happen.
 
-            For that reason we position the wings bodies"
+        For that reason we position the wings bodies"
         """
-        from scipy.spatial.transform import Rotation as R
         for side in ["l", "r"]:
             wing_bodyseg = FlybodyBodySegment(f"{side}_wing")
             if wing_bodyseg in self.bodyseg_to_mjcfbody:
                 mjcf_body = self.bodyseg_to_mjcfbody[wing_bodyseg]
                 bquat = R.from_quat(mjcf_body.quat, scalar_first=True)
-                correction_quat = R.from_euler("xyz", [0, 0, -90 if side == "r" else 90], degrees=True)
+                correction_quat = R.from_euler(
+                    "xyz", [0, 0, -90 if side == "r" else 90], degrees=True
+                )
                 new_quat = (correction_quat * bquat).as_quat(scalar_first=True)
                 mjcf_body.quat = tuple(new_quat)
             else:
-                raise ValueError(f"Expected wing body segment {wing_bodyseg} not found in model, cannot apply wing default pose correction.")
+                raise ValueError(
+                    f"Expected wing body segment {wing_bodyseg} not found in model, "
+                    "cannot apply wing default pose correction."
+                )
 
 
 class Fly(NeuroMechFly):

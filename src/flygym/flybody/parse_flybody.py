@@ -15,8 +15,9 @@ units_mapping = {
     "biasprm": 10,
 }
 
-side_mapping = {"left":"l", "right":"r"}
-leg_mapping = {"T1":"f", "T2":"m", "T3":"h"}
+side_mapping = {"left": "l", "right": "r"}
+leg_mapping = {"T1": "f", "T2": "m", "T3": "h"}
+
 
 def map_flybody_bname_to_flygym_bname(bname):
     s_bname = bname.split("_")
@@ -57,7 +58,11 @@ def map_flybody_bname_to_flygym_bname(bname):
                 flygym_side = side_mapping[s_bname[3]]
                 flygym_leg = leg_mapping[s_bname[2]]
                 return f"{flygym_side}{flygym_leg}_tarsus5"
-            elif s_bname[1] in leg_mapping and s_bname[2].isdigit() and s_bname[3] in side_mapping:
+            elif (
+                s_bname[1] in leg_mapping
+                and s_bname[2].isdigit()
+                and s_bname[3] in side_mapping
+            ):
                 flygym_side = side_mapping[s_bname[3]]
                 flygym_leg = leg_mapping[s_bname[1]]
                 return f"{flygym_side}{flygym_leg}_{s_bname[0]}{s_bname[2]}"
@@ -136,16 +141,20 @@ def _write_yaml_file(path, data):
 
 
 def _is_excluded_geom(geom_name):
-    return (
-        "collision" in geom_name
-        or "fluid" in geom_name
-        or "inertial" in geom_name
-    )
+    return "collision" in geom_name or "fluid" in geom_name or "inertial" in geom_name
 
 
 meshes_suffixes = [
-    "collision", "collision2", "black", "red", "ocelli",
-    "bristle-brown", "lower", "membrane", "brown", "body"
+    "collision",
+    "collision2",
+    "black",
+    "red",
+    "ocelli",
+    "bristle-brown",
+    "lower",
+    "membrane",
+    "brown",
+    "body",
 ]
 
 
@@ -171,8 +180,7 @@ def collect_segment_suffixes(mesh_names):
         all_segment_suffixes.setdefault(flygym_name, set()).add(full_suffix)
 
     return {
-        segment: sorted(suffixes)
-        for segment, suffixes in all_segment_suffixes.items()
+        segment: sorted(suffixes) for segment, suffixes in all_segment_suffixes.items()
     }
 
 
@@ -191,7 +199,9 @@ def parse_xml_to_rig(xml_path, yaml_path):
             resolved_geom_defaults.update(default_lookup["__root__"].get("geom", {}))
 
         if body_childclass in default_lookup:
-            resolved_geom_defaults.update(default_lookup[body_childclass].get("geom", {}))
+            resolved_geom_defaults.update(
+                default_lookup[body_childclass].get("geom", {})
+            )
 
         if geom_class in default_lookup:
             resolved_geom_defaults.update(default_lookup[geom_class].get("geom", {}))
@@ -218,9 +228,8 @@ def parse_xml_to_rig(xml_path, yaml_path):
         selected_data["geoms"] = {}
 
         for child_geom in body.findall("geom"):
-
             if _is_excluded_geom(child_geom.get("name")):
-                # We want collision to happen with real geom not capsules
+                # We want collision to happen with real geom not capsules
                 # We do not care about flight
                 continue
 
@@ -240,14 +249,16 @@ def parse_xml_to_rig(xml_path, yaml_path):
                 if k == "mesh":
                     geom_selected_data[k] = translate_mesh_name(v)
                 elif k == "name" or k == "material" or "class" in k:
-                    # name is in the yaml as the key
+                    # name is in the yaml as the key
                     continue
                 else:
                     geom_selected_data[k] = _parse_and_scale_attr(k, v)
 
             geom_name = child_geom.get("mesh") or ""
             is_wing_brown = body_childclass == "wing" and geom_name.endswith("_brown")
-            is_wing_membrane = body_childclass == "wing" and geom_name.endswith("_membrane")
+            is_wing_membrane = body_childclass == "wing" and geom_name.endswith(
+                "_membrane"
+            )
 
             if is_wing_membrane and wing_inertial_mass is not None:
                 # Keep inertial geoms out of rigging while transferring their mass.
@@ -283,16 +294,18 @@ def parse_xml_to_rig(xml_path, yaml_path):
     all_geom_suffixes = collect_segment_suffixes(all_geom_mesh_names)
     _write_yaml_file(yaml_path.with_name("all_geom_suffixes.yaml"), all_geom_suffixes)
 
+
 def translate_mesh_name(mesh_name):
     bname, full_suffix = _extract_mesh_base_and_suffix(mesh_name)
     flygym_name = map_flybody_bname_to_flygym_bname(bname)
     new_mesh_name = f"{flygym_name}_{full_suffix}" if full_suffix else flygym_name
     return new_mesh_name
 
+
 def parse_meshes(flybody_mesh_dir, mesh_dir):
     flybody_mesh_dir = Path(flybody_mesh_dir)
     mesh_dir = Path(mesh_dir)
-    # remove all existing meshes in the target directory
+    # remove all existing meshes in the target directory
     for existing_mesh in mesh_dir.glob("*.obj"):
         existing_mesh.unlink()
     for mesh_path in flybody_mesh_dir.glob("*.obj"):
@@ -305,11 +318,12 @@ def parse_meshes(flybody_mesh_dir, mesh_dir):
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_bytes(mesh_path.read_bytes())
 
+
 def parse_visuals(xml_path, yaml_path):
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
-    # retrieve all materials with parameters
+    # retrieve all materials with parameters
     parsed_visuals = {}
     for material in root.findall("asset/material"):
         material_name = material.get("name")
@@ -460,13 +474,12 @@ def _clean_actuator_tag_config(tag, tag_cfg, ignore_ctrlrange):
 
 
 def _scale_actuator_tag_config(tag_cfg):
-    return {
-        key: _parse_and_scale_attr(key, value)
-        for key, value in tag_cfg.items()
-    }
+    return {key: _parse_and_scale_attr(key, value) for key, value in tag_cfg.items()}
 
 
-def _has_meaningful_local_actuation(class_name, hierarchy, actuator_tags, ignore_ctrlrange):
+def _has_meaningful_local_actuation(
+    class_name, hierarchy, actuator_tags, ignore_ctrlrange
+):
     class_info = hierarchy.get(class_name, {})
     local_params = class_info.get("local", {})
     for tag in actuator_tags:
@@ -478,7 +491,9 @@ def _has_meaningful_local_actuation(class_name, hierarchy, actuator_tags, ignore
     return False
 
 
-def _resolve_representative_class(class_name, hierarchy, actuator_tags, ignore_ctrlrange):
+def _resolve_representative_class(
+    class_name, hierarchy, actuator_tags, ignore_ctrlrange
+):
     """Map a class to the nearest ancestor with meaningful actuator defaults."""
     current = class_name
     while current is not None:
@@ -598,6 +613,7 @@ def parse_actuators(xml_path, yaml_path, ignore_ctrlrange=True, merge_equivalent
 
     _write_yaml_file(yaml_path, parsed)
 
+
 def get_flygym_jointname(parent_body, child_body, joint):
     parent_flygym_bn = map_flybody_bname_to_flygym_bname(parent_body.get("name"))
     child_flygym_bn = map_flybody_bname_to_flygym_bname(child_body.get("name"))
@@ -619,11 +635,23 @@ def get_flygym_jointname(parent_body, child_body, joint):
         # a^get axis and assert 1 0 0
         axis = joint.get("axis")
         if axis is not None:
-            assert axis == "1 0 0", f"Expected joint axis '1 0 0' for default dof inference, got '{axis}' for joint '{joint_name}' between '{parent_body.get('name')}' and '{child_body.get('name')}'. Please specify a dof explicitly in the XML or ensure the axis is correct for inference."
+            assert axis == "1 0 0", (
+                f"Expected joint axis '1 0 0' for default dof inference, "
+                f"got '{axis}' for joint '{joint_name}' between "
+                f"'{parent_body.get('name')}' and '{child_body.get('name')}'. "
+                f"Please specify a dof explicitly in the XML or ensure the axis is "
+                "correct for inference."
+            )
         else:
-            warnings.warn(f"No axis specified for joint '{joint_name}' between '{parent_body.get('name')}' and '{child_body.get('name')}'. Defaulting to '1 0 0' for pitch dof inference; verify the axis is '1 0 0' in the defaults.")
+            warnings.warn(
+                f"No axis specified for joint '{joint_name}' between "
+                f"'{parent_body.get('name')}' and '{child_body.get('name')}'. "
+                "Defaulting to '1 0 0' for pitch dof inference; "
+                "verify the axis is '1 0 0' in the defaults."
+            )
     flygym_jointname = f"{parent_flygym_bn}-{child_flygym_bn}-{dof}"
     return flygym_jointname
+
 
 def add_class_params(default_lookup, tag, class_name, accumulated_params):
     class_params = default_lookup.get(class_name)
@@ -656,7 +684,9 @@ def recursive_accumulation_joint_params(
                 )
             # 3. Finally, apply explicit joint attributes. This ensures they have
             # highest priority and overwrite class defaults.
-            selected_joint_attribs = {k: v for k, v in joint.attrib.items() if k not in ["name", "class"]}
+            selected_joint_attribs = {
+                k: v for k, v in joint.attrib.items() if k not in ["name", "class"]
+            }
             selected_joint_attribs = {
                 k: _split_whitespace_to_list(v)
                 for k, v in selected_joint_attribs.items()
@@ -730,7 +760,7 @@ def parse_joints(xml_path, joint_yaml_path, pose_yaml_path, kin_order):
     neutral_pose_parsed = {
         "angle_unit": "radian",
         "axis_order": kin_order.split("_"),
-        "joint_angles": {}
+        "joint_angles": {},
     }
     for joint_name, joint_params in all_joints_parsed.items():
         if "springref" in joint_params:
@@ -744,6 +774,7 @@ def parse_joints(xml_path, joint_yaml_path, pose_yaml_path, kin_order):
 
     return
 
+
 def parse_globals(xml_path, yaml_path):
     tree = ET.parse(xml_path)
     root = tree.getroot()
@@ -752,8 +783,7 @@ def parse_globals(xml_path, yaml_path):
         element = root.find(tag)
         if element is not None:
             parsed_globals[tag] = {
-                k: _split_whitespace_to_list(v)
-                for k, v in element.attrib.items()
+                k: _split_whitespace_to_list(v) for k, v in element.attrib.items()
             }
 
     parsed_globals["compiler"]["fusestatic"] = "true"
@@ -771,6 +801,7 @@ def parse_globals(xml_path, yaml_path):
     }
 
     _write_yaml_file(yaml_path, parsed_globals)
+
 
 if __name__ == "__main__":
     out_dir = Path("src/flygym/assets/model/flybody")
@@ -801,7 +832,8 @@ if __name__ == "__main__":
         "joint_angles": {
             "c_thorax-l_wing-yaw": 1.5,
             "c_thorax-l_wing-roll": 0.7,
-            "c_thorax-l_wing-pitch": -1.0,}
+            "c_thorax-l_wing-pitch": -1.0,
+        },
     }
     _write_yaml_file(neutral_pose_path, neutral_pose_parsed)
 

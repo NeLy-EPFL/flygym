@@ -22,7 +22,7 @@ from flygym.flybody import (
     FlybodyAxisOrder,
     FlybodyJointPreset,
     FlybodySkeleton,
-    FlybodyBodySegment
+    FlybodyBodySegment,
 )
 from flygym.simulation import Simulation
 from flygym.utils.math import Rotation3D
@@ -38,7 +38,8 @@ from flygym.vision.retina import Retina
 def vision_config():
     with open(assets_dir / "model/neuromechfly/vision.yaml") as f:
         return yaml.safe_load(f)
-    
+
+
 @pytest.fixture(scope="module")
 def flybody_vision_config():
     with open(assets_dir / "model/flybody/vision.yaml") as f:
@@ -496,7 +497,9 @@ class TestFlybodyFlyAddVision:
             for geom in fly.bodyseg_to_mjcfgeom[fbody_seg]:
                 geom_name = geom.name
                 geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, geom_name)
-                assert geom_id >= 0, f"hidden segment {segname} not found in flybody model"
+                assert geom_id >= 0, (
+                    f"hidden segment {segname} not found in flybody model"
+                )
                 assert mj_model.geom_group[geom_id] == 2
 
     def test_cameras_compile_in_world(self, flybody_neutral_pose, flybody_skeleton):

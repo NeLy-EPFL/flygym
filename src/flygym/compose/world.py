@@ -255,11 +255,8 @@ class _GroundContactMixin:
         elif isinstance(bodysegs_with_ground_contact, str):
             # Resolve the string against the fly's own contact-bodies preset enum
             # so each Fly subclass (nmf, flybody, ...) selects the right segments.
-            preset = type(fly).CONTACT_BODIES_PRESET_CLASS(
-                bodysegs_with_ground_contact
-            )
+            preset = type(fly).CONTACT_BODIES_PRESET_CLASS(bodysegs_with_ground_contact)
             bodysegs_with_ground_contact = preset.to_body_segments_list()
-
 
         self._set_ground_contact(
             fly, bodysegs_with_ground_contact, ground_contact_params
@@ -317,6 +314,7 @@ class _GroundContactMixin:
                 name=f"ground_contact_{leg}_leg",
             )
             self.legpos_to_groundcontactsensors_by_fly[fly.name][leg] = sensor
+
 
 class FlatGroundWorld(_GroundContactMixin, BaseWorld):
     """World with a flat infinite ground plane. Flies are free to move.
@@ -439,6 +437,7 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
         )
         self.ground_geoms.append(geom)
         return geom
+
 
 class GappedTerrainWorld(_ComplexTerrainWorld):
     """World with alternating floor blocks and transverse gaps."""
@@ -625,7 +624,10 @@ class TetheredWorld(BaseWorld):
         spawn_site.attach(fly.mjcf_root)
         return {}
 
-def _sort_legsegs_prox2dist(segments: list[BodySegment], leg_links: list[str]) -> list[BodySegment]:
+
+def _sort_legsegs_prox2dist(
+    segments: list[BodySegment], leg_links: list[str]
+) -> list[BodySegment]:
     bodyseg_linkpos_tuples = [(seg, leg_links.index(seg.link)) for seg in segments]
     bodyseg_linkpos_tuples.sort(key=lambda x: x[1])
     return [t[0] for t in bodyseg_linkpos_tuples]

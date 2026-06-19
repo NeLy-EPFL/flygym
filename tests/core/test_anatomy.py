@@ -1077,7 +1077,9 @@ class TestFlybodySkeleton:
             axis_order=FlybodyAxisOrder.YAW_PITCH_ROLL,
             joint_preset=FlybodyJointPreset.ALL_BIOLOGICAL,
         )
-        dofs = skel.get_actuated_dofs_from_preset(FlybodyActuatedDOFPreset.LEGS_ACTIVE_ONLY)
+        dofs = skel.get_actuated_dofs_from_preset(
+            FlybodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
+        )
         for dof in dofs:
             assert dof.child.is_leg()
             assert dof.child.link not in FLYBODY_PASSIVE_TARSAL_LINKS

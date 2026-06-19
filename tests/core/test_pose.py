@@ -38,12 +38,16 @@ class TestKinematicPoseConstruction:
             KinematicPose(joint_angles_rad_dict=_BALL_JOINT_ANGLES_YPR)
 
     def test_from_path_does_not_accept_axis_order(self):
-        neutral_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        neutral_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        )
         with pytest.raises(ValueError, match="axis_order"):
             KinematicPose(path=neutral_yaml, axis_order=AxisOrder.YAW_PITCH_ROLL)
 
     def test_both_path_and_dict_raises(self):
-        neutral_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        neutral_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        )
         with pytest.raises(ValueError):
             KinematicPose(
                 path=neutral_yaml,
@@ -55,7 +59,9 @@ class TestKinematicPoseConstruction:
             KinematicPose()
 
     def test_from_yaml(self):
-        neutral_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        neutral_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        )
         pose = KinematicPose(path=neutral_yaml)
         assert pose is not None
 
@@ -92,17 +98,23 @@ class TestKinematicPoseConstruction:
         ] == pytest.approx(-1.5)
 
     def test_from_yaml_loads_angles(self):
-        ypr_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        ypr_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        )
         pose = KinematicPose(path=ypr_yaml)
         assert len(pose.joint_angles_lookup_rad) > 0
 
     def test_from_yaml_loads_axis_order(self):
-        ypr_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        ypr_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/yaw_pitch_roll.yaml"
+        )
         pose = KinematicPose(path=ypr_yaml)
         assert pose.axis_order is AxisOrder.YAW_PITCH_ROLL
 
     def test_pry_yaml_axis_order(self):
-        pry_yaml = flygym.assets_dir / "model/neuromechfly/pose/neutral/pitch_roll_yaw.yaml"
+        pry_yaml = (
+            flygym.assets_dir / "model/neuromechfly/pose/neutral/pitch_roll_yaw.yaml"
+        )
         pose = KinematicPose(path=pry_yaml)
         assert pose.axis_order is AxisOrder.PITCH_ROLL_YAW
 

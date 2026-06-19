@@ -82,9 +82,7 @@ class HybridControllerObservation:
         )
 
         detected_segments = [
-            bodyseg_cls(f"{leg}_{link}")
-            for leg in legs
-            for link in stumbling_links
+            bodyseg_cls(f"{leg}_{link}") for leg in legs for link in stumbling_links
         ]
         stumbling_contact_forces = sim.get_bodysegment_contact_forces(
             fly_name, detected_segments, ground_only=True
@@ -229,9 +227,7 @@ class HybridController:
             joint_angles=joint_angles, adhesion_onoff=adhesion_onoff
         )
 
-    def _select_retraction_leg(
-        self, obs: HybridControllerObservation
-    ) -> int | None:
+    def _select_retraction_leg(self, obs: HybridControllerObservation) -> int | None:
         end_effector_z_pos = obs.thorax_z - obs.tarsus5_z
         sorted_idx = np.argsort(end_effector_z_pos)
         sorted_vals = end_effector_z_pos[sorted_idx]
@@ -239,9 +235,7 @@ class HybridController:
             return int(sorted_idx[-1])
         return None
 
-    def _get_stumbling_mask(
-        self, obs: HybridControllerObservation
-    ) -> np.ndarray:
+    def _get_stumbling_mask(self, obs: HybridControllerObservation) -> np.ndarray:
         force_proj = np.dot(obs.stumbling_contact_forces, obs.fly_heading)
         return (force_proj < self.stumbling_force_threshold).any(axis=1)
 

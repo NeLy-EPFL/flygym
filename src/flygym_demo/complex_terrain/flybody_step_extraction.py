@@ -55,15 +55,16 @@ MIN_STEP_PERIOD_SEC = 0.04
 # Replay
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ReplayRecording:
     """Per-timestep state captured during the tethered replay."""
 
     timestep: float
-    targets: np.ndarray                 # (nsteps, n_position_actuators)
-    position_dof_names: list[str]       # parent|child|axis strings
-    claw_body: np.ndarray               # (nsteps, 6, 3) -- body-frame AP/lat/vert
-    clip_path: str                      # absolute string path for provenance
+    targets: np.ndarray  # (nsteps, n_position_actuators)
+    position_dof_names: list[str]  # parent|child|axis strings
+    claw_body: np.ndarray  # (nsteps, 6, 3) -- body-frame AP/lat/vert
+    clip_path: str  # absolute string path for provenance
     warmup_sec: float
 
     def n_steps(self) -> int:
@@ -166,6 +167,7 @@ def load_replay_recording(path: Path | str) -> ReplayRecording:
 # Per-leg slicing and PEP candidate detection
 # ---------------------------------------------------------------------------
 
+
 def find_candidate_peps(
     claw_anteroposterior: np.ndarray, timestep: float
 ) -> np.ndarray:
@@ -177,9 +179,7 @@ def find_candidate_peps(
     segmentation.
     """
     distance = max(1, int(MIN_STEP_PERIOD_SEC / timestep))
-    peaks, _ = find_peaks(
-        -claw_anteroposterior, distance=distance, prominence=1e-3
-    )
+    peaks, _ = find_peaks(-claw_anteroposterior, distance=distance, prominence=1e-3)
     return peaks
 
 
@@ -206,6 +206,7 @@ def per_leg_claw_y(
 # ---------------------------------------------------------------------------
 # Selection JSON I/O
 # ---------------------------------------------------------------------------
+
 
 def save_selection(selection: dict, out_path: Path | str) -> None:
     """Save the user's leg-position picks to JSON.
@@ -247,6 +248,7 @@ def _validate_selection(selection: dict) -> None:
 # ---------------------------------------------------------------------------
 # Asset construction
 # ---------------------------------------------------------------------------
+
 
 def _resample_cycle(
     leg_targets: np.ndarray,
@@ -378,9 +380,8 @@ def save_asset(asset: dict, out_path: Path | str) -> None:
 # Private DOF index lookup
 # ---------------------------------------------------------------------------
 
-def _per_leg_dof_indices(
-    position_dof_names: Iterable[str], leg: str
-) -> list[int]:
+
+def _per_leg_dof_indices(position_dof_names: Iterable[str], leg: str) -> list[int]:
     """Map ``_DOFS_PER_LEG`` to indices in the recording's flat DOF ordering."""
     names = list(position_dof_names)
     indices = []

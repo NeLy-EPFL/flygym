@@ -6,7 +6,12 @@ import numpy as np
 import warp as wp
 
 from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder
-from flygym.compose import NeuroMechFly, ActuatorType, FlatGroundWorld, KinematicPosePreset
+from flygym.compose import (
+    NeuroMechFly,
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+)
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 from flygym.warp.rendering import WarpCPURenderer

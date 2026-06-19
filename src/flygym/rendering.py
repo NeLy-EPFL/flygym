@@ -88,10 +88,12 @@ class Renderer:
         else:
             self.frames = None
 
-        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5  # to avoid floating point issues when comparing times
+        # Avoid floating point issues when comparing times
+        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
 
-
-    def get_camera_matrix(self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel) -> np.ndarray:
+    def get_camera_matrix(
+        self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel
+    ) -> np.ndarray:
         """Get the 3x4 camera projection matrix from the current MjData.
 
         The returned matrix maps homogeneous world coordinates to homogeneous
@@ -99,13 +101,12 @@ class Renderer:
         ``image @ focal @ rotation @ translation`` composition.
         """
         internal_cam_id, _ = self._resolve_camera_id_and_name(camera)
-        # update the scene to get the latest camera position and orientation
+        # update the scene to get the latest camera position and orientation
         self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
         pos = mj_data.cam_xpos[internal_cam_id]
         rot = mj_data.cam_xmat[internal_cam_id].reshape(3, 3)
         fov = mj_model.cam_fovy[internal_cam_id]
         height, width = self.camera_res
-
 
         # Translation matrix (4x4).
         translation = np.eye(4)
@@ -114,7 +115,7 @@ class Renderer:
         rotation = np.eye(4)
         rotation[0:3, 0:3] = rot
         # Focal transformation matrix (3x4).
-        focal_scaling = (1./np.tan(np.deg2rad(fov)/2)) * height / 2.0
+        focal_scaling = (1.0 / np.tan(np.deg2rad(fov) / 2)) * height / 2.0
         focal = np.diag([-focal_scaling, focal_scaling, 1.0, 0])[0:3, :]
         # Image matrix (3x3).
         image = np.eye(3)
@@ -132,8 +133,11 @@ class Renderer:
         Returns:
             True if frames were rendered, False otherwise.
         """
-        min_next_render_time = (self._last_render_time_sec + \
-            self._secs_between_renders - self.rendering_rounding_tolerance)
+        min_next_render_time = (
+            self._last_render_time_sec
+            + self._secs_between_renders
+            - self.rendering_rounding_tolerance
+        )
         if mj_data.time >= min_next_render_time:
             self._last_render_time_sec = float(mj_data.time)
             for cam_name, internal_cam_id in self._cameras_names2id.items():
@@ -143,7 +147,8 @@ class Renderer:
                 frame = self.mj_renderer.render()
                 if self.buffer_frames:
                     if self.render_segmentation:
-                        # segmentation renders 2 channels one is body the other is fly vs background
+                        # Segmentation renders 2 channels:
+                        # one is body the other is fly vs background
                         frame = frame[:, :, 0]
                         if not np.all(frame <= 255):
                             raise ValueError(
@@ -193,7 +198,7 @@ class Renderer:
 
         for cam_name in camera_names:
             if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
-                self._depth_frames_2uint8(cam_name)
+                self._depth_frames_to_uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
@@ -216,7 +221,7 @@ class Renderer:
 
         for cam_name, path in path_by_camera.items():
             if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
-                self._depth_frames_2uint8(cam_name)
+                self._depth_frames_to_uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
@@ -224,17 +229,12 @@ class Renderer:
             path.parent.mkdir(parents=True, exist_ok=True)
 
             iio.imwrite(
-                path,
-                frames,
-                fps=self.output_fps,
-                codec="libx264",
-                quality=8,
-                **kwargs
+                path, frames, fps=self.output_fps, codec="libx264", quality=8, **kwargs
             )
 
-    def _depth_frames_2uint8(self, cam_name: str) -> None:
+    def _depth_frames_to_uint8(self, cam_name: str) -> None:
         """
-        Convert depth frames from uint32 to uint8. 
+        Convert depth frames from uint32 to uint8.
         This is necessary because depth frames are rendered as 32-bit floats, but
         we want to save them as 8-bit videos.
         We treat the global maximum depth (over all frames) as the background and
@@ -250,9 +250,10 @@ class Renderer:
         min_val = np.min(all_frames)
         for i in range(len(self.frames[cam_name])):
             frame = self.frames[cam_name][i]
-            frame_norm = np.clip((frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1)
-            self.frames[cam_name][i] = (frame_norm*255).astype(np.uint8)
-
+            frame_norm = np.clip(
+                (frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1
+            )
+            self.frames[cam_name][i] = (frame_norm * 255).astype(np.uint8)
 
     def _normalize_camera_spec(
         self,
@@ -432,4 +433,3 @@ def preview_model(
             renderer.show_in_notebook()
         if output_path:
             renderer.save_video(output_path)
-

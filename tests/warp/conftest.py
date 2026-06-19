@@ -17,7 +17,12 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.compose import NeuroMechFly, ActuatorType, FlatGroundWorld, KinematicPosePreset
+from flygym.compose import (
+    NeuroMechFly,
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+)
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 
