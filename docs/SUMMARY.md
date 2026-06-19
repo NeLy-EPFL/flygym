@@ -12,7 +12,9 @@
         * [4b. Rule-based locomotion controller](tutorials/4b_rule_based_controller.ipynb)
         * [4c. Hybrid locomotion controller](tutorials/4c_hybrid_controller.ipynb)
         * [4d. Turning locomotion controller](tutorials/4d_turning_controller.ipynb)
-    * [5. Using the FlyBody model](tutorials/5_using_flybody_model.ipynb)
+    * 5&#46; Using the FlyBody model
+        * [5a. Replaying experimental recordings](tutorials/5a_replaying_experimental_flybody_onball.ipynb)
+        * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
