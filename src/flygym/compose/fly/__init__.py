@@ -4,6 +4,7 @@ from .flybody import FlyBody
 from .musculoskeletal import (
     MusculoskeletalFly,
     DEFAULT_MUSCULOSKELETAL_XML,
+    DEFAULT_SCENE_CAMERA,
     MUSCULOSKELETAL_MODEL_DIR,
     build_musculoskeletal_simulation,
     build_musculoskeletal_gpu_simulation,
@@ -21,6 +22,7 @@ __all__ = [
     "FlyBody",
     "MusculoskeletalFly",
     "DEFAULT_MUSCULOSKELETAL_XML",
+    "DEFAULT_SCENE_CAMERA",
     "MUSCULOSKELETAL_MODEL_DIR",
     "build_musculoskeletal_simulation",
     "build_musculoskeletal_gpu_simulation",

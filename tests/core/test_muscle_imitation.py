@@ -177,3 +177,39 @@ def test_env_wrong_action_shape_raises():
     env.reset(seed=0)
     with pytest.raises(ValueError, match="Expected action shape"):
         env.step(np.zeros(env.n_muscles - 1, dtype=np.float32))
+
+
+# -----------------------------------------------------------------------------
+# rollout / video recording (record.py) — no ML deps needed
+# -----------------------------------------------------------------------------
+
+
+def test_scene_camera_is_named_for_rendering():
+    # The muscle model ships an unnamed world camera; MusculoskeletalFly names
+    # it so it can be selected via Simulation.set_renderer.
+    from flygym.compose import DEFAULT_SCENE_CAMERA, build_musculoskeletal_simulation
+
+    _, fly = build_musculoskeletal_simulation()
+    assert DEFAULT_SCENE_CAMERA in fly.cameraname_to_mjcfcamera
+
+
+def test_run_rollout_returns_per_step_rewards():
+    from flygym_demo.muscle_imitation import random_policy, run_rollout
+
+    env = _make_env()
+    rewards = run_rollout(env, random_policy(env), n_steps=10)
+    assert len(rewards) == 10
+    assert all(0.0 <= r <= 1.0 for r in rewards)
+
+
+def test_record_rollout_writes_video(tmp_path):
+    from flygym_demo.muscle_imitation import random_policy, record_rollout
+
+    env = _make_env()  # test mode -> full clip, no early termination
+    out = tmp_path / "rollout.mp4"
+    stats = record_rollout(
+        env, random_policy(env), out, camera_res=(120, 160)
+    )
+    assert out.exists() and out.stat().st_size > 0
+    assert stats["n_steps"] > 0
+    assert stats["video_path"] == str(out)

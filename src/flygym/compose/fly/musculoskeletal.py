@@ -40,11 +40,18 @@ __all__ = [
     "MusculoskeletalFly",
     "MUSCULOSKELETAL_MODEL_DIR",
     "DEFAULT_MUSCULOSKELETAL_XML",
+    "DEFAULT_SCENE_CAMERA",
     "build_musculoskeletal_simulation",
     "MjWarpCompatibilityReport",
     "check_mjwarp_compatibility",
     "build_musculoskeletal_gpu_simulation",
 ]
+
+
+DEFAULT_SCENE_CAMERA = "scene"
+"""Name assigned to FlyMimic's (otherwise unnamed) world camera so it can be
+selected for rendering via ``Simulation.set_renderer`` — e.g. when recording a
+rollout video of a trained policy."""
 
 
 MUSCULOSKELETAL_MODEL_DIR = assets_dir / "model/musculoskeletal"
@@ -146,7 +153,18 @@ class MusculoskeletalFly(BaseCompositionElement):
         self.leg_to_adhesionactuator: dict[str, mjcf.Element] = {}
         self.anatomicaljoint_to_mjcfsites: dict[str, mjcf.Element] = {}
         self.eyecameraname_to_mjcfcamera: dict[str, mjcf.Element] = {}
+
+        # Register scene cameras so they can be selected for rendering. FlyMimic
+        # ships a single unnamed world camera; name any unnamed camera so
+        # ``Simulation.set_renderer(DEFAULT_SCENE_CAMERA)`` resolves it. (Eye
+        # cameras are added later, named, via add_vision().)
         self.cameraname_to_mjcfcamera: dict[str, mjcf.Element] = {}
+        for idx, cam in enumerate(self._mjcf_root.find_all("camera")):
+            if cam.name is None:
+                cam.name = (
+                    DEFAULT_SCENE_CAMERA if idx == 0 else f"{DEFAULT_SCENE_CAMERA}_{idx}"
+                )
+            self.cameraname_to_mjcfcamera[cam.name] = cam
 
     @property
     def mjcf_root(self) -> mjcf.RootElement:

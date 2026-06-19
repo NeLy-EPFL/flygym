@@ -6,8 +6,10 @@ overlaying muscles on FlyGym's default rigid body. This demo wires that model
 into an `ImitationEnv`.
 
 * `make_imitation_env`: build the muscle Simulation + ImitationEnv in one call.
-* `__main__`: train a PPO policy (stable-baselines3 optional; falls back to a
-  random-policy rollout so the example always runs).
+* `train`: PPO training with Monitor/TensorBoard logging + checkpointing.
+* `record_rollout` / `load_policy`: roll out a (trained) policy and save a video.
+* `__main__`: CLI tying these together (stable-baselines3 optional; falls back
+  to a random-policy rollout so the example always runs).
 
 This submodule owns the imitation-learning stack end to end: the mocap clips
 (under ``assets/mocap/``), the dataset loader, the reward/env, and the training
@@ -30,11 +32,24 @@ from flygym_demo.muscle_imitation.data import (
 )
 from flygym_demo.muscle_imitation.env import ImitationConfig, ImitationEnv
 from flygym_demo.muscle_imitation.fly import make_imitation_env
+from flygym_demo.muscle_imitation.record import (
+    load_policy,
+    random_policy,
+    record_rollout,
+    run_rollout,
+)
+from flygym_demo.muscle_imitation.train import TrainConfig, train
 
 __all__ = [
     "make_imitation_env",
     "ImitationConfig",
     "ImitationEnv",
+    "TrainConfig",
+    "train",
+    "load_policy",
+    "random_policy",
+    "record_rollout",
+    "run_rollout",
     "MoCapClip",
     "MoCapDataset",
     "DEFAULT_MOCAP_DIR",
