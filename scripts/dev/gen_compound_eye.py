@@ -21,7 +21,7 @@ RNG_SEED = 0
 
 
 def load_vision_config():
-    with open(assets_dir / "model/vision.yaml") as config_file:
+    with open(assets_dir / "model/neuromechfly/vision.yaml") as config_file:
         return yaml.safe_load(config_file)
 
 
@@ -166,7 +166,7 @@ def main():
     pale_mask = build_pale_mask(num_ommatidia_per_eye, PALE_YELLOW_RATIO, rng)
 
     np.savez_compressed(
-        assets_dir / "model/compound_eye.npz",
+        assets_dir / "model/neuromechfly/compound_eye.npz",
         pale_mask=pale_mask,
         ommatidia_id_map=hex_id_map,
     )

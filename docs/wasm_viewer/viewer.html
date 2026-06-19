@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlyGym interactive viewer</title>
+<style>
+  /* Dark is the default; viewer.js sets data-theme="light" to follow the MkDocs
+     Material palette toggle when the page is embedded in the docs. */
+  :root { --panel-bg: #1f2329; --panel-fg: #e6e8eb; --muted: #9aa0a6;
+          --border: #363b42; --accent: #8c9eff; --input-bg: #2a2f37;
+          --code-bg: #2a2f37; --stage-a: #2a2d36; --stage-b: #16181d;
+          --track: #3a4049; --target: #8c9eff; --actual: #4caf78; }
+  :root[data-theme="light"] { --panel-bg: #f6f7f9; --panel-fg: #1f2329; --muted: #6b7280;
+          --border: #e2e5e9; --accent: #3f51b5; --input-bg: #fff;
+          --code-bg: #eceef1; --stage-a: #e9edf2; --stage-b: #c9d1db;
+          --track: #d4d8de; --target: #3f51b5; --actual: #2e9e63; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+  #stage { position: relative; flex: 1 1 auto; min-width: 0;
+           background: radial-gradient(circle at 50% 35%, var(--stage-a) 0%, var(--stage-b) 100%); }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  #panel { flex: 0 0 340px; max-width: 60%; height: 100%; overflow-y: auto;
+           background: var(--panel-bg); color: var(--panel-fg);
+           border-left: 1px solid var(--border); padding: 14px 16px; }
+  #panel h1 { font-size: 15px; margin: 2px 0 2px; }
+  #panel p.sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; line-height: 1.45; }
+  .section { margin-bottom: 14px; }
+  .section > h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+        color: var(--muted); font-weight: 700; margin: 0 0 8px; padding-bottom: 4px;
+        border-bottom: 1px solid var(--border); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .controls + .controls { margin-top: 8px; }
+  button, label.toggle { font-size: 12px; color: var(--panel-fg); }
+  .controls button { padding: 6px 10px; border: 1px solid var(--border);
+        background: var(--input-bg); border-radius: 6px; cursor: pointer; }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button.primary { border-color: var(--accent); color: var(--accent); }
+  label.toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+        padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--input-bg); }
+  label.toggle:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+  details { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 7px;
+        background: var(--input-bg); overflow: hidden; }
+  details > summary { cursor: pointer; padding: 7px 10px; font-size: 12.5px; font-weight: 600;
+        display: flex; align-items: center; gap: 7px; user-select: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
+  /* One actuator row: label + numeric value on top, then a slider whose track
+     carries a thin "actual joint angle" bar drawn behind the thumb. */
+  .joint { padding: 3px 10px 6px; }
+  .joint .row { display: flex; justify-content: space-between; font-size: 11px;
+        color: var(--muted); margin-bottom: 1px; }
+  .joint .row .val { font-variant-numeric: tabular-nums; }
+  .sld { position: relative; height: 28px; padding-top: 11px; }
+  /* A downward triangle riding above the slider, parked at the joint's current
+     angle (qpos) -- the live readout next to the slider's target thumb. */
+  .sld .tick { position: absolute; top: 0; width: 0; height: 0;
+        border-left: 6px solid transparent; border-right: 6px solid transparent;
+        border-top: 9px solid var(--actual); transform: translateX(-50%);
+        transition: left .05s linear; pointer-events: none;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,.45)); }
+  .joint input[type=range] { position: absolute; left: 0; right: 0; bottom: 0;
+        width: 100%; margin: 0; accent-color: var(--target); background: transparent; }
+  .legendline { display: flex; gap: 14px; font-size: 10.5px; color: var(--muted);
+        margin: 2px 0 4px; }
+  .legendline span { display: inline-flex; align-items: center; gap: 4px; }
+  .dot { width: 9px; height: 9px; border-radius: 2px; }
+  #hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; z-index: 4;
+        color: rgba(255,255,255,.6); pointer-events: none;
+        text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+  #stats { position: absolute; right: 10px; top: 8px; font-size: 11px; z-index: 4;
+        color: rgba(255,255,255,.55); pointer-events: none; font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+  #overlay { position: absolute; inset: 0; display: flex; align-items: center;
+        justify-content: center; flex-direction: column; gap: 12px; color: #e8eaed;
+        background: rgba(20,22,27,.86); font-size: 14px; text-align:center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  .spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,.25);
+        border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #overlay .err { color: #ff8a80; max-width: 460px; }
+  .param-row { padding: 2px 0; }
+  .param-row + .param-row { padding-top: 5px; }
+  .param-header { display: flex; justify-content: space-between; font-size: 11px;
+        color: var(--muted); margin-bottom: 2px; }
+  .param-row input[type=range] { width: 100%; accent-color: var(--accent); }
+  @media (max-width: 640px) {
+    #app { flex-direction: column; }
+    #panel { flex-basis: 50%; max-width: none; border-left: none; border-top: 1px solid var(--border); }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="overlay"><div class="spinner"></div><div id="overlay-msg">Loading MuJoCo &amp; model…</div></div>
+    <div id="stats"></div>
+    <div id="hint">Drag to orbit · scroll to zoom · right-drag to pan · <b>Shift</b>+drag a body to push it</div>
+  </div>
+  <aside id="panel">
+
+    <section class="section">
+      <h2>Simulation</h2>
+      <div class="controls">
+        <button id="reset" class="primary" title="Reset the simulation to the neutral keyframe">Reset</button>
+        <button id="pause" title="Pause / resume the physics">Pause</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Visualize</h2>
+      <div class="controls">
+        <label class="toggle"><input type="checkbox" id="t-contacts"> Contacts</label>
+        <label class="toggle"><input type="checkbox" id="t-forces"> Contact forces</label>
+        <label class="toggle"><input type="checkbox" id="t-joints"> Joints</label>
+        <label class="toggle"><input type="checkbox" id="t-actuators"> Actuators</label>
+        <button id="reset-view" title="Reset the camera to its default framing">Reset view</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Physics parameters</h2>
+      <p class="sub" style="margin-bottom: 6px;">Global multipliers applied on top of the model defaults.</p>
+      <div id="physics-params"></div>
+      <div class="controls" style="margin-top: 6px;">
+        <button id="reset-physics" title="Reset physics parameters to defaults">Reset</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Position actuator targets</h2>
+      <p class="sub" style="margin-bottom: 6px;">Move a slider to set a joint target; the green tick shows the actual angle.</p>
+      <div class="legendline">
+        <span><span class="dot" style="background:var(--target)"></span>target (slider)</span>
+        <span><span class="dot" style="background:var(--actual)"></span>actual joint angle</span>
+      </div>
+      <div id="groups"></div>
+    </section>
+  </aside>
+</div>
+<script type="module" src="./viewer.js"></script>
+</body>
+</html>
