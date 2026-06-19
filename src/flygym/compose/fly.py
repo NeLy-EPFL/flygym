@@ -1220,8 +1220,13 @@ class FlyBody(BaseFly):
 
     def translate_generaljointparams_to_specificjointparams_simplified(self, general_params: dict[str, Any], actuator_type: ActuatorType) -> dict[str, Any]:
         if actuator_type == ActuatorType.POSITION:
+            # gainprm comes from YAML as a string (e.g. '30') or list of strings;
+            # coerce to a numeric type and use the first entry as kp (per MuJoCo,
+            # kp is gainprm[0] for position actuators).
+            gainprm = self._coerce_mjcf_value(general_params.get("gainprm", 1.0))
+            kp = gainprm[0] if isinstance(gainprm, tuple) else gainprm
             return {
-                "kp": general_params.get("gainprm", 1.0),
+                "kp": kp,
             }
         else:
             return {}
