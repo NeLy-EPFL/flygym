@@ -517,7 +517,9 @@ class Simulation:
                         mj.mjtObj.mjOBJ_GEOM,
                         mjcf_geom_element.full_identifier,
                     )
-                    internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = internal_geom_id
+                    internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = (
+                        internal_geom_id
+                    )
 
         self._internal_geomid_by_bodyseg_by_fly = internal_geomids_by_bodyseg_by_fly
 
@@ -602,7 +604,9 @@ class Simulation:
         for fly_name, fly in self.world.fly_lookup.items():
             if len(fly.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]) == 0:
                 continue  # This fly doesn't have any tendon actuators
-            for jointdof, actuator_element in fly.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON].items():
+            for jointdof, actuator_element in fly.jointdof_to_mjcfactuator_by_type[
+                ActuatorType.TENDON
+            ].items():
                 internal_actuator_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_ACTUATOR,
@@ -633,7 +637,6 @@ class Simulation:
             fly_name: np.array(ids, dtype=np.int32)
             for fly_name, ids in internal_adhesionactuatorids_by_fly.items()
         }
-
 
     def _map_internal_groundcontactsensor_ids(self) -> None:
         if self.world.legpos_to_groundcontactsensors_by_fly is None:

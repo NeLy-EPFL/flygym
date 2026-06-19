@@ -22,10 +22,9 @@ def on_startup(command, dirty):
 
 
 def _ensure_vendor():
-    if (
-        (_VENDOR_DIR / "mujoco" / "mujoco.wasm").exists()
-        and (_VENDOR_DIR / "three" / "three.module.js").exists()
-    ):
+    if (_VENDOR_DIR / "mujoco" / "mujoco.wasm").exists() and (
+        _VENDOR_DIR / "three" / "three.module.js"
+    ).exists():
         return
 
     print("mkdocs: downloading WASM viewer vendor files...")
@@ -43,7 +42,8 @@ def _ensure_vendor():
             f"https://registry.npmjs.org/three/-/three-{_THREE_VERSION}.tgz",
             {
                 "package/build/three.module.js": three_dir / "three.module.js",
-                "package/examples/jsm/controls/OrbitControls.js": three_dir / "OrbitControls.js",
+                "package/examples/jsm/controls/OrbitControls.js": three_dir
+                / "OrbitControls.js",
             },
         )
         (three_dir / "VERSION.txt").write_text(f"three@{_THREE_VERSION}\n")
@@ -73,7 +73,10 @@ def _ensure_assets():
 
     print("mkdocs: building WASM viewer assets (fly.xml + STL meshes)...")
     result = subprocess.run(
-        [sys.executable, str(_REPO / "scripts" / "dev" / "build_wasm_viewer_assets.py")],
+        [
+            sys.executable,
+            str(_REPO / "scripts" / "dev" / "build_wasm_viewer_assets.py"),
+        ],
         cwd=_REPO,
     )
     if result.returncode != 0:

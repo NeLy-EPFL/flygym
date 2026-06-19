@@ -122,10 +122,14 @@ def main():
     R_fbody_c_head_global = _body_xmat_global(fbody_sim, FLYBODY_HEAD_BODY)
 
     np.set_printoptions(precision=4, suppress=True)
-    print(f"R_c_head_global(flybody) Euler XYZ (rad): "
-          f"{R.from_matrix(R_fbody_c_head_global).as_euler('xyz').round(4)}")
-    print(f"R_c_head_global(flybody) Euler XYZ (deg): "
-          f"{R.from_matrix(R_fbody_c_head_global).as_euler('xyz', degrees=True).round(2)}")
+    print(
+        f"R_c_head_global(flybody) Euler XYZ (rad): "
+        f"{R.from_matrix(R_fbody_c_head_global).as_euler('xyz').round(4)}"
+    )
+    print(
+        f"R_c_head_global(flybody) Euler XYZ (deg): "
+        f"{R.from_matrix(R_fbody_c_head_global).as_euler('xyz', degrees=True).round(2)}"
+    )
     print()
 
     yaml_suggestion = {}
@@ -155,10 +159,14 @@ def main():
         current_euler = R.from_matrix(current_yaml).as_euler("xyz", degrees=False)
 
         print(f"=== Eye: {side} ===")
-        print(f"  Current cam_global (flybody) Euler XYZ (deg): "
-              f"{R.from_matrix(R_fbody_cam_global_current).as_euler('xyz', degrees=True).round(3)}")
-        print(f"  Target  cam_global (=nmf)    Euler XYZ (deg): "
-              f"{R.from_matrix(R_nmf_cam_global).as_euler('xyz', degrees=True).round(3)}")
+        print(
+            f"  Current cam_global (flybody) Euler XYZ (deg): "
+            f"{R.from_matrix(R_fbody_cam_global_current).as_euler('xyz', degrees=True).round(3)}"
+        )
+        print(
+            f"  Target  cam_global (=nmf)    Euler XYZ (deg): "
+            f"{R.from_matrix(R_nmf_cam_global).as_euler('xyz', degrees=True).round(3)}"
+        )
         print(f"  Current YAML (in c_head frame) XYZ rad: {current_euler}")
         print(f"  TARGET  YAML (in c_head frame) XYZ rad: {yaml_euler}")
         print(f"  TARGET  YAML (in c_head frame) XYZ deg: {np.degrees(yaml_euler)}")
@@ -166,10 +174,14 @@ def main():
 
         yaml_suggestion[side] = yaml_euler
 
-    print("Drop these straight into flybody/vision.yaml (rad, MuJoCo eulerseq=XYZ "
-          "== scipy extrinsic xyz):")
+    print(
+        "Drop these straight into flybody/vision.yaml (rad, MuJoCo eulerseq=XYZ "
+        "== scipy extrinsic xyz):"
+    )
     for side, vals in yaml_suggestion.items():
-        print(f"  {side}_eye_cam.orientation: [{vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}]")
+        print(
+            f"  {side}_eye_cam.orientation: [{vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}]"
+        )
 
     # --- End-to-end verification: predict the resulting cam_global from the
     # YAML value alone (as MuJoCo would compose it) and confirm it equals nmf. ---
@@ -179,10 +191,10 @@ def main():
         R_yaml_extr = R.from_euler("xyz", vals).as_matrix()
         R_pred_global = R_fbody_c_head_global @ R_yaml_extr
         R_nmf_cam_global = _cam_xmat_global(nmf_sim, f"nmf/{cam_name}")
-        err = np.degrees(
-            R.from_matrix(R_pred_global.T @ R_nmf_cam_global).magnitude()
+        err = np.degrees(R.from_matrix(R_pred_global.T @ R_nmf_cam_global).magnitude())
+        print(
+            f"  {side} eye -- angular error between predicted and nmf cam_global: {err:.2e} deg"
         )
-        print(f"  {side} eye -- angular error between predicted and nmf cam_global: {err:.2e} deg")
 
 
 if __name__ == "__main__":

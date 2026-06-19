@@ -412,7 +412,9 @@ class BaseJointPreset(Enum):
     @classmethod
     def _get_all_possible_joints(cls) -> list[AnatomicalJoint]:
         return [
-            AnatomicalJoint(BodySegment(parent), BodySegment(child), AxesSet(RotationAxis))
+            AnatomicalJoint(
+                BodySegment(parent), BodySegment(child), AxesSet(RotationAxis)
+            )
             for parent, child in cls._get_connected_segment_pairs()
         ]
 
@@ -608,8 +610,7 @@ class Skeleton:
     def get_actuated_dofs_from_preset(
         self, preset: BaseActuatedDOFPreset | str
     ) -> list[JointDOF]:
-        """Given a preset of actuated DoFs, return an explicit list of `JointDOF`.
-        """
+        """Given a preset of actuated DoFs, return an explicit list of `JointDOF`."""
         if isinstance(preset, BaseActuatedDOFPreset):
             preset = ActuatedDOFPreset(preset.value)
         else:

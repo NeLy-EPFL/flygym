@@ -189,6 +189,7 @@ class PreprogrammedSteps:
         """Default pose ordered like the default v2 active leg actuators."""
         return self.default_pose_by_dof_order()
 
+
 class FlybodyPreprogrammedSteps(PreprogrammedSteps):
     """Preprogrammed single-leg steps tailored to the Flybody anatomy.
 
@@ -253,8 +254,7 @@ class FlybodyPreprogrammedSteps(PreprogrammedSteps):
     ) -> None:
         if path is None:
             path = (
-                files("flygym_demo.complex_terrain")
-                / "assets/single_steps_flybody.pkl"
+                files("flygym_demo.complex_terrain") / "assets/single_steps_flybody.pkl"
             )
         if hasattr(path, "open"):
             with path.open("rb") as f:
@@ -291,8 +291,6 @@ class FlybodyPreprogrammedSteps(PreprogrammedSteps):
         #   [0, swing_end]  -> swing  (leg in air)
         #   [swing_end, 2π] -> stance (leg planted)
         self.swing_period = {
-            leg: np.array(
-                [0.0, float(swing_fractions[leg]) * 2 * np.pi], dtype=float
-            )
+            leg: np.array([0.0, float(swing_fractions[leg]) * 2 * np.pi], dtype=float)
             for leg in self.legs
         }

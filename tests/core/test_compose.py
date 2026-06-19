@@ -20,7 +20,7 @@ from flygym.compose.fly import (
     Fly,
     FlybodyFly,
     ActuatorType,
-    GeomFittingOption
+    GeomFittingOption,
 )
 from flygym.compose.world import (
     BlocksTerrainWorld,
@@ -77,7 +77,7 @@ class TestFlyConstruction:
     def test_fly_default_name(self):
         fly = NeuroMechFly()
         assert fly.name == "nmf"
-    
+
     def test_flybodyfly_default_name(self):
         fly = FlyBody()
         assert fly.name == "flybody"

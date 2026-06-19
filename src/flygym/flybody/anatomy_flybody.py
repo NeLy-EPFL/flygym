@@ -97,10 +97,12 @@ class FlybodyAxesSet(AxesSet):
 
     rotation_axis_class = FlybodyRotationAxis
 
+
 class WingFlybodyAxesSet(AxesSet):
     """Set of rotation axes for wings using WingFlybody's axis convention."""
 
     rotation_axis_class = WingFlybodyRotationAxis
+
 
 class FlybodyAxisOrder(BaseAxisOrder, Enum):
     """Axis order enum based on FlybodyRotationAxis."""
@@ -195,6 +197,7 @@ class WingFlybodyAxisOrder(BaseAxisOrder, Enum):
 
     DONTCARE = PITCH_ROLL_YAW
 
+
 FLYBODY_LEG_LINKS: list[str] = [
     "coxa",
     "trochanterfemur",
@@ -215,7 +218,9 @@ FLYBODY_ALL_CONNECTED_SEGMENT_PAIRS: list[tuple[str, str]] = [
     *(
         edge
         for leg in LEGS
-        for edge in _chain2joints("c_thorax", *(f"{leg}_{lk}" for lk in FLYBODY_LEG_LINKS))
+        for edge in _chain2joints(
+            "c_thorax", *(f"{leg}_{lk}" for lk in FLYBODY_LEG_LINKS)
+        )
     ),
 ]
 FLYBODY_PROBOSCIS_LINKS += ["labrum"]
@@ -254,6 +259,7 @@ class FlybodyBodySegment(BodySegment):
         """Return True if this segment belongs to the abdomen."""
         return self.link in FLYBODY_ABDOMEN_LINKS
 
+
 class FlybodyJointDOF(JointDOF):
     """Joint DOF specific to the flybody model."""
 
@@ -267,12 +273,13 @@ class FlybodyJointDOF(JointDOF):
             return cls(
                 parent=FlybodyBodySegment(parent),
                 child=bs_child,
-                axis=FlybodyRotationAxis(axis) if not bs_child.is_wing() else WingFlybodyRotationAxis(axis),
+                axis=FlybodyRotationAxis(axis)
+                if not bs_child.is_wing()
+                else WingFlybodyRotationAxis(axis),
             )
         except ValueError:
-            raise ValueError(
-                f"Invalid joint DOF name: {name}. "
-            )
+            raise ValueError(f"Invalid joint DOF name: {name}. ")
+
 
 class FlybodyAnatomicalJoint(AnatomicalJoint):
     """Anatomical joint specific to the flybody model."""
@@ -299,6 +306,7 @@ class FlybodyAnatomicalJoint(AnatomicalJoint):
                     child=self.child,
                     axis=axis,
                 )
+
 
 class FlybodyJointPreset(BaseJointPreset):
     ALL_POSSIBLE = "all_possible"
@@ -395,7 +403,10 @@ class FlybodySkeleton(Skeleton):
     def __init__(
         self,
         *,
-        axis_order: FlybodyAxisOrder | WingFlybodyAxisOrder | AxisOrder | list[RotationAxis | FlybodyRotationAxis | WingFlybodyRotationAxis | str],
+        axis_order: FlybodyAxisOrder
+        | WingFlybodyAxisOrder
+        | AxisOrder
+        | list[RotationAxis | FlybodyRotationAxis | WingFlybodyRotationAxis | str],
         joint_preset: "FlybodyJointPreset | str | None" = None,
         anatomical_joints: list[FlybodyAnatomicalJoint] | None = None,
     ) -> None:
