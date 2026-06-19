@@ -449,3 +449,5 @@ fabric.properties
 
 *.mp4
 outputs/
+# Muscle-imitation training artifacts (default --log-dir)
+runs/
