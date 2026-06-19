@@ -1,6 +1,7 @@
 """Tests for the flygym_demo.muscle_imitation subpackage."""
 
 import importlib
+import platform
 
 import numpy as np
 import pytest
@@ -202,6 +203,13 @@ def test_run_rollout_returns_per_step_rewards():
     assert all(0.0 <= r <= 1.0 for r in rewards)
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason=(
+        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
+        "neither works headlessly in CI without a GPU"
+    ),
+)
 def test_record_rollout_writes_video(tmp_path):
     from flygym_demo.muscle_imitation import random_policy, record_rollout
 
