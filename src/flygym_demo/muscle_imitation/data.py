@@ -71,23 +71,47 @@ def tracked_joint_names_for_ncols(ncols: int) -> tuple[str, ...]:
 
 @dataclass(frozen=True)
 class MoCapClip:
-    """One clip's worth of mocap data."""
+    """One clip's worth of *Drosophila* left-front-leg mocap data.
 
-    qpos: np.ndarray  # (T, n_tracked_joints)
-    qvel: np.ndarray  # (T, n_tracked_joints)
-    xipos: np.ndarray  # (T, n_tracked_bodies, 3)
-    xivel: np.ndarray | None  # (T, n_tracked_bodies, 3), optional
+    All arrays are time-first; indices align frame-by-frame so that row *t*
+    of each array describes the same instant.
+
+    Attributes:
+        qpos: Joint angles of the tracked joints, shape ``(T, n_joints)``
+            in radians.
+        qvel: Joint velocities, shape ``(T, n_joints)`` in rad/s.
+        xipos: 3-D world-frame positions of `TRACKED_BODY_NAMES`, shape
+            ``(T, n_bodies, 3)`` in mm.
+        xivel: 3-D world-frame velocities of the same bodies, shape
+            ``(T, n_bodies, 3)`` in mm/s, or ``None`` if not available.
+        n_frames: Number of time steps *T* (read-only property).
+    """
+
+    qpos: np.ndarray
+    qvel: np.ndarray
+    xipos: np.ndarray
+    xivel: np.ndarray | None
 
     @property
     def n_frames(self) -> int:
+        """Number of time steps in this clip."""
         return int(self.qpos.shape[0])
 
 
 class MoCapDataset:
     """Lazy loader for FlyMimic-format mocap clips.
 
-    The dataset directory must contain `qpos/{clip}.npy`, `qvel/{clip}.npy`,
-    and `xipos/{clip}.npy` (and optionally `xivel/{clip}.npy`).
+    The dataset directory must contain ``qpos/{clip}.npy``,
+    ``qvel/{clip}.npy``, and ``xipos/{clip}.npy`` (and optionally
+    ``xivel/{clip}.npy``).  Use `default` to access the bundled clip
+    (``"0002"``).
+
+    Args:
+        clip_dir: Root directory of the dataset. Defaults to
+            `DEFAULT_MOCAP_DIR` (the clips bundled with this demo).
+
+    Raises:
+        FileNotFoundError: If *clip_dir* does not exist.
     """
 
     def __init__(self, clip_dir: PathLike = DEFAULT_MOCAP_DIR) -> None:
@@ -98,13 +122,30 @@ class MoCapDataset:
 
     @classmethod
     def default(cls) -> "MoCapDataset":
-        """Load the bundled mocap clips."""
+        """Return a dataset pointing at the bundled mocap clips."""
         return cls(DEFAULT_MOCAP_DIR)
 
     def available_clips(self) -> list[str]:
+        """Return stem names of all clips available in this dataset."""
         return sorted(p.stem for p in (self.clip_dir / "qpos").glob("*.npy"))
 
     def load(self, clip: str) -> MoCapClip:
+        """Load a clip by name, caching on first access.
+
+        Args:
+            clip: Clip identifier (e.g. ``"0002"``), matching the file stems
+                under ``qpos/``, ``qvel/``, and ``xipos/``.
+
+        Returns:
+            A `MoCapClip` with ``qpos``, ``qvel``, ``xipos``, and optionally
+            ``xivel`` arrays.
+
+        Raises:
+            FileNotFoundError: If the required ``.npy`` files are missing.
+            ValueError: If the clip's qpos width has no registered joint
+                mapping in `TRACKED_JOINT_NAMES_BY_NCOLS`, or if array
+                shapes are inconsistent.
+        """
         if clip in self._cache:
             return self._cache[clip]
         qpos = np.load(self.clip_dir / "qpos" / f"{clip}.npy")

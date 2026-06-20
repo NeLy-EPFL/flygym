@@ -1,4 +1,13 @@
-"""Musculoskeletal (FlyMimic) body model as a FlyGym composition element.
+"""
+!!! warning "Experimental"
+
+    Support for the FlyMimic musculoskeletal body model is
+    **experimental**. The API may change in future releases, and only
+    the left-front leg is muscle-driven in the current model. Not all
+    features available for the default `NeuroMechFly` model are
+    currently supported (e.g. per-leg ground-contact sensors).
+
+Musculoskeletal (FlyMimic) body model as a FlyGym composition element.
 
 Unlike `NeuroMechFly` and `FlyBody`, which compose a body from meshes and YAML
 rigging configs via `BaseFly`, the musculoskeletal model is a *pre-authored*
@@ -20,10 +29,12 @@ topology does not line up 1:1 with FlyGym's `BodySegment` names:
 * ``eyecameraname_to_mjcfcamera`` plus the ``get_*_order`` accessors.
 
 Pair it with `MusculoskeletalWorld` (see `flygym.compose.world`), or use
-`build_musculoskeletal_simulation` (defined below) for the common case. Guarded
-GPU/MuJoCo-Warp helpers (`check_mjwarp_compatibility`,
-`build_musculoskeletal_gpu_simulation`) live here too — they lazily import
-``mujoco_warp`` so they are safe to import on machines without a GPU.
+`build_musculoskeletal_simulation` (defined below) for the common case.
+`build_musculoskeletal_simulation` returns a plain `flygym.Simulation` (CPU,
+single world) — **not** ``flygym.warp.GPUSimulation``. Guarded GPU/MuJoCo-Warp
+helpers (`check_mjwarp_compatibility`, `build_musculoskeletal_gpu_simulation`)
+live here too — they lazily import ``mujoco_warp`` so they are safe to import
+on machines without a GPU, and require the ``[warp]`` extra to actually run.
 """
 
 from dataclasses import dataclass
@@ -96,13 +107,48 @@ def _load_mjcf(xml_path: PathLike) -> mjcf.RootElement:
 class MusculoskeletalFly(BaseCompositionElement):
     """FlyGym-compatible wrapper around FlyMimic's musculoskeletal MJCF.
 
+    The musculoskeletal body model is published in:
+
+        Ozdil, P. G., et al. (2026). Musculoskeletal simulation of limb
+        movement biomechanics in *Drosophila melanogaster*. *ICLR 2026*.
+        https://arxiv.org/abs/2509.06426
+
+    Source code for the original model: https://github.com/gizemozd/FlyMimic
+
+    !!! info "Plain flygym — not GPU-accelerated"
+
+        `MusculoskeletalFly` works with plain `flygym.Simulation` (CPU,
+        single world). It does **not** require `flygym.warp`.
+
+    Unlike `NeuroMechFly` and `FlyBody`, which compose a body from meshes
+    and YAML rigging configs via `BaseFly`, this class loads FlyMimic's
+    pre-authored self-contained MJCF and wraps it so that `Simulation` and
+    its sensor suite work unchanged. Dict keys on all tracking attributes
+    are the model's own MJCF element-name strings (e.g. ``"LFFemur"``,
+    ``"joint_LFCoxa_yaw"``).
+
     Args:
         xml_path: Path to the FlyMimic MJCF. Defaults to the bundled
-            ``arm_damping_stiff`` musculoskeletal model.
-        name: Logical fly name used by `Simulation` lookups.
+            ``arm_damping_stiff`` musculoskeletal model
+            (`DEFAULT_MUSCULOSKELETAL_XML`).
+        name: Logical fly name used by `Simulation` lookups. Defaults to
+            ``"nmf"``.
 
-    See the module docstring for the exposed attributes; dict keys are the
-    model's own element-name strings.
+    Attributes:
+        bodyseg_to_mjcfbody: Maps body-segment name → MJCF body element.
+        bodyseg_to_mjcfgeom: Maps body-segment name → list of MJCF geom
+            elements (one entry per geom on that body).
+        jointdof_to_mjcfjoint: Maps joint-DoF name → MJCF joint element.
+        jointdof_to_mjcfactuator_by_type: Maps `ActuatorType` → dict of
+            actuator-name → MJCF actuator element.
+        leg_to_adhesionactuator: Always empty (FlyMimic has no adhesion).
+        anatomicaljoint_to_mjcfsites: Always empty.
+        eyecameraname_to_mjcfcamera: Camera elements added via `add_vision`;
+            empty until `add_vision` is called.
+        cameraname_to_mjcfcamera: All scene cameras, including the world
+            camera named `DEFAULT_SCENE_CAMERA`.
+        muscle_names: Names of the 15 Hill-type muscle actuators, in MJCF
+            order (read-only property).
     """
 
     def __init__(
@@ -162,7 +208,9 @@ class MusculoskeletalFly(BaseCompositionElement):
         for idx, cam in enumerate(self._mjcf_root.find_all("camera")):
             if cam.name is None:
                 cam.name = (
-                    DEFAULT_SCENE_CAMERA if idx == 0 else f"{DEFAULT_SCENE_CAMERA}_{idx}"
+                    DEFAULT_SCENE_CAMERA
+                    if idx == 0
+                    else f"{DEFAULT_SCENE_CAMERA}_{idx}"
                 )
             self.cameraname_to_mjcfcamera[cam.name] = cam
 
@@ -192,22 +240,31 @@ class MusculoskeletalFly(BaseCompositionElement):
     # ---- Fly-compatible accessors used by Simulation / the imitation env ----
 
     def get_bodysegs_order(self) -> list[str]:
+        """Return all body-segment names in MJCF order."""
         return list(self.bodyseg_to_mjcfbody.keys())
 
     def get_jointdofs_order(self) -> list[str]:
+        """Return all joint-DoF names in MJCF order."""
         return list(self.jointdof_to_mjcfjoint.keys())
 
     def get_actuated_jointdofs_order(
         self, actuator_type: "ActuatorType | str"
     ) -> list[str]:
+        """Return actuator names of the given type, in MJCF order.
+
+        Args:
+            actuator_type: An `ActuatorType` value or its string name (e.g.
+                ``"muscle"`` or ``ActuatorType.MUSCLE``).
+        """
         actuator_type = ActuatorType(actuator_type)
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
 
     def get_sites_order(self) -> list[str]:
+        """Return anatomical-joint site names (always empty for this model)."""
         return list(self.anatomicaljoint_to_mjcfsites.keys())
 
     def get_legs_order(self) -> list[str]:
-        # No ground-contact leg grouping is defined for the musculoskeletal model.
+        """Return leg names (always empty — no ground-contact grouping defined)."""
         return []
 
     @property
@@ -264,9 +321,8 @@ def build_musculoskeletal_simulation(
     xml_path: PathLike = DEFAULT_MUSCULOSKELETAL_XML,
     name: str = "nmf",
     add_vision: bool = False,
-):
-    """Convenience: build a `MusculoskeletalFly` + `MusculoskeletalWorld` +
-    `Simulation`.
+) -> "tuple[Simulation, MusculoskeletalFly]":  # noqa: F821
+    """Build a `MusculoskeletalFly` + `MusculoskeletalWorld` + `Simulation`.
 
     Equivalent to the standard composition flow::
 
@@ -274,10 +330,25 @@ def build_musculoskeletal_simulation(
         world = MusculoskeletalWorld(fly)
         sim = Simulation(world)
 
+    Args:
+        xml_path: Path to the FlyMimic MJCF. Defaults to
+            `DEFAULT_MUSCULOSKELETAL_XML`.
+        name: Logical fly name. Defaults to ``"nmf"``.
+        add_vision: If True, attach left/right eye cameras so
+            `Simulation.get_raw_vision` / `get_ommatidia_readouts` work.
+            Note that ommatidia readouts are approximate because FlyGym's
+            `Retina` is calibrated for its own eye placement.
+
+    !!! info "Plain flygym — not GPU-accelerated"
+
+        Returns a plain `flygym.Simulation` (CPU, single world). For the
+        GPU path use `build_musculoskeletal_gpu_simulation` with the
+        `[warp]` extra.
+
     Returns:
-        ``(simulation, fly)`` where ``simulation`` is a `flygym.Simulation`
-        and ``fly`` is the `MusculoskeletalFly` (handy for reading
-        ``muscle_names``).
+        ``(simulation, fly)`` where *simulation* is a `flygym.Simulation`
+        and *fly* is the `MusculoskeletalFly` instance (useful for
+        inspecting ``fly.muscle_names`` or calling ``fly.add_vision``).
     """
     from flygym.simulation import Simulation
     from flygym.compose.world.musculoskeletal import MusculoskeletalWorld
@@ -395,15 +466,29 @@ def build_musculoskeletal_gpu_simulation(
     add_vision: bool = False,
     **gpu_kwargs,
 ):
-    """Build a `GPUSimulation` of the muscle model with ``n_worlds`` parallel
-    copies (for vectorized RL on a CUDA machine).
+    """Build a `GPUSimulation` of the muscle model with *n_worlds* parallel
+    copies for vectorized RL on a CUDA machine.
 
-    Raises a clear `ImportError` if the ``[warp]`` extra / an NVIDIA GPU is not
-    available. The non-GPU code path (`build_musculoskeletal_simulation`) is
-    unaffected.
+    Call `check_mjwarp_compatibility` first to verify that the installed
+    ``mujoco_warp`` version supports the muscle model's Hill-type actuators,
+    spatial tendons, and joint-equality constraints.
+
+    Args:
+        n_worlds: Number of parallel simulation worlds.
+        xml_path: Path to the FlyMimic MJCF. Defaults to
+            `DEFAULT_MUSCULOSKELETAL_XML`.
+        name: Logical fly name. Defaults to ``"nmf"``.
+        add_vision: Attach eye cameras (approximate; see
+            `build_musculoskeletal_simulation`).
+        **gpu_kwargs: Forwarded to `GPUSimulation`.
 
     Returns:
-        ``(gpu_simulation, fly)``.
+        ``(gpu_simulation, fly)`` — a `GPUSimulation` and the
+        `MusculoskeletalFly`.
+
+    Raises:
+        ImportError: If the ``[warp]`` extra or an NVIDIA CUDA GPU is not
+            available.
     """
     try:
         from flygym.warp.simulation import GPUSimulation

@@ -162,8 +162,11 @@ def test_reward_matches_flymimic_formula_exactly():
     for perturb in (0.0, 0.05, 0.4):
         env.reset(seed=0)
         for _ in range(3):
-            a = (np.zeros(env.n_muscles, dtype=np.float32) if perturb == 0
-                 else rng.uniform(0, perturb, env.n_muscles).astype(np.float32))
+            a = (
+                np.zeros(env.n_muscles, dtype=np.float32)
+                if perturb == 0
+                else rng.uniform(0, perturb, env.n_muscles).astype(np.float32)
+            )
             env.step(a)
         i = env._mocap_idx
         tq, aq = env._clip.qpos[i], env.sim.mj_data.qpos[env._tracked_qposadrs]
@@ -215,9 +218,7 @@ def test_record_rollout_writes_video(tmp_path):
 
     env = _make_env()  # test mode -> full clip, no early termination
     out = tmp_path / "rollout.mp4"
-    stats = record_rollout(
-        env, random_policy(env), out, camera_res=(120, 160)
-    )
+    stats = record_rollout(env, random_policy(env), out, camera_res=(120, 160))
     assert out.exists() and out.stat().st_size > 0
     assert stats["n_steps"] > 0
     assert stats["video_path"] == str(out)

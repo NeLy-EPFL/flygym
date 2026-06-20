@@ -139,9 +139,7 @@ def test_muscle_fly_cannot_be_added_to_a_normal_attach_world():
     # contained muscle model does not satisfy; it must fail rather than
     # silently produce a doubled floor / wrongly free-jointed thorax.
     with pytest.raises(Exception):
-        world.add_fly(
-            MusculoskeletalFly(), (0, 0, 0), Rotation3D("quat", [1, 0, 0, 0])
-        )
+        world.add_fly(MusculoskeletalFly(), (0, 0, 0), Rotation3D("quat", [1, 0, 0, 0]))
 
 
 # -----------------------------------------------------------------------------
