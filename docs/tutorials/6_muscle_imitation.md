@@ -124,15 +124,15 @@ Reproduce:
 
 ```bash
 # quick check: random-policy rollout (no training dependencies)
-python -m flygym_demo.muscle_imitation --no-train
+uv run python -m flygym_demo.muscle_imitation --no-train
 
 # train a policy with logging + checkpointing, then record a video of it
-python -m flygym_demo.muscle_imitation \
+uv run python -m flygym_demo.muscle_imitation \
     --clip 0002 --total-timesteps 15000000 --learning-rate 1e-5 \
     --log-dir runs/0002 --video-path runs/0002/rollout.mp4
 
 # render a previously-saved policy without retraining
-python -m flygym_demo.muscle_imitation --no-train \
+uv run python -m flygym_demo.muscle_imitation --no-train \
     --model-path runs/0002/final_model.zip --video-path rollout.mp4
 ```
 
