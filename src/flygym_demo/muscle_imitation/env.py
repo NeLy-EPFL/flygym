@@ -35,38 +35,95 @@ from flygym_demo.muscle_imitation.data import (
 
 @dataclass
 class ImitationConfig:
-    """Hyperparameters for the imitation-tracking reward and episodes."""
+    """Hyperparameters for the imitation-tracking reward and episode logic.
+
+    Attributes:
+        clip: Mocap clip identifier to track. Defaults to ``"0002"`` (the
+            bundled FlyMimic clip).
+        pose_rew_weight: Weight applied to the joint-position and body-
+            position error terms in the reward (``pose_w`` in the FlyMimic
+            formula). Default ``5.0``.
+        vel_rew_weight: Weight applied to the joint-velocity error term
+            (``vel_w``). Default ``3.0``.
+        rew_threshold: Training episodes terminate early if per-step reward
+            drops below this value. Ignored in test mode. Default ``0.01``.
+        min_episode_steps: Minimum episode length; the random start index is
+            capped so at least this many frames remain. Default ``20``.
+        init_noise_scale: Standard deviation of Gaussian noise added to the
+            initial qpos in training mode. Set to ``0`` to start exactly
+            from the mocap pose. Default ``0.02``.
+        control_timestep: Seconds per ``env.step()`` call. Must be a
+            positive integer multiple of the MuJoCo physics timestep.
+            Default ``0.002`` (500 Hz).
+        test: If ``True``, disables early termination and initial noise;
+            always starts from frame 0. Use for evaluation rollouts.
+            Default ``False``.
+        tracked_joint_names: Ordered MJCF joint names corresponding to the
+            clip's qpos columns. If ``None`` (default), they are inferred
+            automatically from the clip's qpos width using
+            `tracked_joint_names_for_ncols`.
+        tracked_body_names: MJCF body names tracked by the xipos array.
+            Defaults to `TRACKED_BODY_NAMES`.
+    """
 
     clip: str = "0002"
-    """Mocap clip to track. Defaults to the bundled clip "0002"."""
     pose_rew_weight: float = 5.0
     vel_rew_weight: float = 3.0
     rew_threshold: float = 0.01
-    """Episodes terminate if reward drops below this (training only)."""
     min_episode_steps: int = 20
     init_noise_scale: float = 0.02
-    """Std dev of Gaussian noise applied to initial qpos in training mode."""
     control_timestep: float = 0.002
-    """Seconds per env.step(). Must be a multiple of the MuJoCo dt."""
     test: bool = False
-    """If True, disable early termination and noise; useful for evaluation."""
     tracked_joint_names: tuple[str, ...] | None = None
-    """MJCF joint names matching the clip's qpos columns. If None (default),
-    they are inferred from the clip's qpos width at env construction (the
-    shipped clip has 7 DoFs)."""
     tracked_body_names: tuple[str, ...] = field(
         default_factory=lambda: TRACKED_BODY_NAMES
     )
 
 
 class ImitationEnv(gym.Env):
-    """Mocap-tracking RL env using a pre-built muscle `Simulation`.
+    """Gymnasium environment for mocap-tracking with a muscle `Simulation`.
 
-    The action is a vector of muscle activations (one per muscle, in
-    ``[0, 1]``). Observation defaults to tracked qpos + qvel + muscle
-    activations + muscle forces + a time-left scalar. The reward is the
-    FlyMimic compound tracking reward
-    ``clip((qpos_rew + xpos_rew + qvel_rew) / 3, 0, 1)``.
+    Wraps a pre-built `Simulation` (backed by `MusculoskeletalFly`) and
+    exposes a standard ``gym.Env`` interface for training RL policies.
+
+    **Action space:** ``Box(0, 1, shape=(n_muscles,))`` — one activation
+    per Hill-type muscle, in [0, 1].
+
+    **Observation space:** ``Box(-inf, inf, shape=(obs_dim,))`` where
+    ``obs_dim = 2 * n_tracked_joints + 2 * n_muscles + 1``, containing:
+    tracked qpos ‖ tracked qvel ‖ muscle activations ‖ muscle forces ‖
+    time-left (scalar in [0, 1]).
+
+    **Reward** — FlyMimic compound motion-imitation reward (verified to
+    match FlyMimic's implementation to < 1e-9):
+
+        qpos_rew = exp(-pose_w × ‖target_qpos − actual_qpos‖₂)
+        qvel_rew = exp(-vel_w  × ‖target_qvel − actual_qvel‖₂)
+        xpos_rew = exp(-pose_w × mean_b ‖target_xpos_b − actual_xpos_b‖₂)
+        reward   = clip((qpos_rew + xpos_rew + qvel_rew) / 3, 0, 1)
+
+    Use `make_imitation_env` to build both the `Simulation` and this env
+    in a single call.
+
+    Args:
+        simulation: A `Simulation` built from a `MusculoskeletalFly`.
+        fly_name: Logical name of the fly in *simulation* (must match the
+            ``name`` passed to `MusculoskeletalFly`).
+        dataset: Mocap clip loader. Defaults to the bundled dataset.
+        config: `ImitationConfig` controlling reward weights, clip
+            selection, and episode logic. Defaults to ``ImitationConfig()``.
+
+    Attributes:
+        sim: The underlying `Simulation`.
+        fly_name: The fly identifier.
+        dataset: The `MoCapDataset` being used.
+        config: The active `ImitationConfig`.
+        tracked_joint_names: Ordered MJCF joint names for the tracked DoFs.
+        muscle_names: Names of the muscle actuators (in MJCF order).
+        n_muscles: Number of muscle actuators.
+        action_space: Gymnasium ``Box`` for muscle activations.
+        observation_space: Gymnasium ``Box`` for observations.
+        substeps_per_action: Physics substeps executed per ``step()`` call.
     """
 
     metadata = {"render_modes": []}
@@ -167,6 +224,22 @@ class ImitationEnv(gym.Env):
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[np.ndarray, dict[str, Any]]:
+        """Reset to a (possibly random) position in the mocap clip.
+
+        In training mode a random start frame is sampled so the policy sees
+        diverse states; in test mode (``config.test=True``) the clip always
+        starts at frame 0. Initial qpos is optionally perturbed by Gaussian
+        noise (``config.init_noise_scale``).
+
+        Args:
+            seed: Random seed for reproducibility.
+            options: Optional dict with ``"clip"`` key to override the
+                configured clip for this episode.
+
+        Returns:
+            ``(obs, info)`` where *obs* is the initial observation and
+            *info* contains ``"clip"`` and ``"start_idx"``.
+        """
         super().reset(seed=seed)
         if self._np_random is None or seed is not None:
             self._np_random = np.random.default_rng(seed)
@@ -191,11 +264,29 @@ class ImitationEnv(gym.Env):
         mj.mj_forward(self.sim.mj_model, self.sim.mj_data)
 
         self._last_reward = 0.0
-        return self._get_observation(), {"clip": clip_name, "start_idx": self._mocap_idx}
+        return self._get_observation(), {
+            "clip": clip_name,
+            "start_idx": self._mocap_idx,
+        }
 
     def step(
         self, action: np.ndarray
     ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
+        """Apply muscle activations, advance physics, and compute reward.
+
+        Runs ``substeps_per_action`` MuJoCo physics steps, then advances the
+        mocap frame pointer by one and computes the FlyMimic imitation reward
+        against the new reference frame.
+
+        Args:
+            action: Muscle activations of shape ``(n_muscles,)`` in [0, 1].
+
+        Returns:
+            ``(obs, reward, terminated, truncated, info)`` following the
+            Gymnasium ``step`` convention. *terminated* is ``True`` when the
+            clip ends or reward drops below ``rew_threshold`` (training only).
+            *info* contains ``"mocap_idx"`` and ``"reward"``.
+        """
         action = np.asarray(action, dtype=np.float32)
         if action.shape != (self.n_muscles,):
             raise ValueError(
@@ -209,7 +300,10 @@ class ImitationEnv(gym.Env):
         self._last_reward, terminated = self._compute_reward_and_done()
 
         obs = self._get_observation()
-        info: dict[str, Any] = {"mocap_idx": self._mocap_idx, "reward": self._last_reward}
+        info: dict[str, Any] = {
+            "mocap_idx": self._mocap_idx,
+            "reward": self._last_reward,
+        }
         return obs, self._last_reward, terminated, False, info
 
     # ---- reward + observation ----
@@ -257,7 +351,9 @@ class ImitationEnv(gym.Env):
             muscle_acts = data.act[self._muscle_actadrs].astype(np.float32)
         else:
             muscle_acts = np.zeros(self.n_muscles, dtype=np.float32)
-        muscle_forces = data.actuator_force[self._muscle_actuator_ids].astype(np.float32)
+        muscle_forces = data.actuator_force[self._muscle_actuator_ids].astype(
+            np.float32
+        )
         if self._clip is not None and self._clip.n_frames > 1:
             time_left = np.float32(1.0 - self._mocap_idx / (self._clip.n_frames - 1))
         else:
@@ -267,4 +363,5 @@ class ImitationEnv(gym.Env):
         ).astype(np.float32)
 
     def close(self) -> None:
+        """Close the underlying simulation and release MuJoCo resources."""
         self.sim.close()

@@ -21,17 +21,35 @@ def make_imitation_env(
     config: ImitationConfig | None = None,
     dataset: MoCapDataset | None = None,
 ) -> ImitationEnv:
-    """Build FlyMimic's musculoskeletal `Simulation` and wrap it in an
-    `ImitationEnv`.
+    """Build a muscle `Simulation` and wrap it in an `ImitationEnv`.
+
+    !!! info "Plain flygym — not GPU-accelerated"
+
+        Uses `build_musculoskeletal_simulation`, which returns a plain
+        `flygym.Simulation` (CPU, single world), not `flygym.warp.GPUSimulation`.
+
+    Convenience factory equivalent to::
+
+        sim, fly = build_musculoskeletal_simulation(xml_path=xml_path,
+                                                    name=name,
+                                                    add_vision=add_vision)
+        env = ImitationEnv(sim, fly_name=fly.name, dataset=dataset,
+                           config=config or ImitationConfig())
 
     Args:
-        xml_path: Musculoskeletal MJCF to load. Defaults to the bundled
-            ``arm_damping_stiff`` muscle model.
-        name: Logical fly name.
-        add_vision: If True, attach eye cameras so `get_ommatidia_readouts`
-            works (approximate; see `MusculoskeletalFly.add_vision`).
-        config: `ImitationConfig` for reward weights, clip, etc.
-        dataset: A `MoCapDataset`; defaults to the bundled clips.
+        xml_path: Musculoskeletal MJCF to load. Defaults to
+            `DEFAULT_MUSCULOSKELETAL_XML`.
+        name: Logical fly name passed to `MusculoskeletalFly`. Default
+            ``"nmf"``.
+        add_vision: If ``True``, attach eye cameras so
+            `Simulation.get_ommatidia_readouts` works (approximate; see
+            `MusculoskeletalFly.add_vision`).
+        config: `ImitationConfig` controlling reward weights, clip
+            selection, and episode logic. Defaults to ``ImitationConfig()``.
+        dataset: Mocap clip loader. Defaults to the bundled clips.
+
+    Returns:
+        A fully constructed `ImitationEnv` ready for training or evaluation.
     """
     sim, fly = build_musculoskeletal_simulation(
         xml_path=xml_path, name=name, add_vision=add_vision

@@ -1,6 +1,18 @@
 # Muscle-Based Imitation Learning
 
-FlyGym can drive the left-front (LF) leg of the fly with biomechanical **muscles** and learn to reproduce recorded leg movements via imitation learning. When muscle actuation is selected, FlyGym uses [FlyMimic's](https://github.com/gizemozd/FlyMimic) musculoskeletal model in place of the default rigid-body model, while keeping FlyGym's `Simulation` and sensor APIs. The musculoskeletal body model follows the same composition convention as `NeuroMechFly` and `FlyBody` — the fly and world classes live in `flygym.compose`:
+!!! warning "Experimental"
+
+    Support for the FlyMimic musculoskeletal body model is **experimental**.
+    The API may change in future releases. Only the left-front leg is
+    muscle-driven in the current model; other legs are passive or locked.
+    Not all features available for the default `NeuroMechFly` model are
+    currently supported (e.g. per-leg ground-contact sensors are absent).
+
+FlyGym supports **muscle-actuated** fly simulations, in which the standard joint actuators are replaced by biophysically realistic Hill-type muscles. This opens the door to studying neuromuscular control, movement biomechanics, and motor learning — areas where the mechanical properties of muscles (force–velocity relationships, passive elasticity, activation dynamics) shape how movements are generated and controlled.
+
+**Imitation learning** is a natural application of this framework: given motion-capture recordings of real fly kinematics, a policy can be trained to activate muscles so that the simulated limb tracks the recorded trajectory. The same approach generalises to any muscle-actuated limb or behavior. What ships today is a working implementation for the *Drosophila* left-front (LF) leg, reproducing the [FlyMimic](https://github.com/gizemozd/FlyMimic) result inside FlyGym.
+
+The musculoskeletal body model follows the same composition convention as `NeuroMechFly` and `FlyBody` — the fly and world classes live in `flygym.compose`:
 
 | Component | What it provides |
 | --- | --- |
@@ -10,9 +22,15 @@ FlyGym can drive the left-front (LF) leg of the fly with biomechanical **muscles
 
 FlyGym's core only ships the musculoskeletal **body model**; the mocap clips and the imitation-learning code live entirely in the `flygym_demo.muscle_imitation` demo submodule, which is also the runnable example.
 
----
+!!! info "Plain flygym (CPU) — not GPU-accelerated"
 
-## 1. Dataset
+    `build_musculoskeletal_simulation` and `make_imitation_env` return a plain
+    `flygym.Simulation` backed by a single CPU MuJoCo world — **not**
+    `flygym.warp.GPUSimulation`. Everything on this page, including training,
+    runs on plain `flygym`.
+
+
+## Dataset
 
 The motion-capture clips in `flygym_demo/muscle_imitation/assets/mocap/` are recorded *Drosophila* left-front-leg kinematics, stored as NumPy arrays at a 500 Hz control rate.
 
@@ -41,9 +59,8 @@ One clip ships with FlyGym — **`0002`** (225 frames, 7 joint DoFs), FlyMimic's
 
 The mapping is keyed by qpos width (`TRACKED_JOINT_NAMES_BY_NCOLS` in `flygym_demo.muscle_imitation.data`) and `ImitationEnv` selects it from the clip's width, so observation/action shapes adapt automatically (the shipped clip → 45-dim obs).
 
----
 
-## 2. The musculoskeletal model
+## The musculoskeletal model
 
 The model is `assets/model/musculoskeletal/best_combined_arm_damping_stiff_cvt3.xml` (+ STL meshes), converted from an OpenSim model with [MyoConverter](https://github.com/MyoHub/myoconverter). It has 73 bodies, **15 Hill-type muscle actuators** on the LF leg, and **15 spatial tendons**.
 
@@ -62,9 +79,9 @@ How it differs from FlyGym's default rigid-body fly:
 
 `build_musculoskeletal_simulation()` loads this model and returns a standard `flygym.Simulation`, so the rest of FlyGym works against it unchanged.
 
----
 
-## 3. Environment, reward, and sensors
+
+## Environment, reward, and sensors
 
 ### Environment — `flygym_demo.muscle_imitation.ImitationEnv`
 
@@ -88,21 +105,8 @@ reward   = clip((qpos_rew + xpos_rew + qvel_rew) / 3, 0, 1)
 
 In training mode an episode ends early if the reward drops below `rew_threshold` (default `0.01`) or the clip ends.
 
-### Sensors
 
-| Sensor | Status |
-| --- | --- |
-| Proprioception (`get_joint_angles` / `get_joint_velocities`) | ✅ |
-| Body kinematics (`get_body_positions` / `get_body_rotations`) | ✅ |
-| Compound-eye vision (`get_ommatidia_readouts`) | ⚠️ via `MusculoskeletalFly.add_vision()`; approximate (retina calibrated for FlyGym's eyes) |
-| Per-leg ground contact (`get_ground_contact_info`) | ❌ not available |
-| Body contact forces (`get_bodysegment_contact_forces`) | ✅ against the floor |
-
-(Contact is of limited use while only one leg is actuated — see §6.)
-
----
-
-## 4. Results & reproducibility
+## Results & reproducibility
 
 We reproduced FlyMimic's imitation-learning result in FlyGym. Training a PPO
 policy on clip `0002` with FlyMimic's own hyperparameters (`stable-baselines3`,
@@ -124,7 +128,7 @@ python -m flygym_demo.muscle_imitation --no-train
 
 # train a policy with logging + checkpointing, then record a video of it
 python -m flygym_demo.muscle_imitation \
-    --clip 0002 --total-timesteps 30000000 --learning-rate 1e-5 \
+    --clip 0002 --total-timesteps 15000000 --learning-rate 1e-5 \
     --log-dir runs/0002 --video-path runs/0002/rollout.mp4
 
 # render a previously-saved policy without retraining
@@ -151,9 +155,9 @@ Training is CPU-only on most workstations (see §5 for the GPU path). At higher
 learning rates, set PPO `target_kl ≈ 0.05` and keep the best checkpoint by
 periodic evaluation to avoid late instability.
 
----
 
-## 5. API
+
+## API
 
 ```python
 from flygym.compose import build_musculoskeletal_simulation
@@ -215,51 +219,23 @@ fly.muscle_names                 # the 15 muscle actuator names
 sim.get_joint_angles(fly.name)   # proprioception, body kinematics, ...
 ```
 
-### GPU (MuJoCo-Warp)
 
-`flygym.compose` includes helpers for the GPU path, safe to import anywhere and
-only requiring a CUDA GPU when used:
+## Citation
 
-```python
-from flygym.compose import (
-    check_mjwarp_compatibility,
-    build_musculoskeletal_gpu_simulation,
-)
+If you use the musculoskeletal model in your research, please cite the
+FlyMimic paper in addition to FlyGym:
 
-check_mjwarp_compatibility()              # probe support (no-op without mujoco_warp)
-sim, fly = build_musculoskeletal_gpu_simulation(n_worlds=4096)  # Linux + NVIDIA + [warp]
-```
-
-`GPUSimulation` runs many worlds in parallel — the main speedup for RL. MuJoCo-Warp's support for muscle actuators, spatial tendons, and joint-equality constraints is version-dependent, so run `check_mjwarp_compatibility()` on the target machine first.
-
----
-
-## 6. Future work
-
-* **More legs.** Only the LF leg is muscle-driven. Muscle definitions for the
-  middle (LM) and hind (LH) legs exist in the original FlyMimic repository but
-  still need their parameters tuned and converted into the MuJoCo model.
-* **Meaningful ground contact.** With one active leg and the thorax tethered,
-  ground reaction forces are not yet behaviorally meaningful. This becomes
-  relevant once multiple legs are actuated — e.g. the muscle-driven leg
-  tracking while the others are position-controlled — and the body is free to
-  support itself.
-* **More behaviors.** Additional mocap clips would broaden the imitation
-  repertoire, ultimately enabling high-level task optimization of
-  muscle-driven behavior.
-* **GPU scaling.** Vectorized PPO over many `GPUSimulation` worlds.
-
----
-
-## 7. Citation
-
-If you use the musculoskeletal model in your research, please cite our paper in addition to FlyGym:
+> Ozdil, P. G., Ning, C., Phelps, J. S., Wang-Chen, S., Elisha, G., Blanke, A.,
+> Ijspeert, A., & Ramdya, P. (2026). Musculoskeletal simulation of limb
+> movement biomechanics in *Drosophila melanogaster*. *ICLR 2026*.
+> [arXiv:2509.06426](https://arxiv.org/abs/2509.06426)
 
 ```bibtex
-@inproceedings{ozdil2026musculoskeletal,
+@inproceedings{Ozdil2026,
   title={Musculoskeletal simulation of limb movement biomechanics in Drosophila melanogaster},
-  author={Ozdil, Pembe Gizem and Ning, Chuanfang and Phelps, Jasper S and Wang-Chen, Sibo and Elisha, Guy and Ijspeert, Auke and Ramdya, Pavan},
+  author={Ozdil, Pembe Gizem and Ning, Chuanfang and Phelps, Jasper S and Wang-Chen, Sibo and Elisha, Guy and Blanke, Alexander and Ijspeert, Auke and Ramdya, Pavan},
   booktitle={The Fourteenth International Conference on Learning Representations},
-  year={2026}
+  year={2026},
+  url={https://arxiv.org/abs/2509.06426},
 }
 ```

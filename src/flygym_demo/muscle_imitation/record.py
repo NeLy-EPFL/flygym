@@ -52,9 +52,16 @@ def random_policy(env: ImitationEnv, *, seed: int = 0) -> Policy:
 def run_rollout(
     env: ImitationEnv, policy: Policy, *, n_steps: int = 200
 ) -> list[float]:
-    """Step ``policy`` through the env for ``n_steps``, resetting on episode end.
+    """Step *policy* through the env for *n_steps*, resetting on episode end.
 
-    Returns the per-step rewards. Useful as a quick numeric smoke test.
+    Args:
+        env: The `ImitationEnv` to evaluate.
+        policy: A ``predict(obs) -> action`` callable.
+        n_steps: Total environment steps to run (across episodes).
+
+    Returns:
+        Per-step reward list of length *n_steps*. Useful as a quick numeric
+        smoke test without rendering.
     """
     obs, _ = env.reset()
     rewards: list[float] = []

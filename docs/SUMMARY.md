@@ -1,7 +1,6 @@
 * [Home](index.md)
 * [Installation](installation.md)
 * [FlyGym v1 vs. v2 API](migration.md)
-* [Muscle-Based Imitation Learning](imitation_muscle.md)
 * Tutorials
     * 1&#46; Composing models and scenes
         * [1a. Basic model composition](tutorials/1a_basic_model_composition.ipynb)
@@ -16,6 +15,7 @@
     * 5&#46; Using the FlyBody model
         * [5a. Replaying experimental recordings](tutorials/5a_replaying_experimental_flybody_onball.ipynb)
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
+    * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
@@ -23,6 +23,7 @@
         * fly
             * [base_fly](api_reference/flygym/compose/fly/base_fly.md)
             * [flybody](api_reference/flygym/compose/fly/flybody.md)
+            * [musculoskeletal](api_reference/flygym/compose/fly/musculoskeletal.md)
             * [neuromechfly](api_reference/flygym/compose/fly/neuromechfly.md)
         * [physics](api_reference/flygym/compose/physics.md)
         * [pose](api_reference/flygym/compose/pose.md)
@@ -30,6 +31,7 @@
             * [base_world](api_reference/flygym/compose/world/base_world.md)
             * [complex_terrain](api_reference/flygym/compose/world/complex_terrain.md)
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
+            * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils

@@ -1,10 +1,20 @@
-"""World wrapping a self-contained `MusculoskeletalFly`.
+"""
+!!! warning "Experimental"
+
+    Support for the FlyMimic musculoskeletal body model is
+    **experimental**. The API may change in future releases, and only
+    the left-front leg is muscle-driven in the current model. Not all
+    features available for the default `NeuroMechFly` model are
+    currently supported (e.g. per-leg ground-contact sensors).
+
+World wrapping a self-contained `MusculoskeletalFly`.
 
 FlyMimic's musculoskeletal MJCF already provides a floor, lighting, and an
 anchored thorax, so — unlike the composable FlyGym worlds (`FlatGroundWorld`
 et al.) — this world does not attach the fly into a separately-built scene. It
 adopts the fly's MJCF root directly and presents the `BaseWorld` surface that
-`Simulation` and `GPUSimulation` consume.
+plain `flygym.Simulation` (CPU) consumes. `GPUSimulation` (``flygym.warp``) is
+also supported but requires the ``[warp]`` extra and is not the default path.
 """
 
 import dm_control.mjcf as mjcf
@@ -17,10 +27,37 @@ __all__ = ["MusculoskeletalWorld"]
 
 
 class MusculoskeletalWorld(BaseWorld):
-    """`BaseWorld` over a self-contained `MusculoskeletalFly`.
+    """`BaseWorld` wrapping a self-contained `MusculoskeletalFly`.
 
-    Subclassing `BaseWorld` (rather than just duck-typing) keeps the type
-    contract honest for the GPU path, which annotates ``world: BaseWorld``.
+    Unlike the composable FlyGym worlds (`FlatGroundWorld` et al.), this
+    world does *not* build a fresh scene and attach the fly into it.
+    FlyMimic's musculoskeletal MJCF already provides a floor, lighting, and
+    an anchored thorax, so `MusculoskeletalWorld` adopts the fly's MJCF root
+    directly. Subclassing `BaseWorld` (rather than just duck-typing) keeps
+    the type contract honest for the GPU path.
+
+    Pair with `build_musculoskeletal_simulation` for the common case, or
+    construct directly:
+
+    ```python
+    from flygym import Simulation
+    from flygym.compose import MusculoskeletalFly, MusculoskeletalWorld
+
+    fly = MusculoskeletalFly()
+    world = MusculoskeletalWorld(fly)
+    sim = Simulation(world)
+    ```
+
+    Args:
+        fly: A `MusculoskeletalFly` whose self-contained MJCF root becomes
+            the world's physics scene.
+
+    Attributes:
+        ground_geoms: The floor geom from FlyMimic's MJCF, if present (used
+            by contact-force queries to filter ground hits).
+        legpos_to_groundcontactsensors_by_fly: Always ``None`` — FlyMimic
+            ships no per-leg ground-contact sensors.
+        world_dof_neutral_states: Empty dict (no extra world DoFs).
     """
 
     def __init__(self, fly: MusculoskeletalFly) -> None:

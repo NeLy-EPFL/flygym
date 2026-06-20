@@ -29,7 +29,25 @@ from flygym_demo.muscle_imitation.fly import make_imitation_env
 
 @dataclass
 class TrainConfig:
-    """Hyperparameters for a PPO training run (FlyMimic's defaults)."""
+    """Hyperparameters for a PPO training run.
+
+    Defaults match FlyMimic's published hyperparameters (``lr=1e-5``,
+    ``gamma=0.99``, ReLU ``[512, 512, 256]`` actor/critic).
+
+    Attributes:
+        clip: Mocap clip identifier to train on. Default ``"0002"``.
+        total_timesteps: Total environment steps to train for. Default
+            ``200_000`` (use ~30M for a converged policy).
+        learning_rate: PPO learning rate. Default ``1e-5``.
+        n_steps: Steps per PPO rollout buffer. Default ``2048``.
+        batch_size: Mini-batch size for PPO updates. Default ``64``.
+        n_epochs: PPO epochs per update. Default ``10``.
+        net_arch: Hidden layer sizes for actor and critic MLPs. Default
+            ``(512, 512, 256)``.
+        checkpoint_freq: Save a checkpoint every this many env steps. Set
+            to ``0`` to disable periodic checkpointing. Default ``50_000``.
+        seed: Random seed for PPO. ``None`` uses a random seed.
+    """
 
     clip: str = "0002"
     total_timesteps: int = 200_000
@@ -39,7 +57,6 @@ class TrainConfig:
     n_epochs: int = 10
     net_arch: tuple[int, ...] = (512, 512, 256)
     checkpoint_freq: int = 50_000
-    """Env steps between checkpoints. Set to 0 to disable checkpointing."""
     seed: int | None = None
 
 
