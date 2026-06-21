@@ -33,6 +33,7 @@ dependencies = [
     "pillow>=11,<13",
     "matplotlib>=3.10,<4.0",
     "numba>=0.65.1",
+    "scipy>=1.15,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -71,6 +72,7 @@ examples = [
     "ipykernel>=7.1.0",
     "ipython>=9.10,<10.0",
     "pandas>=3.0,<4.0",
+    "tqdm>=4.67,<5.0",
 ]
 
 [project.urls]
