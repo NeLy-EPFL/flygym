@@ -3,8 +3,8 @@ from os import PathLike
 from fnmatch import filter as filter_with_wildcard
 from typing import Iterable, Any
 
+import mujoco as mj
 import numpy as np
-import dm_control.mjcf as mjcf
 import yaml
 from scipy.spatial.transform import Rotation as R
 
@@ -29,6 +29,7 @@ from flygym.compose.fly.base_fly import (
     GeomFittingOption,
 )
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
+from flygym.utils.mjcf import add_actuator, GEOM_TYPES, JOINT_TYPES
 
 __all__ = ["FlyBody"]
 
@@ -225,26 +226,44 @@ class FlyBody(BaseFly):
     def _normalize_mjcf_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         return {k: cls._coerce_mjcf_value(v) for k, v in params.items()}
 
+    # PyMJCF joint attribute names that MjSpec exposes under different identifiers.
+    _MJSPEC_JOINT_KEY_RENAMES = {
+        "solreflimit": "solref_limit",
+        "solimplimit": "solimp_limit",
+        "solreffriction": "solref_friction",
+        "solimpfriction": "solimp_friction",
+    }
+
+    @classmethod
+    def _rename_mjspec_joint_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
+        return {
+            cls._MJSPEC_JOINT_KEY_RENAMES.get(k, k): v for k, v in params.items()
+        }
+
     def _add_one_body_and_geoms(
         self,
-        parent_body: mjcf.Element,
+        parent_body: mj.MjsBody,
         segment: Any,
         my_rigging_config: dict[str, Any],
         geom_group: int,
-    ) -> tuple[mjcf.Element, mjcf.Element]:
+    ) -> tuple[mj.MjsBody, list[mj.MjsGeom]]:
 
-        body_element = parent_body.add(
-            "body",
+        body_element = parent_body.add_body(
             name=segment.name,
-            pos=my_rigging_config["pos"],
-            quat=my_rigging_config["quat"],
+            pos=self._coerce_mjcf_value(my_rigging_config["pos"]),
+            quat=self._coerce_mjcf_value(my_rigging_config["quat"]),
         )
 
         all_geom_elements = []
         for geom_name, geom_config in my_rigging_config["geoms"].items():
-            geom_element = body_element.add(
-                "geom",
-                type="mesh",
+            # PyMJCF used `mesh=`; MjSpec's geom attribute is `meshname=`. Also coerce
+            # YAML string values (pos/quat/...) to the numeric types MjSpec expects.
+            geom_config = {
+                ("meshname" if k == "mesh" else k): self._coerce_mjcf_value(v)
+                for k, v in geom_config.items()
+            }
+            geom_element = body_element.add_geom(
+                type=GEOM_TYPES["mesh"],
                 name=geom_name,
                 contype=0,  # contact pairs to be added explicitly later
                 conaffinity=0,  # contact pairs to be added explicitly later
@@ -291,8 +310,7 @@ class FlyBody(BaseFly):
                             f"tried {mesh_dir} and {mesh_fallback_dir}."
                         )
 
-                mesh = self.mjcf_root.asset.add(
-                    "mesh",
+                mesh = self.mjcf_root.add_mesh(
                     name=mesh_name,
                     file=str(mesh_path),
                     scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
@@ -304,8 +322,7 @@ class FlyBody(BaseFly):
 
         # add abdomen8 mesh (just a mesh connected to c_abdomen7)
         self.bodyseg_to_mjcfmesh["c_abdomen7"].append(
-            self.mjcf_root.asset.add(
-                "mesh",
+            self.mjcf_root.add_mesh(
                 name="c_abdomen8_body",
                 file=str(mesh_dir / "c_abdomen8_body.obj"),
                 scale=(self.SCALE, self.SCALE, self.SCALE),
@@ -328,7 +345,7 @@ class FlyBody(BaseFly):
         skeleton: Skeleton,
         neutral_pose: KinematicPose | KinematicPosePreset | None = None,
         **kwargs: Any,
-    ) -> dict[JointDOF, mjcf.Element]:
+    ) -> dict[JointDOF, mj.MjsJoint]:
         """Add joints to the fly model based on a skeleton definition.
 
         Creates hinge joints connecting body segments according to the skeleton's
@@ -367,11 +384,11 @@ class FlyBody(BaseFly):
             # Override any joint config values with values provided in kwargs
             joint_params.update(kwargs)
             joint_params = self._normalize_mjcf_params(joint_params)
+            joint_params = self._rename_mjspec_joint_keys(joint_params)
 
-            return_dict[jointdof] = child_body.add(
-                "joint",
+            return_dict[jointdof] = child_body.add_joint(
                 name=jointdof.name,
-                type="hinge",
+                type=JOINT_TYPES["hinge"],
                 axis=jointdof.axis.to_vector(),
                 **joint_params,
             )
@@ -549,7 +566,7 @@ class FlyBody(BaseFly):
         forcelimited: bool = False,
         forcerange: tuple[float, float] = (-0.3, 0.3),
         **kwargs: Any,
-    ) -> dict[JointDOF, mjcf.Element]:
+    ) -> dict[JointDOF, mj.MjsActuator]:
         """Add actuators to specified joints.
 
         Creates actuators that can apply forces/torques to joints. Multiple actuator
@@ -672,7 +689,8 @@ class FlyBody(BaseFly):
 
             default_actuator_params_specific.update(kwargs)
 
-            actuator = self.mjcf_root.actuator.add(
+            actuator = add_actuator(
+                self.mjcf_root,
                 actuator_type.value,
                 name=f"{jointdof.name}-{actuator_type.value}",
                 joint=jointdof.name,
@@ -689,7 +707,7 @@ class FlyBody(BaseFly):
         gain: float | dict[str, float] = 0.985,
         add_labrum: bool = True,
         labrum_gain: float = 1.0,
-    ) -> dict[str, mjcf.Element]:
+    ) -> dict[str, mj.MjsActuator]:
         """Add adhesion actuators to the tarsus5 segments of all legs and optionally to the labrum.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
@@ -715,30 +733,30 @@ class FlyBody(BaseFly):
                 gain_this_leg = gain[leg]
             else:
                 gain_this_leg = gain
-            self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
+            self.leg_to_adhesionactuator[leg] = add_actuator(
+                self.mjcf_root,
                 "adhesion",
                 name=f"{tarsus5_segment.name}-adhesion",
-                body=self.bodyseg_to_mjcfbody[tarsus5_segment],
+                body=self.bodyseg_to_mjcfbody[tarsus5_segment].name,
                 gain=gain_this_leg,
                 ctrlrange=(0, 1),
             )
         if add_labrum:
             for s in "lr":
                 labrum = FlyBodyBodySegment(f"{s}_labrum")
-                self.leg_to_adhesionactuator[f"{s}_labrum"] = (
-                    self.mjcf_root.actuator.add(
-                        "adhesion",
-                        name=f"{labrum.name}-adhesion",
-                        body=self.bodyseg_to_mjcfbody[labrum],
-                        gain=labrum_gain,
-                        ctrlrange=(0, 1),
-                    )
+                self.leg_to_adhesionactuator[f"{s}_labrum"] = add_actuator(
+                    self.mjcf_root,
+                    "adhesion",
+                    name=f"{labrum.name}-adhesion",
+                    body=self.bodyseg_to_mjcfbody[labrum].name,
+                    gain=labrum_gain,
+                    ctrlrange=(0, 1),
                 )
         return self.leg_to_adhesionactuator
 
     def add_tendons(
         self, coef: float | dict[str, float] | None = None
-    ) -> dict[JointDOF, mjcf.Element]:
+    ) -> dict[JointDOF, mj.MjsTendon]:
         # check joints have been added
         if len(self.jointdof_to_mjcfjoint) == 0:
             raise ValueError(
@@ -760,14 +778,13 @@ class FlyBody(BaseFly):
             tree = self.skeleton.get_tree()
             for axis in [FlyBodyRotationAxis.PITCH, FlyBodyRotationAxis.YAW]:
                 tendon_name = f"abdomen_{axis.name.lower()}"
-                tendon = self.mjcf_root.tendon.add("fixed", name=tendon_name)
+                tendon = self.mjcf_root.add_tendon(name=tendon_name)
                 added_tendon = False
                 for parent, child in tree.dfs_edges(abd_bodyseg):
                     joint = FlyBodyJointDOF(parent=parent, child=child, axis=axis)
-                    tendon.add(
-                        "joint",
-                        joint=self.jointdof_to_mjcfjoint[joint],
-                        coef=get_coef_for_joint(joint),
+                    tendon.wrap_joint(
+                        self.jointdof_to_mjcfjoint[joint].name,
+                        get_coef_for_joint(joint),
                     )
                     if not added_tendon:
                         self.jointdof_to_mjcftendon[joint] = tendon
@@ -789,23 +806,19 @@ class FlyBody(BaseFly):
                 joints = self.skeleton.iter_jointdofs(tarsus_bodyseg)
                 first_joint = next(joints)
                 tendon_name = f"{leg}_tarsus"
-                tendon = self.mjcf_root.tendon.add("fixed", name=tendon_name)
+                tendon = self.mjcf_root.add_tendon(name=tendon_name)
                 self.jointdof_to_mjcftendon[first_joint] = tendon
                 coef_to_use = get_coef_for_joint(first_joint)
-                tendon.add(
-                    "joint",
-                    joint=self.jointdof_to_mjcfjoint[first_joint],
-                    coef=coef_to_use,
+                tendon.wrap_joint(
+                    self.jointdof_to_mjcfjoint[first_joint].name, coef_to_use
                 )
                 for joint in joints:
                     coef_to_use = get_coef_for_joint(joint)
-                    tendon.add(
-                        "joint",
-                        joint=self.jointdof_to_mjcfjoint[joint],
-                        coef=coef_to_use,
+                    tendon.wrap_joint(
+                        self.jointdof_to_mjcfjoint[joint].name, coef_to_use
                     )
 
-    def add_tendon_actuators(self, **kwargs: Any) -> dict[JointDOF, mjcf.Element]:
+    def add_tendon_actuators(self, **kwargs: Any) -> dict[JointDOF, mj.MjsActuator]:
         if len(self.jointdof_to_mjcftendon) == 0:
             raise ValueError(
                 "Must first add tendons via `add_tendons` "
@@ -846,8 +859,12 @@ class FlyBody(BaseFly):
             else:
                 default_params.update(kwargs)
 
-            actuator = self.mjcf_root.actuator.add(
-                "general", name=f"{tendon.name}-tendon", tendon=tendon, **default_params
+            actuator = add_actuator(
+                self.mjcf_root,
+                "general",
+                name=f"{tendon.name}-tendon",
+                tendon=tendon.name,
+                **default_params,
             )
 
             self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON][jointdof] = (

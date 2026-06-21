@@ -1,10 +1,11 @@
 from typing import override
 
+import mujoco as mj
 import numpy as np
-import dm_control.mjcf as mjcf
 
 from flygym.compose.fly import BaseFly
 from flygym.utils.math import Vec3, Rotation3D
+from flygym.utils.mjcf import GEOM_TYPES
 from flygym.compose.world.base_world import (
     _GroundContactMixin,
     BaseWorld,
@@ -52,10 +53,9 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
         pos: tuple[float, float, float],
         *,
         rgba: tuple[float, float, float, float],
-    ) -> mjcf.Element:
-        geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="box",
+    ) -> mj.MjsGeom:
+        geom = self.mjcf_root.worldbody.add_geom(
+            type=GEOM_TYPES["box"],
             name=name,
             size=size,
             pos=pos,
@@ -73,10 +73,9 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
         pos: tuple[float, float, float],
         *,
         rgba: tuple[float, float, float, float],
-    ) -> mjcf.Element:
-        geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="plane",
+    ) -> mj.MjsGeom:
+        geom = self.mjcf_root.worldbody.add_geom(
+            type=GEOM_TYPES["plane"],
             name=name,
             size=size,
             pos=pos,
@@ -266,9 +265,10 @@ class TetheredWorld(BaseWorld):
     @override
     def _attach_fly_mjcf(
         self, fly: BaseFly, spawn_position: Vec3, spawn_rotation: Rotation3D
-    ) -> mjcf.Element:
-        spawn_site = self.mjcf_root.worldbody.add(
-            "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
+    ) -> dict[str, list[float]]:
+        spawn_site = self.mjcf_root.worldbody.add_site(
+            name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
-        spawn_site.attach(fly.mjcf_root)
+        # No free joint: the fly root is rigidly fixed to the (static) spawn site.
+        self.mjcf_root.attach(fly.mjcf_root, prefix=f"{fly.name}/", site=spawn_site)
         return {}
