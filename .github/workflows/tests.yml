@@ -31,7 +31,7 @@ jobs:
             libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev
 
       - name: Install Python dependencies
-        run: uv sync --extra dev
+        run: uv sync --extra dev --extra examples
 
       - name: Run core and examples tests
         run: uv run pytest tests/core/ tests/examples/ -v --tb=short
