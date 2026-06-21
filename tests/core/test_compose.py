@@ -471,6 +471,41 @@ class TestFlyColorize:
 
 
 # ==============================================================================
+# save_xml_with_assets
+# ==============================================================================
+
+
+class TestSaveXmlWithAssets:
+    def test_exports_xml_and_assets(self, tmp_path):
+        fly = NeuroMechFly(name="export_fly")
+        fly.save_xml_with_assets(tmp_path)
+        assert list(tmp_path.glob("*.xml")), "expected an exported XML file"
+        assert list(tmp_path.glob("*.stl")), "expected exported mesh assets"
+
+    def test_exported_xml_is_self_contained(self, tmp_path, skeleton_ypr, neutral_pose):
+        import mujoco as mj
+
+        fly = NeuroMechFly(name="export_fly2")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        xml_path = next(tmp_path.glob("*.xml"))
+        # Loadable on its own with assets resolved relative to the XML directory.
+        model = mj.MjModel.from_xml_path(str(xml_path))
+        assert model.nbody > 1
+
+    def test_save_does_not_break_later_compile(
+        self, tmp_path, skeleton_ypr, neutral_pose
+    ):
+        # save_xml_with_assets must not mutate the live spec (it previously
+        # relativized mesh paths in place, breaking subsequent compile()).
+        fly = NeuroMechFly(name="export_fly3")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        mj_model, _ = fly.compile()
+        assert mj_model.nbody > 1
+
+
+# ==============================================================================
 # NeuroMechFly.add_leg_adhesion with per-leg dict gain
 # ==============================================================================
 

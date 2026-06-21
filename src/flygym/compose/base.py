@@ -1,4 +1,6 @@
+import os
 import shutil
+import contextlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 from os import PathLike
@@ -47,7 +49,10 @@ class BaseCompositionElement(ABC):
         """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        spec = self.mjcf_root
+        # Operate on a copy: relativizing asset paths and clearing the asset search
+        # dirs mutates the spec, which would break later compile() calls on the live
+        # model (it would no longer find its meshes).
+        spec = self.mjcf_root.copy()
 
         # Copy file-based assets (meshes, file textures) next to the XML and rewrite
         # their `file` attributes to bare filenames so the export is self-contained.
@@ -62,9 +67,27 @@ class BaseCompositionElement(ABC):
                 if src_path.resolve() != dst_path.resolve():
                     shutil.copy(src_path, dst_path)
                 asset.file = src_path.name
-        # Assets now sit alongside the XML, so clear the asset search dirs.
+        # Assets now sit alongside the XML, so clear the asset search dirs. The
+        # emitted XML then references assets by bare filename, resolved relative to
+        # the XML's own directory when later loaded with `mj_loadXML`.
         spec.meshdir = ""
         spec.texturedir = ""
 
+        # `to_xml()` validates assets by loading them, resolving bare filenames
+        # against the working directory, so serialize from within `output_dir`
+        # (where the assets were just copied).
         xml_filename = xml_filename or f"{spec.modelname}.xml"
-        (output_dir / xml_filename).write_text(spec.to_xml())
+        with _working_directory(output_dir):
+            xml_string = spec.to_xml()
+        (output_dir / xml_filename).write_text(xml_string)
+
+
+@contextlib.contextmanager
+def _working_directory(path: PathLike):
+    """Temporarily change the process working directory."""
+    previous = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
