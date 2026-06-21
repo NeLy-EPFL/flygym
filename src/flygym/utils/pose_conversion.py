@@ -4,7 +4,7 @@ import scipy.optimize
 from loguru import logger
 
 from flygym.anatomy import Skeleton, JointPreset, JointDOF, AxisOrder
-from flygym.compose import NeuroMechFly, KinematicPose
+from flygym.compose import Fly, KinematicPose
 
 
 def get_body_names(mj_model: mj.MjModel):
@@ -167,12 +167,12 @@ def convert_pose_axis_order(
     Returns:
         A `KinematicPose` in the target axis order.
     """
-    ref_fly = NeuroMechFly(**ref_fly_kwargs)
+    ref_fly = Fly(**ref_fly_kwargs)
     ref_skeleton = Skeleton(axis_order=pose.axis_order, joint_preset=joint_preset)
     ref_fly.add_joints(ref_skeleton, neutral_pose=pose)
     ref_mj_model, ref_mj_data = ref_fly.compile()
 
-    fitted_fly = NeuroMechFly(**fitted_fly_kwargs)
+    fitted_fly = Fly(**fitted_fly_kwargs)
     fitted_skeleton = Skeleton(axis_order=target_axis_order, joint_preset=joint_preset)
     fitted_fly.add_joints(fitted_skeleton, neutral_pose=pose)
     fitted_mj_model, fitted_mj_data = fitted_fly.compile()

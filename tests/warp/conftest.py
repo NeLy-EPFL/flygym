@@ -17,12 +17,7 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.compose import (
-    NeuroMechFly,
-    ActuatorType,
-    FlatGroundWorld,
-    KinematicPosePreset,
-)
+from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 
@@ -35,7 +30,7 @@ def build_gpu_sim(
     The fly has legs-only joints, position actuators, leg adhesion, and one
     tracking camera.  The world is a flat-ground world.
     """
-    fly = NeuroMechFly(name=fly_name)
+    fly = Fly(name=fly_name)
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,
