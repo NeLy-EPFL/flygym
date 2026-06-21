@@ -1,13 +1,18 @@
-# NeuroMechFly Live and Outreach
+# NeuroMechFly Live & Outreach
 
-Along with the FlyGym package meant for scientific research, we have also released a real-time version, [NeuroMechFly Live](https://github.com/NeLy-EPFL/neuromechfly-live). Unlike FlyGym, NeuroMechFly Live is designed for education and outreach purposes. It uses simplified physics simulation and runs in real-time on a typical PC.
+We have developed a video game demonstrating how animals control their behaviors at different levels of abstraction for education and outreach purposes. You can **play it right here in your browser** — it runs the same NeuroMechFly model with MuJoCo compiled to WebAssembly:
 
+<iframe src="../wasm/game/game.html" title="NeuroMechFly browser game"
+        style="width:100%;height:640px;border:1px solid var(--md-default-fg-color--lightest);border-radius:8px;">
+</iframe>
 
-## The NeuroMechFly Video Game
+<div style="text-align:center;margin:1.2em 0;">
+<a href="../wasm/game/game.html" target="_blank" rel="noopener"
+   style="display:inline-block;padding:0.75em 2.2em;font-size:1.1em;font-weight:700;background:var(--md-primary-fg-color);color:var(--md-primary-bg-color);border-radius:6px;text-decoration:none;">
+Play in full-screen ↗</a>
+</div>
 
-Using NeuroMechFly Live, we have developed a video game demonstrating how animals control their behaviors at different levels of abstraction. You can download this game via the link above (use a joystick for the best experience).
-
-### Level 1: High-level control using Central Pattern Generators (CPG)
+## Level 1: High-level control using Central Pattern Generators (CPG)
 
 When we walk, we can simply "decide" to walk forward or make a turn. This decision is made at a high level in our brain, and we do not need to think about the details of how our legs should move.
 
@@ -15,10 +20,8 @@ A prominent theory in neuroscience suggests that animals use neural circuits cal
 
 In this level, you can control the fly to go forward, backward, left, or right using a joystick or four buttons on the keyboard. The CPG circuits take care of low-level motor coordination, and the fly is very easy to control.
 
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/cpg_small.mp4" controls autoplay muted playsinline></video>
 
-
-### Level 2: Medium-level control using a fixed gait pattern
+## Level 2: Medium-level control using a fixed gait pattern
 
 Experienced hikers know that walking on rough terrain requires more attention and effort than walking on a flat surface. Often, the hiker needs to pay attention to how their feet are placed in an alternating pattern to ensure stability. If the hiker uses trekking poles, they can further strategize how the poles and legs can work together to maintain balance, much like how horses use trotting or galloping gaits depending on the scenario.
 
@@ -26,18 +29,14 @@ As insects have six legs, their gaits are different from those of quadrupeds. A 
 
 In this level, you can control the fly to move using the tripod gait. You can use four buttons on the joystick or keyboard to make each group of three legs move forward or backward. You will find that the fly is more challenging to control than in Level 1, but you can still manage it with some practice. Identifying neural circuits controlling these gaits is an active area of research in neuroscience. A significant portion of these circuits are thought to be located in the spinal cord of vertebrates and the ventral nerve cord of insects.
 
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/tripod_gait_small.mp4" controls autoplay muted playsinline></video>
 
-
-### Level 3: Low-level control of individual legs
+## Level 3: Low-level control of individual legs
 
 When climbers ascend a steep cliff, they need to carefully place each foot and hand to ensure a secure grip. The control of movements happens at a very low level, meaning that all the details of limb placement are consciously managed.
 
 Most humans have about 240 muscles in their limbs, and flies have about 84. Coordinating all these muscles to achieve smooth and purposeful movements is a daunting task. Much of the control is handled by the spinal cord in vertebrates and the ventral nerve cord in insects. They transform the reaching and grasping intentions from the brain into precise muscle activations.
 
 If we wanted to control the contraction of each individual muscle, we'd run out of keys on our keyboard very quickly! Therefore, in this level, we simplify the task by allowing you to control each individual leg instead of individual muscles. You can use the joystick or keyboard to move one leg at a time. This level is very challenging, and it may take a long time to master the control. However, if you can manage it, you will have a deep appreciation of the complexity of low-level motor control in animals.
-
-<video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/main/flygym/outreach/single_leg_small.mp4" controls autoplay muted playsinline></video>
 
 
 ## Outreach Events

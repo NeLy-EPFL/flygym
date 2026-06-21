@@ -1,6 +1,14 @@
-"""MkDocs hooks: ensure vendor and generated assets are present before build/serve."""
+"""MkDocs hooks: ensure vendor and generated assets are present before build/serve.
+
+The WASM apps (interactive viewer + game) live in the top-level ``wasm/`` tree,
+*outside* the MkDocs ``docs/`` dir, so they are not picked up automatically.
+``on_post_build`` copies ``wasm/`` into the built site (as ``<site>/wasm/``) so
+the iframes in the docs (e.g. ``../wasm/viewer/viewer.html``) resolve, and
+``on_serve`` watches the tree so edits trigger a rebuild during ``mkdocs serve``.
+"""
 
 import io
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -8,9 +16,11 @@ import urllib.request
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[2]
-_WASM_DIR = _REPO / "docs" / "wasm_viewer"
-_VENDOR_DIR = _WASM_DIR / "vendor"
-_ASSETS_DIR = _WASM_DIR / "assets"
+_WASM_DIR = _REPO / "wasm"
+_VENDOR_DIR = _WASM_DIR / "shared" / "vendor"
+_VIEWER_ASSETS_DIR = _WASM_DIR / "viewer" / "assets"
+_GAME_ASSETS_DIR = _WASM_DIR / "game" / "assets"
+_GAME_BUILD_SCRIPT = _REPO / "scripts" / "dev" / "build_wasm_game_assets.py"
 
 _MUJOCO_VERSION = "3.9.0"
 _THREE_VERSION = "0.169.0"
@@ -19,6 +29,23 @@ _THREE_VERSION = "0.169.0"
 def on_startup(command, dirty):
     _ensure_vendor()
     _ensure_assets()
+
+
+def on_post_build(config, **kwargs):
+    """Copy the top-level wasm/ tree into the built site so its apps are served."""
+    dest = Path(config["site_dir"]) / "wasm"
+    if dest.exists():
+        shutil.rmtree(dest)
+    shutil.copytree(
+        _WASM_DIR, dest, ignore=shutil.ignore_patterns(".gitignore", "README.md")
+    )
+    print(f"mkdocs: copied wasm/ -> {dest}")
+
+
+def on_serve(server, config, builder, **kwargs):
+    """Rebuild when anything in wasm/ changes during `mkdocs serve`."""
+    server.watch(str(_WASM_DIR))
+    return server
 
 
 def _ensure_vendor():
@@ -68,19 +95,25 @@ def _fetch_npm_files(url, members):
 
 
 def _ensure_assets():
-    if (_ASSETS_DIR / "model" / "fly.xml").exists():
-        return
-
-    print("mkdocs: building WASM viewer assets (fly.xml + STL meshes)...")
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(_REPO / "scripts" / "dev" / "build_wasm_viewer_assets.py"),
-        ],
-        cwd=_REPO,
+    _build_assets_if_missing(
+        _VIEWER_ASSETS_DIR / "model" / "fly.xml",
+        _REPO / "scripts" / "dev" / "build_wasm_viewer_assets.py",
+        "viewer",
     )
+    # The game build script may not exist yet (added in a later step); skip if so.
+    if _GAME_BUILD_SCRIPT.exists():
+        _build_assets_if_missing(
+            _GAME_ASSETS_DIR / "model" / "fly.xml", _GAME_BUILD_SCRIPT, "game"
+        )
+
+
+def _build_assets_if_missing(sentinel: Path, script: Path, label: str):
+    if sentinel.exists():
+        return
+    print(f"mkdocs: building WASM {label} assets (MJCF + STL meshes)...")
+    result = subprocess.run([sys.executable, str(script)], cwd=_REPO)
     if result.returncode != 0:
-        raise SystemExit("mkdocs: build_wasm_viewer_assets.py failed.")
+        raise SystemExit(f"mkdocs: {script.name} failed.")
 
 
 if __name__ == "__main__":
