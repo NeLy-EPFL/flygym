@@ -2,8 +2,9 @@
 
 A self-contained, in-browser version of `scripts/launch_interactive_viewer.py`.
 It runs the **same** NeuroMechFly model with MuJoCo compiled to WebAssembly and
-renders it with Three.js. Embedded in the docs at `docs/interactive.md`; also
-opens standalone.
+renders it with Three.js. Embedded in the docs home page (`docs/index.md`); also
+opens standalone. The MuJoCo-WASM + Three.js plumbing it shares with the game
+lives one level up in [`../shared/`](../shared/); see [`../README.md`](../README.md).
 
 ## Features
 
@@ -24,13 +25,14 @@ opens standalone.
 ```
 viewer.html          control panel + stage markup and styles
 viewer.js            MuJoCo-WASM simulation loop + Three.js rendering + controls
-assets/
+assets/              (gitignored, generated)
   model/fly.xml      flattened, self-contained MJCF (+ *.stl meshes)
   model_meta.json    timestep, neutral keyframe, per-actuator slider metadata, colors
-vendor/
-  mujoco/            MuJoCo compiled to WebAssembly (mujoco.js + mujoco.wasm)
-  three/             Three.js + OrbitControls
 ```
+
+The shared `../shared/scene.js` (MuJoCo load, FS write, mesh build, per-frame
+geom sync) and `../shared/vendor/` (MuJoCo-WASM + Three.js) are used by both the
+viewer and the game.
 
 ## Rebuilding the assets
 
@@ -50,30 +52,24 @@ uv run python scripts/dev/build_wasm_viewer_assets.py
 The script mirrors the body configuration in
 `scripts/launch_interactive_viewer.py`. Keep the two in sync.
 
-`viewer.html`, `viewer.js`, and this README are committed to `main`. `vendor/`
-is **not** committed — it is downloaded automatically by the MkDocs hook in
-`scripts/dev/mkdocs_hooks.py` when you run `mkdocs serve` or `mkdocs build`
-for the first time. You can also fetch it manually:
-
-```sh
-uv run python scripts/dev/mkdocs_hooks.py
-```
-
-The hook downloads `@mujoco/mujoco@3.9.0` and `three@0.169.0` from the npm
-registry and extracts the relevant files into `vendor/`.
+`viewer.html`, `viewer.js`, and this README are committed to `main`.
+`../shared/vendor/` is **not** committed — it is downloaded automatically by the
+MkDocs hook in `scripts/dev/mkdocs_hooks.py` when you run `mkdocs serve` or
+`mkdocs build` for the first time (see [`../README.md`](../README.md)).
 
 ## Deploying
 
 `scripts/dev/push_doc_site.sh` is the single entry point: it offers to
-regenerate the assets above, verifies `vendor/` is present, runs `mkdocs build`,
-and force-pushes the resulting `site/` to the orphan `gh-pages` branch. So the
-heavy viewer assets live only on `gh-pages`, never bloating `main`.
+regenerate the assets above, verifies `../shared/vendor/` is present, runs
+`mkdocs build` (whose hook copies `wasm/` into the site), and force-pushes the
+resulting `site/` to the orphan `gh-pages` branch. So the heavy assets live only
+on `gh-pages`, never bloating `main`.
 
 ## Attribution
 
 - **Model** (`assets/model/`): the NeuroMechFly v2 biomechanical model, generated
   from [flygym](https://github.com/NeLy-EPFL/flygym) (Apache-2.0). If you use it,
   please cite the NeuroMechFly v2 publication (see https://neuromechfly.org/).
-- **`vendor/mujoco/`**: [MuJoCo](https://github.com/google-deepmind/mujoco) by
-  Google DeepMind, compiled to WebAssembly (Apache-2.0).
-- **`vendor/three/`**: [Three.js](https://threejs.org/) (MIT).
+- **`../shared/vendor/mujoco/`**: [MuJoCo](https://github.com/google-deepmind/mujoco)
+  by Google DeepMind, compiled to WebAssembly (Apache-2.0).
+- **`../shared/vendor/three/`**: [Three.js](https://threejs.org/) (MIT).
