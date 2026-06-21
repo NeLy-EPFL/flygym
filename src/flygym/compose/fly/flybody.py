@@ -236,9 +236,7 @@ class FlyBody(BaseFly):
 
     @classmethod
     def _rename_mjspec_joint_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            cls._MJSPEC_JOINT_KEY_RENAMES.get(k, k): v for k, v in params.items()
-        }
+        return {cls._MJSPEC_JOINT_KEY_RENAMES.get(k, k): v for k, v in params.items()}
 
     def _add_one_body_and_geoms(
         self,

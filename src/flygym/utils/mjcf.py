@@ -96,6 +96,7 @@ def add_material(
         material.textures[int(mj.mjtTextureRole.mjTEXROLE_RGB)] = texture
     return material
 
+
 _INTEGRATORS = {
     "Euler": mj.mjtIntegrator.mjINT_EULER,
     "RK4": mj.mjtIntegrator.mjINT_RK4,
