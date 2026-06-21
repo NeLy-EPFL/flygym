@@ -495,7 +495,7 @@ class TestSetRenderer:
         from flygym.simulation import Simulation
 
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
 
@@ -534,7 +534,7 @@ class TestSetRenderer:
             spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
         )
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         sim.set_renderer(cam_name, camera_res=(64, 64))
 

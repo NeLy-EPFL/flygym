@@ -281,10 +281,10 @@ class TestModifyWorldForBatchRendering:
             warnings.simplefilter("ignore")
             modify_world_for_batch_rendering(world)
 
-        for material in world.mjcf_root.asset.find_all("material"):
-            if material.full_identifier.startswith(fly.name + "/"):
+        for material in world.mjcf_root.materials:
+            if material.name.startswith(fly.name + "/"):
                 assert material.texture is None, (
-                    f"NeuroMechFly material {material.full_identifier!r} still has a texture."
+                    f"NeuroMechFly material {material.name!r} still has a texture."
                 )
 
     def test_is_modified_true_for_colorized_fly(self):

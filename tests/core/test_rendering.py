@@ -50,9 +50,9 @@ def compiled_model_with_camera():
 
 @pytest.fixture(scope="module")
 def cam_name(compiled_model_with_camera):
-    """Full identifier of the tracking camera after world attachment."""
+    """Name of the tracking camera after world attachment (includes fly prefix)."""
     _, _, fly = compiled_model_with_camera
-    return fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+    return fly.cameraname_to_mjcfcamera["trackcam"].name
 
 
 @pytest.fixture(scope="module")

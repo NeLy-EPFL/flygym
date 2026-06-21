@@ -1,7 +1,34 @@
 # Changelog
 
 ## Version 2.0.3 (ongoing development, unreleased)
-TODO
+
+> [!CAUTION]
+> ### API-breaking changes (PyMJCF → MjSpec migration)
+> FlyGym 2.0.3 drops the `dm-control` PyMJCF backend in favour of MuJoCo's native `MjSpec` API. Model elements (cameras, materials, bodies, joints, …) are now `mujoco._specs.Mjs*` objects rather than `dm_control.mjcf` wrappers, and two patterns that worked under PyMJCF need to be updated:
+>
+> - **`element.full_identifier` → `element.name`:** PyMJCF exposed `full_identifier` to return the fully-scoped compiled name (e.g. `"fly/trackcam"`). MjSpec mutates `.name` in place when a child spec is attached with a prefix, so `.name` already returns the prefixed name after `world.add_fly()`. Replace every occurrence of `.full_identifier` with `.name`.
+> - **`spec.asset.find_all("material")` → `spec.materials`:** The PyMJCF tree-traversal helper is gone. MjSpec exposes typed collection properties (`spec.materials`, `spec.bodies`, `spec.joints`, etc.) directly on the `MjSpec` object.
+
+> [!NOTE]
+> ### Migration guide: `element.full_identifier`
+> If you stored references to spec elements (e.g. the `MjsCamera` returned by `fly.add_tracking_camera()`) and later used `element.full_identifier` as a dict key or to look up the compiled ID, replace it with `element.name`:
+>
+> ```python
+> # Before (PyMJCF)
+> cam = fly.add_tracking_camera(name="body_cam")
+> world.add_fly(fly, ...)
+> frames = renderer.frames[cam.full_identifier]  # AttributeError under MjSpec
+>
+> # After (MjSpec)
+> cam = fly.add_tracking_camera(name="body_cam")
+> world.add_fly(fly, ...)
+> frames = renderer.frames[cam.name]  # "fly_name/body_cam" after attachment
+> ```
+>
+> No other change is needed: `cam.name` already returns the same prefixed string that `cam.full_identifier` used to return, because MjSpec mutates held element references in place when the child spec is attached.
+
+### Bug fixes
+- Fixed `AttributeError: 'mujoco._specs.MjsCamera' object has no attribute 'full_identifier'` in tutorials 4a–4d and 5b caused by the PyMJCF → MjSpec migration ([#285](https://github.com/NeLy-EPFL/flygym/pull/285)).
 
 ## Version 2.0.2
 > [!CAUTION]
