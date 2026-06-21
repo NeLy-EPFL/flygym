@@ -19,8 +19,8 @@ opens standalone. Shares the MuJoCo-WASM + Three.js plumbing in
   <kbd>T</kbd><kbd>G</kbd><kbd>B</kbd> <kbd>Z</kbd><kbd>H</kbd><kbd>N</kbd>,
   backward <kbd>R</kbd><kbd>F</kbd><kbd>V</kbd> <kbd>U</kbd><kbd>J</kbd><kbd>M</kbd>.
 
-<kbd>R</kbd>/<kbd>Space</kbd> restarts. Best times per level are kept in
-`localStorage`.
+<kbd>Space</kbd> restarts (in Level 3 <kbd>R</kbd> is a leg control, so restart is
+Space only). Best times per level are kept in `localStorage`.
 
 ### Joystick / gamepad
 
