@@ -224,72 +224,58 @@ class TestRotation3DAsKwargs:
 
 
 # ==============================================================================
-# utils.mjcf: set_params_recursive / set_mujoco_globals
+# utils.mjcf: set_mujoco_globals
 # ==============================================================================
-
-
-class TestSetParamsRecursive:
-    def test_sets_attribute_on_root(self):
-        """set_params_recursive can set a direct attribute on the MJCF root."""
-        import dm_control.mjcf as mjcf
-
-        root = mjcf.RootElement()
-        # 'timestep' lives under root.option
-        from flygym.utils.mjcf import set_params_recursive
-
-        set_params_recursive(root, {"option": {"timestep": 0.001}})
-        assert root.option.timestep == pytest.approx(0.001)
-
-    def test_sets_nested_attribute(self):
-        """set_params_recursive traverses nested child elements."""
-        import dm_control.mjcf as mjcf
-        from flygym.utils.mjcf import set_params_recursive
-
-        root = mjcf.RootElement()
-        set_params_recursive(root, {"option": {"gravity": [0, 0, -9.81]}})
-        assert root.option.gravity[2] == pytest.approx(-9.81)
-
-    def test_non_dict_child_raises(self):
-        """Providing a non-dict value for a child element key should raise ValueError."""
-        import dm_control.mjcf as mjcf
-        from flygym.utils.mjcf import set_params_recursive
-
-        root = mjcf.RootElement()
-        with pytest.raises(ValueError, match="Expected dict"):
-            set_params_recursive(root, {"option": "not_a_dict"})
-
-    def test_unknown_key_is_silently_ignored(self):
-        """Keys that exist neither as attributes nor children are silently skipped."""
-        import dm_control.mjcf as mjcf
-        from flygym.utils.mjcf import set_params_recursive
-
-        root = mjcf.RootElement()
-        # Should not raise even though 'nonexistent_key' is unknown
-        set_params_recursive(root, {"nonexistent_key": 42})
 
 
 class TestSetMujocoGlobals:
     def test_applies_yaml_settings(self, tmp_path):
         """set_mujoco_globals reads a YAML file and applies the settings."""
-        import dm_control.mjcf as mjcf
+        import mujoco as mj
         from flygym.utils.mjcf import set_mujoco_globals
 
         yaml_content = "option:\n  timestep: 0.0005\n"
         yaml_path = tmp_path / "globals.yaml"
         yaml_path.write_text(yaml_content)
 
-        root = mjcf.RootElement()
-        set_mujoco_globals(root, yaml_path)
-        assert root.option.timestep == pytest.approx(0.0005)
+        spec = mj.MjSpec()
+        set_mujoco_globals(spec, yaml_path)
+        assert spec.option.timestep == pytest.approx(0.0005)
+
+    def test_applies_enums_and_flags(self, tmp_path):
+        """Enum-valued settings and option flags are translated to MjSpec."""
+        import mujoco as mj
+        from flygym.utils.mjcf import set_mujoco_globals
+
+        yaml_content = (
+            "compiler:\n  angle: radian\n"
+            "option:\n"
+            "  integrator: Euler\n"
+            "  solver: Newton\n"
+            "  flag:\n    multiccd: enable\n"
+            "statistic:\n  extent: '5'\n"
+            "visual:\n  global:\n    offwidth: 2048\n"
+        )
+        yaml_path = tmp_path / "globals.yaml"
+        yaml_path.write_text(yaml_content)
+
+        spec = mj.MjSpec()
+        set_mujoco_globals(spec, yaml_path)
+        assert not spec.compiler.degree
+        assert spec.option.integrator == mj.mjtIntegrator.mjINT_EULER
+        assert spec.option.solver == mj.mjtSolver.mjSOL_NEWTON
+        assert spec.option.enableflags & int(mj.mjtEnableBit.mjENBL_MULTICCD)
+        assert spec.stat.extent == pytest.approx(5.0)
+        assert spec.visual.global_.offwidth == 2048
 
     def test_missing_yaml_raises(self, tmp_path):
         """set_mujoco_globals raises when the YAML file does not exist."""
-        import dm_control.mjcf as mjcf
+        import mujoco as mj
         from flygym.utils.mjcf import set_mujoco_globals
 
-        root = mjcf.RootElement()
+        spec = mj.MjSpec()
         with pytest.raises(FileNotFoundError):
-            set_mujoco_globals(root, tmp_path / "nonexistent.yaml")
+            set_mujoco_globals(spec, tmp_path / "nonexistent.yaml")
 
 
 # ==============================================================================

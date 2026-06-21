@@ -1,6 +1,7 @@
 from typing import override
 
 from flygym.compose.world.base_world import _GroundContactMixin, BaseWorld
+from flygym.utils.mjcf import add_texture, add_material, GEOM_TYPES
 
 __all__ = ["FlatGroundWorld"]
 
@@ -29,8 +30,8 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
     ) -> None:
         super().__init__(name=name)
 
-        checker_texture = self.mjcf_root.asset.add(
-            "texture",
+        add_texture(
+            self.mjcf_root,
             name="checker",
             type="2d",
             builtin="checker",
@@ -39,18 +40,17 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
             rgb1=(0.3, 0.3, 0.3),
             rgb2=(0.4, 0.4, 0.4),
         )
-        grid_material = self.mjcf_root.asset.add(
-            "material",
+        add_material(
+            self.mjcf_root,
             name="grid",
-            texture=checker_texture,
+            texture="checker",
             texrepeat=(250, 250),
             reflectance=0.2,
         )
-        self.ground_geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="plane",
+        self.ground_geom = self.mjcf_root.worldbody.add_geom(
+            type=GEOM_TYPES["plane"],
             name="ground_plane",
-            material=grid_material,
+            material="grid",
             pos=(0, 0, 0),
             size=(half_size, half_size, 1),
             contype=0,

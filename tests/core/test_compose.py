@@ -263,7 +263,7 @@ class TestFlatGroundWorld:
 
     def test_custom_name(self):
         world = FlatGroundWorld(name="myworld")
-        assert world.mjcf_root.model == "myworld"
+        assert world.mjcf_root.modelname == "myworld"
 
     def test_add_fly_registers_in_lookup(self, flat_world_with_fly, fly_with_joints):
         assert fly_with_joints.name in flat_world_with_fly.fly_lookup
@@ -442,9 +442,7 @@ class TestFlyAddTrackingCamera:
         )
         mj_model, _ = world.compile()
         cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
-        cam_id = mj.mj_name2id(
-            mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
-        )
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
         assert cam_id >= 0, "Camera should be findable in the compiled model"
 
 
@@ -462,7 +460,7 @@ class TestFlyColorize:
         fly = NeuroMechFly(name="color_fly2")
         fly.colorize()
         # After colorize, there should be materials in the MJCF asset section
-        materials = fly.mjcf_root.find_all("material")
+        materials = fly.mjcf_root.materials
         assert len(materials) > 0
 
     def test_colorize_compiles(self):

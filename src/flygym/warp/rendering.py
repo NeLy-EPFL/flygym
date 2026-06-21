@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 import mediapy
 import mujoco as mj
 import mujoco_warp as mjw
-import dm_control.mjcf as mjcf
 import warp as wp
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -23,7 +22,7 @@ class _BaseWarpRenderer(Renderer, ABC):
     def __init__(
         self,
         mj_model: mj.MjModel,
-        cameras: str | mjcf.Element | list[str | mjcf.Element],
+        cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
         n_worlds_total: int | None = None,
         *,
         worlds: list[int] | None = None,
@@ -113,7 +112,7 @@ class _BaseWarpRenderer(Renderer, ABC):
     def show_in_notebook(
         self,
         world_id: int,
-        camera: str | mjcf.Element | list[str | mjcf.Element] | None = None,
+        camera: str | mj.MjsCamera | list[str | mj.MjsCamera] | None = None,
         scale: float | None = None,
         **kwargs,
     ):
@@ -141,7 +140,7 @@ class _BaseWarpRenderer(Renderer, ABC):
     def save_video(
         self,
         world_id: int | list[int],
-        output_path: dict[str | mjcf.Element, PathLike] | PathLike,
+        output_path: dict[str | mj.MjsCamera, PathLike] | PathLike,
         scale: float | None = None,
         **kwargs,
     ) -> None:
@@ -394,44 +393,45 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
     """
     is_modified = False
 
+    rgb_role = int(mj.mjtTextureRole.mjTEXROLE_RGB)
+
     # Strip textures from fly body materials
     # (rendering textures on complex meshes causes MJWarp memory corruption)
-    for material in world.mjcf_root.asset.find_all("material"):
+    for material in world.mjcf_root.materials:
         # Don't touch things that are not part of a Fly
-        if material.full_identifier.split("/")[0] not in world.fly_lookup:
+        if material.name.split("/")[0] not in world.fly_lookup:
             continue
         # Make wings half transparent
-        if "wing" in material.full_identifier:
+        if "wing" in material.name:
             material.rgba[3] = 0.5
         # If material has a texture, remove it to reduce memory use
-        if material.texture is not None:
-            texture_element = world.mjcf_root.asset.find(
-                "texture", material.texture.full_identifier
-            )
+        texture_name = material.textures[rgb_role]
+        if texture_name:
+            texture_element = world.mjcf_root.texture(texture_name)
             primary_color_rgb = texture_element.rgb1
-            material.texture = None
+            material.textures[rgb_role] = ""
             material.rgba[:3] = primary_color_rgb
             is_modified = True
 
     # Adjust scale of checker materials (e.g., ground): texrepeat needs to be scaled
-    # down by 1000x to get the same pattern - unclear why
-    for material in world.mjcf_root.asset.find_all("material"):
-        if material.texrepeat is not None:
+    # down by 1000x to get the same pattern - unclear why. Only materials that still
+    # reference a texture (e.g. the ground checker) need this.
+    for material in world.mjcf_root.materials:
+        if material.textures[rgb_role]:
             material.texrepeat = tuple(tr / 1000 for tr in material.texrepeat)
             is_modified = True
 
     # Add light above each fly explicitly
-    for body in world.mjcf_root.find_all("body"):
-        if hasattr(body, "name") and body.name == "c_thorax":
-            warnings.warn(f"Adding overhead light for body {body.full_identifier}")
-            body.add(
-                "light",
-                name=body.full_identifier.replace("/", "-") + "-overheadlight",
-                mode="track",
-                target="c_thorax",
+    for body in world.mjcf_root.bodies:
+        if body.name.split("/")[-1] == "c_thorax":
+            warnings.warn(f"Adding overhead light for body {body.name}")
+            body.add_light(
+                name=body.name.replace("/", "-") + "-overheadlight",
+                mode=mj.mjtCamLight.mjCAMLIGHT_TRACK,
+                targetbody=body.name,
                 pos=(0, 0, 30),
                 dir=(0, 0, -1),
-                directional=True,
+                type=mj.mjtLightType.mjLIGHT_DIRECTIONAL,
                 ambient=(10, 10, 10),
                 diffuse=(10, 10, 10),
                 specular=(0.3, 0.3, 0.3),

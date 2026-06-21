@@ -5,7 +5,6 @@ from os import PathLike
 
 import mujoco as mj
 import mujoco.viewer as mjviewer
-import dm_control.mjcf as mjcf
 import mediapy
 import imageio.v3 as iio
 import numpy as np
@@ -36,7 +35,7 @@ class Renderer:
     def __init__(
         self,
         mj_model: mj.MjModel,
-        cameras: str | mjcf.Element | list[str | mjcf.Element],
+        cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -92,7 +91,7 @@ class Renderer:
         self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
 
     def get_camera_matrix(
-        self, camera: str | mjcf.Element, mj_data: mj.MjData, mj_model: mj.MjModel
+        self, camera: str | mj.MjsCamera, mj_data: mj.MjData, mj_model: mj.MjModel
     ) -> np.ndarray:
         """Get the 3x4 camera projection matrix from the current MjData.
 
@@ -185,7 +184,7 @@ class Renderer:
 
     def show_in_notebook(
         self,
-        camera: str | mjcf.Element | list[str | mjcf.Element] | None = None,
+        camera: str | mj.MjsCamera | list[str | mj.MjsCamera] | None = None,
         **kwargs: Any,
     ) -> None:
         """Display recorded frames in a Jupyter notebook.
@@ -206,7 +205,7 @@ class Renderer:
 
     def save_video(
         self,
-        output_path: dict[str | mjcf.Element, PathLike] | PathLike,
+        output_path: dict[str | mj.MjsCamera, PathLike] | PathLike,
         **kwargs: Any,
     ) -> None:
         """Save recorded frames as video files.
@@ -257,7 +256,7 @@ class Renderer:
 
     def _normalize_camera_spec(
         self,
-        camera: str | mjcf.Element | list[str | mjcf.Element] | None,
+        camera: str | mj.MjsCamera | list[str | mj.MjsCamera] | None,
     ) -> list[str]:
         """Convert various camera specifications to a list of camera names.
 
@@ -272,7 +271,7 @@ class Renderer:
         """
         if camera is None:
             return list(self._cameras_names2id.keys())
-        elif isinstance(camera, (str, mjcf.Element)):
+        elif isinstance(camera, (str, mj.MjsCamera)):
             _, cam_name = self._resolve_camera_id_and_name(camera)
             camera_names = [cam_name]
         elif isinstance(camera, list):
@@ -280,7 +279,7 @@ class Renderer:
         else:
             raise ValueError(
                 f"Invalid camera spec type: {type(camera)}. Must be str, "
-                "mjcf.Element, list of these, or None."
+                "mj.MjsCamera, list of these, or None."
             )
 
         # Validate all cameras are available
@@ -295,7 +294,7 @@ class Renderer:
 
     def _resolve_output_paths(
         self,
-        output_path: dict[str | mjcf.Element, PathLike] | PathLike,
+        output_path: dict[str | mj.MjsCamera, PathLike] | PathLike,
     ) -> dict[str, Path]:
         """Convert output_path specification to dict mapping camera names to Paths.
 
@@ -336,19 +335,19 @@ class Renderer:
             }
 
     def _resolve_camera_id_and_name(
-        self, camera: str | mjcf.Element, /
+        self, camera: str | mj.MjsCamera, /
     ) -> tuple[int, str]:
         """Convert a camera specification to (internal_id, camera_name)."""
         if isinstance(camera, str):
             cam_id = mj.mj_name2id(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, camera)
             return cam_id, camera
-        elif isinstance(camera, mjcf.Element):
-            cam_name = camera.full_identifier
+        elif isinstance(camera, mj.MjsCamera):
+            cam_name = camera.name
             cam_id = mj.mj_name2id(self.mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_name)
             return cam_id, cam_name
         else:
             raise ValueError(
-                f"Invalid camera spec: {camera}. Must be one of str or mjcf.Element."
+                f"Invalid camera spec: {camera}. Must be one of str or mj.MjsCamera."
             )
 
 
@@ -384,7 +383,7 @@ def launch_interactive_viewer(
 def preview_model(
     mj_model: mj.MjModel,
     mj_data: mj.MjData,
-    camera: mjcf.Element | str,
+    camera: mj.MjsCamera | str,
     *,
     init_keyframe: str | None = "neutral",
     duration: float = 0.1,
