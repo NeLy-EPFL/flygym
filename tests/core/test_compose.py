@@ -1,6 +1,7 @@
 """Integration tests for flygym.compose (NeuroMechFly, World)."""
 
 import warnings
+import platform
 
 import pytest
 import numpy as np
@@ -475,6 +476,13 @@ class TestFlyAddTrackingCamera:
             f"'{fly.name}/{fly.root_segment.name}'."
         )
 
+    @pytest.mark.skipif(
+        platform.system() != "Linux",
+        reason=(
+            "mujoco hardcodes CGL on macOS and GLFW on Windows; "
+            "neither works headlessly in CI without a GPU"
+        ),
+    )
     def test_camera_follows_moving_body(self, skeleton_ypr, neutral_pose):
         """End-to-end check that ``track`` mode keeps the camera at a constant offset
         from the fly as the fly translates."""
