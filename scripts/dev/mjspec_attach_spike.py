@@ -4,7 +4,7 @@ Issue #282 proposes dropping dm-control's PyMJCF in favour of MuJoCo's native
 MjSpec. The biggest risk identified was whether MjSpec's attach + namespacing can
 reproduce the compiled element names FlyGym's runtime relies on. FlyGym maps
 stored MJCF element references to MuJoCo IDs via ``mj.mj_name2id(model,
-element.full_identifier)`` (see ``flygym/simulation.py``), so any name mismatch
+element.name)`` (see ``flygym/simulation.py``), so any name mismatch
 would silently break state read/write.
 
 This script builds a minimal fly + world the same way FlyGym does, once with
@@ -22,8 +22,8 @@ Findings (MuJoCo 3.6.0):
 * MjSpec **mutates element references in place** on attach: a body created as
   ``"thorax"`` reports ``.name == "fly/thorax"`` after attach. So FlyGym's pattern
   of stashing element refs (``bodyseg_to_mjcfbody`` etc.) and later reading their
-  compiled name keeps working -- ``element.full_identifier`` simply becomes
-  ``element.name``.
+  compiled name keeps working -- ``element.name`` already returns the prefixed
+  name after attach.
 * The only structural difference: PyMJCF inserts an extra massless intermediate
   body (the attached submodel's old worldbody, named ``"fly/"``). MjSpec attaches
   the submodel's top-level bodies directly, so ``nbody`` differs by one. FlyGym
