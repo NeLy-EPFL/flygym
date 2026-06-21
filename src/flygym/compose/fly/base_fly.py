@@ -577,9 +577,20 @@ class BaseFly(BaseCompositionElement):
     ) -> mj.MjsCamera:
         """Add a camera that tracks the fly's root body.
 
+        The camera is added *inside* the root segment's body element. MuJoCo's
+        ``track``/``trackcom`` modes follow the camera's parent body, so the camera
+        must be a child of the fly body to follow it; a camera placed in the world
+        body would stay put. ``track`` follows the body's position while keeping a
+        constant orientation in the world frame (a "follow" camera that pans but does
+        not rotate with the fly). Because the root segment's body frame is aligned with
+        the world frame in the neutral pose, ``pos_offset`` and ``rotation`` are
+        effectively expressed in world coordinates.
+
         Args:
             name: Camera name.
-            mode: MuJoCo camera tracking mode (e.g. ``"track"``, ``"targetbody"``).
+            mode: MuJoCo camera tracking mode (``"track"``, ``"trackcom"``, or
+                ``"fixed"``). ``"fixed"`` rigidly attaches the camera to the body so it
+                also rotates with the fly.
             pos_offset: Camera position offset from the tracked body in mm.
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
@@ -589,10 +600,10 @@ class BaseFly(BaseCompositionElement):
         Returns:
             The created MJCF camera element.
         """
-        camera = self.mjcf_root.worldbody.add_camera(
+        root_body = self.bodyseg_to_mjcfbody[self.root_segment]
+        camera = root_body.add_camera(
             name=name,
             mode=CAMERA_MODES[mode],
-            targetbody=self.root_segment.name,
             pos=pos_offset,
             fovy=fovy,
             **rotation.as_kwargs(),

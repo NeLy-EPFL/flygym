@@ -3,6 +3,7 @@
 import warnings
 
 import pytest
+import numpy as np
 import mujoco as mj
 
 from flygym.anatomy import (
@@ -444,6 +445,75 @@ class TestFlyAddTrackingCamera:
         cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
         cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
         assert cam_id >= 0, "Camera should be findable in the compiled model"
+
+    def test_camera_parented_to_root_body(self, skeleton_ypr, neutral_pose):
+        """The tracking camera must be a child of the fly's root body so that
+        ``track`` mode follows the fly. A camera in the world body would not move
+        (the world never moves), which is the bug this guards against. A freely
+        spawned fly keeps its root body dynamic (not fused into the world), so the
+        camera stays parented to it."""
+        fly = NeuroMechFly(name="cam_fly7")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world3")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        parent_body = mj.mj_id2name(
+            mj_model, mj.mjtObj.mjOBJ_BODY, mj_model.cam_bodyid[cam_id]
+        )
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_body_id, (
+            f"Tracking camera parent is '{parent_body}', expected the root body "
+            f"'{fly.name}/{fly.root_segment.name}'."
+        )
+
+    def test_camera_follows_moving_body(self, skeleton_ypr, neutral_pose):
+        """End-to-end check that ``track`` mode keeps the camera at a constant offset
+        from the fly as the fly translates."""
+        fly = NeuroMechFly(name="cam_fly8")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world4")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, mj_data = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+
+        renderer = mj.Renderer(mj_model, 64, 64)
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_before = np.array(renderer.scene.camera[0].pos)
+        body_pos_before = mj_data.xpos[root_body_id].copy()
+
+        # Translate the fly via its free joint (qpos layout: x, y, z, qw, qx, qy, qz).
+        free_adr = mj_model.jnt_qposadr[
+            mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_JOINT, fly.name)
+        ]
+        mj_data.qpos[free_adr + 1] += 5.0  # move +5 mm in y
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_after = np.array(renderer.scene.camera[0].pos)
+        body_pos_after = mj_data.xpos[root_body_id]
+        renderer.close()
+
+        body_shift = body_pos_after - body_pos_before
+        cam_shift = cam_pos_after - cam_pos_before
+        np.testing.assert_allclose(cam_shift, body_shift, atol=1e-3)
 
 
 # ==============================================================================
