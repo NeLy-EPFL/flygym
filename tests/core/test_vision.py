@@ -1,4 +1,4 @@
-"""Tests for flygym vision: Retina, Fly.add_vision, and Simulation vision APIs."""
+"""Tests for flygym vision: Retina, NeuroMechFly.add_vision, and Simulation vision APIs."""
 
 import platform
 
@@ -14,9 +14,16 @@ from flygym.anatomy import (
     JointPreset,
     Skeleton,
 )
-from flygym.compose.fly import Fly, ActuatorType
+from flygym.compose.fly import NeuroMechFly, FlyBody, ActuatorType
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
+from flygym.flybody import (
+    FlyBodyActuatedDOFPreset,
+    FlyBodyAxisOrder,
+    FlyBodyJointPreset,
+    FlyBodySkeleton,
+    FlyBodyBodySegment,
+)
 from flygym.simulation import Simulation
 from flygym.utils.math import Rotation3D
 from flygym.vision.retina import Retina
@@ -29,7 +36,13 @@ from flygym.vision.retina import Retina
 
 @pytest.fixture(scope="module")
 def vision_config():
-    with open(assets_dir / "model/vision.yaml") as f:
+    with open(assets_dir / "model/neuromechfly/vision.yaml") as f:
+        return yaml.safe_load(f)
+
+
+@pytest.fixture(scope="module")
+def flybody_vision_config():
+    with open(assets_dir / "model/flybody/vision.yaml") as f:
         return yaml.safe_load(f)
 
 
@@ -203,19 +216,19 @@ class TestRetinaCorrectFisheye:
 
 
 # ==============================================================================
-# Fly.add_vision (pure MJCF assembly; no rendering)
+# NeuroMechFly.add_vision (pure MJCF assembly; no rendering)
 # ==============================================================================
 
 
 class TestFlyAddVision:
     def test_eye_cameras_registered(self):
-        fly = Fly(name="vision_fly_basic")
+        fly = NeuroMechFly(name="vision_fly_basic")
         fly.add_vision()
         assert set(fly.eyecameraname_to_mjcfcamera.keys()) == {"l_eye_cam", "r_eye_cam"}
 
     def test_markers_hidden_by_default(self, vision_config):
         """With draw_sensor_markers=False, marker geoms stay in the hidden group."""
-        fly = Fly(name="vision_fly_nomarkers")
+        fly = NeuroMechFly(name="vision_fly_nomarkers")
         fly.add_vision(draw_sensor_markers=False)
         mj_model, _ = fly.compile()
         for sensor_name in vision_config["sensors"]:
@@ -225,7 +238,7 @@ class TestFlyAddVision:
             assert mj_model.geom_group[marker_id] == 4
 
     def test_hidden_segments_use_expected_groups(self, vision_config):
-        fly = Fly(name="vision_fly_hidden_groups")
+        fly = NeuroMechFly(name="vision_fly_hidden_groups")
         fly.add_vision(draw_sensor_markers=False)
         mj_model, _ = fly.compile()
         for segname in vision_config["hidden_segments"]:
@@ -235,7 +248,7 @@ class TestFlyAddVision:
             assert mj_model.geom_group[geom_id] == expected_group
 
     def test_markers_added_when_requested(self, vision_config):
-        fly = Fly(name="vision_fly_markers")
+        fly = NeuroMechFly(name="vision_fly_markers")
         fly.add_vision(draw_sensor_markers=True)
         mj_model, _ = fly.compile()
         for sensor_name in vision_config["sensors"]:
@@ -245,7 +258,7 @@ class TestFlyAddVision:
             assert mj_model.geom_group[marker_id] == 1
 
     def test_compiles_after_add_vision(self):
-        fly = Fly(name="vision_fly_compile")
+        fly = NeuroMechFly(name="vision_fly_compile")
         fly.add_vision(draw_sensor_markers=True)
         mj_model, _ = fly.compile()
         assert mj_model is not None
@@ -253,7 +266,7 @@ class TestFlyAddVision:
         assert mj_model.ncam >= 2
 
     def test_cameras_compile_in_world(self, neutral_pose, skeleton_ypr):
-        fly = Fly(name="vision_fly_world")
+        fly = NeuroMechFly(name="vision_fly_world")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         fly.add_vision()
         world = TetheredWorld(name="vision_world_compile")
@@ -274,7 +287,7 @@ class TestFlyAddVision:
 @pytest.fixture(scope="module")
 def fly_with_vision(neutral_pose, skeleton_ypr):
     """Standard fly + joints + actuators + vision (with markers)."""
-    fly = Fly(name="vision_sim_fly")
+    fly = NeuroMechFly(name="vision_sim_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -301,8 +314,8 @@ def simulation_with_vision(fly_with_vision):
 
 @pytest.fixture(scope="module")
 def fly_without_vision(neutral_pose, skeleton_ypr):
-    """Fly with joints/actuators but no add_vision call."""
-    fly = Fly(name="novision_sim_fly")
+    """NeuroMechFly with joints/actuators but no add_vision call."""
+    fly = NeuroMechFly(name="novision_sim_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -409,5 +422,186 @@ class TestSimulationGetOmmatidiaReadouts:
 
     def test_values_in_unit_range(self, simulation_with_vision, fly_with_vision):
         readouts = simulation_with_vision.get_ommatidia_readouts(fly_with_vision.name)
+        assert readouts.min() >= 0.0
+        assert readouts.max() <= 1.0
+
+
+# ==============================================================================
+# FlyBody vision: add_vision and Simulation hookup on the FlyBody variant.
+# The vision config (vision.yaml) is written against the flybody segment naming
+# (c_thorax, c_head, l_eye, l_pedicel, ...), so it should work on FlyBody
+# without any model-specific adjustments. These tests verify that.
+# ==============================================================================
+
+
+@pytest.fixture(scope="module")
+def flybody_neutral_pose():
+    return KinematicPosePreset.FLYBODY_NEUTRAL.get_pose_by_axis_order(
+        FlyBodyAxisOrder.YAW_ROLL_PITCH
+    )
+
+
+@pytest.fixture(scope="module")
+def flybody_skeleton():
+    return FlyBodySkeleton(
+        axis_order=FlyBodyAxisOrder.YAW_ROLL_PITCH,
+        joint_preset=FlyBodyJointPreset.LEGS_ONLY,
+    )
+
+
+class TestFlyBodyAddVision:
+    def test_eye_cameras_registered(self):
+        fly = FlyBody(name="flybody_vision_basic")
+        fly.add_vision()
+        assert set(fly.eyecameraname_to_mjcfcamera.keys()) == {
+            "l_eye_cam",
+            "r_eye_cam",
+        }
+
+    def test_compiles_after_add_vision(self):
+        fly = FlyBody(name="flybody_vision_compile")
+        fly.add_vision(draw_sensor_markers=True)
+        mj_model, _ = fly.compile()
+        assert mj_model is not None
+        assert mj_model.ncam >= 2
+
+    def test_markers_hidden_by_default(self, flybody_vision_config):
+        fly = FlyBody(name="flybody_vision_nomarkers")
+        fly.add_vision(draw_sensor_markers=False)
+        mj_model, _ = fly.compile()
+        for sensor_name in flybody_vision_config["sensors"]:
+            marker_name = f"{sensor_name}_marker"
+            marker_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, marker_name)
+            assert marker_id >= 0
+            assert mj_model.geom_group[marker_id] == 4
+
+    def test_markers_added_when_requested(self, flybody_vision_config):
+        fly = FlyBody(name="flybody_vision_markers")
+        fly.add_vision(draw_sensor_markers=True)
+        mj_model, _ = fly.compile()
+        for sensor_name in flybody_vision_config["sensors"]:
+            marker_name = f"{sensor_name}_marker"
+            marker_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, marker_name)
+            assert marker_id >= 0
+            assert mj_model.geom_group[marker_id] == 1
+
+    def test_hidden_segments_use_expected_groups(self, flybody_vision_config):
+        """The vision config's hidden_segments names (c_thorax, c_head, l_eye, ...)
+        all exist on the FlyBody model and should land in geom group 2 so the
+        eye cameras can be configured to ignore them."""
+        fly = FlyBody(name="flybody_vision_hidden_groups")
+        fly.add_vision(draw_sensor_markers=False)
+        mj_model, _ = fly.compile()
+        for segname in flybody_vision_config["hidden_segments"]:
+            fbody_seg = FlyBodyBodySegment(segname)
+            for geom in fly.bodyseg_to_mjcfgeom[fbody_seg]:
+                geom_name = geom.name
+                geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, geom_name)
+                assert geom_id >= 0, (
+                    f"hidden segment {segname} not found in flybody model"
+                )
+                assert mj_model.geom_group[geom_id] == 2
+
+    def test_cameras_compile_in_world(self, flybody_neutral_pose, flybody_skeleton):
+        fly = FlyBody(name="flybody_vision_world")
+        fly.add_joints(flybody_skeleton, neutral_pose=flybody_neutral_pose)
+        fly.add_vision()
+        world = TetheredWorld(name="flybody_vision_world_compile")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        assert mj_model.ncam == 2
+
+
+# ------------------------------------------------------------------------------
+# Simulation hookup with the flybody (no rendering required).
+# ------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def flybody_fly_with_vision(flybody_neutral_pose, flybody_skeleton):
+    fly = FlyBody(name="flybody_vision_sim_fly")
+    fly.add_joints(flybody_skeleton, neutral_pose=flybody_neutral_pose)
+    actuated_dofs = fly.skeleton.get_actuated_dofs_from_preset(
+        FlyBodyActuatedDOFPreset.LEGS_ACTIVE_ONLY
+    )
+    fly.add_actuators(
+        actuated_dofs, ActuatorType.POSITION, neutral_input=flybody_neutral_pose, kp=50
+    )
+    fly.add_vision(draw_sensor_markers=True)
+    return fly
+
+
+@pytest.fixture(scope="module")
+def flybody_simulation_with_vision(flybody_fly_with_vision):
+    world = TetheredWorld(name="flybody_vision_sim_world")
+    world.add_fly(
+        flybody_fly_with_vision,
+        spawn_position=[0, 0, 1.5],
+        spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+    )
+    sim = Simulation(world)
+    sim.reset()
+    return sim
+
+
+class TestFlyBodySimulationVisionIDMapping:
+    def test_eye_camera_ids_present(
+        self, flybody_simulation_with_vision, flybody_fly_with_vision
+    ):
+        ids = flybody_simulation_with_vision._intern_eye_camera_ids_by_fly[
+            flybody_fly_with_vision.name
+        ]
+        assert ids.shape == (2,)
+        assert ids.dtype == np.int32
+        assert (ids >= 0).all()
+
+    def test_retina_default_construction_for_flybody(
+        self, flybody_simulation_with_vision, flybody_fly_with_vision
+    ):
+        """get_ommatidia_readouts/get_raw_vision lazily build a default Retina.
+        Constructing one directly here exercises the same code path without
+        needing a GL context — verifies the flybody sim's retina-side shapes."""
+        retina = Retina()
+        assert retina.num_ommatidia_per_eye > 0
+        n_cams = flybody_simulation_with_vision._intern_eye_camera_ids_by_fly[
+            flybody_fly_with_vision.name
+        ].shape[0]
+        assert n_cams == 2
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason=(
+        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
+        "neither works headlessly in CI without a GPU"
+    ),
+)
+class TestFlyBodySimulationGetRawVision:
+    def test_returns_shape_and_type(
+        self, flybody_simulation_with_vision, flybody_fly_with_vision
+    ):
+        frames = flybody_simulation_with_vision.get_raw_vision(
+            flybody_fly_with_vision.name
+        )
+        assert isinstance(frames, np.ndarray)
+        assert frames.shape[0] == 2  # two eye cameras
+        assert frames.shape[3] == 3  # RGB channels
+        assert frames.dtype == np.uint8
+
+    def test_ommatidia_readouts_shape(
+        self, flybody_simulation_with_vision, flybody_fly_with_vision
+    ):
+        readouts = flybody_simulation_with_vision.get_ommatidia_readouts(
+            flybody_fly_with_vision.name
+        )
+        n_cams, n_om, n_ch = readouts.shape
+        assert n_cams == 2
+        assert n_om == flybody_simulation_with_vision.retina.num_ommatidia_per_eye
+        assert n_ch == 2
+        assert readouts.dtype == np.float32
         assert readouts.min() >= 0.0
         assert readouts.max() <= 1.0

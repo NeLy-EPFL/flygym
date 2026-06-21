@@ -37,14 +37,3 @@ joint_angles:
   lh_tarsus3-lh_tarsus4-pitch: -5
   lh_tarsus4-lh_tarsus5-pitch: -5
 
-  c_head-l_pedicel-roll: -15
-  c_head-l_pedicel-pitch: 5
-  c_head-l_pedicel-yaw: 50
-  l_funiculus-l_arista-yaw: -45
-
-  c_thorax-l_wing-roll: 10
-  c_thorax-l_wing-pitch: -3
-  c_thorax-l_wing-yaw: -8
-
-  c_thorax-l_haltere-roll: 35
-  c_thorax-l_haltere-yaw: 15

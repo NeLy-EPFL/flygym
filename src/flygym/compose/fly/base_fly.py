@@ -8,7 +8,6 @@ import numpy as np
 import dm_control.mjcf as mjcf
 import yaml
 
-from flygym import assets_dir
 from flygym.anatomy import (
     BodySegment,
     AnatomicalJoint,
@@ -17,22 +16,19 @@ from flygym.anatomy import (
     RotationAxis,
     AxisOrder,
     JointPreset,
+    ContactBodiesPreset,
     ALL_SEGMENT_NAMES,
     LEGS,
+    LEG_LINKS,
 )
+
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
 from flygym.utils.mjcf import set_mujoco_globals
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
 
-__all__ = ["Fly", "ActuatorType", "MeshType", "GeomFittingOption"]
-
-
-DEFAULT_RIGGING_CONFIG_PATH = assets_dir / "model/rigging.yaml"
-DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/mujoco_globals.yaml"
-DEFAULT_MESH_DIR = assets_dir / "model/meshes/"
-DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/visuals.yaml"
+__all__ = ["BaseFly", "ActuatorType", "MeshType", "GeomFittingOption"]
 
 
 class MeshType(Enum):
@@ -54,7 +50,7 @@ class GeomFittingOption(Enum):
     Attributes:
         UNMODIFIED: Keep the original mesh-based geometries.
         ALL_TO_CAPSULES: Replace all geometries with capsule approximations.
-        CLAWS_TO_CAPSULES: Replace only tarsus5 (claw) geometries with capsules.
+        CLAWS_TO_CAPSULES: Replace only tarsus5 geometries with capsules.
     """
 
     UNMODIFIED = "unmodified"
@@ -75,10 +71,29 @@ class ActuatorType(Enum):
     CYLINDER = "cylinder"
     MUSCLE = "muscle"
     ADHESION = "adhesion"
+    TENDON = "tendon"
 
 
-class Fly(BaseCompositionElement):
-    """Represents a complete fly with body segments, joints, actuators, sensors, and
+class BaseFly(BaseCompositionElement):
+    """Abstract base for all fly body models (e.g. `NeuroMechFly`, `FlyBody`).
+
+    FlyGym supports multiple fly body models that can be used interchangeably within
+    the same simulation API. Concrete subclasses provide model-specific geometry assets,
+    anatomy classes, and parameter defaults, while all model-agnostic composition logic
+    lives here. Choose the model that best fits your experiment:
+
+    - `NeuroMechFly` — The default model, derived from micro-CT imaging. Suitable for
+      most locomotion and sensorimotor experiments.
+    - `FlyBody` — A biomechanically detailed model from Vaxenburg et al. (2025), with
+      wing and abdomen degrees of freedom and anatomically grounded parameters.
+
+    This class is not meant to be instantiated directly — use a concrete subclass.
+
+    Holds the model-agnostic composition logic shared by every fly. Concrete
+    subclasses supply the model identity (asset paths, anatomy classes, scale)
+    and may override individual build steps.
+
+    Represents a complete fly with body segments, joints, actuators, sensors, and
     cameras. The fly is built from mesh assets and configured via config files that
     define rigging (joint positions), visuals (colors/textures), and global MuJoCo
     parameters.
@@ -134,16 +149,27 @@ class Fly(BaseCompositionElement):
             neutral actuator input (only if the actuator exists).
     """
 
+    # For numerical reasons, we simulate length in mm, not m. This changes the units
+    # of other quantities as well, for example acceleration is now in mm/s^2.
+    SCALE = 1000
+    BODY_SEGMENT_CLASS = BodySegment
+    JOINT_DOF_CLASS = JointDOF
+    AXIS_ORDER_CLASS = AxisOrder
+    BASE_SKELETON_CLASS = Skeleton
+    CONTACT_BODIES_PRESET_CLASS = ContactBodiesPreset
+    LEG_LINKS = LEG_LINKS
+
     def __init__(
         self,
-        name: str = "nmf",
+        name: str = "fly",
         *,
-        rigging_config_path: PathLike = DEFAULT_RIGGING_CONFIG_PATH,
-        mesh_basedir: PathLike = DEFAULT_MESH_DIR,
-        mujoco_globals_path: PathLike = DEFAULT_MUJOCO_GLOBALS_PATH,
+        rigging_config_path: PathLike,
+        mesh_basedir: PathLike,
+        mujoco_globals_path: PathLike,
+        mirror_left2right: bool,
+        mesh_type: MeshType,
+        vision_config_path: PathLike,
         root_segment: BodySegment | str = "c_thorax",
-        mirror_left2right: bool = True,
-        mesh_type: MeshType = MeshType.SIMPLIFIED_MAX2000FACES,
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
     ) -> None:
         self._name = name
@@ -167,7 +193,7 @@ class Fly(BaseCompositionElement):
         self.jointdof_to_neutralaction_by_type = {ty: {} for ty in ActuatorType}
 
         if isinstance(root_segment, str):
-            root_segment = BodySegment(root_segment)
+            root_segment = self.BODY_SEGMENT_CLASS(root_segment)
         self.root_segment = root_segment
 
         self._neutral_keyframe = self.mjcf_root.keyframe.add(
@@ -175,7 +201,10 @@ class Fly(BaseCompositionElement):
         )
 
         self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
-        self._add_bodies_and_geoms(rigging_config_path, geom_fitting_option)
+        self._add_bodies_and_geoms(
+            rigging_config_path, geom_fitting_option, vision_config_path
+        )
+        self.vision_config_path = vision_config_path
 
     @override
     @property
@@ -210,6 +239,28 @@ class Fly(BaseCompositionElement):
     def get_legs_order(self) -> list[str]:
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
         return LEGS
+
+    def get_pose_lookup(
+        self, neutral_pose: KinematicPose | KinematicPosePreset | None
+    ) -> dict[str, float]:
+        """Get a lookup dictionary mapping joint DOF names to neutral angles for a given
+        neutral pose."""
+
+        if self.skeleton is None:
+            raise FlyGymInternalError("Skeleton must be defined to get pose lookup.")
+
+        if neutral_pose is None:
+            return {}
+        elif isinstance(neutral_pose, KinematicPose):
+            return neutral_pose.joint_angles_lookup_rad
+        elif isinstance(neutral_pose, KinematicPosePreset):
+            neutral_pose = neutral_pose.get_pose_by_axis_order(self.skeleton.axis_order)
+            return neutral_pose.joint_angles_lookup_rad
+        else:
+            raise ValueError(
+                "When specified, `neutral_pose` must be a "
+                "`KinematicPose` or `KinematicPosePreset`."
+            )
 
     def get_sites_order(self) -> list[AnatomicalJoint]:
         """Get the canonical order of anatomical joints with associated MJCF sites.
@@ -256,20 +307,9 @@ class Fly(BaseCompositionElement):
         Returns:
             Dictionary mapping JointDOF to created MJCF joint elements.
         """
-        if neutral_pose is None:
-            neutral_angle_lookup = {}
-        elif isinstance(neutral_pose, KinematicPose):
-            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
-        elif isinstance(neutral_pose, KinematicPosePreset):
-            neutral_pose = neutral_pose.get_pose_by_axis_order(skeleton.axis_order)
-            neutral_angle_lookup = neutral_pose.joint_angles_lookup_rad
-        else:
-            raise ValueError(
-                "When specified, `neutral_pose` must be a "
-                "`KinematicPose` or `KinematicPosePreset`."
-            )
 
         self.skeleton = skeleton
+        neutral_angle_lookup = self.get_pose_lookup(neutral_pose)
 
         return_dict = {}
         for jointdof in skeleton.iter_jointdofs(self.root_segment):
@@ -280,7 +320,7 @@ class Fly(BaseCompositionElement):
             # Flip axis direction for right side's roll and yaw so that axes are defined
             # symmetrically (e.g., positive roll is always "outward").
             vec = np.array(jointdof.axis.to_vector())
-            if jointdof.child.pos[0] == "r" and jointdof.axis != RotationAxis.PITCH:
+            if jointdof.child.pos[0] == "r" and not self._is_pitch(jointdof):
                 vec = -vec
 
             return_dict[jointdof] = child_body.add(
@@ -339,17 +379,17 @@ class Fly(BaseCompositionElement):
         """
         actuator_type = ActuatorType(actuator_type)
 
-        if neutral_input is None:
-            neutral_input = {}
-
         if actuator_type == ActuatorType.POSITION:
-            if isinstance(neutral_input, KinematicPose):
-                neutral_input = neutral_input.joint_angles_lookup_rad
-            elif isinstance(neutral_input, KinematicPosePreset):
-                neutral_pose = neutral_input.get_pose_by_axis_order(
-                    self.skeleton.axis_order
+            neutral_input = self.get_pose_lookup(neutral_input)
+        else:
+            if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
+                raise ValueError(
+                    "When actuator_type is not POSITION, neutral_input cannot be a "
+                    "KinematicPose or KinematicPosePreset since those specify joint "
+                    "angles, not actuator inputs."
                 )
-                neutral_input = neutral_pose.joint_angles_lookup_rad
+            else:
+                neutral_input = {} if neutral_input is None else neutral_input
 
         return_dict = {}
         for jointdof in jointdofs:
@@ -364,6 +404,7 @@ class Fly(BaseCompositionElement):
                 forcerange=forcerange,
                 **kwargs,
             )
+
             return_dict[jointdof] = actuator
         self.jointdof_to_mjcfactuator_by_type[actuator_type].update(return_dict)
         self._rebuild_neutral_keyframe()
@@ -442,8 +483,8 @@ class Fly(BaseCompositionElement):
             )
         return self.leg_to_adhesionactuator
 
-    def add_vision(self, draw_sensor_markers: bool = False):
-        with open(assets_dir / "model/vision.yaml") as f:
+    def add_vision(self, draw_sensor_markers: bool = False) -> None:
+        with open(self.vision_config_path) as f:
             info = yaml.safe_load(f)
 
         return_dict = {}
@@ -488,9 +529,7 @@ class Fly(BaseCompositionElement):
 
         self.eyecameraname_to_mjcfcamera.update(return_dict)
 
-    def colorize(
-        self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH
-    ) -> None:
+    def colorize(self, visuals_config_path: PathLike) -> None:
         """Apply colors and textures to the fly model.
 
         Args:
@@ -512,9 +551,11 @@ class Fly(BaseCompositionElement):
                 )
                 material.texture = texture
 
-        for segment, geom in self.bodyseg_to_mjcfgeom.items():
-            vis_set_name = lookup[segment]
-            geom.set_attributes(material=vis_set_name)
+        for _, geoms in self.bodyseg_to_mjcfgeom.items():
+            for geom in geoms:
+                geom_name = geom.name
+                vis_set_name = lookup[geom_name]
+                geom.set_attributes(material=vis_set_name)
 
     def add_tracking_camera(
         self,
@@ -555,9 +596,6 @@ class Fly(BaseCompositionElement):
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
     ) -> None:
-        # For numerical reasons, we simulate length in mm, not m. This changes the units
-        # of other quantities as well, for example acceleration is now in mm/s^2.
-        SCALE = 1000
 
         # Decide which folder to load mesh files from
         mesh_dir = mesh_basedir / mesh_type.value
@@ -587,11 +625,26 @@ class Fly(BaseCompositionElement):
                 "mesh",
                 name=segment_name,
                 file=str(mesh_path),
-                scale=(SCALE, y_sign * SCALE, SCALE),
+                scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
             )
 
+    def _all_possible_joint_preset(self):
+        return JointPreset.ALL_POSSIBLE
+
+    def _get_base_skeleton(self) -> Skeleton:
+        return self.BASE_SKELETON_CLASS(
+            joint_preset=self._all_possible_joint_preset(),
+            axis_order=self.AXIS_ORDER_CLASS.DONTCARE,
+        )
+
+    def _is_pitch(self, jointdof: JointDOF) -> bool:
+        return jointdof.axis == RotationAxis.PITCH
+
     def _add_bodies_and_geoms(
-        self, rigging_config_path: PathLike, geom_fitting_option: GeomFittingOption
+        self,
+        rigging_config_path: PathLike,
+        geom_fitting_option: GeomFittingOption,
+        vision_config_path: PathLike,
     ) -> None:
         # Load rigging config
         with open(rigging_config_path) as f:
@@ -599,29 +652,27 @@ class Fly(BaseCompositionElement):
 
         # Load vision config to find out which geoms should be invisible to the eye
         # cameras to avoid occlusion (e.g., the eye geoms themselves)
-        with open(assets_dir / "model/vision.yaml") as f:
+        with open(vision_config_path) as f:
             info = yaml.safe_load(f)
 
         # Add root body and geom. The root can also be hidden from eye cameras if
         # requested in the vision config, so we apply the same group assignment rule
         # used for all other body segments.
         root_geom_group = 2 if self.root_segment.name in info["hidden_segments"] else 0
-        body, geom = self._add_one_body_and_geom(
+        body, geoms = self._add_one_body_and_geoms(
             self.mjcf_root.worldbody,
             self.root_segment,
             rigging_config[self.root_segment.name],
             geom_group=root_geom_group,
         )
         self.bodyseg_to_mjcfbody[self.root_segment] = body
-        self.bodyseg_to_mjcfgeom[self.root_segment] = geom
+        self.bodyseg_to_mjcfgeom[self.root_segment] = geoms
 
         # Add remaining bodies and geoms by traversing the kinematic tree defined by
         # the skeleton
-        full_skeleton = Skeleton(
-            joint_preset=JointPreset.ALL_POSSIBLE, axis_order=AxisOrder.DONTCARE
-        )
+        full_skeleton = self._get_base_skeleton()
         for jointdof in full_skeleton.iter_jointdofs(self.root_segment):
-            if jointdof.axis != RotationAxis.PITCH:
+            if not self._is_pitch(jointdof):
                 # Look at only 1 DoF per joint as we're still just adding bodies/geoms
                 continue
             parent_body = self.bodyseg_to_mjcfbody.get(jointdof.parent)
@@ -640,23 +691,27 @@ class Fly(BaseCompositionElement):
             # occlusion. This makes the behavior of FlyGym less surprising to users who
             # wish to add their own renderers manually. We avoid group 1 because it's by
             # convention meant for mocap markers and helper geoms.
+            # Geom group is based on parent body segment name because it's more
+            # intuitive to specify the entire segment.
             geom_group = 2 if jointdof.child.name in info["hidden_segments"] else 0
 
             # Actually add the body and geom to the MJCF model
-            body, geom = self._add_one_body_and_geom(
+            body, geoms = self._add_one_body_and_geoms(
                 parent_body, jointdof.child, my_rigging_config, geom_group
             )
             self.bodyseg_to_mjcfbody[jointdof.child] = body
-            self.bodyseg_to_mjcfgeom[jointdof.child] = geom
+            self.bodyseg_to_mjcfgeom[jointdof.child] = geoms
 
         # Optionally fit certain geoms to capsule shapes for simpler physics
-        for bodyseg, mjcf_element in self.bodyseg_to_mjcfgeom.items():
-            if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
-                bodyseg.is_leg() and bodyseg.link == "tarsus5"
-            ):
-                mjcf_element.type = "capsule"
+        for bodyseg, mjcf_elements in self.bodyseg_to_mjcfgeom.items():
+            for mjcf_element in mjcf_elements:
+                if (geom_fitting_option == GeomFittingOption.ALL_TO_CAPSULES) or (
+                    bodyseg.is_claw()
+                    and geom_fitting_option == GeomFittingOption.CLAWS_TO_CAPSULES
+                ):
+                    mjcf_element.type = "capsule"
 
-    def _add_one_body_and_geom(
+    def _add_one_body_and_geoms(
         self,
         parent_body: mjcf.Element,
         segment: BodySegment,
@@ -679,16 +734,19 @@ class Fly(BaseCompositionElement):
             conaffinity=0,  # contact pairs to be added explicitly later
             group=geom_group,
         )
-        return body_element, geom_element
+        return body_element, [geom_element]
 
-    @staticmethod
     def _parse_visuals_config(
+        self,
         visuals_config_path: PathLike,
     ) -> tuple[dict[str, dict], dict[BodySegment, dict]]:
-        # Load visuals config and assign vis sets to body segments
+        # Load visuals config and assign vis sets to geometry name
+        all_geom_names = [
+            geom.name for geoms in self.bodyseg_to_mjcfgeom.values() for geom in geoms
+        ]
         with open(visuals_config_path) as f:
             vis_set_params_all = yaml.safe_load(f)
-        all_matches_by_segname = {k: [] for k in ALL_SEGMENT_NAMES}
+        all_matches_by_geomname = {k: [] for k in all_geom_names}
         for vis_set_name, vis_set_params in vis_set_params_all.items():
             apply_to = vis_set_params.get("apply_to")
             material = vis_set_params.get("material")
@@ -703,22 +761,22 @@ class Fly(BaseCompositionElement):
                     f"Invalid keys in visualization set {vis_set_name}: "
                     f"{invalid_keys}. Must be one of {allowed_keys}."
                 )
-            target_segnames = set()
+            target_geomnames = set()
             for pattern in [apply_to] if isinstance(apply_to, str) else apply_to:
-                target_segnames |= set(filter_with_wildcard(ALL_SEGMENT_NAMES, pattern))
-            for segname in target_segnames:
-                all_matches_by_segname[segname].append(vis_set_name)
-        for segname, vis_set_names in all_matches_by_segname.items():
+                target_geomnames |= set(filter_with_wildcard(all_geom_names, pattern))
+            for geomname in target_geomnames:
+                all_matches_by_geomname[geomname].append(vis_set_name)
+        for geomname, vis_set_names in all_matches_by_geomname.items():
             if len(vis_set_names) != 1:
                 raise ValueError(
-                    f"Zero or multiple vis sets matched for body segment {segname}: "
+                    f"Zero or multiple vis sets matched for body segment {geomname}: "
                     f"{vis_set_names}. Only one should apply."
                 )
-        lookup_by_segname = {
-            BodySegment(segname): matches[0]
-            for segname, matches in all_matches_by_segname.items()
+        lookup_by_geomname = {
+            geomname: matches[0]
+            for geomname, matches in all_matches_by_geomname.items()
         }
-        return vis_set_params_all, lookup_by_segname
+        return vis_set_params_all, lookup_by_geomname
 
     def _rebuild_neutral_keyframe(self):
         mj_model, _ = self.compile()
