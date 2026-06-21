@@ -38,16 +38,16 @@ const MAX_SUBSTEPS = 60;
 const LEVELS = {
   CPG:    { name: 'CPG control',        chip: '#8ace00' },
   tripod: { name: 'Tripod gait',        chip: '#4d66ff' },
-  single: { name: 'Individual legs',    chip: '#ff3333' },
+  single: { name: 'Individual legs',    chip: '#ff5a5a' },
 };
 const HELP = {
   CPG: '<kbd>W</kbd> forward · <kbd>S</kbd> back · <kbd>A</kbd>/<kbd>D</kbd> turn · <kbd>Q</kbd> stop' +
-       '<div class="row2">Switch level: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>R</kbd></div>',
+       '<div class="row2">Switch level: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>Space</kbd></div>',
   tripod: '<kbd>G</kbd>/<kbd>H</kbd> step left/right tripod forward · <kbd>F</kbd>/<kbd>J</kbd> backward' +
-       '<div class="row2">Each tripod is 3 alternating legs. Switch: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>R</kbd></div>',
+       '<div class="row2">Each tripod is 3 alternating legs. Switch: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>Space</kbd></div>',
   single: 'Forward <kbd>T</kbd><kbd>G</kbd><kbd>B</kbd> <kbd>Z</kbd><kbd>H</kbd><kbd>N</kbd> · ' +
        'Back <kbd>R</kbd><kbd>F</kbd><kbd>V</kbd> <kbd>U</kbd><kbd>J</kbd><kbd>M</kbd>' +
-       '<div class="row2">Six legs, one key each (L/R front·mid·hind). Switch: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>R</kbd></div>',
+       '<div class="row2">Six legs, one key each (L/R front·mid·hind). Switch: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> · Restart: <kbd>Space</kbd></div>',
 };
 // Joystick hint appended to the help line while a gamepad is connected. Mirrors
 // the desktop game's joystick layout (see the Gamepad class / controls.py).
@@ -227,7 +227,9 @@ class Input {
       if (k === '1' || k === 'i') return onLevel('CPG');
       if (k === '2' || k === 'o') return onLevel('tripod');
       if (k === '3' || k === 'p') return onLevel('single');
-      if (k === 'r' || k === ' ') { e.preventDefault(); return onRestart(); }
+      // Restart is Space only: in Level 3 'r' is the left-front leg's "backward"
+      // key (see singleAction), so it must fall through to `held` below.
+      if (k === ' ') { e.preventDefault(); return onRestart(); }
       this.held.add(k);
       this._cpgKey(k);
       if (MOVE.includes(k)) { e.preventDefault(); onMove(); }

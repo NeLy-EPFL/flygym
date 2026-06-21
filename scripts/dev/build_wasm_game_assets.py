@@ -90,8 +90,11 @@ LEG_STEP_TIME = 0.025  # s, tripod/single per-step duration
 # legs order matches PreprogrammedSteps.legs; tripod_map LF/LH/RM -> 0, LM/RF/RH -> 1
 TRIPOD_MAP = [0, 1, 0, 1, 0, 1]
 
-# Camera-follow parameters (from neuromechfly-live Game.update_camera_to_follow_fly).
-CAMERA = {"smoothing": 0.995, "tilt": -np.pi / 8, "height": 4.0, "distance": 6.5}
+# Chase-camera placement (loosely from neuromechfly-live
+# Game.update_camera_to_follow_fly). Only height + distance behind the fly are
+# consumed by the JS, which does its own per-frame yaw smoothing and look-at, so
+# the desktop's per-physics-step smoothing / tilt are intentionally not baked.
+CAMERA = {"height": 4.0, "distance": 6.5}
 
 # Per-level ground tint. Desaturated, dark versions of the desktop game's floor
 # colors (Game.state_floor_colors) -- low-saturation tinted darks so the floor
