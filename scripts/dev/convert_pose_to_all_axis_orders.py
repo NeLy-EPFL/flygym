@@ -101,7 +101,7 @@ def write_pose_yaml(pose: KinematicPose, output_path: Path):
 
 
 if __name__ == "__main__":
-    pose_dir = neutral_pose_file = assets_dir / "model/pose/"
+    pose_dir = neutral_pose_file = assets_dir / "model/neuromechfly/pose/"
     all_manually_specified_files = pose_dir.glob("_manual_specs/*.yaml")
 
     for path in all_manually_specified_files:

@@ -19,7 +19,7 @@ import pytest
 
 
 from flygym.anatomy import AxisOrder, JointPreset, ActuatedDOFPreset, Skeleton
-from flygym.compose.fly import Fly, ActuatorType
+from flygym.compose.fly import NeuroMechFly, ActuatorType
 from flygym.compose.world import FlatGroundWorld, TetheredWorld
 from flygym.compose.pose import KinematicPosePreset
 from flygym.utils.math import Rotation3D
@@ -47,14 +47,14 @@ def skeleton_ypr():
 
 
 # ---------------------------------------------------------------------------
-# Fly fixtures (each attached to at most one world per module)
+# NeuroMechFly fixtures (each attached to at most one world per module)
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
 def fly_with_joints(neutral_pose, skeleton_ypr):
-    """Fly with joints and position actuators. Used by compose tests."""
-    fly = Fly(name="test_fly")
+    """NeuroMechFly with joints and position actuators. Used by compose tests."""
+    fly = NeuroMechFly(name="test_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -70,8 +70,8 @@ def fly_with_joints(neutral_pose, skeleton_ypr):
 
 @pytest.fixture(scope="module")
 def fly_with_adhesion(neutral_pose, skeleton_ypr):
-    """Fly with joints, position actuators, and leg adhesion. Used by simulation tests."""
-    fly = Fly(name="sim_fly")
+    """NeuroMechFly with joints, position actuators, and leg adhesion. Used by simulation tests."""
+    fly = NeuroMechFly(name="sim_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -106,7 +106,7 @@ def flat_world_with_fly(fly_with_joints):
 @pytest.fixture(scope="module")
 def tethered_world_with_fly(neutral_pose, skeleton_ypr):
     """TetheredWorld with a standalone fly (used by compose tests)."""
-    fly = Fly(name="tethered_fly")
+    fly = NeuroMechFly(name="tethered_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY

@@ -64,6 +64,12 @@ class TestTree:
         # First edge must start from root
         assert dfs[0][0] == "root"
 
+    def test_dfs_from_internal_node_does_not_go_to_parent(self):
+        nodes = ["root", "a", "b"]
+        edges = [("root", "a"), ("a", "b")]
+        tree = Tree(nodes, edges)
+        assert list(tree.dfs_edges("a")) == [("a", "b")]
+
     def test_single_node_tree(self):
         tree = Tree([1], [])
         assert list(tree.dfs_edges(1)) == []
@@ -444,14 +450,14 @@ class TestWriteVideoFromFrames:
 def compiled_fly_model():
     """A minimal compiled MuJoCo model from a single fly (no world)."""
     from flygym.anatomy import AxisOrder, JointPreset, Skeleton
-    from flygym.compose.fly import Fly
+    from flygym.compose.fly import NeuroMechFly
     from flygym.compose.pose import KinematicPosePreset
 
     pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
     )
-    fly = Fly(name="pc_fly")
+    fly = NeuroMechFly(name="pc_fly")
     fly.add_joints(skeleton, neutral_pose=pose)
     mj_model, mj_data = fly.compile()
     return mj_model, mj_data
