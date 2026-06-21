@@ -63,7 +63,37 @@
 
 === "Using Docker"
 
-    Forthcoming.
+    FlyGym is published as a Docker image on [Docker Hub](https://hub.docker.com/r/nelyepfl/flygym). The image comes with all optional dependencies pre-installed and EGL rendering pre-configured, making it suitable for headless servers.
+
+    Pull the latest image:
+
+    ```sh
+    docker pull nelyepfl/flygym
+    ```
+
+    Or pull a specific version (e.g., v2.0.2):
+
+    ```sh
+    docker pull nelyepfl/flygym:v2.0.2
+    ```
+
+    Start an interactive shell inside the container:
+
+    ```sh
+    docker run -it nelyepfl/flygym
+    ```
+
+    To share files between your host machine and the container, mount a local directory:
+
+    ```sh
+    docker run -it -v /path/to/your/work:/root/work nelyepfl/flygym
+    ```
+
+    The FlyGym source code is located at `/root/flygym` inside the container. The virtual environment is managed by `uv`; activate it with:
+
+    ```sh
+    source /root/flygym/.venv/bin/activate
+    ```
 
 === "Online using Google Colab"
 
