@@ -45,10 +45,7 @@ from flygym import assets_dir
 from flygym.anatomy import ALL_SEGMENT_NAMES, ContactBodiesPreset
 from flygym.compose import ContactParams, FlatGroundWorld
 from flygym.utils.math import Rotation3D
-from flygym_demo.complex_terrain.common import (
-    get_default_locomotion_dof_order,
-    make_locomotion_fly,
-)
+from flygym_demo.complex_terrain.common import make_locomotion_fly
 from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
 
 # --- repo paths -------------------------------------------------------------
@@ -101,7 +98,7 @@ CAMERA = {"height": 4.0, "distance": 6.5}
 # stays easy on the eyes and the orange fly reads clearly, especially the red
 # of level 3.
 LEVEL_GROUND_COLORS = {
-    "CPG": [0.22, 0.27, 0.15, 1.0],     # dark muted green
+    "CPG": [0.22, 0.27, 0.15, 1.0],  # dark muted green
     "tripod": [0.16, 0.19, 0.28, 1.0],  # dark muted blue
     "single": [0.27, 0.15, 0.15, 1.0],  # dark muted red
 }
@@ -278,18 +275,23 @@ def build_meta(model: mj.MjModel, world: SlalomGroundWorld) -> dict:
     for a in range(model.nu):
         act = model.actuator(a)
         name = act.name.split("/")[-1]
-        if act.trntype == mj.mjtTrn.mjTRN_BODY:  # adhesion actuator (transmits to a body)
+
+        # Adhesion actuator (transmits to a body)
+        if act.trntype == mj.mjtTrn.mjTRN_BODY:
             body = model.body(int(act.trnid[0])).name.split("/")[-1]
             leg = body.split("_", 1)[0]
             if leg in _LEG_INDEX:
                 adhesion[_LEG_INDEX[leg]] = a
             continue
+
         joint_id = int(act.trnid[0])
         joint = model.joint(joint_id)
         joint_short = joint.name.split("/")[-1]
         leg, dof_idx = _parse_actuator_joint(joint_short)
+
         if leg is not None and dof_idx is not None:
             ctrl_index_by_leg_dof[_LEG_INDEX[leg]][dof_idx] = a
+
         lo, hi = (float(x) for x in act.ctrlrange)
         actuators.append(
             {
@@ -302,9 +304,9 @@ def build_meta(model: mj.MjModel, world: SlalomGroundWorld) -> dict:
             }
         )
 
-    assert all(
-        all(idx is not None for idx in leg) for leg in ctrl_index_by_leg_dof
-    ), "could not map every (leg, dof) to a position actuator"
+    assert all(all(idx is not None for idx in leg) for leg in ctrl_index_by_leg_dof), (
+        "could not map every (leg, dof) to a position actuator"
+    )
     assert all(idx is not None for idx in adhesion), "missing an adhesion actuator"
 
     return {
