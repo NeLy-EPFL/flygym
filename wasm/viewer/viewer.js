@@ -3,8 +3,8 @@
 // native viewer.
 //
 // MuJoCo (compiled to WebAssembly by Google DeepMind, vendored under
-// vendor/mujoco/) loads the flattened MJCF written by
-// scripts/build_wasm_viewer_assets.py and runs the real dynamics: every
+// ../shared/vendor/mujoco/) loads the flattened MJCF written by
+// scripts/dev/build_wasm_viewer_assets.py and runs the real dynamics: every
 // animation frame advances the physics with `mj_step`. The position-actuator
 // sliders write `data.ctrl`; a bar over each slider reads the driven joint's
 // `data.qpos`; bodies can be dragged (Shift+drag) to push them via
@@ -13,8 +13,11 @@
 // rendering, reading body/geom frames straight from the solved state.
 
 import * as THREE from 'three';
-import { OrbitControls } from './vendor/three/OrbitControls.js';
-import loadMujoco from './vendor/mujoco/mujoco.js';
+import { OrbitControls } from '../shared/vendor/three/OrbitControls.js';
+import {
+  loadMujoco, setupTheme, loadModel, writeModelToFS,
+  buildMeshes, syncMeshes, pool,
+} from '../shared/scene.js';
 
 const ASSETS = './assets';
 const overlayEl = document.getElementById('overlay');
@@ -40,19 +43,13 @@ async function main() {
     fetch(`${ASSETS}/model_meta.json`).then((r) => r.json()),
   ]);
 
-  // Write the MJCF and every mesh it references into MuJoCo's virtual filesystem.
-  const meshFiles = [...new Set(
-    [...xmlText.matchAll(/<mesh[^>]*\bfile="([^"]+)"/g)].map((m) => m[1]))];
-  try { mj.FS.mkdir('/work'); } catch (_) { /* already exists */ }
-  mj.FS.writeFile('/work/fly.xml', xmlText);
-  overlayMsg.textContent = `Loading ${meshFiles.length} meshes…`;
-  await Promise.all(meshFiles.map(async (f) => {
-    const buf = new Uint8Array(await fetch(`${ASSETS}/model/${f}`).then((r) => r.arrayBuffer()));
-    mj.FS.writeFile(`/work/${f}`, buf);
-  }));
+  const xmlPath = await writeModelToFS(mj, {
+    xmlText, xmlName: 'fly.xml', modelBaseUrl: `${ASSETS}/model`,
+    onProgress: (_stage, n) => { overlayMsg.textContent = `Loading ${n} meshes…`; },
+  });
 
   overlayMsg.textContent = 'Compiling the model…';
-  const model = loadModel(mj, '/work/fly.xml');
+  const model = loadModel(mj, xmlPath);
   const data = new mj.MjData(model);
   mj.mj_resetDataKeyframe(model, data, 0); // the "neutral" keyframe
   mj.mj_forward(model, data);
@@ -61,7 +58,6 @@ async function main() {
   overlayEl.classList.add('hidden');
 }
 
-const MESH_OPACITY_T = 0.35; // "Transparent" toggle: force every mesh to this
 // Each animation frame advances at most this many physics steps. At dt=1e-4 s
 // that is ~SUBSTEPS*60 steps/s; the model is heavy, so this trades real-time
 // speed for a steady frame rate (the achieved factor is shown in the corner).
@@ -83,29 +79,6 @@ const CONTACT_FORCE_MAX_LEN = 30; // mm, clamp so a spike can't fill the screen
 const CONTACT_FORCE_SHAFT_R = 0.018; // mm (shaft radius)
 const CONTACT_FORCE_HEAD_LEN = 0.13; // mm (constant)
 const CONTACT_FORCE_HEAD_R = 0.055;  // mm (constant)
-
-// The panel defaults to dark; when embedded in the MkDocs Material docs (same
-// origin) mirror the site's light/dark palette and follow its toggle live.
-function setupTheme() {
-  const root = document.documentElement;
-  const apply = (dark) => root.setAttribute('data-theme', dark ? 'dark' : 'light');
-  apply(true);
-  try {
-    const pbody = window.parent !== window ? window.parent.document.body : null;
-    if (!pbody) return;
-    const sync = () => apply(pbody.getAttribute('data-md-color-scheme') === 'slate');
-    sync();
-    new MutationObserver(sync).observe(pbody,
-      { attributes: true, attributeFilter: ['data-md-color-scheme'] });
-  } catch (_) { /* cross-origin / standalone: keep the dark default */ }
-}
-
-function loadModel(mj, path) {
-  if (typeof mj.mj_loadXML === 'function') return mj.mj_loadXML(path);
-  if (mj.MjModel && typeof mj.MjModel.from_xml_path === 'function')
-    return mj.MjModel.from_xml_path(path);
-  throw new Error('no XML model-loading entry point found in the MuJoCo build');
-}
 
 function buildApp(mj, model, data, meta) {
   const stage = document.getElementById('stage');
@@ -193,19 +166,6 @@ function buildApp(mj, model, data, meta) {
   window.addEventListener('resize', resize);
   resize();
 
-  // --- mesh pose sync (read solved geom frames into the Three.js meshes) ---
-  const m4 = new THREE.Matrix4();
-  function syncMeshes() {
-    const gx = data.geom_xpos, gm = data.geom_xmat;
-    for (const { mesh, g } of meshGroup.userData.items) {
-      m4.set(gm[9 * g + 0], gm[9 * g + 1], gm[9 * g + 2], gx[3 * g + 0],
-             gm[9 * g + 3], gm[9 * g + 4], gm[9 * g + 5], gx[3 * g + 1],
-             gm[9 * g + 6], gm[9 * g + 7], gm[9 * g + 8], gx[3 * g + 2],
-             0, 0, 0, 1);
-      mesh.matrix.copy(m4);
-    }
-  }
-
   // --- main loop ---
   const dt = meta.timestep;
   const statsEl = document.getElementById('stats');
@@ -234,7 +194,7 @@ function buildApp(mj, model, data, meta) {
     }
     simStepsWindow += nSteps;
 
-    syncMeshes();
+    syncMeshes(meshGroup, data);
     viz.update(mj, model, data, flags);
     perturb.updateGizmo();
     controls.update();
@@ -262,61 +222,6 @@ function addGround(scene) {
   grid.position.set(0, 0, 0);
   grid.material.opacity = 0.35; grid.material.transparent = true;
   scene.add(grid);
-}
-
-// --- mesh building (one Three.js mesh per renderable MuJoCo geom) -----------
-function buildMeshes(model, meta) {
-  const group = new THREE.Group();
-  const items = [];
-  const rgbaList = meta.geom_rgba || [];
-  for (let g = 0; g < model.ngeom; g++) {
-    const geometry = geometryForGeom(model, g, model.geom_type[g]);
-    if (!geometry) continue; // planes/hfields handled separately
-    const rgba = rgbaList[g] || [0.7, 0.7, 0.7, 1.0];
-    const baseOpacity = rgba.length > 3 ? rgba[3] : 1.0;
-    const color = new THREE.Color().setRGB(rgba[0], rgba[1], rgba[2], THREE.SRGBColorSpace);
-    const material = new THREE.MeshStandardMaterial({
-      color, roughness: 0.75, metalness: 0.0, side: THREE.DoubleSide,
-      transparent: baseOpacity < 1, opacity: baseOpacity, depthWrite: baseOpacity >= 1,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.matrixAutoUpdate = false;
-    mesh.userData = { kind: 'mesh', g, name: model.geom(g).name, bodyId: model.geom_bodyid[g] };
-    group.add(mesh);
-    items.push({ mesh, g, bodyId: model.geom_bodyid[g], baseOpacity });
-  }
-  group.userData.items = items;
-  return group;
-}
-
-function geometryForGeom(model, g, type) {
-  // mjGEOM_PLANE=0, HFIELD=1, SPHERE=2, CAPSULE=3, ELLIPSOID=4, CYLINDER=5,
-  // BOX=6, MESH=7.
-  const s = (k) => model.geom_size[g * 3 + k];
-  if (model.geom_dataid[g] >= 0) return meshGeometry(model, model.geom_dataid[g]);
-  switch (type) {
-    case 2: return new THREE.SphereGeometry(s(0), 16, 12);
-    case 3: { const geo = new THREE.CapsuleGeometry(s(0), 2 * s(1), 6, 12); geo.rotateX(Math.PI / 2); return geo; }
-    case 4: { const geo = new THREE.SphereGeometry(1, 16, 12); geo.scale(s(0), s(1), s(2)); return geo; }
-    case 5: { const geo = new THREE.CylinderGeometry(s(0), s(0), 2 * s(1), 16); geo.rotateX(Math.PI / 2); return geo; }
-    case 6: return new THREE.BoxGeometry(2 * s(0), 2 * s(1), 2 * s(2));
-    default: return null; // plane / hfield
-  }
-}
-
-function meshGeometry(model, dataid) {
-  const va = model.mesh_vertadr[dataid], vn = model.mesh_vertnum[dataid];
-  const fa = model.mesh_faceadr[dataid], fn = model.mesh_facenum[dataid];
-  const allVerts = model.mesh_vert, allFaces = model.mesh_face;
-  const verts = new Float32Array(vn * 3);
-  for (let i = 0; i < vn * 3; i++) verts[i] = allVerts[va * 3 + i];
-  const index = new Uint32Array(fn * 3);
-  for (let i = 0; i < fn * 3; i++) index[i] = allFaces[fa * 3 + i];
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-  geo.setIndex(new THREE.BufferAttribute(index, 1));
-  geo.computeVertexNormals();
-  return geo;
 }
 
 // --- on-top visualizers: contacts, contact forces, joints, actuators -------
@@ -472,17 +377,6 @@ function buildVisualizers(scene, forceScale, cone) {
   }
 
   return { update };
-}
-
-// A tiny grow-on-demand object pool: begin() rewinds, next() hands out (and
-// creates) the next object, end() hides any left over from a previous frame.
-function pool(make) {
-  const items = []; let cur = 0;
-  return {
-    begin() { cur = 0; },
-    next() { const o = items[cur] || (items[cur] = make()); cur++; return o; },
-    end() { for (let i = cur; i < items.length; i++) items[i].visible = false; },
-  };
 }
 
 // --- drag-to-push (Shift + left-drag a body) -------------------------------
