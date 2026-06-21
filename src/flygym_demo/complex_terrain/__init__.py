@@ -7,7 +7,7 @@ from .common import (
     get_default_locomotion_dof_order,
     make_locomotion_fly,
 )
-from .preprogrammed import FlyBodyPreprogrammedSteps, PreprogrammedSteps
+from .preprogrammed import PreprogrammedSteps
 from .cpg_controller import (
     CPGController,
     CPGNetwork,
@@ -16,7 +16,7 @@ from .cpg_controller import (
     make_tripod_cpg_network,
 )
 from .rule_based_controller import RuleBasedController, construct_rules_graph
-from .hybrid_controller import HybridController, HybridControllerObservation
+from .hybrid_controller import HybridController
 from .turning_controller import HybridTurningController
 
 __all__ = [
@@ -26,7 +26,6 @@ __all__ = [
     "get_default_locomotion_dof_order",
     "make_locomotion_fly",
     "PreprogrammedSteps",
-    "FlyBodyPreprogrammedSteps",
     "CPGController",
     "CPGNetwork",
     "calculate_ddt",
@@ -35,6 +34,5 @@ __all__ = [
     "RuleBasedController",
     "construct_rules_graph",
     "HybridController",
-    "HybridControllerObservation",
     "HybridTurningController",
 ]
