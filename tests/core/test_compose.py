@@ -429,9 +429,7 @@ class TestFlyAddTrackingCamera:
         mj_model, _ = world.compile()
         assert mj_model.ncam == 1
 
-    def test_camera_name_after_world_attachment(
-        self, skeleton_ypr, neutral_pose
-    ):
+    def test_camera_name_after_world_attachment(self, skeleton_ypr, neutral_pose):
         """After attaching to a world, the camera's .name includes the fly's prefix."""
         fly = NeuroMechFly(name="cam_fly6")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
