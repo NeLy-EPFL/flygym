@@ -26,6 +26,26 @@ from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
 
 
+def pytest_collection_modifyitems(config, items):
+    """Silence the standalone-fly-compile warning across the whole test suite.
+
+    Compiling a fly on its own (not attached to a world) -- whether directly, or
+    internally via world/Simulation construction and tracking-camera placement --
+    intentionally emits a ``fusestatic`` ``UserWarning`` from ``BaseFly.compile``.
+    Many tests hit that path, so we filter the warning suite-wide.
+
+    This is applied as a per-item mark rather than an ini ``filterwarnings`` entry
+    or a ``-W`` filter so it survives ``pytest -W error``: mark filters take
+    precedence over both command-line and ini filters. The mark also wraps each
+    item's setup, so it covers warnings raised during (module-scoped) fixture setup.
+    """
+    mark = pytest.mark.filterwarnings(
+        "ignore:Compiling a fly model that is not attached to a world"
+    )
+    for item in items:
+        item.add_marker(mark)
+
+
 # ---------------------------------------------------------------------------
 # Shared pose / skeleton (no I/O side-effects)
 # ---------------------------------------------------------------------------
