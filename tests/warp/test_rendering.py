@@ -3,6 +3,7 @@
 import warnings
 import pytest
 import numpy as np
+import mujoco as mj
 
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
 from flygym.compose import NeuroMechFly, FlatGroundWorld, KinematicPosePreset
@@ -281,9 +282,10 @@ class TestModifyWorldForBatchRendering:
             warnings.simplefilter("ignore")
             modify_world_for_batch_rendering(world)
 
+        rgb_role = int(mj.mjtTextureRole.mjTEXROLE_RGB)
         for material in world.mjcf_root.materials:
             if material.name.startswith(fly.name + "/"):
-                assert material.texture is None, (
+                assert material.textures[rgb_role] == "", (
                     f"NeuroMechFly material {material.name!r} still has a texture."
                 )
 
