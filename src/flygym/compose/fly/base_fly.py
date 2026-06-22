@@ -1,3 +1,4 @@
+import warnings
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
@@ -108,6 +109,13 @@ class BaseFly(BaseCompositionElement):
     The fly uses a hierarchical body structure with a root segment (typically the
     thorax) from which all other segments branch. Joints and actuators are added
     separately after initialization to allow flexible model configurations.
+
+    !!! warning "PyMJCF -> MjSpec migration (v2.1.0)"
+
+        FlyGym 2.0.3 dropped the PyMJCF backend in favour of MuJoCo's native
+        ``MjSpec`` API. If you are upgrading from an earlier version, see the
+        [v2.1.0 changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md#version-210)
+        for breaking changes and a migration guide.
 
     Args:
         name:
@@ -225,6 +233,33 @@ class BaseFly(BaseCompositionElement):
     def name(self) -> str:
         """Name of this fly instance."""
         return self._name
+
+    @override
+    def compile(self) -> tuple[mj.MjModel, mj.MjData]:
+        """Compile the fly on its own (e.g. for `preview_model` or `save_xml`).
+
+        Disables `fusestatic` for the standalone compile. A lone fly has no free joint,
+        so its root segment is a static body that the optimization would fuse into the
+        worldbody -- which breaks the `track`-mode tracking camera parented to it (the
+        camera would fall back to tracking the worldbody and mis-place itself relative to
+        the fly). A standalone fly is only ever inspected/previewed, never simulated, so
+        the lost optimization does not matter here. The setting is applied to the
+        compiled copy only (see the base method), leaving the live spec untouched so a
+        world can still fuse the fly's other static bodies once it is attached.
+        """
+        if self.mjcf_root.compiler.fusestatic:
+            warnings.warn(
+                "Compiling a fly model that is not attached to a world. "
+                "`fusestatic` is changed to false to prevent the root body segment "
+                "from being fused with the MJCF root, which would impair the placement "
+                "of the tracking camera."
+            )
+            spec = self.mjcf_root.copy()
+            spec.compiler.fusestatic = False
+            model = spec.compile()
+        else:
+            model = self.mjcf_root.compile()
+        return model, mj.MjData(model)
 
     def get_bodysegs_order(self) -> list[BodySegment]:
         """Get the canonical order of body segments. The exact order is not important,
@@ -570,7 +605,7 @@ class BaseFly(BaseCompositionElement):
         self,
         name: str = "trackcam",
         mode: str = "track",
-        pos_offset: Vec3 = (0, -7.5, 6),
+        pos_offset: Vec3 = (-0.5, -7.5, 5),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
         **kwargs: Any,
@@ -582,16 +617,28 @@ class BaseFly(BaseCompositionElement):
         must be a child of the fly body to follow it; a camera placed in the world
         body would stay put. ``track`` follows the body's position while keeping a
         constant orientation in the world frame (a "follow" camera that pans but does
-        not rotate with the fly). Because the root segment's body frame is aligned with
-        the world frame in the neutral pose, ``pos_offset`` and ``rotation`` are
-        effectively expressed in world coordinates.
+        not rotate with the fly).
+
+        !!! warning
+
+            ``pos_offset`` is expressed in the root segment's (thorax) body frame, not
+            in world coordinates. This differs from FlyGym versions before the MjSpec
+            migration, where the tracking camera lived in the world body and the offset
+            was effectively a world-frame position. The default changed accordingly,
+            from ``(0, -7.5, 6)`` to ``(-0.5, -7.5, 5)``. Hard-coded ``pos_offset``
+            values tuned for the old world-frame placement must be re-tuned: the root
+            segment sits roughly ``(0.5, 0, 1.3)`` mm from the fly's attachment point
+            (plus the spawn height) in the neutral pose, so the same offset now places
+            the camera higher and shifted toward the head. The upside is that a given
+            ``pos_offset`` now yields the same camera position relative to the fly in
+            every world and when the fly is compiled on its own.
 
         Args:
             name: Camera name.
             mode: MuJoCo camera tracking mode (``"track"``, ``"trackcom"``, or
                 ``"fixed"``). ``"fixed"`` rigidly attaches the camera to the body so it
                 also rotates with the fly.
-            pos_offset: Camera position offset from the tracked body in mm.
+            pos_offset: Camera position offset from the tracked root segment in mm.
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
             **kwargs: Additional attributes passed to the MJCF camera element. See

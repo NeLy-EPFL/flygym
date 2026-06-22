@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 2.0.3 (ongoing development, unreleased)
+## Version 2.1.0
 
 > [!CAUTION]
 > ### API-breaking changes (PyMJCF → MjSpec migration)
@@ -26,6 +26,14 @@
 > ```
 >
 > No other change is needed: `cam.name` already returns the same prefixed string that `cam.full_identifier` used to return, because MjSpec mutates held element references in place when the child spec is attached.
+
+> [!CAUTION]
+> ### `add_tracking_camera` placement is now relative to the fly's root segment
+> `Fly.add_tracking_camera()` now adds the camera *inside* the fly's root segment (thorax) body so that MuJoCo's `track` mode actually follows the fly as it moves. As a result, `pos_offset` (and `rotation`) are interpreted in the root segment's body frame rather than in world coordinates as before, and the default `pos_offset` changed from `(0, -7.5, 6)` to `(-0.5, -7.5, 5)`.
+>
+> **Any hard-coded `pos_offset` values must be re-tuned.** A value that previously positioned the camera in the world frame now positions it relative to the root segment, which in the neutral pose sits roughly `(0.5, 0, 1.3)` mm from the fly's attachment point plus the spawn height. The camera will therefore appear higher and shifted toward the head unless you adjust the offset (to reproduce the old framing, subtract the root segment's rest position from your previous world-frame offset).
+>
+> The same `pos_offset` now yields the same camera position *relative to the fly* in every context (`FlatGroundWorld`, `TetheredWorld`, or a fly compiled on its own for `preview_model`).
 
 ### Bug fixes
 - Fixed `AttributeError: 'mujoco._specs.MjsCamera' object has no attribute 'full_identifier'` in tutorials 4a–4d and 5b caused by the PyMJCF → MjSpec migration ([#285](https://github.com/NeLy-EPFL/flygym/pull/285)).
