@@ -63,7 +63,7 @@ Notes:
 
 ## Profiling
 
-The replay smoke-test scripts double as end-to-end profiling targets. Both take a
+The replay end-to-end test scripts double as end-to-end profiling targets. Both take a
 `--profile PATH` flag. Run them without `--save-data` to profile the pure
 simulation pipeline (no rendering/video). See
 [the installation notes](https://neuromechfly.org/installation/) for the profiler
@@ -75,7 +75,7 @@ installed separately).
 [speedscope](https://www.speedscope.app/) format:
 
 ```bash
-uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest --profile outputs/cpu.speedscope.json
+uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_sim --profile outputs/cpu.speedscope.json
 ```
 
 py-spy attaches to the **already-running process for the simulation loop only**, so
@@ -107,7 +107,7 @@ phases MuJoCo's timer flags as expensive should match the hot native frames
 [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) (`nsys`):
 
 ```bash
-uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest --profile outputs/gpu_profile
+uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_sim --profile outputs/gpu_profile
 ```
 
 This re-executes the script under `nsys profile` and writes `profile.nsys-rep`,

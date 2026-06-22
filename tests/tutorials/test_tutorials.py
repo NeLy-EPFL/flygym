@@ -1,4 +1,4 @@
-"""Smoke tests: execute every tutorial notebook end-to-end, failing on any error.
+"""Tutorial tests: execute every tutorial notebook end-to-end, failing on any error.
 
 One test is parametrized per notebook in ``tutorials/``.  Each runs the notebook
 in a fresh kernel (see the ``notebook_runner`` fixture in ``conftest.py``)

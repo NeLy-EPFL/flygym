@@ -63,7 +63,7 @@
     
     !!! note "Profiling tools (for `scripts/replay_behavior_{cpu,gpu}.py --profile`)"
 
-        The replay smoke-test scripts have a `--profile` flag for performance profiling.
+        The replay end-to-end test scripts have a `--profile` flag for performance profiling.
 
         The **GPU** script profiles with [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) (`nsys`), which is **not** a Python package and must be installed separately. It ships with the CUDA Toolkit, or you can install it standalone:
 
