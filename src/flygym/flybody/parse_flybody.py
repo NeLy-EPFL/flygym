@@ -3,16 +3,24 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import yaml
 
-# density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10, biasprm*=10, etc.
+# Unit-conversion factors for flybody XML attributes, converting the source model
+# (authored in cm) to FlyGym's mm convention: length x10, mass and time unchanged.
+# Lengths scale x10; density (M/L^3) x1e-3; viscosity (M/L/T) x1e-1. All joints are
+# hinges, so every generalized force is a torque (M*L^2/T^2) and every joint inertia
+# is rotational (M*L^2); these scale x100: stiffness, damping, armature, forcerange,
+# and the actuator gain/bias terms. (Gravity, L/T^2, scales x10 -- see parse_globals.)
 units_mapping = {
     "pos": 10,
     "size": 10,
     "fromto": 10,
     "density": 1e-3,
     "viscosity": 1e-1,
-    "forcerange": 10,
-    "gainprm": 10,
-    "biasprm": 10,
+    "stiffness": 100,
+    "damping": 100,
+    "armature": 100,
+    "forcerange": 100,
+    "gainprm": 100,
+    "biasprm": 100,
 }
 
 side_mapping = {"left": "l", "right": "r"}
@@ -34,7 +42,7 @@ def map_flybody_bname_to_flygym_bname(bname):
                 flygym_side = side_mapping[s_bname[1]]
                 return f"{flygym_side}_{s_bname[0]}"
             elif s_bname[1].isdigit():
-                # TO DO DEAL WITH DIFFERENT AMOUNT OF ABD SEGMENTS
+                # TODO: handle a variable number of abdomen segments
                 return f"c_{''.join(s_bname)}"
             else:
                 raise ValueError(f"Unexpected segmented name: {s_bname}")
@@ -244,8 +252,6 @@ def parse_xml_to_rig(xml_path, yaml_path):
                     )
 
             for k, v in child_geom.attrib.items():
-                # if k in ["pos", "quat", "type", "size", "fromto"]:
-                #     geom_selected_data[k] = v
                 if k == "mesh":
                     geom_selected_data[k] = translate_mesh_name(v)
                 elif k == "name" or k == "material" or "class" in k:
@@ -632,7 +638,7 @@ def get_flygym_jointname(parent_body, child_body, joint):
         dof = dof_mapping[flybody_dof]
     else:
         dof = "pitch"
-        # a^get axis and assert 1 0 0
+        # Default to pitch; verify the joint axis is "1 0 0".
         axis = joint.get("axis")
         if axis is not None:
             assert axis == "1 0 0", (
@@ -785,6 +791,15 @@ def parse_globals(xml_path, yaml_path):
             parsed_globals[tag] = {
                 k: _split_whitespace_to_list(v) for k, v in element.attrib.items()
             }
+
+    # The source XML is authored in cm but the parsed model is in mm (lengths are
+    # scaled by units_mapping["pos"] elsewhere). Gravity has units length/time^2, so
+    # scale it to mm/s^2 to match (e.g. -981 cm/s^2 -> -9810 mm/s^2).
+    if "gravity" in parsed_globals.get("option", {}):
+        parsed_globals["option"]["gravity"] = [
+            _scale_numeric_value(g, units_mapping["pos"])
+            for g in parsed_globals["option"]["gravity"]
+        ]
 
     parsed_globals["compiler"]["fusestatic"] = "true"
     parsed_globals["statistic"] = {"extent": "5"}

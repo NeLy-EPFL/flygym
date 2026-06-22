@@ -97,11 +97,12 @@ class FlyBody(BaseFly):
         vision_config_path: Path to YAML file with vision sensor configuration.
     """
 
-    # The flybody XML is already in mm units, so no scaling is needed, BUT in the
-    # original xml meshes are scaled by 0.1. Therefore, we need to adjust all other
-    # length-realteed quantities by 10 to keep units consitant.
-    # density/=1000, viscosity/=10, forcerange*=10, pos*=10, gravity*=10, gainprm*=10,
-    # biasprm*=10, etc. See parsing script.
+    # The parsed flybody assets are already in mm (FlyGym's convention), so the
+    # composer applies no further scaling (SCALE = 1.0). The original flybody XML is
+    # authored in cm; parse_flybody.py converts it to mm -- lengths x10, gravity x10
+    # (-981 cm/s^2 -> -9810 mm/s^2), and (for the all-hinge skeleton) torque-valued
+    # quantities x100: stiffness, damping, armature, forcerange, and actuator gains.
+    # See units_mapping and parse_globals in parse_flybody.py.
     SCALE = 1.0
 
     BODY_SEGMENT_CLASS = FlyBodyBodySegment
@@ -344,24 +345,24 @@ class FlyBody(BaseFly):
         neutral_pose: KinematicPose | KinematicPosePreset | None = None,
         **kwargs: Any,
     ) -> dict[JointDOF, mj.MjsJoint]:
-        """Add joints to the fly model based on a skeleton definition.
+        """Add joints to the FlyBody model based on a skeleton definition.
 
-        Creates hinge joints connecting body segments according to the skeleton's
-        kinematic tree structure. Each joint is configured with passive spring-damper
-        dynamics and a neutral (resting) angle.
+        Like `BaseFly.add_joints`, but instead of taking uniform ``stiffness``,
+        ``damping``, and ``armature`` arguments, the per-joint values are loaded from
+        the flybody joint config (via ``_resolve_joint_params``). ``neutral_pose`` sets
+        each joint's ``springref`` (the angle at which passive spring forces are zero),
+        and ``kwargs`` override the config-derived values.
 
         Args:
             skeleton:
                 Skeleton defining which joints to create and their DOFs.
             neutral_pose:
-                Resting angles for joints. If provided, must match skeleton's axis
-                order. If not provided, all neutral angles default to 0.
-                Will be used to set the springref attribute of the joints, which defines
-                the angle at which the passive spring forces are zero.
+                Resting angles for joints. If provided, must match the skeleton's axis
+                order; otherwise all neutral angles default to 0.
             **kwargs:
-                Additional arguments passed to MJCF joint creation. See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint>`_
-                for details on supported attributes.
+                Per-joint MJCF attributes that override the config-derived values. See
+                the [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint)
+                for supported attributes.
 
         Returns:
             Dictionary mapping JointDOF to created MJCF joint elements.
@@ -567,8 +568,9 @@ class FlyBody(BaseFly):
     ) -> dict[JointDOF, mj.MjsActuator]:
         """Add actuators to specified joints.
 
-        Creates actuators that can apply forces/torques to joints. Multiple actuator
-        types can be added to the same joints.
+        Like `BaseFly.add_actuators`, but actuator parameters default to the values in
+        the flybody ``actuator_config.yaml`` unless overridden. The FlyBody defaults
+        also differ: ``forcelimited`` is False and ``forcerange`` is ``(-0.3, 0.3)``.
 
         Args:
             jointdofs:
@@ -581,17 +583,16 @@ class FlyBody(BaseFly):
                 defaults to 0 for all actuators. For position actuators the values
                 are joint angles and must match the skeleton axis order.
             forcelimited:
-                If True, actuators cannot exceed set forcerange otherwise uses
-                default forcerange if specified in actuator_config.yaml.
-                default is False.
+                If True, clamp actuator force to ``forcerange``. If False, fall back to
+                the ``forcerange`` from ``actuator_config.yaml`` if one is specified.
             forcerange:
                 Force limit as a (min, max) tuple.
             **kwargs:
-                Additional arguments passed to MJCF actuator creation (e.g., kp for
-                position actuators, kv for velocity actuators). See
-                `MuJoCo XML reference <https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator>`_
-                for details on supported attributes.
-                Overrides any default values specified in actuator_config.yaml.
+                MJCF actuator attributes (e.g. ``kp`` for position actuators, ``kv`` for
+                velocity actuators) that override the defaults from
+                ``actuator_config.yaml``. See the
+                [MuJoCo XML reference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator)
+                for supported attributes.
 
         Returns:
             Dictionary mapping JointDOF to created MJCF actuator elements.
@@ -709,12 +710,13 @@ class FlyBody(BaseFly):
         """Add adhesion actuators to the tarsus5 segments of all legs and optionally to the labrum.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
-        surfaces. The control input per leg ranges from 1 to 100.
+        surfaces. The control input per leg ranges from 0 (released) to 1 (full gain).
 
         Args:
             gain: Adhesion actuator gain. Either a single float applied to all legs,
                 or a dict mapping leg position identifiers to per-leg gain values.
             add_labrum: Whether to also add an adhesion actuator for the labrum (mouthpart).
+            labrum_gain: Adhesion actuator gain for the labrum (used when ``add_labrum``).
 
         Returns:
             Dict mapping leg position identifier to the created MJCF adhesion
@@ -828,20 +830,25 @@ class FlyBody(BaseFly):
                 "as MOTOR actuators are used for tendons in this implementation."
             )
 
+        # Motor-actuator gains, in mm units (the original flybody XML, authored in cm,
+        # uses affine-servo gains of 0.1 for the abdomen and 0.4 for the tarsus tendons;
+        # the tendons drive hinge joints, so these torque-valued gains scale x100).
+        ABDOMEN_TENDON_GAIN = 10.0
+        TARSUS_TENDON_GAIN = 40.0
         for jointdof, tendon in self.jointdof_to_mjcftendon.items():
             default_params = {}
             if "abdomen" in jointdof.name:
                 if jointdof.axis == FlyBodyRotationAxis.PITCH:
-                    default_params = {"ctrlrange": [-1.05, 0.7]}
+                    default_params = {"ctrlrange": [-1.05, 0.7], "gain": ABDOMEN_TENDON_GAIN}
                 elif jointdof.axis == FlyBodyRotationAxis.YAW:
-                    default_params = {"ctrlrange": [-0.7, 0.7]}
+                    default_params = {"ctrlrange": [-0.7, 0.7], "gain": ABDOMEN_TENDON_GAIN}
                 else:
                     warnings.warn(
                         "No default ctrlrange for abdomen tendon joint "
                         f"{jointdof.name} with axis {jointdof.axis}; using no defaults."
                     )
             elif "tarsus" in jointdof.name:
-                default_params = {"ctrlrange": [-0.9, 0.9]}
+                default_params = {"ctrlrange": [-0.9, 0.9], "gain": TARSUS_TENDON_GAIN}
             else:
                 warnings.warn(
                     f"No default tendon actuator params for joint {jointdof.name}; "
@@ -873,12 +880,12 @@ class FlyBody(BaseFly):
         return self.jointdof_to_mjcfactuator_by_type[ActuatorType.TENDON]
 
     def _correct_wing_default_pose(self) -> None:
-        """
-        In flybody the wings are put in place by the spring property of the joint
-        As they use general actuators an input of 0 means no forces leading to the wings
-        going to their default pose. With position actuators, this does not happen.
+        """Rotate the wing bodies into their resting pose.
 
-        For that reason we position the wings bodies"
+        In the flybody model the wings are held in place by the joint's spring
+        property. With the original general actuators, a zero input applies no force,
+        so the wings fall back to this resting pose. Position actuators do not behave
+        this way, so we rotate the wing bodies into the resting pose explicitly here.
         """
         for side in ["l", "r"]:
             wing_bodyseg = FlyBodyBodySegment(f"{side}_wing")
