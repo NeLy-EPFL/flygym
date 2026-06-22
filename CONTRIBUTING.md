@@ -78,10 +78,30 @@ installed separately).
 uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest --profile outputs/cpu.speedscope.json
 ```
 
-This re-executes the script under `py-spy record --native`, so native (C/C++)
-frames — notably MuJoCo's physics step — appear alongside the Python frames. Open
-the resulting file at [speedscope.app](https://www.speedscope.app/) (or with the
-`speedscope` CLI).
+py-spy attaches to the **already-running process for the simulation loop only**, so
+the one-time imports and model building (which otherwise dominate the flame graph as
+a tall `_find_and_load` / `exec_module` tower) are never sampled — what you see is
+the loop itself. Sampling uses `--native`, so native (C/C++) frames — notably
+MuJoCo's physics step (`mj_projectConstraint`, `mju_cholFactorNumeric`, …) — appear
+alongside the Python frames. Open the resulting file at
+[speedscope.app](https://www.speedscope.app/) (or with the `speedscope` CLI). On
+Linux this needs no `sudo` (the script nominates py-spy as an allowed tracer via
+`prctl(PR_SET_PTRACER)`); a longer `--sim-duration-sec` just yields more samples.
+
+For a complementary, **symbolication-free** view of where time goes *inside* the
+physics step (kinematics, collision broad/narrow-phase, constraint solve,
+integration, …), pass `--mujoco-timing`. This installs MuJoCo's internal timer
+callback (`mjcb_time`) so the C engine fills in `mjData.timer` per phase, then
+prints a per-phase breakdown after the run:
+
+```bash
+uv run python scripts/replay_behavior_cpu.py --mujoco-timing
+```
+
+It adds a per-phase callback overhead, so read it as a *relative* breakdown rather
+than an absolute-throughput measurement. The two views corroborate each other — the
+phases MuJoCo's timer flags as expensive should match the hot native frames
+(`mj_projectConstraint`, `mju_cholFactorNumeric`, …) in the flame graph.
 
 **GPU (`scripts/replay_behavior_gpu.py`)** — timeline via
 [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) (`nsys`):
