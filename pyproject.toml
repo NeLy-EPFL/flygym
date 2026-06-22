@@ -2,7 +2,7 @@
 name = "flygym"
 version = "2.1.0"
 description = "NeuroMechFly, a framework for simulating embodied sensorimotor control in adult Drosophila."
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12,<3.15"
 authors = [
     { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
     { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch" },
@@ -21,7 +21,7 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "mujoco>=3.6,<3.7",
+    "mujoco>=3.9,<3.10",
     "numpy>=2.0,<3.0",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
@@ -38,8 +38,8 @@ dependencies = [
 
 [project.optional-dependencies]
 warp = [
-    "warp-lang>=1.12,<1.13",
-    "mujoco_warp>=3.6,<3.7",
+    "warp-lang>=1.14,<1.15",
+    "mujoco_warp>=3.9,<3.10",
 ]
 dev = [
     # Testing

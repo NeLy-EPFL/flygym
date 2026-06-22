@@ -1,6 +1,6 @@
 {
   "description": "Per-position single-step trajectories for the FlyBody anatomy, extracted from a tethered FlyBody replay of 'ball_flybody_clip.npz'. See flygym_demo.complex_terrain.preprogrammed.FlyBodyPreprogrammedSteps and flygym_demo.complex_terrain.flybody_step_extraction for the extraction pipeline and conventions.",
-  "source_clip": "ball_flybody_data/assets/ball_flybody_clip.npz",
+  "source_clip": "ball_flybody_clip.npz",
   "leg_positions": [
     "F",
     "M",

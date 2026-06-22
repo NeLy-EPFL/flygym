@@ -844,7 +844,15 @@ class BaseFly(BaseCompositionElement):
         return vis_set_params_all, lookup_by_geomname
 
     def _rebuild_neutral_keyframe(self):
-        mj_model, _ = self.compile()
+        # This standalone compile is intentional and internal: we only read the
+        # neutral qpos/ctrl off the resulting model. The `fusestatic` flip it does
+        # is irrelevant here, so suppress its (otherwise noisy) warning.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Compiling a fly model that is not attached to a world",
+            )
+            mj_model, _ = self.compile()
         self._neutral_keyframe.qpos = self._get_neutral_qpos(mj_model)
         self._neutral_keyframe.ctrl = self._get_neutral_ctrl(mj_model)
 

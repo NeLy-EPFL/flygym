@@ -10,18 +10,32 @@ permissions:
 
 jobs:
   test-core:
-    name: Core tests (${{ matrix.os }})
+    name: Core tests (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Full version sweep on Linux; only the newest supported Python on
+        # macOS and Windows.
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: ubuntu-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.14"
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install EGL/Mesa dependencies (Linux only)
         if: runner.os == 'Linux'
