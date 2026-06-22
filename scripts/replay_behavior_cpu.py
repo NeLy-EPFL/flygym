@@ -11,24 +11,45 @@ without arguments to just exercise the pipeline (and print a performance report)
 or pass ``--save-data DIR`` to additionally write the observation history, plots,
 and rendered video to ``DIR``.
 
-Pass ``--profile PATH`` to record a sampling profile of the whole run with
+Pass ``--profile PATH`` to record a sampling profile with
 `py-spy <https://github.com/benfred/py-spy>`_ and write it in speedscope format to
 ``PATH``; open the result at https://speedscope.app (or with the ``speedscope``
-CLI). This re-executes the script under ``py-spy record --native``, so native
-(C/C++) frames -- notably MuJoCo's physics step, which dominates this workload --
-show up in the flame graph alongside the Python frames.
+CLI). py-spy is attached to the *already-running* process for the duration of the
+simulation loop only -- the one-time imports and model building, which otherwise
+dominate the flame graph as a tall ``_find_and_load`` / ``exec_module`` tower, are
+never sampled, so what you see is the loop itself. Sampling uses ``--native``, so
+native (C/C++) frames -- notably MuJoCo's physics step, which dominates this
+workload (``mj_step`` -> ``mj_projectConstraint``, ``mju_cholFactorNumeric``, ...) --
+show up alongside the Python frames. On Linux this needs no sudo (we nominate py-spy
+as an allowed tracer via ``prctl(PR_SET_PTRACER)``); a longer ``--sim-duration-sec``
+simply yields more samples.
+
+Pass ``--mujoco-timing`` for a complementary, symbolication-free view: it installs
+MuJoCo's internal timer callback (``mjcb_time``) so the C engine fills in
+``mjData.timer`` per phase, then prints a per-phase breakdown of the physics step
+(kinematics, collision broad/narrow-phase, constraint solve, integration, ...)
+after the run. This is the natural way to see *where inside* the physics step the
+time goes, which stripped/inlined native stacks make hard to read. It adds a
+per-phase Python callback overhead, so read it as a relative breakdown rather than
+an absolute-throughput measurement.
 
 Example:
     uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest
-    uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest --profile outputs/cpu.speedscope.json
+    uv run python scripts/replay_behavior_cpu.py --profile outputs/cpu.speedscope.json
+    uv run python scripts/replay_behavior_cpu.py --mujoco-timing
 """
 
 import os
 import sys
+import time
 import shutil
+import signal
+import ctypes
 import argparse
+import threading
 import subprocess
 from pathlib import Path
+from contextlib import contextmanager, nullcontext
 
 import numpy as np
 import matplotlib
@@ -36,6 +57,7 @@ import matplotlib
 matplotlib.use("Agg")  # non-interactive backend: no display needed
 import matplotlib.pyplot as plt
 from tqdm import trange
+from tabulate import tabulate
 
 from flygym import Simulation
 from flygym.compose import (
@@ -65,13 +87,13 @@ def parse_args() -> argparse.Namespace:
         default=None,
         metavar="DIR",
         help="Directory to write the observation history, plots, and rendered "
-        "video. Errors out if it already exists. If omitted, nothing is saved.",
+        "video. Overwritten if it already exists. If omitted, nothing is saved.",
     )
     parser.add_argument(
         "--sim-duration-sec",
         type=float,
         default=None,
-        help="Duration to simulate, in seconds. Defaults to the full recording.",
+        help="Duration to simulate, in seconds. Defaults to half the recording.",
     )
     parser.add_argument(
         "--timestep",
@@ -90,51 +112,194 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         metavar="PATH",
-        help="Record a sampling profile of this run with py-spy and write it in "
-        "speedscope format to PATH (e.g. profile.speedscope.json), then open it at "
-        "https://speedscope.app. Re-executes the script under `py-spy record "
-        "--native`. Requires the 'dev' extra.",
+        help="Record a sampling profile of the simulation loop with py-spy and write "
+        "it in speedscope format to PATH (e.g. profile.speedscope.json), then open it "
+        "at https://speedscope.app. Attaches `py-spy record --native` to the loop only "
+        "(imports/model build are excluded). Requires the 'dev' extra.",
+    )
+    parser.add_argument(
+        "--mujoco-timing",
+        action="store_true",
+        help="Print MuJoCo's built-in per-phase timing breakdown of the physics step "
+        "(via the mjcb_time callback) after the run. Adds per-step overhead, so read "
+        "it as a relative breakdown rather than an absolute-throughput measurement.",
     )
     return parser.parse_args()
 
 
-# Sentinel env var: set on the child process so it knows it is already running
-# under py-spy and must run normally instead of re-executing itself.
-_PYSPY_ACTIVE_ENV = "_FLYGYM_PYSPY_ACTIVE"
+# py-spy sampling rate (Hz). A physics step is only tens of microseconds, so we
+# sample well above py-spy's 100 Hz default.
+_PYSPY_RATE = 500
 
 
-def reexec_under_pyspy(output_path: Path) -> None:
-    """Re-execute this script under ``py-spy record``, writing a speedscope profile.
-
-    py-spy launches (and is the parent of) the Python subprocess, so this needs no
-    elevated privileges -- unlike attaching to an already-running PID. ``--native``
-    captures C/C++ frames (e.g. MuJoCo's physics step). Returns immediately (a no-op)
-    when already running under py-spy; otherwise it never returns -- it exits with
-    py-spy's return code.
-    """
-    if os.environ.get(_PYSPY_ACTIVE_ENV):
-        return  # already running under py-spy: just run normally
+def ensure_pyspy() -> None:
+    """Exit with a helpful message if the py-spy executable is not on PATH."""
     if shutil.which("py-spy") is None:
         sys.exit(
             "Error: --profile requires py-spy, which was not found on PATH. "
             "Install the 'dev' extra (e.g. `uv sync --extra dev`)."
         )
+
+
+@contextmanager
+def pyspy_attached(output_path: Path):
+    """Attach py-spy to *this* process for the duration of the wrapped block only.
+
+    Unlike launching the whole script under py-spy, this profiles just the simulation
+    loop: the one-time imports and model building -- which otherwise dominate and
+    clutter the flame graph -- are never sampled.
+
+    py-spy runs as a separate process that ptraces us. Under Linux's default Yama
+    policy (``ptrace_scope=1``) that requires us to nominate it as an allowed tracer
+    via ``prctl(PR_SET_PTRACER)``; we pass ``PR_SET_PTRACER_ANY`` so no sudo is needed.
+    On stop we send SIGINT, which makes py-spy flush the speedscope file while this
+    process keeps running (e.g. to go on and save data).
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if sys.platform == "linux":
+        # PR_SET_PTRACER == 0x59616d61 ("Yama"); PR_SET_PTRACER_ANY == (unsigned long)-1.
+        try:
+            libc = ctypes.CDLL("libc.so.6", use_errno=True)
+            libc.prctl(0x59616D61, ctypes.c_ulong(0xFFFFFFFFFFFFFFFF), 0, 0, 0)
+        except OSError:
+            pass  # best effort: attach can still succeed if ptrace_scope == 0
+
     cmd = [
         "py-spy",
         "record",
+        "--pid",
+        str(os.getpid()),
         "--native",
+        "--rate",
+        str(_PYSPY_RATE),
         "--format",
         "speedscope",
         "--output",
         str(output_path),
-        "--",
-        sys.executable,
-        *sys.argv,
     ]
-    print("Profiling under py-spy:\n  " + " ".join(cmd), flush=True)
-    env = {**os.environ, _PYSPY_ACTIVE_ENV: "1"}
-    raise SystemExit(subprocess.call(cmd, env=env))
+    print("Attaching py-spy to the simulation loop:\n  " + " ".join(cmd), flush=True)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+    )
+
+    ready = threading.Event()
+    output_lines: list[str] = []
+
+    def _reader() -> None:
+        for line in proc.stdout:  # type: ignore[union-attr]
+            output_lines.append(line.rstrip())
+            if "Sampling" in line:  # py-spy prints this once it begins sampling
+                ready.set()
+
+    reader_thread = threading.Thread(target=_reader, daemon=True)
+    reader_thread.start()
+
+    # Wait until py-spy is actually sampling (or has died trying to attach).
+    start = time.monotonic()
+    while time.monotonic() - start < 60 and not ready.is_set():
+        if proc.poll() is not None:
+            break
+        ready.wait(timeout=0.2)
+    if not ready.is_set():
+        proc.send_signal(signal.SIGINT)
+        proc.wait(timeout=10)
+        sys.exit(
+            "Error: py-spy did not start sampling:\n  " + "\n  ".join(output_lines)
+        )
+
+    try:
+        yield
+    finally:
+        proc.send_signal(signal.SIGINT)  # tell py-spy to flush the speedscope file
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        reader_thread.join(timeout=5)
+        for line in output_lines:
+            if any(k in line for k in ("Wrote", "Error", "error")):
+                print(line)
+
+
+# MuJoCo's `mjData.timer` phases, in the order we report them, with an indent depth
+# for a readable nested layout. Times are reported relative to `mjTIMER_STEP`.
+# (Imported lazily inside the helpers so a normal run never imports mujoco directly.)
+_MUJOCO_TIMER_PHASES = [
+    ("mjTIMER_STEP", "step (total)", 0),
+    ("mjTIMER_FORWARD", "forward dynamics", 1),
+    ("mjTIMER_POSITION", "position", 2),
+    ("mjTIMER_POS_KINEMATICS", "kinematics", 3),
+    ("mjTIMER_POS_INERTIA", "inertia", 3),
+    ("mjTIMER_POS_COLLISION", "collision", 3),
+    ("mjTIMER_COL_BROAD", "broad-phase", 4),
+    ("mjTIMER_COL_NARROW", "narrow-phase", 4),
+    ("mjTIMER_POS_MAKE", "make constraints", 3),
+    ("mjTIMER_POS_PROJECT", "project constraints", 3),
+    ("mjTIMER_VELOCITY", "velocity", 2),
+    ("mjTIMER_ACTUATION", "actuation", 2),
+    ("mjTIMER_CONSTRAINT", "constraint solve", 1),
+    ("mjTIMER_ADVANCE", "integrate (advance)", 1),
+]
+
+
+def enable_mujoco_timing() -> None:
+    """Install MuJoCo's timer callback so the C engine fills in ``mjData.timer``.
+
+    ``mjData.timer`` always counts how often each phase runs, but its durations stay
+    zero unless a ``mjcb_time`` callback is registered; ``time.perf_counter`` (in
+    seconds) is the timestamp source MuJoCo's own ``simulate`` viewer uses.
+    """
+    import mujoco
+
+    mujoco.set_mjcb_time(time.perf_counter)
+
+
+def reset_mujoco_timers(mj_data) -> None:
+    """Zero ``mjData.timer`` so the report excludes warm-up / pre-loop steps."""
+    for i in range(len(mj_data.timer)):
+        mj_data.timer[i].number = 0
+        mj_data.timer[i].duration = 0.0
+
+
+def print_mujoco_timing(mj_data) -> None:
+    """Print MuJoCo's built-in per-phase timing breakdown of the physics step.
+
+    Reads ``mjData.timer`` (populated by `enable_mujoco_timing`), MuJoCo's own C-level
+    instrumentation -- a symbolication-free view of where time goes *inside* a step,
+    complementary to the py-spy flame graph. All times are over the step count and
+    relative to the total ``mjTIMER_STEP`` time.
+    """
+    import mujoco
+
+    n_steps = mj_data.timer[int(mujoco.mjtTimer.mjTIMER_STEP)].number
+    step_total_s = mj_data.timer[int(mujoco.mjtTimer.mjTIMER_STEP)].duration
+    if n_steps == 0 or step_total_s == 0.0:
+        print("No MuJoCo timing recorded (did the loop run any steps?).")
+        return
+
+    rows = []
+    for enum_name, label, depth in _MUJOCO_TIMER_PHASES:
+        timer = mj_data.timer[int(getattr(mujoco.mjtTimer, enum_name))]
+        if timer.number == 0:
+            continue
+        rows.append(
+            [
+                "  " * depth + label,
+                1e3 * timer.duration,  # total ms
+                1e6 * timer.duration / n_steps,  # us per step
+                100 * timer.duration / step_total_s,  # % of step
+            ]
+        )
+    print(f"\nMuJoCo per-phase physics timing ({n_steps} steps):")
+    print(
+        tabulate(
+            rows,
+            headers=["Phase", "Total (ms)", "us/step", "% of step"],
+            floatfmt=".3f",
+            tablefmt="rounded_outline",
+        )
+    )
 
 
 def build_model(actuator_gain: float):
@@ -243,18 +408,18 @@ def main() -> None:
     args = parse_args()
 
     if args.profile is not None:
-        # Re-exec under py-spy (no-op once we are the profiled child).
-        reexec_under_pyspy(args.profile)
+        ensure_pyspy()  # fail fast, before the (untimed) model build
 
     data_dir: Path | None = args.save_data
     if data_dir is not None:
-        if data_dir.exists():
-            sys.exit(f"Error: output directory already exists: {data_dir}")
-        data_dir.mkdir(parents=True)
+        data_dir.mkdir(parents=True, exist_ok=True)  # overwrite if it exists
 
     snippet = MotionSnippet()
     fly, sim, sites, actuator_type = build_model(args.actuator_gain)
     fly_name = fly.name
+
+    if args.mujoco_timing:
+        enable_mujoco_timing()
 
     # Build the target angle sequence (smoothed, upsampled, reordered).
     target_angles = snippet.get_joint_angles(
@@ -262,7 +427,7 @@ def main() -> None:
         output_dof_order=fly.get_actuated_jointdofs_order(actuator_type),
     )
     full_duration_sec = snippet.joint_angles.shape[0] / snippet.data_fps
-    duration_sec = args.sim_duration_sec or full_duration_sec
+    duration_sec = args.sim_duration_sec or full_duration_sec / 2
     timegrid = np.arange(0, duration_sec, args.timestep)
     nsteps_sim = min(timegrid.size, target_angles.shape[0])
     timegrid = timegrid[:nsteps_sim]
@@ -278,15 +443,37 @@ def main() -> None:
     sim.set_leg_adhesion_states(fly_name, np.ones(6, dtype=bool))
     sim.warmup()
 
-    for step_idx in trange(nsteps_sim, desc="Simulating"):
-        sim.set_actuator_inputs(fly_name, actuator_type, target_angles[step_idx, :])
-        sim.step()
-        simulated_joint_angles[step_idx, :] = sim.get_joint_angles(fly_name)
-        actuator_torques[step_idx, :] = sim.get_actuator_forces(fly_name, actuator_type)
-        site_positions[step_idx, :, :] = sim.get_site_positions(fly_name)
-        sim.render_as_needed()
+    # Zero the MuJoCo timers after warm-up so the report covers only the timed loop.
+    if args.mujoco_timing:
+        reset_mujoco_timers(sim.mj_data)
 
-    sim.print_performance_report()
+    # Attach py-spy (if profiling) around the loop only -- imports/model build above
+    # are deliberately excluded. Time the loop as a whole (no per-step instrumentation,
+    # which would otherwise add Python frames to the sampling profile).
+    profile_cm = (
+        pyspy_attached(args.profile) if args.profile is not None else nullcontext()
+    )
+    with profile_cm:
+        loop_start_ns = time.perf_counter_ns()
+        for step_idx in trange(nsteps_sim, desc="Simulating"):
+            sim.set_actuator_inputs(fly_name, actuator_type, target_angles[step_idx, :])
+            sim.step()
+            simulated_joint_angles[step_idx, :] = sim.get_joint_angles(fly_name)
+            actuator_torques[step_idx, :] = sim.get_actuator_forces(
+                fly_name, actuator_type
+            )
+            site_positions[step_idx, :, :] = sim.get_site_positions(fly_name)
+            sim.render_as_needed()
+        loop_walltime_s = (time.perf_counter_ns() - loop_start_ns) / 1e9
+
+    throughput = nsteps_sim / loop_walltime_s
+    print(
+        f"Simulated {nsteps_sim} steps in {loop_walltime_s:.3f}s "
+        f"({throughput:.0f} steps/s, {throughput * args.timestep:.2f}x realtime, "
+        f"end-to-end incl. observation recording and rendering)."
+    )
+    if args.mujoco_timing:
+        print_mujoco_timing(sim.mj_data)
 
     if data_dir is None:
         return
