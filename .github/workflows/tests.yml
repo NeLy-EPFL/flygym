@@ -33,10 +33,14 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --extra dev --extra examples
 
-      - name: Run core and examples tests
+      - name: Run tests
         env:
           # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create
           # a headless OpenGL context on GitHub-hosted runners (no GPU), so skip
           # rendering tests there. Linux uses EGL/Mesa and runs them.
           SKIP_RENDERING_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
-        run: uv run pytest tests/core/ tests/examples/ -v --tb=short
+        # Collect the whole tree but use marker selection (not directory
+        # selection) to drop the groups CI can't run: warp needs a CUDA GPU, and
+        # the tutorial notebooks are too slow for CI. Rendering tests are gated
+        # separately via SKIP_RENDERING_TESTS above.
+        run: uv run pytest tests/ -m "not warp and not tutorial" -v --tb=short

@@ -24,7 +24,6 @@ from flygym.compose import (
     KinematicPosePreset,
 )
 from flygym.utils.math import Rotation3D
-from flygym.warp import GPUSimulation
 
 
 def build_gpu_sim(
@@ -35,6 +34,10 @@ def build_gpu_sim(
     The fly has legs-only joints, position actuators, leg adhesion, and one
     tracking camera.  The world is a flat-ground world.
     """
+    # Imported lazily so this conftest can be collected without the optional
+    # warp extra installed (the warp test modules ``importorskip`` it).
+    from flygym.warp import GPUSimulation
+
     fly = NeuroMechFly(name=fly_name)
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL,

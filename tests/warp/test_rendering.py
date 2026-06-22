@@ -5,6 +5,11 @@ import pytest
 import numpy as np
 import mujoco as mj
 
+# These tests require the optional warp (GPU) extra; tag them so they can be
+# excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
+pytestmark = pytest.mark.warp
+pytest.importorskip("warp")
+
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
 from flygym.compose import NeuroMechFly, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D

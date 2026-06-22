@@ -88,6 +88,13 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mode=importlib"
+# Test selection is driven by markers, not by which directory a test lives in,
+# so a test can declare an optional-dependency requirement wherever it lives and
+# be excluded with e.g. `pytest -m "not warp"`.
+markers = [
+    "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
+    "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
+]
 
 [tool.coverage.run]
 source = ["flygym", "flygym_demo"]
