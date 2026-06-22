@@ -22,12 +22,22 @@ observation history, plots, and rendered video to ``DIR``.
 Pass ``--profile PATH`` to capture an NVIDIA Nsight Systems timeline of the run.
 This re-executes the script under ``nsys profile`` (tracing CUDA, NVTX, and OS
 runtime calls) and writes ``PATH.nsys-rep``, which you open in the Nsight Systems
-GUI. The script annotates the timeline with NVTX ranges via Warp's own profiling
+GUI. The capture passes ``--cuda-graph-trace=node`` so the CUDA-graph-captured loop
+body is expanded into its individual kernels on the GPU timeline (the target-angle
+update, the MuJoCo Warp physics-step kernels, joint-angle recording, and the counter
+increment); without it the whole ``wp.capture_launch`` collapses into a single
+opaque ``cudaGraphLaunch`` and the per-kernel breakdown is lost. For a textual
+breakdown without the GUI, run ``nsys stats --report cuda_gpu_kern_sum PATH.nsys-rep``.
+
+The script also annotates the timeline with NVTX ranges via Warp's own profiling
 layer (``wp.ScopedTimer(use_nvtx=True)``) -- "warmup", "timed_run", and per-step
-"step" ranges -- so warm-up/JIT is visually separated from the steady-state loop
-and host-side launches line up with the captured CUDA-graph kernels. ``nsys`` is
-part of the CUDA toolkit / a standalone install (see ``docs/installation.md``);
-the ``nvtx`` Python package (the 'dev' extra) is needed for the range annotations.
+"step" ranges -- so warm-up/JIT is visually separated from the steady-state loop.
+Note that the per-step "step" ranges bracket only the *host-side* ``wp.capture_launch``
+submission, not GPU execution: because the loop is replayed asynchronously as a CUDA
+graph, read per-kernel timing from the (node-traced) GPU rows, not from these host
+ranges. ``nsys`` is part of the CUDA toolkit / a standalone install (see
+``docs/installation.md``); the ``nvtx`` Python package (the 'dev' extra) is needed
+for the range annotations.
 
 Timing only starts *after* the simulation has been JIT-compiled: building the
 capture graph compiles the physics and control kernels, and a single untimed
@@ -157,6 +167,10 @@ def reexec_under_nsys(output_path: Path) -> None:
         "nsys",
         "profile",
         "--trace=cuda,nvtx,osrt",
+        # Expand the CUDA-graph-captured loop into its individual kernel nodes on
+        # the GPU timeline; otherwise each `wp.capture_launch` collapses into a
+        # single opaque `cudaGraphLaunch` and the per-kernel breakdown is lost.
+        "--cuda-graph-trace=node",
         "--force-overwrite=true",
         "--output",
         str(output_path),
