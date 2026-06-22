@@ -1,4 +1,4 @@
-"""Fixtures for the tutorial-notebook smoke tests.
+"""Fixtures for the tutorial notebook tests.
 
 Each tutorial test executes one notebook end-to-end in a fresh kernel and fails
 if any cell raises.  The notebooks themselves are never modified: they are read

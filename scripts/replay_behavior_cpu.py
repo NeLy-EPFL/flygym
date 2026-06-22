@@ -1,4 +1,4 @@
-"""Smoke test: replay experimentally recorded fly walking on the CPU.
+"""End-to-end test: replay experimentally recorded fly walking on the CPU.
 
 This is a script version of the core of
 ``tutorials/2_replaying_experimental_recordings.ipynb``. It loads a snippet of
@@ -34,7 +34,7 @@ per-phase Python callback overhead, so read it as a relative breakdown rather th
 an absolute-throughput measurement.
 
 Example:
-    uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest
+    uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_sim
     uv run python scripts/replay_behavior_cpu.py --profile outputs/cpu.speedscope.json
     uv run python scripts/replay_behavior_cpu.py --mujoco-timing
 """

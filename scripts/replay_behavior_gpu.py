@@ -1,4 +1,4 @@
-"""Smoke test: replay experimentally recorded fly walking on the GPU (MuJoCo Warp).
+"""End-to-end test: replay experimentally recorded fly walking on the GPU (MuJoCo Warp).
 
 This is a script version of the core of
 ``tutorials/3_gpu_accelerated_simulation.ipynb``. It is the GPU-accelerated
@@ -46,8 +46,8 @@ kernels -- notably the batch-render megakernel -- to compile before the clock
 starts.
 
 Example:
-    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest
-    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest --profile outputs/gpu_profile
+    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_sim
+    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_sim --profile outputs/gpu_profile
 """
 
 import os
