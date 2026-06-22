@@ -75,8 +75,10 @@ def make_locomotion_fly(
     )
     for jointdof, joint in joints.items():
         if jointdof.child.link in PASSIVE_TARSAL_LINKS:
-            joint.stiffness = passive_tarsus_stiffness
-            joint.damping = passive_tarsus_damping
+            # MuJoCo 3.7+ widened MjsJoint stiffness/damping to polynomial-
+            # coefficient arrays; the linear term lives at index 0.
+            joint.stiffness[0] = passive_tarsus_stiffness
+            joint.damping[0] = passive_tarsus_damping
     actuated_dofs = skeleton.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
     )

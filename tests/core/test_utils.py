@@ -252,7 +252,7 @@ class TestSetMujocoGlobals:
             "option:\n"
             "  integrator: Euler\n"
             "  solver: Newton\n"
-            "  flag:\n    multiccd: enable\n"
+            "  flag:\n    multiccd: enable\n    energy: enable\n"
             "statistic:\n  extent: '5'\n"
             "visual:\n  global:\n    offwidth: 2048\n"
         )
@@ -264,7 +264,11 @@ class TestSetMujocoGlobals:
         assert not spec.compiler.degree
         assert spec.option.integrator == mj.mjtIntegrator.mjINT_EULER
         assert spec.option.solver == mj.mjtSolver.mjSOL_NEWTON
-        assert spec.option.enableflags & int(mj.mjtEnableBit.mjENBL_MULTICCD)
+        # `energy` is an enable bit: enabling sets the corresponding enableflag.
+        assert spec.option.enableflags & int(mj.mjtEnableBit.mjENBL_ENERGY)
+        # `multiccd` became default-on in MuJoCo 3.8 and is now a disable bit;
+        # "enable" means it must NOT be present in the disable mask.
+        assert not (spec.option.disableflags & int(mj.mjtDisableBit.mjDSBL_MULTICCD))
         assert spec.stat.extent == pytest.approx(5.0)
         assert spec.visual.global_.offwidth == 2048
 
