@@ -67,6 +67,9 @@ dev = [
     # Git pre-commit filter: strips output from ipynb notebooks
     "nbstripout==0.9.1",
     "rasterio>=1.5.0",
+    # Profiling (see scripts/replay_behavior_{cpu,gpu}.py --profile)
+    "py-spy>=0.4,<0.5",  # CPU sampling profiler -> speedscope
+    "nvtx>=0.2,<0.3",  # NVTX ranges for the GPU script's Nsight timeline
 ]
 examples = [
     "ipykernel>=7.1.0",
