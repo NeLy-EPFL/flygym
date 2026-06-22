@@ -1,6 +1,13 @@
 MUJOCO_LOG.TXT
 demo_output/
+outputs/
 gpu_benchmark_results*/
+
+# Profiling output (scripts/replay_behavior_{cpu,gpu}.py --profile)
+*.speedscope.json
+*.nsys-rep
+*.qdrep
+*.qdstrm
 
 .idea/
 
