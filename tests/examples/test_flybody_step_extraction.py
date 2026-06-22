@@ -344,8 +344,14 @@ def test_save_asset_is_deterministic_and_note_independent(tmp_path):
     rec = _make_recording(nsteps=60)
     a = tmp_path / "a.npz"
     b = tmp_path / "b.npz"
-    fse.save_asset(fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v1"}), a)
-    fse.save_asset(fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v2!"}), b)
+    fse.save_asset(
+        fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v1"}),
+        a,
+    )
+    fse.save_asset(
+        fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v2!"}),
+        b,
+    )
     assert a.read_bytes() == b.read_bytes()
 
 
