@@ -219,7 +219,9 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
        fraction of timesteps where the body-frame anteroposterior velocity is
        positive (``np.diff(claw_ap) > 0``).
     5. Keep the picked side's trajectory verbatim and fill the opposite side by
-       mirroring it across the sagittal plane, giving one canonical
+       reusing the same trajectory (no sign flip -- the FlyBody leg joint axes
+       are symmetric across the sagittal plane, so identical joint angles
+       already produce a mirror-symmetric step), giving one canonical
        ``(7, n_phase_bins)`` trajectory and one scalar swing fraction per leg.
 
     Conventions
@@ -287,7 +289,7 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
             for leg, theta_neutral in zip(self.legs, neutral_pose_phases)
         }
 
-        # Phase 0 is AEP, so the cycle is laid out as
+        # Phase 0 is PEP, so the cycle is laid out as
         #   [0, swing_end]  -> swing  (leg in air)
         #   [swing_end, 2π] -> stance (leg planted)
         self.swing_period = {
