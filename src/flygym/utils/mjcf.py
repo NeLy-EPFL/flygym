@@ -176,7 +176,7 @@ def add_actuator(
         forcelimited/forcerange/ctrllimited/ctrlrange/gear: Common attributes.
         kp: Position/intvelocity gain.
         kv: Position/velocity/intvelocity damping.
-        gain: Adhesion gain.
+        gain: Gain (``gainprm[0]``) for adhesion, motor, and general actuators.
         **kwargs: Extra low-level attributes set directly on the actuator (e.g.
             ``gainprm``, ``biasprm`` for ``general``).
 
@@ -205,8 +205,9 @@ def add_actuator(
     # Shortcut expansion (gain/bias/dyn). Verified against PyMJCF output. MjSpec
     # requires gainprm/biasprm to be length 10, so leading entries are padded.
     if kind == "motor" or kind == "general":
+        gain_v = 1.0 if gain is None else gain
         params["gaintype"] = mj.mjtGain.mjGAIN_FIXED
-        params["gainprm"] = _prm(1.0)
+        params["gainprm"] = _prm(gain_v)
         params["biastype"] = mj.mjtBias.mjBIAS_NONE
     elif kind == "position":
         kp_v = 1.0 if kp is None else kp
