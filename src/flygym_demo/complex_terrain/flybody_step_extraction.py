@@ -57,6 +57,14 @@ WARMUP_SEC_DEFAULT = 0.1
 # PEP candidate filtering: lower bound on plausible step period (s).
 MIN_STEP_PERIOD_SEC = 0.04
 
+# Round the stored asset so reruns don't churn the saved floats. On a fixed
+# MuJoCo / NumPy / SciPy build the replay is deterministic and the asset already
+# rebuilds bit-for-bit; across builds the recording drifts at the ~1e-8 level.
+# Rounding to grids far finer than any meaningful resolution absorbs that drift
+# (lossless in practice) for all but the rare value on a grid boundary.
+JOINT_ANGLE_DECIMALS = 6  # 1e-6 rad ~= 6e-5 deg
+SWING_FRACTION_DECIMALS = 4
+
 
 # ---------------------------------------------------------------------------
 # Replay
@@ -362,6 +370,12 @@ def build_asset_from_selection(
         joint_angles[i] = _resample_cycle(leg_targets, n_phase_bins)
         swing_fractions[i] = _swing_fraction_from_diff(claw_y)
         cycle_lengths[leg_pos] = end - start
+
+    # Round so the asset resists ~1e-8 build-to-build drift in the recording.
+    # Adding 0.0 collapses any -0.0 produced by rounding tiny negatives to +0.0
+    # (the two have distinct bit patterns and would otherwise differ on disk).
+    joint_angles = np.round(joint_angles, JOINT_ANGLE_DECIMALS) + 0.0
+    swing_fractions = np.round(swing_fractions, SWING_FRACTION_DECIMALS) + 0.0
 
     source_clip = _portable_clip_path(recording.clip_path)
     description = (
