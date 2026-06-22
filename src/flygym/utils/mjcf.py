@@ -122,14 +122,15 @@ _JACOBIANS = {
 }
 
 # Names used under ``option.flag`` in the globals YAML -> enable/disable bit.
+# Both dicts are derived from the enums so they track MuJoCo's own additions and
+# removals. Some features migrate between the two over versions (e.g. ``multiccd``
+# and ``island`` became default-on and moved from enable bits to disable bits in
+# MuJoCo 3.x); ``_apply_option_flags`` resolves the YAML state against whichever
+# dict the flag currently lives in.
 _ENABLE_BITS = {
-    "override": mj.mjtEnableBit.mjENBL_OVERRIDE,
-    "energy": mj.mjtEnableBit.mjENBL_ENERGY,
-    "fwdinv": mj.mjtEnableBit.mjENBL_FWDINV,
-    "invdiscrete": mj.mjtEnableBit.mjENBL_INVDISCRETE,
-    "multiccd": mj.mjtEnableBit.mjENBL_MULTICCD,
-    "island": getattr(mj.mjtEnableBit, "mjENBL_ISLAND", None),
-    "sleep": getattr(mj.mjtEnableBit, "mjENBL_SLEEP", None),
+    name[len("mjENBL_") :].lower(): getattr(mj.mjtEnableBit, name)
+    for name in dir(mj.mjtEnableBit)
+    if name.startswith("mjENBL_")
 }
 _DISABLE_BITS = {
     name[len("mjDSBL_") :].lower(): getattr(mj.mjtDisableBit, name)
