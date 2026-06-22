@@ -347,3 +347,16 @@ def test_save_asset_is_deterministic_and_note_independent(tmp_path):
     fse.save_asset(fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v1"}), a)
     fse.save_asset(fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v2!"}), b)
     assert a.read_bytes() == b.read_bytes()
+
+
+def test_build_asset_rounds_stored_arrays():
+    # Stored arrays are rounded to fixed grids so reruns don't churn the floats.
+    rec = _make_recording(nsteps=60)
+    asset = fse.build_asset_from_selection(rec, {"picks": _three_picks()})
+    np.testing.assert_array_equal(
+        asset["joint_angles"], np.round(asset["joint_angles"], fse.JOINT_ANGLE_DECIMALS)
+    )
+    np.testing.assert_array_equal(
+        asset["swing_fractions"],
+        np.round(asset["swing_fractions"], fse.SWING_FRACTION_DECIMALS),
+    )
