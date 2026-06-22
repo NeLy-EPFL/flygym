@@ -43,4 +43,4 @@ jobs:
         # selection) to drop the groups CI can't run: warp needs a CUDA GPU, and
         # the tutorial notebooks are too slow for CI. Rendering tests are gated
         # separately via SKIP_RENDERING_TESTS above.
-        run: uv run pytest tests/ -m "not warp and not tutorial" -v --tb=short
+        run: uv run pytest tests/ -m "not warp" -v --tb=short
