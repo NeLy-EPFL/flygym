@@ -839,9 +839,15 @@ class FlyBody(BaseFly):
             default_params = {}
             if "abdomen" in jointdof.name:
                 if jointdof.axis == FlyBodyRotationAxis.PITCH:
-                    default_params = {"ctrlrange": [-1.05, 0.7], "gain": ABDOMEN_TENDON_GAIN}
+                    default_params = {
+                        "ctrlrange": [-1.05, 0.7],
+                        "gain": ABDOMEN_TENDON_GAIN,
+                    }
                 elif jointdof.axis == FlyBodyRotationAxis.YAW:
-                    default_params = {"ctrlrange": [-0.7, 0.7], "gain": ABDOMEN_TENDON_GAIN}
+                    default_params = {
+                        "ctrlrange": [-0.7, 0.7],
+                        "gain": ABDOMEN_TENDON_GAIN,
+                    }
                 else:
                     warnings.warn(
                         "No default ctrlrange for abdomen tendon joint "
