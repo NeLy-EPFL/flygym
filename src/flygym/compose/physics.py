@@ -24,7 +24,7 @@ class ContactParams:
 
     Attributes:
         sliding_friction:
-            Tangential friction coefficient. Default: 5.0 (MuJoCo default: 1.0).
+            Tangential friction coefficient. Default: 1.0 (same as MuJoCo).
         torsional_friction:
             Torsional friction coefficient. Default: 0.02 (MuJoCo default: 0.005).
         rolling_friction:

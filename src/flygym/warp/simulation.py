@@ -332,12 +332,11 @@ class GPUSimulation(Simulation):
         return self.renderer
 
     @override
-    def render_as_needed(self) -> dict[str, Float[np.ndarray, "height width 3"]]:
+    def render_as_needed(self) -> bool:
         """Render frames for all configured cameras if enough time has elapsed.
 
         Returns:
-            Dict mapping camera name to rendered frame array ``(height, width, 3)``,
-            or an empty dict if no render occurred.
+            True if a render occurred, False otherwise.
         """
         return self.renderer.render_as_needed(self.mjw_data)
 

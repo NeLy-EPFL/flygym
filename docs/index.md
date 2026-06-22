@@ -60,9 +60,9 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
 
 ## Getting Started
 
-!!! tip "March 2026 Update"
+!!! tip "April 2026 Update"
 
-    We introduced a new FlyGym 2.x.x API in March 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
+    We introduced a new FlyGym 2.x.x API in April 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
 
     - **~10x speed-up** for CPU-based simulations (~2x real-time throughput)
     - **~300x speed-up** for GPU-based simulation via Warp/MJWarp (~60x real-time throughput)

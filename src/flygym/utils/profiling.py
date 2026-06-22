@@ -146,7 +146,7 @@ def print_perf_report_parallel(
         raise ValueError(
             "n_steps must be > 0 to print performance report. "
             "Hint: Did you place `sim.step()` inside a captured graph? If so, "
-            "If so, profiling cannot be meaningfully done due to GPU-CPU synch "
+            "profiling cannot be meaningfully done due to GPU-CPU sync "
             "constraints."
         )
 
