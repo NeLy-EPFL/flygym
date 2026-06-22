@@ -11,12 +11,23 @@ without arguments to just exercise the pipeline (and print a performance report)
 or pass ``--save-data DIR`` to additionally write the observation history, plots,
 and rendered video to ``DIR``.
 
+Pass ``--profile PATH`` to record a sampling profile of the whole run with
+`py-spy <https://github.com/benfred/py-spy>`_ and write it in speedscope format to
+``PATH``; open the result at https://speedscope.app (or with the ``speedscope``
+CLI). This re-executes the script under ``py-spy record --native``, so native
+(C/C++) frames -- notably MuJoCo's physics step, which dominates this workload --
+show up in the flame graph alongside the Python frames.
+
 Example:
-    uv run python scripts/dev/run_cpu_smoketest.py --save-data outputs/cpu_smoketest
+    uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest
+    uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest --profile outputs/cpu.speedscope.json
 """
 
+import os
 import sys
+import shutil
 import argparse
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -74,7 +85,56 @@ def parse_args() -> argparse.Namespace:
         default=150.0,
         help="Position actuator gain in uN*mm/rad (default: 150).",
     )
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Record a sampling profile of this run with py-spy and write it in "
+        "speedscope format to PATH (e.g. profile.speedscope.json), then open it at "
+        "https://speedscope.app. Re-executes the script under `py-spy record "
+        "--native`. Requires the 'dev' extra.",
+    )
     return parser.parse_args()
+
+
+# Sentinel env var: set on the child process so it knows it is already running
+# under py-spy and must run normally instead of re-executing itself.
+_PYSPY_ACTIVE_ENV = "_FLYGYM_PYSPY_ACTIVE"
+
+
+def reexec_under_pyspy(output_path: Path) -> None:
+    """Re-execute this script under ``py-spy record``, writing a speedscope profile.
+
+    py-spy launches (and is the parent of) the Python subprocess, so this needs no
+    elevated privileges -- unlike attaching to an already-running PID. ``--native``
+    captures C/C++ frames (e.g. MuJoCo's physics step). Returns immediately (a no-op)
+    when already running under py-spy; otherwise it never returns -- it exits with
+    py-spy's return code.
+    """
+    if os.environ.get(_PYSPY_ACTIVE_ENV):
+        return  # already running under py-spy: just run normally
+    if shutil.which("py-spy") is None:
+        sys.exit(
+            "Error: --profile requires py-spy, which was not found on PATH. "
+            "Install the 'dev' extra (e.g. `uv sync --extra dev`)."
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "py-spy",
+        "record",
+        "--native",
+        "--format",
+        "speedscope",
+        "--output",
+        str(output_path),
+        "--",
+        sys.executable,
+        *sys.argv,
+    ]
+    print("Profiling under py-spy:\n  " + " ".join(cmd), flush=True)
+    env = {**os.environ, _PYSPY_ACTIVE_ENV: "1"}
+    raise SystemExit(subprocess.call(cmd, env=env))
 
 
 def build_model(actuator_gain: float):
@@ -182,6 +242,10 @@ def plot_pose_over_time(site_positions, timestep):
 def main() -> None:
     args = parse_args()
 
+    if args.profile is not None:
+        # Re-exec under py-spy (no-op once we are the profiled child).
+        reexec_under_pyspy(args.profile)
+
     data_dir: Path | None = args.save_data
     if data_dir is not None:
         if data_dir.exists():
@@ -216,11 +280,11 @@ def main() -> None:
 
     for step_idx in trange(nsteps_sim, desc="Simulating"):
         sim.set_actuator_inputs(fly_name, actuator_type, target_angles[step_idx, :])
-        sim.step_with_profile()
+        sim.step()
         simulated_joint_angles[step_idx, :] = sim.get_joint_angles(fly_name)
         actuator_torques[step_idx, :] = sim.get_actuator_forces(fly_name, actuator_type)
         site_positions[step_idx, :, :] = sim.get_site_positions(fly_name)
-        sim.render_as_needed_with_profile()
+        sim.render_as_needed()
 
     sim.print_performance_report()
 

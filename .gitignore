@@ -3,6 +3,12 @@ demo_output/
 outputs/
 gpu_benchmark_results*/
 
+# Profiling output (scripts/replay_behavior_{cpu,gpu}.py --profile)
+*.speedscope.json
+*.nsys-rep
+*.qdrep
+*.qdstrm
+
 .idea/
 
 # Created by https://www.toptal.com/developers/gitignore/api/vim,emacs,macos,linux,windows,visualstudiocode,git,python,jupyternotebooks

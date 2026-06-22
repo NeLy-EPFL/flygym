@@ -2,7 +2,7 @@
 
 This is a script version of the core of
 ``tutorials/3_gpu_accelerated_simulation.ipynb``. It is the GPU-accelerated
-counterpart of ``run_cpu_smoketest.py``: it replays the same Spotlight kinematic
+counterpart of ``replay_behavior_cpu.py``: it replays the same Spotlight kinematic
 recording, but over many parallel worlds at once using ``flygym.warp``. Each world
 is fed a different 0.1 s slice of the recording (wrapping around when the slices
 are exhausted).
@@ -19,6 +19,16 @@ arguments it is a pure physics-throughput benchmark; passing ``--save-data DIR``
 additionally renders the simulation (GPU batch rendering) and writes the
 observation history, plots, and rendered video to ``DIR``.
 
+Pass ``--profile PATH`` to capture an NVIDIA Nsight Systems timeline of the run.
+This re-executes the script under ``nsys profile`` (tracing CUDA, NVTX, and OS
+runtime calls) and writes ``PATH.nsys-rep``, which you open in the Nsight Systems
+GUI. The script annotates the timeline with NVTX ranges via Warp's own profiling
+layer (``wp.ScopedTimer(use_nvtx=True)``) -- "warmup", "timed_run", and per-step
+"step" ranges -- so warm-up/JIT is visually separated from the steady-state loop
+and host-side launches line up with the captured CUDA-graph kernels. ``nsys`` is
+part of the CUDA toolkit / a standalone install (see ``docs/installation.md``);
+the ``nvtx`` Python package (the 'dev' extra) is needed for the range annotations.
+
 Timing only starts *after* the simulation has been JIT-compiled: building the
 capture graph compiles the physics and control kernels, and a single untimed
 warm-up replay (plus one warm-up render, when rendering) forces any remaining
@@ -26,11 +36,15 @@ kernels -- notably the batch-render megakernel -- to compile before the clock
 starts.
 
 Example:
-    uv run python scripts/dev/run_gpu_smoketest.py --save-data outputs/gpu_smoketest
+    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest
+    uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest --profile outputs/gpu_profile
 """
 
+import os
 import sys
+import shutil
 import argparse
+import subprocess
 from pathlib import Path
 from time import perf_counter_ns
 
@@ -107,7 +121,66 @@ def parse_args() -> argparse.Namespace:
         help="Number of worlds to render and save to video (default: 9). Only used "
         "when --save-data is given.",
     )
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Capture an NVIDIA Nsight Systems timeline of this run, writing "
+        "PATH.nsys-rep (open it in the Nsight Systems GUI). Re-executes the script "
+        "under `nsys profile` and annotates the timeline with NVTX ranges via "
+        "Warp's profiling layer. Requires `nsys` on PATH and the 'dev' extra.",
+    )
     return parser.parse_args()
+
+
+# Sentinel env var: set on the child process so it knows it is already running
+# under nsys and must run normally instead of re-executing itself.
+_NSYS_ACTIVE_ENV = "_FLYGYM_NSYS_ACTIVE"
+
+
+def reexec_under_nsys(output_path: Path) -> None:
+    """Re-execute this script under ``nsys profile``, writing ``output_path.nsys-rep``.
+
+    Returns immediately (a no-op) when already running under nsys; otherwise it
+    never returns -- it exits with nsys's return code.
+    """
+    if os.environ.get(_NSYS_ACTIVE_ENV):
+        return  # already running under nsys: just run normally
+    if shutil.which("nsys") is None:
+        sys.exit(
+            "Error: --profile requires NVIDIA Nsight Systems (`nsys`), which was not "
+            "found on PATH. See docs/installation.md for how to install it."
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "nsys",
+        "profile",
+        "--trace=cuda,nvtx,osrt",
+        "--force-overwrite=true",
+        "--output",
+        str(output_path),
+        sys.executable,
+        *sys.argv,
+    ]
+    print("Profiling under Nsight Systems:\n  " + " ".join(cmd), flush=True)
+    env = {**os.environ, _NSYS_ACTIVE_ENV: "1"}
+    raise SystemExit(subprocess.call(cmd, env=env))
+
+
+def nvtx_range(name: str, enabled: bool, *, synchronize: bool = False):
+    """An NVTX range (via Warp's profiling layer) that no-ops when ``enabled`` is False.
+
+    When disabled, ``wp.ScopedTimer`` skips its body entirely -- including the
+    ``import nvtx`` -- so the ``nvtx`` package is only needed when actually profiling.
+    """
+    return wp.ScopedTimer(
+        name,
+        active=enabled,
+        print=False,
+        use_nvtx=enabled,
+        synchronize=synchronize,
+    )
 
 
 def plot_joint_angle_tracking(
@@ -144,7 +217,25 @@ def plot_joint_angle_tracking(
 def main() -> None:
     args = parse_args()
 
+    profiling = args.profile is not None
+    if profiling:
+        # Re-exec under nsys (no-op once we are the profiled child).
+        reexec_under_nsys(args.profile)
+
     check_gpu()
+
+    # NVTX range annotations need the `nvtx` package; without it we still get a
+    # useful CUDA timeline, just no named ranges.
+    nvtx_enabled = profiling
+    if profiling:
+        try:
+            import nvtx  # noqa: F401  (probe availability only)
+        except ImportError:
+            print(
+                "Warning: nvtx not installed; NVTX ranges disabled (install the "
+                "'dev' extra). CUDA activity is still captured."
+            )
+            nvtx_enabled = False
 
     data_dir: Path | None = args.save_data
     if data_dir is not None:
@@ -231,10 +322,11 @@ def main() -> None:
     # --- Untimed warm-up: force any remaining JIT (e.g. the batch-render megakernel),
     # then reset the step counter and renderer so the timed run starts from step 0. ---
     print(f"Warming up (JIT compilation) {n_worlds} worlds...")
-    wp.capture_launch(advance_sim_capture.graph)
-    if render_enabled:
-        sim.render_as_needed()
-    wp.synchronize()
+    with nvtx_range("warmup", nvtx_enabled, synchronize=True):
+        wp.capture_launch(advance_sim_capture.graph)
+        if render_enabled:
+            sim.render_as_needed()
+        wp.synchronize()
 
     step_counter.zero_()
     if render_enabled:
@@ -244,10 +336,12 @@ def main() -> None:
     print(f"Simulating {sim_steps} steps across {n_worlds} worlds...")
     wp.synchronize()
     start_time = perf_counter_ns()
-    for _ in range(sim_steps):
-        wp.capture_launch(advance_sim_capture.graph)
-        if render_enabled:
-            sim.render_as_needed()
+    with nvtx_range("timed_run", nvtx_enabled):
+        for _ in range(sim_steps):
+            with nvtx_range("step", nvtx_enabled):
+                wp.capture_launch(advance_sim_capture.graph)
+                if render_enabled:
+                    sim.render_as_needed()
     wp.synchronize()
     end_time = perf_counter_ns()
 

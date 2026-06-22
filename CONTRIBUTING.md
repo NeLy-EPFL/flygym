@@ -61,6 +61,43 @@ Notes:
   is unavailable (e.g. macOS/Windows CI), set `SKIP_RENDERING_TESTS=1` to skip
   them; on Linux they run via EGL/Mesa.
 
+## Profiling
+
+The replay smoke-test scripts double as end-to-end profiling targets. Both take a
+`--profile PATH` flag. Run them without `--save-data` to profile the pure
+simulation pipeline (no rendering/video). See
+[the installation notes](https://neuromechfly.org/installation/) for the profiler
+prerequisites (`py-spy` and `nvtx` come with the `dev` extra; `nsys` must be
+installed separately).
+
+**CPU (`scripts/replay_behavior_cpu.py`)** — sampling profile via
+[py-spy](https://github.com/benfred/py-spy), written in
+[speedscope](https://www.speedscope.app/) format:
+
+```bash
+uv run python scripts/replay_behavior_cpu.py --save-data outputs/cpu_smoketest --profile outputs/cpu.speedscope.json
+```
+
+This re-executes the script under `py-spy record --native`, so native (C/C++)
+frames — notably MuJoCo's physics step — appear alongside the Python frames. Open
+the resulting file at [speedscope.app](https://www.speedscope.app/) (or with the
+`speedscope` CLI).
+
+**GPU (`scripts/replay_behavior_gpu.py`)** — timeline via
+[NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) (`nsys`):
+
+```bash
+uv run python scripts/replay_behavior_gpu.py --save-data outputs/gpu_smoketest --profile outputs/gpu_profile
+```
+
+This re-executes the script under `nsys profile` and writes `profile.nsys-rep`,
+which you open in the Nsight Systems GUI. The timeline is annotated with NVTX
+ranges (via Warp's `wp.ScopedTimer(use_nvtx=True)`) — `warmup`, `timed_run`, and
+per-step `step` — so JIT/warm-up is separated from the steady-state loop and
+host-side launches line up with the captured CUDA-graph kernels.
+
+Profiling output files (`*.speedscope.json`, `*.nsys-rep`, …) are gitignored.
+
 ## Submitting changes
 
 1. Fork the repository and create a branch **from the current `dev-vx.y.z` branch**.
