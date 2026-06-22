@@ -1,7 +1,9 @@
 # Contributors
 
-If you find yourself missing from the following lists, please submit a PR with your name
-added.
+!!! tip "Missing from the lists below?"
+
+    If you find yourself missing from the following lists, please submit a PR with your
+    name added.
 
 ## NeuroMechFly v1 (Lobato-Rios et al., 2022)
 - [Victor Lobato-Rios](https://www.linkedin.com/in/victor-lobato-rios-986756301/)

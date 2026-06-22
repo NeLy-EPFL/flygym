@@ -114,7 +114,7 @@ class BaseFly(BaseCompositionElement):
 
         FlyGym 2.0.3 dropped the PyMJCF backend in favour of MuJoCo's native
         ``MjSpec`` API. If you are upgrading from an earlier version, see the
-        [v2.1.0 changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md#version-210)
+        [v2.1.0 changelog](https://neuromechfly.org/changelog/#version-210)
         for breaking changes and a migration guide.
 
     Args:

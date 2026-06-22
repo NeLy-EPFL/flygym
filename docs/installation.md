@@ -60,19 +60,12 @@
         source .venv/bin/activate
         nbstripout --install --attributes .gitattributes
         ```
-    
-    !!! note "Profiling tools (for `scripts/replay_behavior_{cpu,gpu}.py --profile`)"
 
-        The replay end-to-end test scripts have a `--profile` flag for performance profiling.
+    !!! tip "Profiling FlyGym simulations"
 
-        The **GPU** script profiles with [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems) (`nsys`), which is **not** a Python package and must be installed separately. It ships with the CUDA Toolkit, or you can install it standalone:
-
-        ```sh
-        # Ubuntu/Debian, via NVIDIA's CUDA apt repository:
-        apt-get install nsight-systems
-        ```
-
-        Alternatively, download the installer for your platform from the [Nsight Systems page](https://developer.nvidia.com/nsight-systems/get-started). Make sure the `nsys` executable is on your `PATH`. The NVTX range annotations additionally require the `nvtx` Python package, which is included in the `dev` extra. Open the resulting `.nsys-rep` file in the Nsight Systems GUI.
+        For instructions on CPU/GPU performance profiling (including the `nsys`
+        prerequisite), see the [Performance profiling](tutorials/6_performance_profiling.md)
+        guide.
 
 
 === "Using Docker"
