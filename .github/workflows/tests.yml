@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev
+            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev ffmpeg
 
       - name: Install Python dependencies
         run: uv sync --extra dev --extra examples
@@ -40,7 +40,6 @@ jobs:
           # rendering tests there. Linux uses EGL/Mesa and runs them.
           SKIP_RENDERING_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
         # Collect the whole tree but use marker selection (not directory
-        # selection) to drop the groups CI can't run: warp needs a CUDA GPU, and
-        # the tutorial notebooks are too slow for CI. Rendering tests are gated
-        # separately via SKIP_RENDERING_TESTS above.
+        # selection) to drop the groups CI can't run: warp needs a CUDA GPU.
+        # Rendering tests are gated separately via SKIP_RENDERING_TESTS above.
         run: uv run pytest tests/ -m "not warp" -v --tb=short

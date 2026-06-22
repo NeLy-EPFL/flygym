@@ -12,7 +12,16 @@ Tutorial 3 additionally exercises the GPU-accelerated (warp) backend, so it is
 also tagged ``warp`` and is excluded by ``-m "not warp"`` / when warp is absent.
 """
 
+import os
+
 import pytest
+
+# Every tutorial spins up a full simulation that renders, so the whole module
+# is skipped on runners without headless GL (which set SKIP_RENDERING_TESTS=1).
+pytestmark = pytest.mark.skipif(
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
+)
 
 NOTEBOOKS = [
     "1a_basic_model_composition.ipynb",
