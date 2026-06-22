@@ -1,3 +1,4 @@
+import warnings
 from os import PathLike
 from enum import Enum
 from fnmatch import filter as filter_with_wildcard
@@ -5,7 +6,6 @@ from typing import Iterable, Any, override
 
 import mujoco as mj
 import numpy as np
-import dm_control.mjcf as mjcf
 import yaml
 
 from flygym.anatomy import (
@@ -24,7 +24,15 @@ from flygym.anatomy import (
 
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
-from flygym.utils.mjcf import set_mujoco_globals
+from flygym.utils.mjcf import (
+    set_mujoco_globals,
+    add_actuator,
+    add_material,
+    add_texture,
+    GEOM_TYPES,
+    JOINT_TYPES,
+    CAMERA_MODES,
+)
 from flygym.utils.math import Vec3, Rotation3D
 from flygym.utils.exceptions import FlyGymInternalError
 
@@ -102,6 +110,13 @@ class BaseFly(BaseCompositionElement):
     thorax) from which all other segments branch. Joints and actuators are added
     separately after initialization to allow flexible model configurations.
 
+    !!! warning "PyMJCF -> MjSpec migration (v2.1.0)"
+
+        FlyGym 2.0.3 dropped the PyMJCF backend in favour of MuJoCo's native
+        ``MjSpec`` API. If you are upgrading from an earlier version, see the
+        [v2.1.0 changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md#version-210)
+        for breaking changes and a migration guide.
+
     Args:
         name:
             Identifier for this fly instance.
@@ -173,7 +188,12 @@ class BaseFly(BaseCompositionElement):
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
     ) -> None:
         self._name = name
-        self._mjcf_root = mjcf.RootElement(model=name)
+        self._mjcf_root = mj.MjSpec()
+        self._mjcf_root.modelname = name
+        # Keep the globals path so the world can inherit the fly's physics settings:
+        # MjSpec.attach() does not merge the child's <option>/<compiler> into the
+        # parent, so these must be (re)applied to the world spec that gets compiled.
+        self.mujoco_globals_path = mujoco_globals_path
         set_mujoco_globals(self.mjcf_root, mujoco_globals_path)
 
         self.skeleton: Skeleton | None = None
@@ -196,9 +216,7 @@ class BaseFly(BaseCompositionElement):
             root_segment = self.BODY_SEGMENT_CLASS(root_segment)
         self.root_segment = root_segment
 
-        self._neutral_keyframe = self.mjcf_root.keyframe.add(
-            "key", name="neutral", time=0
-        )
+        self._neutral_keyframe = self.mjcf_root.add_key(name="neutral", time=0)
 
         self._add_mesh_assets(mesh_basedir, mirror_left2right, mesh_type)
         self._add_bodies_and_geoms(
@@ -208,13 +226,42 @@ class BaseFly(BaseCompositionElement):
 
     @override
     @property
-    def mjcf_root(self) -> mjcf.RootElement:
+    def mjcf_root(self) -> mj.MjSpec:
         return self._mjcf_root
 
     @property
     def name(self) -> str:
         """Name of this fly instance."""
         return self._name
+
+    @override
+    def compile(self) -> tuple[mj.MjModel, mj.MjData]:
+        """Compile the fly on its own (e.g. for `preview_model` or `save_xml`).
+
+        Disables `fusestatic` for the standalone compile. A lone fly has no free joint,
+        so its root segment is a static body that the optimization would fuse into the
+        worldbody -- which breaks the `track`-mode tracking camera parented to it (the
+        camera would fall back to tracking the worldbody and mis-place itself relative to
+        the fly). A standalone fly is only ever inspected/previewed, never simulated, so
+        the lost optimization does not matter here. The setting is applied to the
+        compiled copy only, leaving the live spec untouched so a world can still fuse
+        the fly's other static bodies once it is attached.
+
+        As in the base method, we always compile a *copy* rather than the live spec:
+        compiling mutates the spec in place, which would invalidate the element
+        references FlyGym holds.
+        """
+        spec = self.mjcf_root.copy()
+        if spec.compiler.fusestatic:
+            warnings.warn(
+                "Compiling a fly model that is not attached to a world. "
+                "`fusestatic` is changed to false to prevent the root body segment "
+                "from being fused with the MJCF root, which would impair the placement "
+                "of the tracking camera."
+            )
+            spec.compiler.fusestatic = False
+        model = spec.compile()
+        return model, mj.MjData(model)
 
     def get_bodysegs_order(self) -> list[BodySegment]:
         """Get the canonical order of body segments. The exact order is not important,
@@ -279,7 +326,7 @@ class BaseFly(BaseCompositionElement):
         damping: float = 0.5,
         armature: float = 1e-6,
         **kwargs: Any,
-    ) -> dict[JointDOF, mjcf.Element]:
+    ) -> dict[JointDOF, mj.MjsJoint]:
         """Add joints to the fly model based on a skeleton definition.
 
         Creates hinge joints connecting body segments according to the skeleton's
@@ -323,10 +370,9 @@ class BaseFly(BaseCompositionElement):
             if jointdof.child.pos[0] == "r" and not self._is_pitch(jointdof):
                 vec = -vec
 
-            return_dict[jointdof] = child_body.add(
-                "joint",
+            return_dict[jointdof] = child_body.add_joint(
                 name=jointdof.name,
-                type="hinge",
+                type=JOINT_TYPES["hinge"],
                 axis=vec,
                 stiffness=stiffness,
                 damping=damping,
@@ -348,7 +394,7 @@ class BaseFly(BaseCompositionElement):
         forcelimited: bool = True,
         forcerange: tuple[float, float] = (-30.0, 30.0),
         **kwargs: Any,
-    ) -> dict[JointDOF, mjcf.Element]:
+    ) -> dict[JointDOF, mj.MjsActuator]:
         """Add actuators to specified joints.
 
         Creates actuators that can apply forces/torques to joints. Multiple actuator
@@ -396,7 +442,8 @@ class BaseFly(BaseCompositionElement):
             self.jointdof_to_neutralaction_by_type[actuator_type][jointdof] = (
                 neutral_input.get(jointdof.name, 0.0)
             )
-            actuator = self.mjcf_root.actuator.add(
+            actuator = add_actuator(
+                self.mjcf_root,
                 actuator_type.value,
                 name=f"{jointdof.name}-{actuator_type.value}",
                 joint=jointdof.name,
@@ -412,7 +459,7 @@ class BaseFly(BaseCompositionElement):
 
     def add_joint_sites(
         self, anatomical_joints: list[AnatomicalJoint]
-    ) -> dict[AnatomicalJoint, mjcf.Element]:
+    ) -> dict[AnatomicalJoint, mj.MjsSite]:
         """Add MJCF sites at the origins of selected anatomical joints.
 
         Each site is placed at ``(0, 0, 0)`` in the child body frame. Since body
@@ -437,8 +484,7 @@ class BaseFly(BaseCompositionElement):
                     f"A site has already been added for anatomical joint '{joint.name}'."
                 )
             child_body_element = self.bodyseg_to_mjcfbody[joint.child]
-            site = child_body_element.add(
-                "site",
+            site = child_body_element.add_site(
                 name=joint.name,
                 pos=(0, 0, 0),  # origin of child body is defined at joint to parent
             )
@@ -448,7 +494,7 @@ class BaseFly(BaseCompositionElement):
 
     def add_leg_adhesion(
         self, gain: float | dict[str, float] = 1.0
-    ) -> dict[str, mjcf.Element]:
+    ) -> dict[str, mj.MjsActuator]:
         """Add adhesion actuators to the tarsus5 segments of all legs.
 
         Adhesion actuators apply a normal attraction force, enabling the fly to grip
@@ -474,10 +520,11 @@ class BaseFly(BaseCompositionElement):
                 gain_this_leg = gain[leg]
             else:
                 gain_this_leg = gain
-            self.leg_to_adhesionactuator[leg] = self.mjcf_root.actuator.add(
+            self.leg_to_adhesionactuator[leg] = add_actuator(
+                self.mjcf_root,
                 "adhesion",
                 name=f"{tarsus5.name}-adhesion",
-                body=self.bodyseg_to_mjcfbody[tarsus5],
+                body=self.bodyseg_to_mjcfbody[tarsus5].name,
                 gain=gain_this_leg,
                 ctrlrange=(0, 1),
             )
@@ -490,16 +537,14 @@ class BaseFly(BaseCompositionElement):
         return_dict = {}
 
         for sensor_name, sensor_info in info["sensors"].items():
-            parent_body = self.mjcf_root.find("body", sensor_info["parent"])
-            sensor_body = parent_body.add(
-                "body",
+            parent_body = self.mjcf_root.body(sensor_info["parent"])
+            sensor_body = parent_body.add_body(
                 name=f"{sensor_name}_body",
                 pos=sensor_info["rel_pos"],
             )
-            cam = sensor_body.add(
-                "camera",
+            cam = sensor_body.add_camera(
                 name=f"{sensor_name}_camera",
-                mode="fixed",
+                mode=CAMERA_MODES["fixed"],
                 euler=sensor_info["orientation"],
                 fovy=info["fovy_per_eye"],
             )
@@ -513,11 +558,10 @@ class BaseFly(BaseCompositionElement):
             # and group 4 is often for additional stuff. So if the user doesn't want to
             # draw sensor markers, we put them in group 4.
             geom_group = 1 if draw_sensor_markers else 4
-            sensor_body.add(
-                "geom",
+            sensor_body.add_geom(
                 name=f"{sensor_name}_marker",
-                type="sphere",
-                size=[0.06],
+                type=GEOM_TYPES["sphere"],
+                size=[0.06, 0, 0],
                 rgba=sensor_info["marker_rgba"],
                 mass=0,
                 contype=0,
@@ -542,36 +586,61 @@ class BaseFly(BaseCompositionElement):
         vis_sets_all, lookup = self._parse_visuals_config(visuals_config_path)
 
         for vis_set_name, params in vis_sets_all.items():
-            material = self.mjcf_root.asset.add(
-                "material", name=vis_set_name, **params["material"]
-            )
+            texture_name = None
             if texture_params := params.get("texture"):
-                texture = self.mjcf_root.asset.add(
-                    "texture", name=vis_set_name, **texture_params
-                )
-                material.texture = texture
+                add_texture(self.mjcf_root, name=vis_set_name, **texture_params)
+                texture_name = vis_set_name
+            add_material(
+                self.mjcf_root,
+                name=vis_set_name,
+                texture=texture_name,
+                **params["material"],
+            )
 
         for _, geoms in self.bodyseg_to_mjcfgeom.items():
             for geom in geoms:
                 geom_name = geom.name
                 vis_set_name = lookup[geom_name]
-                geom.set_attributes(material=vis_set_name)
+                geom.material = vis_set_name
 
     def add_tracking_camera(
         self,
         name: str = "trackcam",
         mode: str = "track",
-        pos_offset: Vec3 = (0, -7.5, 6),
+        pos_offset: Vec3 = (-0.5, -7.5, 5),
         rotation: Rotation3D = Rotation3D("xyaxes", (1, 0, 0, 0, 0.6, 0.8)),
         fovy: float = 30.0,
         **kwargs: Any,
-    ) -> mjcf.Element:
+    ) -> mj.MjsCamera:
         """Add a camera that tracks the fly's root body.
+
+        The camera is added *inside* the root segment's body element. MuJoCo's
+        ``track``/``trackcom`` modes follow the camera's parent body, so the camera
+        must be a child of the fly body to follow it; a camera placed in the world
+        body would stay put. ``track`` follows the body's position while keeping a
+        constant orientation in the world frame (a "follow" camera that pans but does
+        not rotate with the fly).
+
+        !!! warning
+
+            ``pos_offset`` is expressed in the root segment's (thorax) body frame, not
+            in world coordinates. This differs from FlyGym versions before the MjSpec
+            migration, where the tracking camera lived in the world body and the offset
+            was effectively a world-frame position. The default changed accordingly,
+            from ``(0, -7.5, 6)`` to ``(-0.5, -7.5, 5)``. Hard-coded ``pos_offset``
+            values tuned for the old world-frame placement must be re-tuned: the root
+            segment sits roughly ``(0.5, 0, 1.3)`` mm from the fly's attachment point
+            (plus the spawn height) in the neutral pose, so the same offset now places
+            the camera higher and shifted toward the head. The upside is that a given
+            ``pos_offset`` now yields the same camera position relative to the fly in
+            every world and when the fly is compiled on its own.
 
         Args:
             name: Camera name.
-            mode: MuJoCo camera tracking mode (e.g. ``"track"``, ``"targetbody"``).
-            pos_offset: Camera position offset from the tracked body in mm.
+            mode: MuJoCo camera tracking mode (``"track"``, ``"trackcom"``, or
+                ``"fixed"``). ``"fixed"`` rigidly attaches the camera to the body so it
+                also rotates with the fly.
+            pos_offset: Camera position offset from the tracked root segment in mm.
             rotation: Camera orientation as a `Rotation3D`.
             fovy: Vertical field of view in degrees.
             **kwargs: Additional attributes passed to the MJCF camera element. See
@@ -580,11 +649,10 @@ class BaseFly(BaseCompositionElement):
         Returns:
             The created MJCF camera element.
         """
-        camera = self.mjcf_root.worldbody.add(
-            "camera",
+        root_body = self.bodyseg_to_mjcfbody[self.root_segment]
+        camera = root_body.add_camera(
             name=name,
-            mode=mode,
-            target=self.root_segment.name,
+            mode=CAMERA_MODES[mode],
             pos=pos_offset,
             fovy=fovy,
             **rotation.as_kwargs(),
@@ -621,8 +689,7 @@ class BaseFly(BaseCompositionElement):
                         f"tried {mesh_dir} and {mesh_fallback_dir}."
                     )
 
-            self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.asset.add(
-                "mesh",
+            self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.add_mesh(
                 name=segment_name,
                 file=str(mesh_path),
                 scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
@@ -709,26 +776,24 @@ class BaseFly(BaseCompositionElement):
                     bodyseg.is_claw()
                     and geom_fitting_option == GeomFittingOption.CLAWS_TO_CAPSULES
                 ):
-                    mjcf_element.type = "capsule"
+                    mjcf_element.type = GEOM_TYPES["capsule"]
 
     def _add_one_body_and_geoms(
         self,
-        parent_body: mjcf.Element,
+        parent_body: mj.MjsBody,
         segment: BodySegment,
         my_rigging_config: dict[str, Any],
         geom_group: int,
-    ) -> tuple[mjcf.Element, mjcf.Element]:
-        body_element = parent_body.add(
-            "body",
+    ) -> tuple[mj.MjsBody, list[mj.MjsGeom]]:
+        body_element = parent_body.add_body(
             name=segment.name,
             pos=my_rigging_config["pos"],
             quat=my_rigging_config["quat"],
         )
-        geom_element = body_element.add(
-            "geom",
+        geom_element = body_element.add_geom(
             name=segment.name,
-            type="mesh",
-            mesh=segment.name,
+            type=GEOM_TYPES["mesh"],
+            meshname=segment.name,
             mass=my_rigging_config["mass"],
             contype=0,  # contact pairs to be added explicitly later
             conaffinity=0,  # contact pairs to be added explicitly later
@@ -788,7 +853,7 @@ class BaseFly(BaseCompositionElement):
         for jointdof, angle in self.jointdof_to_neutralangle.items():
             joint_element = self.jointdof_to_mjcfjoint[jointdof]
             internal_jointid = mj.mj_name2id(
-                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.name
             )
             qposadr = mj_model.jnt_qposadr[internal_jointid]
             neutral_qpos[qposadr] = angle
@@ -799,7 +864,7 @@ class BaseFly(BaseCompositionElement):
         for ty, jointdof_to_actuator in self.jointdof_to_mjcfactuator_by_type.items():
             for jointdof, actuator in jointdof_to_actuator.items():
                 internal_actuatorid = mj.mj_name2id(
-                    mj_model, mj.mjtObj.mjOBJ_ACTUATOR, actuator.full_identifier
+                    mj_model, mj.mjtObj.mjOBJ_ACTUATOR, actuator.name
                 )
                 neutral_input = self.jointdof_to_neutralaction_by_type[ty][jointdof]
                 neutral_ctrl[internal_actuatorid] = neutral_input

@@ -156,17 +156,17 @@ class Rotation3D:
         """Convert to keyword arguments for MuJoCo MJCF elements as a dict.
 
         One should typically use `**` to expand the returned dict when passing to an
-        MJCF element constructor. For example::
+        MjSpec element constructor. For example::
 
             rotation = Rotation3D("quat", (1, 0, 0, 0))
-            camera = self.mjcf_root.worldbody.add(
-                "camera", pos=pos_offset, **rotation.as_kwargs()
+            camera = self.mjcf_root.worldbody.add_camera(
+                pos=pos_offset, **rotation.as_kwargs()
             )
 
         which expands to::
 
-            camera = self.mjcf_root.worldbody.add(
-                "camera", pos=pos_offset, quat=(1, 0, 0, 0)
+            camera = self.mjcf_root.worldbody.add_camera(
+                pos=pos_offset, quat=(1, 0, 0, 0)
             )
         """
         return {self.format: self.values}

@@ -23,11 +23,49 @@ IDEs to stage notebook files—they might skip the `nbstripout` filter. Always r
 `git add <notebook_files>` in the terminal.
 
 
+## Running tests
+
+Run the whole suite with:
+
+```bash
+uv run pytest tests/
+```
+
+Which tests run is controlled by **markers**, not by directory. This lets a test
+declare a dependency (e.g. on the GPU backend) regardless of which file it lives
+in. Use pytest's `-m` flag to select or exclude groups:
+
+| Marker     | What it covers                              | Requires                          |
+| ---------- | ------------------------------------------- | --------------------------------- |
+| `warp`     | GPU-accelerated (warp) backend tests        | the `warp` extra **and** a CUDA GPU |
+| `tutorial` | executes each tutorial notebook end-to-end  | the `examples` extra; slow        |
+
+```bash
+# Skip the GPU tests (e.g. no CUDA GPU available):
+uv run pytest tests/ -m "not warp"
+
+# Skip both GPU and the slow notebook tests (what CI runs):
+uv run pytest tests/ -m "not warp and not tutorial"
+
+# Run only one group:
+uv run pytest tests/ -m warp
+uv run pytest tests/ -m tutorial
+```
+
+Notes:
+
+- Tests marked `warp` are **automatically skipped** if the `warp` extra is not
+  installed (default dev installs omit it), so you only need `-m "not warp"` to
+  exclude them when warp *is* installed but you have no GPU.
+- Rendering tests need a headless OpenGL context. On runners/machines where that
+  is unavailable (e.g. macOS/Windows CI), set `SKIP_RENDERING_TESTS=1` to skip
+  them; on Linux they run via EGL/Mesa.
+
 ## Submitting changes
 
 1. Fork the repository and create a branch **from the current `dev-vx.y.z` branch**.
 2. Make your changes and add tests if applicable. Use `uv` for package management.
-3. Run the test suite: `uv run pytest tests/`
+3. Run the test suite (see [Running tests](#running-tests) above): `uv run pytest tests/`
 4. Open a pull request against the current `dev-vx.y.z` with a clear description of the change.
 
 ## Code style

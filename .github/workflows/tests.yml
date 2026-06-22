@@ -28,10 +28,18 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev
+            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev ffmpeg
 
       - name: Install Python dependencies
-        run: uv sync --extra dev
+        run: uv sync --extra dev --extra examples
 
-      - name: Run core and examples tests
-        run: uv run pytest tests/core/ tests/examples/ -v --tb=short
+      - name: Run tests
+        env:
+          # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create
+          # a headless OpenGL context on GitHub-hosted runners (no GPU), so skip
+          # rendering tests there. Linux uses EGL/Mesa and runs them.
+          SKIP_RENDERING_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
+        # Collect the whole tree but use marker selection (not directory
+        # selection) to drop the groups CI can't run: warp needs a CUDA GPU.
+        # Rendering tests are gated separately via SKIP_RENDERING_TESTS above.
+        run: uv run pytest tests/ -m "not warp" -v --tb=short

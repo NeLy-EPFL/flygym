@@ -1,7 +1,41 @@
 # Changelog
 
-## Version 2.0.3 (ongoing development, unreleased)
-TODO
+## Version 2.1.0
+
+> [!CAUTION]
+> ### API-breaking changes
+> FlyGym 2.1.0 drops the `dm-control` PyMJCF backend in favour of MuJoCo's native `MjSpec` API. Model elements (cameras, materials, bodies, joints, …) are now `mujoco._specs.Mjs*` objects rather than `dm_control.mjcf` wrappers. The following changes may require updates:
+>
+> - **`element.full_identifier` → `element.name`:** PyMJCF exposed `full_identifier` to return the fully-scoped compiled name (e.g. `"fly/trackcam"`). MjSpec mutates `.name` in place when a child spec is attached with a prefix, so `.name` already returns the prefixed name after `world.add_fly()`. Replace every occurrence of `.full_identifier` with `.name`.
+>
+>   *Migration:* If you stored references to spec elements (e.g. the `MjsCamera` returned by `fly.add_tracking_camera()`) and later used `element.full_identifier` as a dict key or to look up the compiled ID, replace it with `element.name`:
+>
+>   ```python
+>   # Before (PyMJCF)
+>   cam = fly.add_tracking_camera(name="body_cam")
+>   world.add_fly(fly, ...)
+>   frames = renderer.frames[cam.full_identifier]  # AttributeError under MjSpec
+>
+>   # After (MjSpec)
+>   cam = fly.add_tracking_camera(name="body_cam")
+>   world.add_fly(fly, ...)
+>   frames = renderer.frames[cam.name]  # "fly_name/body_cam" after attachment
+>   ```
+>
+>   No other change is needed: `cam.name` already returns the same prefixed string that `cam.full_identifier` used to return, because MjSpec mutates held element references in place when the child spec is attached.
+>
+> - **`spec.asset.find_all("material")` → `spec.materials`:** The PyMJCF tree-traversal helper is gone. MjSpec exposes typed collection properties (`spec.materials`, `spec.bodies`, `spec.joints`, etc.) directly on the `MjSpec` object.
+>
+> - **`add_tracking_camera` placement is now relative to the fly's root segment:** `Fly.add_tracking_camera()` now adds the camera *inside* the fly's root segment (thorax) body so that MuJoCo's `track` mode actually follows the fly as it moves. As a result, `pos_offset` (and `rotation`) are interpreted in the root segment's body frame rather than in world coordinates as before, and the default `pos_offset` changed from `(0, -7.5, 6)` to `(-0.5, -7.5, 5)`. The same `pos_offset` now yields the same camera position *relative to the fly* in every context (`FlatGroundWorld`, `TetheredWorld`, or a fly compiled on its own for `preview_model`).
+>
+>   *Migration:* Any hard-coded `pos_offset` values must be re-tuned. A value that previously positioned the camera in the world frame now positions it relative to the root segment, which in the neutral pose sits roughly `(0.5, 0, 1.3)` mm from the fly's attachment point plus the spawn height. The camera will therefore appear higher and shifted toward the head unless you adjust the offset (to reproduce the old framing, subtract the root segment's rest position from your previous world-frame offset).
+>
+> - **`World.world_dof_neutral_states` is now a `set`, not a `dict`:** Under MjSpec, the neutral pose of world-level DoFs (e.g. the free joints by which flies are attached) is read from the compiled model's `qpos0` rest configuration. The explicit per-DoF state values that `World.world_dof_neutral_states` used to map to are therefore no longer needed, so the attribute is now a `set[str]` of DoF (joint) names rather than a `dict[str, list[float]]`. Relatedly, `World._attach_fly_mjcf` now returns a `set[str]` of the DoF names it created instead of a name → state mapping.
+>
+>   *Migration:* If you read this attribute, iterate it as a set of names (iterating a `dict` already yielded its keys, so plain `for name in world.world_dof_neutral_states` is unaffected); subscripting it (`world.world_dof_neutral_states[name]`) no longer works. If you implement a custom `World` subclass, return a `set[str]` from `_attach_fly_mjcf`.
+
+### Bug fixes
+- Fixed `AttributeError: 'mujoco._specs.MjsCamera' object has no attribute 'full_identifier'` in tutorials 4a–4d and 5b caused by the PyMJCF → MjSpec migration ([#285](https://github.com/NeLy-EPFL/flygym/pull/285)).
 
 ## Version 2.0.2
 > [!CAUTION]
