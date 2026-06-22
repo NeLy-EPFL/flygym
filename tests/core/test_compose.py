@@ -1,7 +1,7 @@
 """Integration tests for flygym.compose (NeuroMechFly, World)."""
 
 import warnings
-import platform
+import os
 
 import pytest
 import numpy as np
@@ -475,11 +475,8 @@ class TestFlyAddTrackingCamera:
         )
 
     @pytest.mark.skipif(
-        platform.system() != "Linux",
-        reason=(
-            "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-            "neither works headlessly in CI without a GPU"
-        ),
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
     )
     def test_camera_follows_moving_body(self, skeleton_ypr, neutral_pose):
         """End-to-end check that ``track`` mode keeps the camera at a constant offset
@@ -522,11 +519,8 @@ class TestFlyAddTrackingCamera:
         np.testing.assert_allclose(cam_shift, body_shift, atol=1e-3)
 
     @pytest.mark.skipif(
-        platform.system() != "Linux",
-        reason=(
-            "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-            "neither works headlessly in CI without a GPU"
-        ),
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
     )
     def test_pos_offset_is_relative_to_root_segment(self, skeleton_ypr, neutral_pose):
         """``pos_offset`` is expressed in the root segment's body frame: the camera

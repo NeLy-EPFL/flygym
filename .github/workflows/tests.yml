@@ -34,4 +34,9 @@ jobs:
         run: uv sync --extra dev --extra examples
 
       - name: Run core and examples tests
+        env:
+          # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create
+          # a headless OpenGL context on GitHub-hosted runners (no GPU), so skip
+          # rendering tests there. Linux uses EGL/Mesa and runs them.
+          SKIP_RENDERING_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
         run: uv run pytest tests/core/ tests/examples/ -v --tb=short

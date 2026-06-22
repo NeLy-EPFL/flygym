@@ -1,6 +1,6 @@
 """Integration tests for flygym.simulation (Simulation)."""
 
-import platform
+import os
 
 import pytest
 import numpy as np
@@ -453,11 +453,8 @@ class TestSimulationCloseMethods:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestSetRenderer:
     def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
