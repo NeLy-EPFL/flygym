@@ -93,7 +93,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         metavar="DIR",
         help="Directory to write the observation history, plots, and rendered "
-        "video. Errors out if it already exists. If omitted, nothing is saved and "
+        "video. Overwritten if it already exists. If omitted, nothing is saved and "
         "rendering is skipped (pure physics-throughput benchmark).",
     )
     parser.add_argument(
@@ -239,9 +239,7 @@ def main() -> None:
 
     data_dir: Path | None = args.save_data
     if data_dir is not None:
-        if data_dir.exists():
-            sys.exit(f"Error: output directory already exists: {data_dir}")
-        data_dir.mkdir(parents=True)
+        data_dir.mkdir(parents=True, exist_ok=True)  # overwrite if it exists
 
     n_worlds = args.n_worlds
     sim_steps = args.sim_steps
