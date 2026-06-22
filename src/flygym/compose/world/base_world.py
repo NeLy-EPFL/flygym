@@ -34,6 +34,13 @@ class BaseWorld(BaseCompositionElement, ABC):
     (e.g., ground plane) and `_attach_fly_mjcf` to define how flies are attached. See
     method documentation below for details.
 
+    !!! warning "PyMJCF -> MjSpec migration (v2.1.0)"
+
+        FlyGym 2.0.3 dropped the PyMJCF backend in favour of MuJoCo's native
+        ``MjSpec`` API. If you are upgrading from an earlier version, see the
+        [v2.1.0 changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md#version-210)
+        for breaking changes and a migration guide.
+
     Attributes:
         name:
             Name of the world.
