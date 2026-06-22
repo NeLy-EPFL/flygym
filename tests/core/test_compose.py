@@ -318,7 +318,12 @@ class TestFlatGroundWorld:
         assert len(sensors) == 6  # one per leg
 
     def test_world_dof_neutral_states_set(self, flat_world_with_fly):
-        assert len(flat_world_with_fly.world_dof_neutral_states) > 0
+        # world_dof_neutral_states is a set of the world-level DoF (joint) names;
+        # a free-jointed fly contributes its free joint, named after the fly.
+        dof_names = flat_world_with_fly.world_dof_neutral_states
+        assert isinstance(dof_names, set)
+        fly_name = list(flat_world_with_fly.fly_lookup.keys())[0]
+        assert fly_name in dof_names
 
     def test_accepts_flybody_contact_preset(self):
         fly = FlyBody(name="flybody_contact_test")

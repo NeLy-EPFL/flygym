@@ -244,21 +244,23 @@ class BaseFly(BaseCompositionElement):
         camera would fall back to tracking the worldbody and mis-place itself relative to
         the fly). A standalone fly is only ever inspected/previewed, never simulated, so
         the lost optimization does not matter here. The setting is applied to the
-        compiled copy only (see the base method), leaving the live spec untouched so a
-        world can still fuse the fly's other static bodies once it is attached.
+        compiled copy only, leaving the live spec untouched so a world can still fuse
+        the fly's other static bodies once it is attached.
+
+        As in the base method, we always compile a *copy* rather than the live spec:
+        compiling mutates the spec in place, which would invalidate the element
+        references FlyGym holds.
         """
-        if self.mjcf_root.compiler.fusestatic:
+        spec = self.mjcf_root.copy()
+        if spec.compiler.fusestatic:
             warnings.warn(
                 "Compiling a fly model that is not attached to a world. "
                 "`fusestatic` is changed to false to prevent the root body segment "
                 "from being fused with the MJCF root, which would impair the placement "
                 "of the tracking camera."
             )
-            spec = self.mjcf_root.copy()
             spec.compiler.fusestatic = False
-            model = spec.compile()
-        else:
-            model = self.mjcf_root.compile()
+        model = spec.compile()
         return model, mj.MjData(model)
 
     def get_bodysegs_order(self) -> list[BodySegment]:

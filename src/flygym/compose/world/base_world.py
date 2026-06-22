@@ -50,10 +50,11 @@ class BaseWorld(BaseCompositionElement, ABC):
             The root element of the world's MJCF model (fly MJCF models are attached to
             this root).
         world_dof_neutral_states:
-            A dictionary mapping names of DoFs managed by the world (e.g., free joints
-            by which flies are attached to the world) to their neutral state values.
-            The neutral state is 1D for slide and hinge joints, 4D for ball joints
-            (quaternion), and 7D for free joints (position + orientation).
+            A set of names of DoFs managed by the world (e.g., free joints by which
+            flies are attached to the world). The neutral pose for these DoFs is read
+            from the compiled model's ``qpos0`` rest configuration in
+            `_rebuild_neutral_keyframe`, so only the joint names are tracked here, not
+            explicit state values.
     """
 
     def __init__(self, name: str) -> None:
@@ -67,7 +68,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         self._fly_lookup: dict[str, BaseFly] = {}
         self.ground_geoms: list = []
         self.legpos_to_groundcontactsensors_by_fly = None
-        self.world_dof_neutral_states = {}
+        self.world_dof_neutral_states: set[str] = set()
         self._neutral_keyframe = self.mjcf_root.add_key(name="neutral", time=0)
         self._add_skybox()
 
@@ -89,7 +90,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
-    ) -> dict[str, list[float]]:
+    ) -> set[str]:
         """Attach the fly's MJCF root to the world MJCF model.
 
         Concrete subclasses should implement this method instead of overriding
@@ -102,9 +103,10 @@ class BaseWorld(BaseCompositionElement, ABC):
         found in the [MuJoCo model editing documentation](https://mujoco.readthedocs.io/en/stable/python.html#model-editing).
 
         Returns:
-            Mapping from joint name to neutral state for any world-level
-            DoFs created by this attachment. Return an empty dict if the fly is
-            rigidly attached (no new DoFs).
+            The names of any world-level DoFs (joints) created by this attachment.
+            Their neutral pose is taken from the compiled model's ``qpos0``, so only
+            the names are needed. Return an empty set if the fly is rigidly attached
+            (no new DoFs).
         """
         pass
 
@@ -170,8 +172,9 @@ class BaseWorld(BaseCompositionElement, ABC):
             fly, spawn_position, spawn_rotation, *args, **kwargs
         )
 
-        # Set neutral state for the freejoint attaching the fly to the world
-        # (freejoint state is in [x, y, z, qw, qx, qy, qz] format)
+        # The freejoint's neutral pose is read from the compiled model's qpos0 in
+        # `_rebuild_neutral_keyframe`; here we only register the new DoF names. qpos0
+        # encodes the spawn orientation as a quaternion, so reject other formats.
         if spawn_rotation.format != "quat":
             raise ValueError(
                 "Freejoint neutral rotation can only be specified in quaternion format "
@@ -251,7 +254,7 @@ class _GroundContactMixin:
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
-    ) -> dict[str, list[float]]:
+    ) -> set[str]:
         spawn_site = self.mjcf_root.worldbody.add_site(
             name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
@@ -278,9 +281,7 @@ class _GroundContactMixin:
         if add_ground_contact_sensors:
             self._add_ground_contact_sensors(fly, bodysegs_with_ground_contact)
 
-        neutral_state = [*spawn_position, *spawn_rotation.values]
-
-        return {freejoint.name: neutral_state}
+        return {freejoint.name}
 
     def _set_ground_contact(
         self,

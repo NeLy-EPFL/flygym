@@ -1,6 +1,4 @@
-import os
 import shutil
-import contextlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 from os import PathLike
@@ -56,6 +54,10 @@ class BaseCompositionElement(ABC):
 
         # Copy file-based assets (meshes, file textures) next to the XML and rewrite
         # their `file` attributes to bare filenames so the export is self-contained.
+        # The same bytes are stashed in the spec's in-memory asset dict (keyed by the
+        # bare filename) so `to_xml()` below can resolve them without touching the
+        # filesystem -- see the serialization note.
+        in_memory_assets = dict(spec.assets)
         asset_collections = [spec.meshes, spec.textures]
         for collection in asset_collections:
             for asset in collection:
@@ -67,27 +69,19 @@ class BaseCompositionElement(ABC):
                 if src_path.resolve() != dst_path.resolve():
                     shutil.copy(src_path, dst_path)
                 asset.file = src_path.name
+                in_memory_assets[src_path.name] = dst_path.read_bytes()
         # Assets now sit alongside the XML, so clear the asset search dirs. The
         # emitted XML then references assets by bare filename, resolved relative to
         # the XML's own directory when later loaded with `mj_loadXML`.
         spec.meshdir = ""
         spec.texturedir = ""
 
-        # `to_xml()` validates assets by loading them, resolving bare filenames
-        # against the working directory, so serialize from within `output_dir`
-        # (where the assets were just copied).
+        # `to_xml()` validates assets by loading them and would otherwise resolve bare
+        # filenames against the process working directory. Rather than chdir into
+        # `output_dir` (a process-global, non-thread-safe side effect), we hand the
+        # asset bytes to the spec's in-memory asset dict, which `to_xml()` consults
+        # first -- keeping `meshdir`/`texturedir` empty so the export stays portable.
+        spec.assets = in_memory_assets
         xml_filename = xml_filename or f"{spec.modelname}.xml"
-        with _working_directory(output_dir):
-            xml_string = spec.to_xml()
+        xml_string = spec.to_xml()
         (output_dir / xml_filename).write_text(xml_string)
-
-
-@contextlib.contextmanager
-def _working_directory(path: PathLike):
-    """Temporarily change the process working directory."""
-    previous = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(previous)
