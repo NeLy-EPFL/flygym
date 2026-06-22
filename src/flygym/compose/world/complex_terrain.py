@@ -266,7 +266,7 @@ class TetheredWorld(BaseWorld):
     @override
     def _attach_fly_mjcf(
         self, fly: BaseFly, spawn_position: Vec3, spawn_rotation: Rotation3D
-    ) -> dict[str, list[float]]:
+    ) -> set[str]:
         spawn_site = self.mjcf_root.worldbody.add_site(
             name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
@@ -282,4 +282,4 @@ class TetheredWorld(BaseWorld):
         # but the weld is a soft constraint: the body visibly drifts under the leg
         # reaction forces unless its stiffness is tuned, so mocap is the simpler choice.)
         fly.bodyseg_to_mjcfbody[fly.root_segment].mocap = True
-        return {}
+        return set()
