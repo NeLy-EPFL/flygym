@@ -121,6 +121,7 @@ class _BaseWarpRenderer(Renderer, ABC):
         Args:
             world_id: Which parallel world to display frames for
             camera: Camera(s) to display. If None, displays all enabled cameras.
+            scale: Optional factor by which to rescale frames before display.
             **kwargs: Additional arguments passed to mediapy.show_video
         """
         camera_names = self._normalize_camera_spec(camera)
@@ -151,6 +152,7 @@ class _BaseWarpRenderer(Renderer, ABC):
             output_path: Either a dict mapping camera specs to file paths, or:
                 - If single camera: a file path to save to
                 - If multiple cameras: a directory path to save all videos to
+            scale: Optional factor by which to rescale frames before saving.
             **kwargs: Additional arguments passed to imageio.imwrite
         """
         path_by_camera = self._resolve_output_paths(output_path)
@@ -307,7 +309,7 @@ class WarpGPUBatchRenderer(_BaseWarpRenderer):
         self.scene_option = None
         self.mj_renderer = None
 
-    def _render_impl(self, mjw_data: mjw.Data) -> bool:
+    def _render_impl(self, mjw_data: mjw.Data) -> np.ndarray | wp.array:
         mjw.refit_bvh(self.mjw_model, mjw_data, self._rendering_context)
         mjw.render(self.mjw_model, mjw_data, self._rendering_context)
         rgb_out = wp.zeros(self._buf_dim_per_frame, dtype=wp.vec3f)
@@ -347,7 +349,7 @@ class WarpCPURenderer(_BaseWarpRenderer):
         self._mj_data_buffer = mj.MjData(self.mj_model)
         # Nothing else to do - just use mjRenderer inherited from CPU Renderer
 
-    def _render_impl(self, mjw_data: mjw.Data) -> bool:
+    def _render_impl(self, mjw_data: mjw.Data) -> np.ndarray | wp.array:
         rendered_images = np.zeros((*self._buf_dim_per_frame, 3), dtype=np.uint8)
 
         for world_id in self.world_ids:

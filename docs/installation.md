@@ -12,7 +12,7 @@
     pip install flygym
     ```
 
-    Add the `warp` optional dependency if you want to use fly.warp with GPU acceleration:
+    Add the `warp` optional dependency if you want to use the `flygym.warp` GPU-accelerated backend:
     
     ```sh
     pip install flygym[warp]
@@ -108,7 +108,7 @@
 
 !!! warning "Special notes for rendering on machines without a display"
 
-    If you are using a machine without a display (e.g. a server), you will need to change the renderer to EGL (see this link for details). This requires setting the following environment variables before running FlyGym:
+    If you are using a machine without a display (e.g. a server), you will need to switch the renderer to EGL (see [this page](https://docs.pytorch.org/rl/main/reference/generated/knowledge_base/MUJOCO_INSTALLATION.html#prerequisite-for-rendering-all-mujoco-versions) for details). This requires setting the following environment variables before running FlyGym:
 
     ```sh
     export MUJOCO_GL=egl

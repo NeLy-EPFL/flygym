@@ -71,7 +71,7 @@ class KinematicPose:
         self.joint_angles_lookup_rad = joint_angles_rad_dict
 
     def copy(self) -> "KinematicPose":
-        """Return a deep copy of this pose."""
+        """Return an independent copy of this pose."""
         return KinematicPose(
             joint_angles_rad_dict=self.joint_angles_lookup_rad.copy(),
             axis_order=self.axis_order,
@@ -134,6 +134,7 @@ class KinematicPosePreset(Enum):
 
     Attributes:
         NEUTRAL: The neutral (resting) pose of the fly.
+        FLYBODY_NEUTRAL: The neutral (resting) pose of the FlyBody model.
     """
 
     NEUTRAL = "neutral"

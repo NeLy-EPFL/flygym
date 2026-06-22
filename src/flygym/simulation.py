@@ -461,8 +461,8 @@ class Simulation:
 
         Returns:
             A float32 array with shape ``(2, n_ommatidia, 2)`` containing
-            the pale/yellow channel readings for each eye camera. The first dimension
-            corresponds to the left and right eyes, in that order). The last
+            the yellow/pale channel readings for each eye camera. The first dimension
+            corresponds to the left and right eyes, in that order. The last
             dimension corresponds to the yellow- and pale-type ommatidia, in that
             order. Zero values indicate that the ommatidium is of the other type.
             For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium

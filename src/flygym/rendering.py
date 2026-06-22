@@ -25,6 +25,8 @@ class Renderer:
         output_fps: Output video frame rate.
         buffer_frames: If True, store frames in ``self.frames``.
         scene_option: MuJoCo scene options. Uses defaults if None.
+        render_depth: If True, render depth maps instead of RGB frames.
+        render_segmentation: If True, render segmentation masks instead of RGB frames.
         **kwargs: Passed to ``mujoco.Renderer``.
 
     Attributes:
@@ -233,7 +235,7 @@ class Renderer:
 
     def _depth_frames_to_uint8(self, cam_name: str) -> None:
         """
-        Convert depth frames from uint32 to uint8.
+        Convert depth frames from float32 to uint8.
         This is necessary because depth frames are rendered as 32-bit floats, but
         we want to save them as 8-bit videos.
         We treat the global maximum depth (over all frames) as the background and
