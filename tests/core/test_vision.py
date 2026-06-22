@@ -1,6 +1,6 @@
 """Tests for flygym vision: Retina, NeuroMechFly.add_vision, and Simulation vision APIs."""
 
-import platform
+import os
 
 import pytest
 import numpy as np
@@ -367,11 +367,8 @@ class TestSimulationVisionIDMapping:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestSimulationGetRawVision:
     def test_returns_shape_and_type(self, simulation_with_vision, fly_with_vision):
@@ -401,11 +398,8 @@ class TestSimulationGetRawVision:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestSimulationGetOmmatidiaReadouts:
     def test_output_shape(self, simulation_with_vision, fly_with_vision):
@@ -574,11 +568,8 @@ class TestFlyBodySimulationVisionIDMapping:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestFlyBodySimulationGetRawVision:
     def test_returns_shape_and_type(

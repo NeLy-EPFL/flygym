@@ -1,6 +1,6 @@
 """Integration tests for flygym.simulation (Simulation)."""
 
-import platform
+import os
 
 import pytest
 import numpy as np
@@ -453,11 +453,8 @@ class TestSimulationCloseMethods:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestSetRenderer:
     def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
@@ -495,7 +492,7 @@ class TestSetRenderer:
         from flygym.simulation import Simulation
 
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
 
@@ -534,7 +531,7 @@ class TestSetRenderer:
             spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
         )
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         sim.set_renderer(cam_name, camera_res=(64, 64))
 

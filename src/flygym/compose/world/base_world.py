@@ -3,20 +3,25 @@ from collections import defaultdict
 from typing import Any, override
 
 import mujoco as mj
-import dm_control.mjcf as mjcf
 import numpy as np
 
 from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import BaseFly
 from flygym.compose.physics import ContactParams
+from flygym.utils.mjcf import add_texture, set_mujoco_globals
 from flygym.utils.math import Rotation3D, Vec3
 from flygym.utils.exceptions import FlyGymInternalError
 
 __all__ = ["BaseWorld"]
 
 
-_STATE_DIM_BY_JOINT_TYPE = {"free": 7, "ball": 4, "hinge": 1, "slide": 1}
+_STATE_DIM_BY_JOINT_TYPE = {
+    mj.mjtJoint.mjJNT_FREE: 7,
+    mj.mjtJoint.mjJNT_BALL: 4,
+    mj.mjtJoint.mjJNT_HINGE: 1,
+    mj.mjtJoint.mjJNT_SLIDE: 1,
+}
 
 
 class BaseWorld(BaseCompositionElement, ABC):
@@ -29,6 +34,13 @@ class BaseWorld(BaseCompositionElement, ABC):
     (e.g., ground plane) and `_attach_fly_mjcf` to define how flies are attached. See
     method documentation below for details.
 
+    !!! warning "PyMJCF -> MjSpec migration (v2.1.0)"
+
+        FlyGym 2.0.3 dropped the PyMJCF backend in favour of MuJoCo's native
+        ``MjSpec`` API. If you are upgrading from an earlier version, see the
+        [v2.1.0 changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md#version-210)
+        for breaking changes and a migration guide.
+
     Attributes:
         name:
             Name of the world.
@@ -38,10 +50,11 @@ class BaseWorld(BaseCompositionElement, ABC):
             The root element of the world's MJCF model (fly MJCF models are attached to
             this root).
         world_dof_neutral_states:
-            A dictionary mapping names of DoFs managed by the world (e.g., free joints
-            by which flies are attached to the world) to their neutral state values.
-            The neutral state is 1D for slide and hinge joints, 4D for ball joints
-            (quaternion), and 7D for free joints (position + orientation).
+            A set of names of DoFs managed by the world (e.g., free joints by which
+            flies are attached to the world). The neutral pose for these DoFs is read
+            from the compiled model's ``qpos0`` rest configuration in
+            `_rebuild_neutral_keyframe`, so only the joint names are tracked here, not
+            explicit state values.
     """
 
     def __init__(self, name: str) -> None:
@@ -50,19 +63,18 @@ class BaseWorld(BaseCompositionElement, ABC):
         Concrete subclasses should call this first (i.e., `super().__init__(name)`) as
         it sets up a few essential attributes.
         """
-        self._mjcf_root = mjcf.RootElement(model=name)
+        self._mjcf_root = mj.MjSpec()
+        self._mjcf_root.modelname = name
         self._fly_lookup: dict[str, BaseFly] = {}
         self.ground_geoms: list = []
         self.legpos_to_groundcontactsensors_by_fly = None
-        self.world_dof_neutral_states = {}
-        self._neutral_keyframe = self.mjcf_root.keyframe.add(
-            "key", name="neutral", time=0
-        )
+        self.world_dof_neutral_states: set[str] = set()
+        self._neutral_keyframe = self.mjcf_root.add_key(name="neutral", time=0)
         self._add_skybox()
 
     @override
     @property
-    def mjcf_root(self) -> mjcf.RootElement:
+    def mjcf_root(self) -> mj.MjSpec:
         return self._mjcf_root
 
     @property
@@ -78,7 +90,7 @@ class BaseWorld(BaseCompositionElement, ABC):
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
-    ) -> mjcf.Element:
+    ) -> set[str]:
         """Attach the fly's MJCF root to the world MJCF model.
 
         Concrete subclasses should implement this method instead of overriding
@@ -86,20 +98,21 @@ class BaseWorld(BaseCompositionElement, ABC):
         `fly_lookup` and updating neutral states; this method is responsible only for
         connecting the fly's MJCF model to the world's MJCF model.
 
-        Use `dm_control.mjcf`'s `attach()` method to attach the fly's MJCF model. See
-        `FlatGroundWorld` for an example. More details can be found in the
-        [`dm_control.mjcf` documentation](https://github.com/google-deepmind/dm_control/tree/main/dm_control/mjcf#attaching-models).
+        Use `MjSpec.attach()` to attach the fly's MjSpec to the world. See
+        `_GroundContactMixin` and `TetheredWorld` for examples. More details can be
+        found in the [MuJoCo model editing documentation](https://mujoco.readthedocs.io/en/stable/python.html#model-editing).
 
         Returns:
-            Mapping from joint full_identifier to neutral state for any world-level
-            DoFs created by this attachment. Return an empty dict if the fly is
-            rigidly attached (no new DoFs).
+            The names of any world-level DoFs (joints) created by this attachment.
+            Their neutral pose is taken from the compiled model's ``qpos0``, so only
+            the names are needed. Return an empty set if the fly is rigidly attached
+            (no new DoFs).
         """
         pass
 
     def _add_skybox(self):
-        self.mjcf_root.asset.add(
-            "texture",
+        add_texture(
+            self.mjcf_root,
             name="skybox",
             type="skybox",
             builtin="gradient",
@@ -140,12 +153,18 @@ class BaseWorld(BaseCompositionElement, ABC):
             raise ValueError(f"Fly with name '{fly.name}' already exists in the world.")
         self._fly_lookup[fly.name] = fly
 
+        # Inherit the fly's global MuJoCo settings (timestep, gravity, integrator,
+        # etc.). MjSpec.attach() uses the parent (world) spec's <option>/<compiler>
+        # for the compiled model and does not merge the child's, so we apply the
+        # fly's globals to the world spec here.
+        set_mujoco_globals(self.mjcf_root, fly.mujoco_globals_path)
+
         # Remove neutral keyframes that are already generated by the fly. Neutral states
         # are globally managed at the world level. A single neutral keyframe will be
         # managed by the world from now on.
-        neutral_keyframe = fly.mjcf_root.keyframe.find("key", "neutral")
-        if neutral_keyframe is not None:
-            neutral_keyframe.remove()
+        fly_neutral_keyframes = [k for k in fly.mjcf_root.keys if k.name == "neutral"]
+        for keyframe in fly_neutral_keyframes:
+            fly.mjcf_root.delete(keyframe)
 
         # Attach the fly's MJCF root to the world MJCF model with a free joint.
         # This is an abstract method that must be implemented by concrete world classes.
@@ -153,8 +172,9 @@ class BaseWorld(BaseCompositionElement, ABC):
             fly, spawn_position, spawn_rotation, *args, **kwargs
         )
 
-        # Set neutral state for the freejoint attaching the fly to the world
-        # (freejoint state is in [x, y, z, qw, qx, qy, qz] format)
+        # The freejoint's neutral pose is read from the compiled model's qpos0 in
+        # `_rebuild_neutral_keyframe`; here we only register the new DoF names. qpos0
+        # encodes the spawn orientation as a quaternion, so reject other formats.
         if spawn_rotation.format != "quat":
             raise ValueError(
                 "Freejoint neutral rotation can only be specified in quaternion format "
@@ -169,29 +189,28 @@ class BaseWorld(BaseCompositionElement, ABC):
         neutral_qpos = np.zeros(mj_model.nq)
         neutral_ctrl = np.zeros(mj_model.nu)
 
-        # Step 1: set neutral qpos for DoFs created by the world
-        # dm_control.mjcf has trouble finding freejoints by name with
-        # .find("joint", freejoint_name), but they do show up in the list of all joints
-        # obtained with .find_all("joint"). So we build a mapping manually in order to
-        # set the neutral pose for freejoints corresponding to fly spawns.
-        all_world_joints = {
-            j.full_identifier: j for j in self.mjcf_root.find_all("joint")
-        }
-        for joint_name, neutral_state in self.world_dof_neutral_states.items():
+        # Step 1: set neutral qpos for DoFs created by the world (e.g. the free joints
+        # by which flies are attached). Joints are keyed by their (prefixed) name,
+        # which matches the compiled model's joint names. We use the compiled `qpos0`
+        # rest pose, which already composes the spawn site transform with each fly's
+        # root-body offset. This matches the previous (PyMJCF) behavior, where
+        # `spawn_position` positions the fly's attachment frame rather than its root
+        # body directly.
+        all_world_joints = {j.name: j for j in self.mjcf_root.joints}
+        for joint_name in self.world_dof_neutral_states:
             joint_element = all_world_joints.get(joint_name)
             if joint_element is None:
                 raise RuntimeError(
                     f"Joint '{joint_name}' not found when rebuilding neutral keyframe."
                 )
-            joint_type = (
-                "free" if joint_element.tag == "freejoint" else joint_element.type
-            )
             internal_jointid = mj.mj_name2id(
-                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.full_identifier
+                mj_model, mj.mjtObj.mjOBJ_JOINT, joint_element.name
             )
-            dofadr_start = mj_model.jnt_dofadr[internal_jointid]
-            dofadr_end = dofadr_start + _STATE_DIM_BY_JOINT_TYPE[joint_type]
-            neutral_qpos[dofadr_start:dofadr_end] = neutral_state
+            qposadr_start = mj_model.jnt_qposadr[internal_jointid]
+            qposadr_end = qposadr_start + _STATE_DIM_BY_JOINT_TYPE[joint_element.type]
+            neutral_qpos[qposadr_start:qposadr_end] = mj_model.qpos0[
+                qposadr_start:qposadr_end
+            ]
 
         # Step 2: handle joints and actuators belonging to flies attached to the world
         for fly_name, fly in self.fly_lookup.items():
@@ -235,11 +254,16 @@ class _GroundContactMixin:
         ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
-    ) -> mjcf.Element:
-        spawn_site = self.mjcf_root.worldbody.add(
-            "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
+    ) -> set[str]:
+        spawn_site = self.mjcf_root.worldbody.add_site(
+            name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
         )
-        freejoint = spawn_site.attach(fly.mjcf_root).add("freejoint", name=fly.name)
+        # Attach the fly spec at the spawn site (prefixing its element names with the
+        # fly name) and give it a free joint so it floats freely in the world.
+        self.mjcf_root.attach(fly.mjcf_root, prefix=f"{fly.name}/", site=spawn_site)
+        freejoint = fly.bodyseg_to_mjcfbody[fly.root_segment].add_freejoint(
+            name=fly.name
+        )
 
         if isinstance(bodysegs_with_ground_contact, BaseContactBodiesPreset):
             bodysegs_with_ground_contact = (
@@ -257,9 +281,7 @@ class _GroundContactMixin:
         if add_ground_contact_sensors:
             self._add_ground_contact_sensors(fly, bodysegs_with_ground_contact)
 
-        neutral_state = [*spawn_position, *spawn_rotation.values]
-
-        return {freejoint.full_identifier: neutral_state}
+        return {freejoint.name}
 
     def _set_ground_contact(
         self,
@@ -271,10 +293,9 @@ class _GroundContactMixin:
             for body_geom in fly.bodyseg_to_mjcfgeom[body_segment]:
                 for ground_geom in self.ground_geoms:
                     geom_name = body_geom.name
-                    self.mjcf_root.contact.add(
-                        "pair",
-                        geom1=body_geom,
-                        geom2=ground_geom,
+                    self.mjcf_root.add_pair(
+                        geomname1=body_geom.name,
+                        geomname2=ground_geom.name,
                         name=f"{geom_name}-{ground_geom.name}-ground",
                         friction=ground_contact_params.get_friction_tuple(),
                         solref=ground_contact_params.get_solref_tuple(),
@@ -297,14 +318,22 @@ class _GroundContactMixin:
         for leg, contact_geoms in contact_geoms_by_leg.items():
             subtree_rootseg = _sort_legsegs_prox2dist(contact_geoms, fly.LEG_LINKS)[0]
             subtree_rootseg_body = fly.bodyseg_to_mjcfbody[subtree_rootseg]
-            sensor = self.mjcf_root.sensor.add(
-                "contact",
-                subtree1=subtree_rootseg_body,
-                geom2=self.ground_geoms[0],
-                num=1,
-                reduce="netforce",
-                data="found force torque pos normal tangent",
+            # MjSpec has no high-level contact-sensor shortcut, so set the low-level
+            # fields directly (matching what the XML `<contact .../>` shortcut emits):
+            #   - subtree1=<body>  -> objtype=XBODY, objname=<body>
+            #   - geom2=<geom>     -> reftype=GEOM,  refname=<geom>
+            #   - intprm = [data_bitmask, reduce, num], where the data bitmask encodes
+            #     "found force torque pos normal tangent" (found=1, force=2, torque=4,
+            #     dist=8, pos=16, normal=32, tangent=64 -> 1+2+4+16+32+64 = 119) and
+            #     reduce "netforce" = 3.
+            sensor = self.mjcf_root.add_sensor(
                 name=f"ground_contact_{leg}_leg",
+                type=mj.mjtSensor.mjSENS_CONTACT,
+                objtype=mj.mjtObj.mjOBJ_XBODY,
+                objname=subtree_rootseg_body.name,
+                reftype=mj.mjtObj.mjOBJ_GEOM,
+                refname=self.ground_geoms[0].name,
+                intprm=[119, 3, 1],
             )
             self.legpos_to_groundcontactsensors_by_fly[fly.name][leg] = sensor
 

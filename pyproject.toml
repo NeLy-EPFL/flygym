@@ -23,7 +23,6 @@ license = "Apache-2.0"
 dependencies = [
     "mujoco>=3.6,<3.7",
     "numpy>=2.0,<3.0",
-    "dm_control>=1.0.38,<1.0.39",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
     "imageio>=2.37,<3.0",
@@ -34,6 +33,7 @@ dependencies = [
     "pillow>=11,<13",
     "matplotlib>=3.10,<4.0",
     "numba>=0.65.1",
+    "scipy>=1.15,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -72,6 +72,7 @@ examples = [
     "ipykernel>=7.1.0",
     "ipython>=9.10,<10.0",
     "pandas>=3.0,<4.0",
+    "tqdm>=4.67,<5.0",
 ]
 
 [project.urls]
@@ -87,6 +88,13 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mode=importlib"
+# Test selection is driven by markers, not by which directory a test lives in,
+# so a test can declare an optional-dependency requirement wherever it lives and
+# be excluded with e.g. `pytest -m "not warp"`.
+markers = [
+    "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
+    "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
+]
 
 [tool.coverage.run]
 source = ["flygym", "flygym_demo"]
