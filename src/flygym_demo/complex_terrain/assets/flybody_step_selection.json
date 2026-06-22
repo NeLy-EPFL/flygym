@@ -16,5 +16,5 @@
       "end": 6058
     }
   },
-  "notes": "Edit the start/end indices to match the AEP candidates printed above. Either side is fine; the other side is mirrored automatically."
+  "notes": "Edit the start/end indices to match the PEP candidates (local minima of the body-frame anteroposterior trace) printed above. Either side is fine; the opposite side reuses the same trajectory verbatim (the FlyBody leg joint axes are sagittally symmetric, so no sign flip is needed)."
 }

@@ -14,13 +14,15 @@ The notebook drives the full two-step pipeline:
    swing.
 
 2. **Build the asset.** Resample each picked slice onto a phase grid, compute
-   the swing fraction from the sign of the anteroposterior velocity, mirror
-   the picked side onto the opposite side, and pickle the result to
-   ``single_steps_flybody.pkl``.
+   the swing fraction from the sign of the anteroposterior velocity, copy the
+   picked side's trajectory verbatim onto the opposite side, and pickle the
+   result to ``single_steps_flybody.pkl``.
 
 The helpers below cover: per-timestep replay recording, per-leg slicing, PEP
-candidate detection, selection JSON I/O, left-right mirroring, and asset
-construction.
+candidate detection, selection JSON I/O, and asset construction. The opposite
+side reuses the picked side's trajectory verbatim: the FlyBody leg joint axes
+are symmetric across the sagittal plane, so identical joint angles already
+produce a mirror-symmetric step (no roll/yaw sign flip is applied).
 """
 
 from __future__ import annotations
@@ -345,8 +347,10 @@ def build_asset_from_selection(
         "replay of the NeuroMechFly v1 walking-on-ball clip "
         f"({Path(recording.clip_path).name}, 100 frames @ 100 fps, anatomical-"
         "convention joint angles via SeqIKPy IK). Each pick supplies the chosen "
-        "side; the opposite side is mirrored (roll/yaw sign flip in SeqIKPy/"
-        "global convention). Phase 0 = PEP / start of swing; swing fraction "
+        "side; the opposite side reuses the same joint-angle trajectory verbatim "
+        "(no sign flip -- the FlyBody leg joint axes are symmetric across the "
+        "sagittal plane, so identical angles already produce a mirror-symmetric "
+        "step). Phase 0 = PEP / start of swing; swing fraction "
         "computed as the fraction of timesteps where the body-frame "
         "anteroposterior velocity is positive (np.diff(claw_ap) > 0). Built by "
         "src/flygym_demo/complex_terrain/flybody_step_extraction.py from a "
