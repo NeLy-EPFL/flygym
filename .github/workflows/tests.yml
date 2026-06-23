@@ -47,6 +47,18 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --extra dev --extra examples
 
+      # The high-resolution "fullsize" meshes (FlyBody + fullsize NeuroMechFly)
+      # are not shipped with the package; flygym.utils.assets downloads them from
+      # S3 on first use. actions/cache persists this directory in GitHub's cache
+      # storage across runs (the runner VM is ephemeral, the cache is not), so we
+      # only download ~140 MB once per cache key. Default cache root is
+      # ~/.cache/flygym_assets on all runners.
+      - name: Cache FlyGym remote assets
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/flygym_assets
+          key: flygym-assets-${{ runner.os }}-v1
+
       - name: Run tests
         env:
           # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create
