@@ -76,7 +76,7 @@ assets/              (gitignored, generated)
 
 `assets/` is generated and **gitignored** (regenerated for the `gh-pages` site by
 `scripts/dev/push_doc_site.sh`). Regenerate whenever the model or controller
-config changes (also needed once to preview locally with `mkdocs serve`):
+config changes (also needed once to preview locally with `properdocs serve`):
 
 ```sh
 uv run python scripts/dev/build_wasm_game_assets.py

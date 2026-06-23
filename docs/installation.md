@@ -64,7 +64,7 @@
     !!! tip "Profiling FlyGym simulations"
 
         For instructions on CPU/GPU performance profiling (including the `nsys`
-        prerequisite), see the [Performance profiling](tutorials/6_performance_profiling.md)
+        prerequisite), see the [Performance profiling](tutorials/7_performance_profiling.md)
         guide.
 
 
