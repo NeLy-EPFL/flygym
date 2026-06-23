@@ -220,8 +220,10 @@ def prefetch_meshes() -> list[Path]:
     # import from this one, so a top-level import here would be circular.
     from flygym.compose.fly.neuromechfly import NEUROMECHFLY_FULLSIZE_MESH_DIR
     from flygym.compose.fly.flybody import FLYBODY_FULLSIZE_MESH_DIR
+    from flygym.compose.fly.musculoskeletal import MUSCULOSKELETAL_MESH_DIR
 
     return [
         lazy_load_asset_dir(NEUROMECHFLY_FULLSIZE_MESH_DIR),
         lazy_load_asset_dir(FLYBODY_FULLSIZE_MESH_DIR),
+        lazy_load_asset_dir(MUSCULOSKELETAL_MESH_DIR),
     ]

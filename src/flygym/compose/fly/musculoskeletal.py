@@ -49,6 +49,7 @@ import mujoco as mj
 from flygym import assets_dir
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly.base_fly import ActuatorType
+from flygym.utils.assets_lazy_loading import lazy_load_asset_dir
 from flygym.utils.mjcf import CAMERA_MODES, GEOM_TYPES
 
 if TYPE_CHECKING:
@@ -58,6 +59,7 @@ if TYPE_CHECKING:
 __all__ = [
     "MusculoskeletalFly",
     "MUSCULOSKELETAL_MODEL_DIR",
+    "MUSCULOSKELETAL_MESH_DIR",
     "DEFAULT_MUSCULOSKELETAL_XML",
     "DEFAULT_SCENE_CAMERA",
     "build_musculoskeletal_simulation",
@@ -74,8 +76,16 @@ rollout video of a trained policy."""
 
 
 MUSCULOSKELETAL_MODEL_DIR = assets_dir / "model/musculoskeletal"
-"""Directory holding FlyMimic's musculoskeletal MJCF + meshes. (The imitation-
-learning mocap clips live with the demo, in ``flygym_demo.muscle_imitation``.)"""
+"""Directory holding FlyMimic's musculoskeletal MJCF. The body meshes it
+references are *not* bundled here (see `MUSCULOSKELETAL_MESH_DIR`), and the
+imitation-learning mocap clips live with the demo, in
+``flygym_demo.muscle_imitation``."""
+
+# Mesh path relative to the flygym_assets/ dir on the S3 bucket and local cache
+# dir. FlyMimic's body meshes are large (~14 MB) so, like the FlyBody and
+# fullsize NeuroMechFly meshes, they are not shipped with the package; they are
+# downloaded and cached on first use (see flygym.utils.assets_lazy_loading).
+MUSCULOSKELETAL_MESH_DIR = "neuromechfly_musculoskeletal_meshes_20260623a"
 
 DEFAULT_MUSCULOSKELETAL_XML = (
     MUSCULOSKELETAL_MODEL_DIR / "best_combined_arm_damping_stiff_cvt3.xml"
@@ -108,12 +118,14 @@ def _load_mjcf(xml_path: PathLike) -> mj.MjSpec:
     # (`global` is a Python keyword; MjSpec exposes it as `global_`.)
     spec.visual.global_.offheight = 640
     spec.visual.global_.offwidth = 640
-    # FlyMimic references its meshes with paths relative to the XML directory
-    # (via `meshdir`). MjSpec resolves these at compile time, but they would not
-    # survive being copied into another spec or exported (e.g.
-    # `save_xml_with_assets`), which resolve `file` against the process working
-    # directory. Rewrite them to absolute paths so the model is portable.
-    _absolutize_asset_paths(spec, xml_path.parent / spec.meshdir, spec.meshes)
+    # FlyMimic references its meshes/textures with paths relative to the XML
+    # directory (via `meshdir`/`texturedir`). MjSpec resolves these at compile
+    # time, but they would not survive being copied into another spec or exported
+    # (e.g. `save_xml_with_assets`), which resolve `file` against the process
+    # working directory. Rewrite them to absolute paths so the model is portable.
+    # The body meshes are not bundled with the package; they are pulled from S3
+    # and cached on first use (see `_resolve_mesh_files`).
+    _resolve_mesh_files(spec, xml_path.parent / spec.meshdir)
     _absolutize_asset_paths(spec, xml_path.parent / spec.texturedir, spec.textures)
     spec.meshdir = ""
     spec.texturedir = ""
@@ -125,6 +137,31 @@ def _absolutize_asset_paths(spec: mj.MjSpec, basedir: Path, assets) -> None:
     for asset in assets:
         if asset.file and not Path(asset.file).is_absolute():
             asset.file = str((basedir / asset.file).resolve())
+
+
+def _resolve_mesh_files(spec: mj.MjSpec, local_meshdir: Path) -> None:
+    """Rewrite each mesh's relative ``file`` to an absolute path.
+
+    FlyMimic's high-resolution body meshes are large, so (like the FlyBody and
+    fullsize NeuroMechFly meshes) they are not bundled with the package: they
+    live on the FlyGym S3 bucket and are downloaded and cached on first use, then
+    resolved by file name from the cache (see `MUSCULOSKELETAL_MESH_DIR`).
+
+    A mesh that *is* present under ``local_meshdir`` -- e.g. a custom XML that
+    ships its own meshes -- is used as-is and never triggers a download, so the
+    download happens only for the default (bundled-XML, remote-mesh) model.
+    """
+    cache_dir: Path | None = None
+    for mesh in spec.meshes:
+        if not mesh.file or Path(mesh.file).is_absolute():
+            continue
+        local = (local_meshdir / mesh.file).resolve()
+        if local.is_file():
+            mesh.file = str(local)
+            continue
+        if cache_dir is None:
+            cache_dir = lazy_load_asset_dir(MUSCULOSKELETAL_MESH_DIR)
+        mesh.file = str((cache_dir / Path(mesh.file).name).resolve())
 
 
 class MusculoskeletalFly(BaseCompositionElement):
