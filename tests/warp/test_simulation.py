@@ -3,7 +3,11 @@
 import warnings
 import pytest
 import numpy as np
-import warp as wp
+
+# These tests require the optional warp (GPU) extra; tag them so they can be
+# excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
+pytestmark = pytest.mark.warp
+wp = pytest.importorskip("warp")
 
 from flygym.anatomy import Skeleton, JointPreset, ActuatedDOFPreset, AxisOrder
 from flygym.compose import (

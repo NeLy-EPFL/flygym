@@ -1,9 +1,9 @@
 """Generate the static assets for the browser (WebAssembly) interactive viewer.
 
-The page at ``docs/wasm_viewer/viewer.html`` runs the *same* NeuroMechFly model
+The page at ``wasm/viewer/viewer.html`` runs the *same* NeuroMechFly model
 as ``scripts/launch_interactive_viewer.py`` -- but instead of MuJoCo's native
 viewer it uses MuJoCo compiled to WebAssembly (vendored under
-``docs/wasm_viewer/vendor/mujoco``) and renders with Three.js. The simulation is
+``wasm/shared/vendor/mujoco``) and renders with Three.js. The simulation is
 real (``mj_step``): the position-actuator sliders write ``data.ctrl``; a little
 bar over each slider shows the actuated joint's current ``qpos``; bodies can be
 dragged to apply an external force; and contacts/forces/joints/actuators can be
@@ -11,13 +11,13 @@ toggled, much like MuJoCo's own viewer.
 
 This script produces everything that page loads, so the docs build itself stays
 lightweight (it never imports flygym or mujoco -- it only serves the committed
-files under ``docs/wasm_viewer/``). It is therefore run *by hand* whenever the
+files under ``wasm/viewer/``). It is therefore run *by hand* whenever the
 model or its viewer config changes. It needs ``flygym`` + ``mujoco``, e.g.::
 
     uv run --with flygym --with mujoco --python 3.12 \
         python scripts/dev/build_wasm_viewer_assets.py
 
-Outputs (all under ``docs/wasm_viewer/assets/``):
+Outputs (all under ``wasm/viewer/assets/``):
 
 ``model/fly.xml`` + ``model/*.stl``
     A flattened, self-contained MJCF and the meshes it references, written by
@@ -57,8 +57,8 @@ from flygym.compose import ActuatorType, FlatGroundWorld, Fly, KinematicPosePres
 from flygym.utils.math import Rotation3D
 
 # --- repo paths -------------------------------------------------------------
-REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = REPO_ROOT / "docs/wasm_viewer/assets"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUT_DIR = REPO_ROOT / "wasm/viewer/assets"
 MODEL_DIR = OUT_DIR / "model"
 
 # --- body config: must mirror scripts/launch_interactive_viewer.py ----------

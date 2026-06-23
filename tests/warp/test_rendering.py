@@ -3,6 +3,12 @@
 import warnings
 import pytest
 import numpy as np
+import mujoco as mj
+
+# These tests require the optional warp (GPU) extra; tag them so they can be
+# excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
+pytestmark = pytest.mark.warp
+pytest.importorskip("warp")
 
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
 from flygym.compose import NeuroMechFly, FlatGroundWorld, KinematicPosePreset
@@ -281,10 +287,11 @@ class TestModifyWorldForBatchRendering:
             warnings.simplefilter("ignore")
             modify_world_for_batch_rendering(world)
 
-        for material in world.mjcf_root.asset.find_all("material"):
-            if material.full_identifier.startswith(fly.name + "/"):
-                assert material.texture is None, (
-                    f"NeuroMechFly material {material.full_identifier!r} still has a texture."
+        rgb_role = int(mj.mjtTextureRole.mjTEXROLE_RGB)
+        for material in world.mjcf_root.materials:
+            if material.name.startswith(fly.name + "/"):
+                assert material.textures[rgb_role] == "", (
+                    f"NeuroMechFly material {material.name!r} still has a texture."
                 )
 
     def test_is_modified_true_for_colorized_fly(self):

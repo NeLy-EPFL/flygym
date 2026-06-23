@@ -1,10 +1,7 @@
-from typing import override
-
+import mujoco as mj
 import numpy as np
-import dm_control.mjcf as mjcf
 
-from flygym.compose.fly import BaseFly
-from flygym.utils.math import Vec3, Rotation3D
+from flygym.utils.mjcf import GEOM_TYPES
 from flygym.compose.world.base_world import (
     _GroundContactMixin,
     BaseWorld,
@@ -15,7 +12,6 @@ __all__ = [
     "GappedTerrainWorld",
     "BlocksTerrainWorld",
     "MixedTerrainWorld",
-    "TetheredWorld",
 ]
 
 
@@ -52,10 +48,9 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
         pos: tuple[float, float, float],
         *,
         rgba: tuple[float, float, float, float],
-    ) -> mjcf.Element:
-        geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="box",
+    ) -> mj.MjsGeom:
+        geom = self.mjcf_root.worldbody.add_geom(
+            type=GEOM_TYPES["box"],
             name=name,
             size=size,
             pos=pos,
@@ -73,10 +68,9 @@ class _ComplexTerrainWorld(_GroundContactMixin, BaseWorld):
         pos: tuple[float, float, float],
         *,
         rgba: tuple[float, float, float, float],
-    ) -> mjcf.Element:
-        geom = self.mjcf_root.worldbody.add(
-            "geom",
-            type="plane",
+    ) -> mj.MjsGeom:
+        geom = self.mjcf_root.worldbody.add_geom(
+            type=GEOM_TYPES["plane"],
             name=name,
             size=size,
             pos=pos,
@@ -247,28 +241,3 @@ class MixedTerrainWorld(_ComplexTerrainWorld):
                 pos=(np.mean(x_range), 0, -gap_depth / 2),
                 rgba=(0.3, 0.3, 0.3, ground_alpha),
             )
-
-
-class TetheredWorld(BaseWorld):
-    """World where the fly body is fixed in space via a weld constraint.
-
-    The fly's appendages (legs, wings, etc.) can still move. Useful for motor control
-    experiments without locomotion.
-
-    Args:
-        name: Name of the world.
-    """
-
-    @override
-    def __init__(self, name: str = "tethered_world") -> None:
-        super().__init__(name=name)
-
-    @override
-    def _attach_fly_mjcf(
-        self, fly: BaseFly, spawn_position: Vec3, spawn_rotation: Rotation3D
-    ) -> mjcf.Element:
-        spawn_site = self.mjcf_root.worldbody.add(
-            "site", name=fly.name, pos=spawn_position, **spawn_rotation.as_kwargs()
-        )
-        spawn_site.attach(fly.mjcf_root)
-        return {}

@@ -121,6 +121,28 @@ def test_find_candidate_peps_locates_minima():
 
 
 # ---------------------------------------------------------------------------
+# _portable_clip_path
+# ---------------------------------------------------------------------------
+
+
+def test_portable_clip_path_relative_to_package():
+    p = "/Users/someone/Desktop/flygym-v2/src/flygym_demo/ball_flybody_data/assets/clip.npz"
+    assert fse._portable_clip_path(p) == "ball_flybody_data/assets/clip.npz"
+
+
+def test_portable_clip_path_is_machine_independent():
+    # Two different absolute roots must resolve to the same portable string so
+    # the pickled asset does not churn across machines/checkouts.
+    a = "/Users/alice/proj/src/flygym_demo/ball_flybody_data/assets/clip.npz"
+    b = "/home/bob/flygym/src/flygym_demo/ball_flybody_data/assets/clip.npz"
+    assert fse._portable_clip_path(a) == fse._portable_clip_path(b)
+
+
+def test_portable_clip_path_falls_back_to_name_outside_package():
+    assert fse._portable_clip_path("/tmp/somewhere/clip.npz") == "clip.npz"
+
+
+# ---------------------------------------------------------------------------
 # Selection validation + JSON I/O
 # ---------------------------------------------------------------------------
 
@@ -235,44 +257,58 @@ def test_swing_fraction_single_sample_is_zero():
 
 
 # ---------------------------------------------------------------------------
-# build_asset_from_selection + pickle round-trips
+# build_asset_from_selection + npz/json round-trips
 # ---------------------------------------------------------------------------
+
+
+def _three_picks():
+    return {
+        "F": {"side": "l", "start": 0, "end": 30},
+        "M": {"side": "l", "start": 5, "end": 35},
+        "H": {"side": "l", "start": 10, "end": 40},
+    }
 
 
 def test_build_asset_from_selection_structure():
     rec = _make_recording(nsteps=60)
-    selection = {
-        "picks": {
-            "F": {"side": "l", "start": 0, "end": 30},
-            "M": {"side": "l", "start": 5, "end": 35},
-            "H": {"side": "l", "start": 10, "end": 40},
-        }
-    }
+    selection = {"picks": _three_picks()}
     asset = fse.build_asset_from_selection(rec, selection, n_phase_bins=120)
 
-    # every leg (picked + mirrored opposite) is present
-    assert set(asset["joint_angles"]) == set(fse.LEGS)
-    assert set(asset["swing_fractions"]) == set(fse.LEGS)
-    for arr in asset["joint_angles"].values():
-        assert arr.shape == (7, 120)
-
-    # opposite side reuses the picked cycle but is an independent copy
-    np.testing.assert_array_equal(
-        asset["joint_angles"]["lf"], asset["joint_angles"]["rf"]
-    )
-    assert asset["joint_angles"]["lf"] is not asset["joint_angles"]["rf"]
+    # One canonical cycle per leg POSITION (F/M/H), stacked, ordered by
+    # LEG_POSITIONS; not per leg.
+    assert asset["joint_angles"].shape == (len(fse.LEG_POSITIONS), 7, 120)
+    assert asset["swing_fractions"].shape == (len(fse.LEG_POSITIONS),)
 
     meta = asset["meta"]
     assert meta["n_phase_bins"] == 120
     assert meta["sim_timestep"] == rec.timestep
-    assert meta["selection"] == selection
-    assert meta["cycle_lengths_samples"]["lf"] == 30
+    assert meta["leg_positions"] == list(fse.LEG_POSITIONS)
+    assert meta["cycle_lengths_samples"]["F"] == 30
+    # dof_order documents the joint_angles column layout.
+    assert meta["dof_order"] == [list(d) for d in _DOFS_PER_LEG]
 
 
 def test_build_asset_from_selection_validates():
     rec = _make_recording()
     with pytest.raises(ValueError):
         fse.build_asset_from_selection(rec, {"picks": {}})
+
+
+def test_build_asset_records_only_picks_not_notes():
+    # The free-text ``notes`` is a curation hint, not asset provenance, and must
+    # not be baked into the asset (it would churn the artifact on edits).
+    rec = _make_recording(nsteps=60)
+    selection = {"picks": _three_picks(), "notes": "curation hint"}
+    asset = fse.build_asset_from_selection(rec, selection)
+    assert asset["meta"]["picks"] == _three_picks()
+    assert "notes" not in asset["meta"]
+
+
+def test_build_asset_source_clip_is_portable():
+    rec = _make_recording(nsteps=60)
+    rec.clip_path = "/Users/dev/x/src/flygym_demo/ball_flybody_data/assets/clip.npz"
+    asset = fse.build_asset_from_selection(rec, {"picks": _three_picks()})
+    assert asset["meta"]["source_clip"] == "ball_flybody_data/assets/clip.npz"
 
 
 def test_replay_recording_pickle_roundtrip(tmp_path):
@@ -285,18 +321,48 @@ def test_replay_recording_pickle_roundtrip(tmp_path):
     assert loaded.position_dof_names == rec.position_dof_names
 
 
-def test_save_asset_roundtrip(tmp_path):
+def test_save_asset_writes_npz_and_manifest(tmp_path):
     rec = _make_recording()
-    selection = {
-        "picks": {
-            "F": {"side": "l", "start": 0, "end": 30},
-            "M": {"side": "l", "start": 5, "end": 35},
-            "H": {"side": "l", "start": 10, "end": 40},
-        }
-    }
-    asset = fse.build_asset_from_selection(rec, selection)
-    out = tmp_path / "asset.pkl"
+    asset = fse.build_asset_from_selection(rec, {"picks": _three_picks()})
+    out = tmp_path / "single_steps_flybody.npz"
     fse.save_asset(asset, out)
-    with out.open("rb") as f:
-        loaded = pickle.load(f)
-    assert set(loaded["joint_angles"]) == set(fse.LEGS)
+
+    # npz loads with pickle disabled (purely numeric, no object arrays).
+    with np.load(out, allow_pickle=False) as npz:
+        np.testing.assert_array_equal(npz["joint_angles"], asset["joint_angles"])
+        np.testing.assert_array_equal(npz["swing_fractions"], asset["swing_fractions"])
+
+    # sibling .meta.json holds the human-readable provenance.
+    meta_path = tmp_path / "single_steps_flybody.meta.json"
+    assert meta_path.exists()
+    assert json.loads(meta_path.read_text()) == asset["meta"]
+
+
+def test_save_asset_is_deterministic_and_note_independent(tmp_path):
+    # Same inputs -> byte-identical .npz, and changing only the free-text note
+    # leaves the artifact unchanged.
+    rec = _make_recording(nsteps=60)
+    a = tmp_path / "a.npz"
+    b = tmp_path / "b.npz"
+    fse.save_asset(
+        fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v1"}),
+        a,
+    )
+    fse.save_asset(
+        fse.build_asset_from_selection(rec, {"picks": _three_picks(), "notes": "v2!"}),
+        b,
+    )
+    assert a.read_bytes() == b.read_bytes()
+
+
+def test_build_asset_rounds_stored_arrays():
+    # Stored arrays are rounded to fixed grids so reruns don't churn the floats.
+    rec = _make_recording(nsteps=60)
+    asset = fse.build_asset_from_selection(rec, {"picks": _three_picks()})
+    np.testing.assert_array_equal(
+        asset["joint_angles"], np.round(asset["joint_angles"], fse.JOINT_ANGLE_DECIMALS)
+    )
+    np.testing.assert_array_equal(
+        asset["swing_fractions"],
+        np.round(asset["swing_fractions"], fse.SWING_FRACTION_DECIMALS),
+    )

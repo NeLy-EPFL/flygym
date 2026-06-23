@@ -10,28 +10,62 @@ permissions:
 
 jobs:
   test-core:
-    name: Core tests (${{ matrix.os }})
+    name: Core tests (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Full version sweep on Linux; only the newest supported Python on
+        # macOS and Windows.
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: ubuntu-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.14"
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install EGL/Mesa dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev
+            libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev ffmpeg
 
       - name: Install Python dependencies
-        run: uv sync --extra dev
+        run: uv sync --extra dev --extra examples
 
-      - name: Run core and examples tests
-        run: uv run pytest tests/core/ tests/examples/ -v --tb=short
+      # The high-resolution "fullsize" meshes (FlyBody + fullsize NeuroMechFly)
+      # are not shipped with the package; flygym.utils.assets downloads them from
+      # S3 on first use. actions/cache persists this directory in GitHub's cache
+      # storage across runs (the runner VM is ephemeral, the cache is not), so we
+      # only download ~140 MB once per cache key. Default cache root is
+      # ~/.cache/flygym_assets on all runners.
+      - name: Cache FlyGym remote assets
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/flygym_assets
+          key: flygym-assets-${{ runner.os }}-v1
+
+      - name: Run tests
+        env:
+          # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create
+          # a headless OpenGL context on GitHub-hosted runners (no GPU), so skip
+          # rendering tests there. Linux uses EGL/Mesa and runs them.
+          SKIP_RENDERING_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
+        # Collect the whole tree but use marker selection (not directory
+        # selection) to drop the groups CI can't run: warp needs a CUDA GPU.
+        # Rendering tests are gated separately via SKIP_RENDERING_TESTS above.
+        run: uv run pytest tests/ -m "not warp" -v --tb=short

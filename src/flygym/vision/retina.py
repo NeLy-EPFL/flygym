@@ -189,7 +189,7 @@ class Retina:
 
     def correct_fisheye(self, img: np.ndarray) -> np.ndarray:
         """
-        The raw imaged rendered by the MuJoCo camera is rectilinear. This
+        The raw image rendered by the MuJoCo camera is rectilinear. This
         distorts the image and overrepresents the periphery of the field of
         view (the same angle near the periphery is reflected by a greater
         angle in the rendered image). This method applies a fisheye effect

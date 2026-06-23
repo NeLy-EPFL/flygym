@@ -6,7 +6,7 @@ compiler:
   fusestatic: 'false'
 option:
   timestep: '0.0001'
-  gravity: ['0', '0', '-981']
+  gravity: ['0', '0', '-9810']  # mm/s^2 (source XML is cm: -981 cm/s^2 x10 -> mm)
   density: '0.00128'
   viscosity: '0.000185'
   cone: elliptic

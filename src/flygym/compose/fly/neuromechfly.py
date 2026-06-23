@@ -1,10 +1,12 @@
 import warnings
 from os import PathLike
+from pathlib import Path
 from typing import Any
 
 from flygym import assets_dir
-from flygym.anatomy import BodySegment
+from flygym.anatomy import BodySegment, ALL_SEGMENT_NAMES
 from flygym.compose.fly.base_fly import BaseFly, MeshType, GeomFittingOption
+from flygym.utils.assets_lazy_loading import lazy_load_asset_dir
 
 __all__ = ["NeuroMechFly", "Fly"]
 
@@ -14,6 +16,9 @@ DEFAULT_MUJOCO_GLOBALS_PATH = assets_dir / "model/neuromechfly/mujoco_globals.ya
 DEFAULT_MESH_DIR = assets_dir / "model/neuromechfly/meshes/"
 DEFAULT_VISUALS_CONFIG_PATH = assets_dir / "model/neuromechfly/visuals.yaml"
 DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/neuromechfly/vision.yaml"
+
+# Mesh path relative to the flygym_assets/ dir on the S3 bucket and local cache dir
+NEUROMECHFLY_FULLSIZE_MESH_DIR = "neuromechfly_fullsize_meshes_20260623a"
 
 
 class NeuroMechFly(BaseFly):
@@ -64,6 +69,36 @@ class NeuroMechFly(BaseFly):
             geom_fitting_option=geom_fitting_option,
             vision_config_path=vision_config_path,
         )
+
+    def _add_mesh_assets(
+        self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
+    ) -> None:
+        # Simplified meshes are bundled with the package; fullsize meshes are
+        # downloaded from S3 and cached on first use.
+        if mesh_type == MeshType.FULLSIZE:
+            mesh_dir = lazy_load_asset_dir(NEUROMECHFLY_FULLSIZE_MESH_DIR)
+        else:
+            mesh_dir = Path(mesh_basedir) / mesh_type.value
+
+        for segment_name in ALL_SEGMENT_NAMES:
+            if mirror_left2right and segment_name[0] == "r":
+                mesh_to_use = f"l{segment_name[1:]}"
+                y_sign = -1
+            else:
+                mesh_to_use = segment_name
+                y_sign = 1
+
+            mesh_path = (mesh_dir / f"{mesh_to_use}.stl").resolve()
+            if not mesh_path.exists():
+                raise FileNotFoundError(
+                    f"Mesh file not found for segment {segment_name}: {mesh_path}"
+                )
+
+            self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.add_mesh(
+                name=segment_name,
+                file=str(mesh_path),
+                scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
+            )
 
     def colorize(
         self, visuals_config_path: PathLike = DEFAULT_VISUALS_CONFIG_PATH

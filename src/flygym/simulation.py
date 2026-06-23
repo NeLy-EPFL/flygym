@@ -3,7 +3,6 @@ from time import perf_counter_ns
 from typing import Any, Literal
 
 import mujoco as mj
-import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
 
@@ -95,7 +94,7 @@ class Simulation:
 
     def set_renderer(
         self,
-        cameras: str | mjcf.Element | list[str | mjcf.Element],
+        cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -462,8 +461,8 @@ class Simulation:
 
         Returns:
             A float32 array with shape ``(2, n_ommatidia, 2)`` containing
-            the pale/yellow channel readings for each eye camera. The first dimension
-            corresponds to the left and right eyes, in that order). The last
+            the yellow/pale channel readings for each eye camera. The first dimension
+            corresponds to the left and right eyes, in that order. The last
             dimension corresponds to the yellow- and pale-type ommatidia, in that
             order. Zero values indicate that the ommatidium is of the other type.
             For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium
@@ -497,7 +496,7 @@ class Simulation:
                 internal_body_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_BODY,
-                    mjcf_body_element.full_identifier,
+                    mjcf_body_element.name,
                 )
                 internal_bodyids_by_fly[fly_name].append(internal_body_id)
 
@@ -515,7 +514,7 @@ class Simulation:
                     internal_geom_id = mj.mj_name2id(
                         self.mj_model,
                         mj.mjtObj.mjOBJ_GEOM,
-                        mjcf_geom_element.full_identifier,
+                        mjcf_geom_element.name,
                     )
                     internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = (
                         internal_geom_id
@@ -530,7 +529,7 @@ class Simulation:
                 mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_GEOM,
-                    ground_geom.full_identifier,
+                    ground_geom.name,
                 )
             )
         self._internal_ground_geom_ids = np.array(
@@ -545,7 +544,7 @@ class Simulation:
                 internal_joint_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_JOINT,
-                    mjcf_joint_element.full_identifier,
+                    mjcf_joint_element.name,
                 )
                 internal_jointids_by_fly[fly_name].append(internal_joint_id)
 
@@ -562,7 +561,7 @@ class Simulation:
                 internal_joint_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_JOINT,
-                    mjcf_joint_element.full_identifier,
+                    mjcf_joint_element.name,
                 )
                 qposadr = self.mj_model.jnt_qposadr[internal_joint_id]
                 qveladr = self.mj_model.jnt_dofadr[internal_joint_id]
@@ -585,7 +584,7 @@ class Simulation:
                     internal_actuator_id = mj.mj_name2id(
                         self.mj_model,
                         mj.mjtObj.mjOBJ_ACTUATOR,
-                        actuator_element.full_identifier,
+                        actuator_element.name,
                     )
                     internal_actuatorids_by_fly_by_type[actuator_ty][fly_name].append(
                         internal_actuator_id
@@ -610,7 +609,7 @@ class Simulation:
                 internal_actuator_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_ACTUATOR,
-                    actuator_element.full_identifier,
+                    actuator_element.name,
                 )
                 internal_tendonactuatorids_by_fly[fly_name].append(internal_actuator_id)
         self._intern_tendonactuatorids_by_fly = {
@@ -628,7 +627,7 @@ class Simulation:
                 internal_actuator_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_ACTUATOR,
-                    actuator_element.full_identifier,
+                    actuator_element.name,
                 )
                 internal_adhesionactuatorids_by_fly[fly_name].append(
                     internal_actuator_id
@@ -655,7 +654,7 @@ class Simulation:
                 if sensor is None:
                     continue
                 internal_id = mj.mj_name2id(
-                    self.mj_model, mj.mjtObj.mjOBJ_SENSOR, sensor.full_identifier
+                    self.mj_model, mj.mjtObj.mjOBJ_SENSOR, sensor.name
                 )
                 start_idx = self.mj_model.sensor_adr[internal_id]
                 sensor_dim = self.mj_model.sensor_dim[internal_id]
@@ -676,7 +675,7 @@ class Simulation:
                 internal_site_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_SITE,
-                    mjcf_site_element.full_identifier,
+                    mjcf_site_element.name,
                 )
                 internal_siteids_by_fly[fly_name].append(internal_site_id)
 
@@ -692,7 +691,7 @@ class Simulation:
                 internal_eye_camera_id = mj.mj_name2id(
                     self.mj_model,
                     mj.mjtObj.mjOBJ_CAMERA,
-                    eye_camera_element.full_identifier,
+                    eye_camera_element.name,
                 )
                 internal_eye_camera_ids_by_fly[fly_name].append(internal_eye_camera_id)
 
