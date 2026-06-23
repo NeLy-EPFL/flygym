@@ -109,6 +109,10 @@
 
     [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/colab/tutorials/1a_basic_model_composition.ipynb)
 
+    !!! warning "Colab is slow"
+
+        Execution on Colab can be **up to ~50× slower** than on a local machine or dedicated GPU, depending on the resources Colab makes available at the time. Use Colab only for testing and following along with the tutorials—not for production runs or benchmarking.
+
     Click the badge to open the notebook in Colab, then run the first code cell (titled *Google Colab setup*). It installs FlyGym from GitHub (matching the version of the notebook) and configures headless (EGL) rendering for you:
 
     ```python
@@ -130,6 +134,8 @@
     !!! tip "GPU-accelerated tutorial"
 
         The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) tutorial uses the `flygym.warp` backend, which requires a GPU. Before running it, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Its setup cell installs the `warp` extra automatically.
+
+        On a GPU runtime, `pip` may warn that Colab's preinstalled `cudf`/`cuml` (RAPIDS) require `numba<0.62` while FlyGym installs a newer `numba`. This warning is harmless: the tutorial uses MuJoCo Warp, not RAPIDS, so the upgraded `numba` does not affect it.
 
 !!! warning "Special notes for rendering on machines without a display"
 
