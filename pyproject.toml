@@ -97,6 +97,7 @@ addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mod
 markers = [
     "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
     "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
+    "network: talks to the live S3 asset bucket (skips itself if unreachable)",
 ]
 
 [tool.coverage.run]
@@ -112,6 +113,12 @@ where = ["src"]
 [tool.setuptools.package-data]
 flygym = ["assets/**"]
 flygym_demo = ["spotlight_data/assets/**", "complex_terrain/assets/**"]
+
+[tool.setuptools.exclude-package-data]
+flygym = [
+    "assets/model/neuromechfly/meshes/fullsize/*",
+    "assets/model/flybody/meshes/**/*",
+]
 
 [tool.ruff.lint]
 # Disable the following ruff linting rules globally:

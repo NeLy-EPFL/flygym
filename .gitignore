@@ -3,6 +3,10 @@ demo_output/
 outputs/
 gpu_benchmark_results*/
 
+# Large asset files that are stored on an S3 bucket and lazy-loaded on first use
+src/flygym/assets/model/neuromechfly/meshes/fullsize/
+src/flygym/assets/model/flybody/meshes/
+
 # Profiling output (scripts/replay_behavior_{cpu,gpu}.py --profile)
 *.speedscope.json
 *.nsys-rep
