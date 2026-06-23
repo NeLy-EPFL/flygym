@@ -173,8 +173,16 @@ def add_actuator(
         spec: The spec to add the actuator to.
         kind: Actuator shortcut name (e.g. ``"position"``, ``"motor"``).
         name: Actuator name.
-        joint/body/tendon/site: Transmission target name (exactly one).
-        forcelimited/forcerange/ctrllimited/ctrlrange/gear: Common attributes.
+        joint: Transmission target joint name (give exactly one of
+            ``joint``/``body``/``tendon``/``site``).
+        body: Transmission target body name.
+        tendon: Transmission target tendon name.
+        site: Transmission target site name.
+        forcelimited: Whether actuator force is clamped to ``forcerange``.
+        forcerange: Min/max actuator force.
+        ctrllimited: Whether the control input is clamped to ``ctrlrange``.
+        ctrlrange: Min/max control input.
+        gear: Transmission gear ratio (``gear[0]``).
         kp: Position/intvelocity gain.
         kv: Position/velocity/intvelocity damping.
         gain: Gain (``gainprm[0]``) for adhesion, motor, and general actuators.

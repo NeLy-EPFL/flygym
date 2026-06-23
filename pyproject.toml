@@ -41,13 +41,7 @@ warp = [
     "warp-lang>=1.14,<1.15",
     "mujoco_warp>=3.9,<3.10",
 ]
-imitation = [
-    "gymnasium>=1.0,<2.0",
-    "stable-baselines3>=2.0,<3.0",
-]
 dev = [
-    # Imitation-learning env (flygym_demo.muscle_imitation) used by its tests
-    "flygym[imitation]",
     # Testing
     "pytest>=9.0,<10.0",
     "pytest-cov>=7.0,<8.0",
@@ -88,6 +82,7 @@ examples = [
     "tqdm>=4.67,<5.0",
 ]
 rl = [
+    "gymnasium>=1.0,<2.0",
     "stable_baselines3>=2.7,<3.0",
     "tensorboard>=2.20,<3.0",
     # tensorboard still imports pkg_resources, which setuptools removed in 81.
@@ -112,6 +107,7 @@ addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mod
 # be excluded with e.g. `pytest -m "not warp"`.
 markers = [
     "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
+    "rl: requires the rl extra (gymnasium + Stable-Baselines3 + TensorBoard) (skip with -m 'not rl')",
     "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
     "network: talks to the live S3 asset bucket (skips itself if unreachable)",
 ]

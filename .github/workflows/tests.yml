@@ -45,7 +45,10 @@ jobs:
             libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev ffmpeg
 
       - name: Install Python dependencies
-        run: uv sync --extra dev --extra examples
+        # rl is its own extra (not pulled in by dev) so the muscle-imitation
+        # tests can run in CI; the GPU-only `warp` group is still excluded and
+        # deselected via `-m "not warp"` below.
+        run: uv sync --extra dev --extra examples --extra rl
 
       # The high-resolution "fullsize" meshes (FlyBody + fullsize NeuroMechFly)
       # are not shipped with the package; flygym.utils.assets downloads them from

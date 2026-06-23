@@ -6,8 +6,11 @@ import platform
 import numpy as np
 import pytest
 
-# muscle_imitation.env imports gymnasium at module load; skip this whole module
-# cleanly (rather than erroring at collection) when the optional dep is absent.
+# The whole module needs the `rl` extra (gymnasium + Stable-Baselines3). The
+# marker lets it be deselected explicitly (`pytest -m "not rl"`); the
+# importorskip additionally skips it cleanly — rather than erroring at
+# collection — when the optional dep simply isn't installed.
+pytestmark = pytest.mark.rl
 pytest.importorskip("gymnasium")
 
 from flygym_demo.muscle_imitation import (  # noqa: E402

@@ -102,7 +102,7 @@ def train(
         print(
             "tensorboard not installed; skipping TensorBoard logs "
             "(per-episode reward/length still written to monitor.csv). "
-            "Install with `pip install tensorboard`."
+            "Install with `pip install flygym[rl]`."
         )
 
     model = PPO(
