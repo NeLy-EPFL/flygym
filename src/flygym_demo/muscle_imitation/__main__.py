@@ -104,7 +104,7 @@ def main() -> int:
         if not have_sb3:
             print(
                 "stable_baselines3 not available; skipping training. "
-                "Install with `pip install stable-baselines3`.",
+                "Install with `pip install flygym[rl]`.",
                 file=sys.stderr,
             )
         else:

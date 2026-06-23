@@ -42,6 +42,7 @@ on machines without a GPU, and require the ``[warp]`` extra to actually run.
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import mujoco as mj
 
@@ -49,6 +50,10 @@ from flygym import assets_dir
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly.base_fly import ActuatorType
 from flygym.utils.mjcf import CAMERA_MODES, GEOM_TYPES
+
+if TYPE_CHECKING:
+    from flygym.simulation import Simulation
+    from flygym.warp.simulation import GPUSimulation
 
 __all__ = [
     "MusculoskeletalFly",
@@ -341,7 +346,7 @@ def build_musculoskeletal_simulation(
     xml_path: PathLike = DEFAULT_MUSCULOSKELETAL_XML,
     name: str = "nmf",
     add_vision: bool = False,
-) -> "tuple[Simulation, MusculoskeletalFly]":  # noqa: F821
+) -> "tuple[Simulation, MusculoskeletalFly]":
     """Build a `MusculoskeletalFly` + `MusculoskeletalWorld` + `Simulation`.
 
     Equivalent to the standard composition flow::
@@ -484,8 +489,8 @@ def build_musculoskeletal_gpu_simulation(
     xml_path: PathLike = DEFAULT_MUSCULOSKELETAL_XML,
     name: str = "nmf",
     add_vision: bool = False,
-    **gpu_kwargs,
-):
+    **gpu_kwargs: Any,
+) -> "tuple[GPUSimulation, MusculoskeletalFly]":
     """Build a `GPUSimulation` of the muscle model with *n_worlds* parallel
     copies for vectorized RL on a CUDA machine.
 

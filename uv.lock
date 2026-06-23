@@ -705,7 +705,6 @@ dependencies = [
 dev = [
     { name = "build" },
     { name = "fast-simplification" },
-    { name = "gymnasium" },
     { name = "mapbox-earcut" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-jupyter" },
@@ -724,7 +723,6 @@ dev = [
     { name = "rtree" },
     { name = "ruff" },
     { name = "shapely" },
-    { name = "stable-baselines3" },
     { name = "trimesh" },
     { name = "twine" },
 ]
@@ -734,11 +732,8 @@ examples = [
     { name = "pandas" },
     { name = "tqdm" },
 ]
-imitation = [
-    { name = "gymnasium" },
-    { name = "stable-baselines3" },
-]
 rl = [
+    { name = "gymnasium" },
     { name = "setuptools" },
     { name = "stable-baselines3" },
     { name = "tensorboard" },
@@ -752,8 +747,7 @@ warp = [
 requires-dist = [
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0,<2.0" },
     { name = "fast-simplification", marker = "extra == 'dev'", specifier = "==0.1.13" },
-    { name = "flygym", extras = ["imitation"], marker = "extra == 'dev'" },
-    { name = "gymnasium", marker = "extra == 'imitation'", specifier = ">=1.0,<2.0" },
+    { name = "gymnasium", marker = "extra == 'rl'", specifier = ">=1.0,<2.0" },
     { name = "imageio", specifier = ">=2.37,<3.0" },
     { name = "imageio-ffmpeg", specifier = "==0.6.0" },
     { name = "ipykernel", marker = "extra == 'examples'", specifier = ">=7.1.0" },
@@ -789,7 +783,6 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.15,<2.0" },
     { name = "setuptools", marker = "extra == 'rl'", specifier = "<81" },
     { name = "shapely", marker = "extra == 'dev'", specifier = ">=2.0,<3.0" },
-    { name = "stable-baselines3", marker = "extra == 'imitation'", specifier = ">=2.0,<3.0" },
     { name = "stable-baselines3", marker = "extra == 'rl'", specifier = ">=2.7,<3.0" },
     { name = "tabulate", specifier = "==0.9.0" },
     { name = "tensorboard", marker = "extra == 'rl'", specifier = ">=2.20,<3.0" },
@@ -798,7 +791,7 @@ requires-dist = [
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6.0,<7.0" },
     { name = "warp-lang", marker = "extra == 'warp'", specifier = ">=1.14,<1.15" },
 ]
-provides-extras = ["warp", "imitation", "dev", "examples", "rl"]
+provides-extras = ["warp", "dev", "examples", "rl"]
 
 [[package]]
 name = "fonttools"
@@ -2347,7 +2340,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [

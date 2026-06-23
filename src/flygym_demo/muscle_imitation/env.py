@@ -19,7 +19,7 @@ try:
 except ImportError as e:  # pragma: no cover - clearer error than the import trace
     raise ImportError(
         "flygym_demo.muscle_imitation.env requires the optional dependency "
-        "'gymnasium'. Install with `pip install gymnasium`."
+        "'gymnasium'. Install with `pip install flygym[rl]`."
     ) from e
 
 from flygym.compose.fly import ActuatorType

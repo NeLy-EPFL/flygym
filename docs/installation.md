@@ -24,10 +24,16 @@
     pip install flygym[examples]
     ```
 
+    Add the `rl` optional dependency for reinforcement-learning training (e.g. the muscle imitation tutorial), which installs Gymnasium, Stable-Baselines3, and TensorBoard:
+
+    ```sh
+    pip install flygym[rl]
+    ```
+
     You can combine multiple optional dependencies in one command. For example:
 
     ```sh
-    pip install flygym[warp,examples]
+    pip install flygym[warp,examples,rl]
     ```
 
 
