@@ -61,6 +61,30 @@ def test_muscle_fly_compiles_with_15_muscle_actuators():
     assert mj_model.ntendon == 15
 
 
+def test_save_xml_with_assets_roundtrips(tmp_path):
+    # FlyMimic references its meshes with paths relative to the model's own
+    # directory (`meshdir`). `MusculoskeletalFly` absolutizes those at load time
+    # so the model survives being exported: `save_xml_with_assets` copies the
+    # mesh files next to the XML and rewrites references to bare filenames. The
+    # export must be self-contained -- loadable from anywhere with no dependency
+    # on the original asset directory.
+    fly = MusculoskeletalFly()
+    live_model, _ = fly.compile()
+
+    fly.save_xml_with_assets(tmp_path, "muscle.xml")
+    xml_out = tmp_path / "muscle.xml"
+    assert xml_out.exists()
+    # Mesh assets were copied alongside the XML (every body geom is a mesh).
+    assert len(list(tmp_path.glob("*.stl"))) == live_model.nmesh
+
+    # The exported model reloads independently and matches the live one.
+    reloaded = mj.MjModel.from_xml_path(str(xml_out))
+    assert reloaded.nbody == live_model.nbody
+    assert reloaded.nu == live_model.nu
+    assert reloaded.ntendon == live_model.ntendon
+    assert reloaded.nmesh == live_model.nmesh
+
+
 def test_add_vision_attaches_eye_cameras():
     fly = MusculoskeletalFly()
     added = fly.add_vision()
