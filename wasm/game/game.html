@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroMechFly — the game</title>
+<style>
+  :root { --fg: #e6e8eb; --muted: #9aa0a6; --accent: #8c9eff;
+          --stage-a: #2a2d36; --stage-b: #14161b; --hud-bg: rgba(20,22,27,.72); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--fg); background: #14161b; }
+  #stage { position: relative; width: 100vw; height: 100vh;
+           background: radial-gradient(circle at 50% 30%, var(--stage-a) 0%, var(--stage-b) 100%); }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+
+  /* top-left: level + timer (below the level bar) */
+  #hud { position: absolute; left: 14px; top: 58px; z-index: 4; pointer-events: none;
+         text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+  #level { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  #level .chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+        margin-right: 7px; vertical-align: middle; background: var(--accent); }
+  #timer { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  #best { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  /* top-right: realtime/fps (below the level bar) */
+  #stats { position: absolute; right: 12px; top: 56px; z-index: 4; font-size: 11px;
+        color: rgba(255,255,255,.5); pointer-events: none; font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 2px rgba(0,0,0,.6); text-align: right; }
+
+  /* bottom: controls help */
+  #help { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 4;
+        font-size: 12px; color: rgba(255,255,255,.72); pointer-events: none; text-align: center;
+        text-shadow: 0 1px 2px rgba(0,0,0,.7); line-height: 1.5; max-width: 92vw; }
+  #help kbd { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22);
+        border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: inherit; }
+  #help .row2 { color: var(--muted); margin-top: 3px; }
+  #help .row2.pad { color: var(--accent); }
+
+  /* top bar: a solid strip across the top holding the three level tabs on one
+     line; kept above the overlay (z-index 6) so you can always switch levels,
+     even from the info / countdown / finish screens. */
+  #levels { position: absolute; top: 0; left: 0; width: 100%; z-index: 7;
+        display: flex; justify-content: center; align-items: center; gap: 8px;
+        padding: 8px 12px; background: #1b1e24;
+        border-bottom: 1px solid rgba(255,255,255,.10); box-shadow: 0 2px 12px rgba(0,0,0,.4); }
+  #levels button { pointer-events: auto; font: inherit; font-size: 12.5px; font-weight: 600;
+        color: var(--fg); background: transparent; border: 1px solid rgba(255,255,255,.16);
+        border-radius: 8px; padding: 7px 14px; cursor: pointer;
+        display: flex; align-items: center; gap: 7px; white-space: nowrap;
+        transition: border-color .12s, background .12s, color .12s; }
+  #levels button:hover { border-color: rgba(255,255,255,.45); color: #fff; }
+  #levels button .lv { color: var(--muted); font-weight: 700; }
+  #levels button.active .lv { color: #fff; }
+  #levels button .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; opacity: .5; }
+  #levels button.active { background: rgba(255,255,255,.10); color: #fff; }
+  #levels button.active .dot { opacity: 1; }
+  #levels button[data-level="CPG"] .dot { background: #8ace00; }
+  #levels button[data-level="tripod"] .dot { background: #4d66ff; }
+  #levels button[data-level="single"] .dot { background: #ff5a5a; }
+  #levels button[data-level="CPG"].active { border-color: #8ace00; box-shadow: 0 0 0 1px rgba(138,206,0,.55); }
+  #levels button[data-level="tripod"].active { border-color: #4d66ff; box-shadow: 0 0 0 1px rgba(77,102,255,.55); }
+  #levels button[data-level="single"].active { border-color: #ff5a5a; box-shadow: 0 0 0 1px rgba(255,90,90,.55); }
+
+  /* center overlay: loading / instructions / countdown / finish */
+  #overlay { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 24px;
+        background: rgba(16,18,23,.82); backdrop-filter: blur(3px); }
+  #overlay.hidden { display: none; }
+  #overlay h1 { font-size: 26px; margin: 0; }
+  #overlay p { margin: 0; color: var(--muted); font-size: 14px; max-width: 520px; line-height: 1.55; }
+  #overlay .big { font-size: 88px; font-weight: 800; line-height: 1; }
+  #overlay .err { color: #ff8a80; max-width: 480px; }
+  #overlay button { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+        color: #14161b; background: var(--accent); border: 0; border-radius: 8px; padding: 11px 26px; }
+  #overlay .lb { font-size: 13px; color: var(--fg); font-variant-numeric: tabular-nums;
+        background: rgba(255,255,255,.06); border-radius: 8px; padding: 10px 16px; min-width: 220px; }
+  #overlay .lb .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  #overlay .lb .row.you { color: var(--accent); font-weight: 700; }
+  .spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,.25);
+        border-top-color: #fff; border-radius: 50%; animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "../shared/vendor/three/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <div id="levels">
+    <button data-level="CPG" class="active"><span class="dot"></span><span class="lv">Level 1:</span> CPG control</button>
+    <button data-level="tripod"><span class="dot"></span><span class="lv">Level 2:</span> Tripod gait</button>
+    <button data-level="single"><span class="dot"></span><span class="lv">Level 3:</span> Individual legs</button>
+  </div>
+  <div id="hud">
+    <div id="level"><span class="chip"></span><span id="level-name">CPG control</span></div>
+    <div id="timer">0.00</div>
+    <div id="best">Best: —</div>
+  </div>
+  <div id="stats"></div>
+  <div id="help"></div>
+  <div id="overlay">
+    <div class="spinner"></div>
+    <p id="overlay-msg">Loading MuJoCo &amp; the fly…</p>
+  </div>
+</div>
+<script type="module" src="./game.js"></script>
+</body>
+</html>

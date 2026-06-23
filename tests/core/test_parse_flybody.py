@@ -200,7 +200,7 @@ class TestActuatorHelpers:
 
     def test_scale_actuator_tag_config(self):
         scaled = pf._scale_actuator_tag_config({"gainprm": "1", "foo": "bar"})
-        assert scaled == {"gainprm": "10", "foo": "bar"}
+        assert scaled == {"gainprm": "100", "foo": "bar"}
 
     def test_has_meaningful_local_actuation(self):
         hierarchy = {

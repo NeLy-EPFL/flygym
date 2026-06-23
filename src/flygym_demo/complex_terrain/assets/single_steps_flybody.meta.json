@@ -1,0 +1,71 @@
+{
+  "description": "Per-position single-step trajectories for the FlyBody anatomy, extracted from a tethered FlyBody replay of 'ball_flybody_clip.npz'. See flygym_demo.complex_terrain.preprogrammed.FlyBodyPreprogrammedSteps and flygym_demo.complex_terrain.flybody_step_extraction for the extraction pipeline and conventions.",
+  "source_clip": "ball_flybody_clip.npz",
+  "leg_positions": [
+    "F",
+    "M",
+    "H"
+  ],
+  "dof_order": [
+    [
+      "thorax",
+      "coxa",
+      "pitch"
+    ],
+    [
+      "thorax",
+      "coxa",
+      "roll"
+    ],
+    [
+      "thorax",
+      "coxa",
+      "yaw"
+    ],
+    [
+      "coxa",
+      "trochanterfemur",
+      "pitch"
+    ],
+    [
+      "coxa",
+      "trochanterfemur",
+      "roll"
+    ],
+    [
+      "trochanterfemur",
+      "tibia",
+      "pitch"
+    ],
+    [
+      "tibia",
+      "tarsus1",
+      "pitch"
+    ]
+  ],
+  "n_phase_bins": 200,
+  "cycle_lengths_samples": {
+    "F": 1627,
+    "M": 1626,
+    "H": 1500
+  },
+  "sim_timestep": 0.0001,
+  "warmup_sec": 0.1,
+  "picks": {
+    "F": {
+      "side": "r",
+      "start": 7736,
+      "end": 9363
+    },
+    "M": {
+      "side": "l",
+      "start": 3421,
+      "end": 5047
+    },
+    "H": {
+      "side": "l",
+      "start": 4558,
+      "end": 6058
+    }
+  }
+}

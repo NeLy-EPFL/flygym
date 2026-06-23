@@ -1,8 +1,10 @@
 """Integration tests for flygym.compose (NeuroMechFly, World)."""
 
 import warnings
+import os
 
 import pytest
+import numpy as np
 import mujoco as mj
 
 from flygym.anatomy import (
@@ -263,7 +265,7 @@ class TestFlatGroundWorld:
 
     def test_custom_name(self):
         world = FlatGroundWorld(name="myworld")
-        assert world.mjcf_root.model == "myworld"
+        assert world.mjcf_root.modelname == "myworld"
 
     def test_add_fly_registers_in_lookup(self, flat_world_with_fly, fly_with_joints):
         assert fly_with_joints.name in flat_world_with_fly.fly_lookup
@@ -316,7 +318,12 @@ class TestFlatGroundWorld:
         assert len(sensors) == 6  # one per leg
 
     def test_world_dof_neutral_states_set(self, flat_world_with_fly):
-        assert len(flat_world_with_fly.world_dof_neutral_states) > 0
+        # world_dof_neutral_states is a set of the world-level DoF (joint) names;
+        # a free-jointed fly contributes its free joint, named after the fly.
+        dof_names = flat_world_with_fly.world_dof_neutral_states
+        assert isinstance(dof_names, set)
+        fly_name = list(flat_world_with_fly.fly_lookup.keys())[0]
+        assert fly_name in dof_names
 
     def test_accepts_flybody_contact_preset(self):
         fly = FlyBody(name="flybody_contact_test")
@@ -427,10 +434,8 @@ class TestFlyAddTrackingCamera:
         mj_model, _ = world.compile()
         assert mj_model.ncam == 1
 
-    def test_camera_full_identifier_after_world_attachment(
-        self, skeleton_ypr, neutral_pose
-    ):
-        """After attaching to a world, the camera's full_identifier gets the fly's prefix."""
+    def test_camera_name_after_world_attachment(self, skeleton_ypr, neutral_pose):
+        """After attaching to a world, the camera's .name includes the fly's prefix."""
         fly = NeuroMechFly(name="cam_fly6")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         fly.add_tracking_camera(name="trackcam")
@@ -442,10 +447,243 @@ class TestFlyAddTrackingCamera:
         )
         mj_model, _ = world.compile()
         cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
-        cam_id = mj.mj_name2id(
-            mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
-        )
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
         assert cam_id >= 0, "Camera should be findable in the compiled model"
+
+    def test_camera_parented_to_root_body(self, skeleton_ypr, neutral_pose):
+        """The tracking camera must be a child of the fly's root body so that
+        ``track`` mode follows the fly. A camera in the world body would not move
+        (the world never moves), which is the bug this guards against. A freely
+        spawned fly keeps its root body dynamic (not fused into the world), so the
+        camera stays parented to it."""
+        fly = NeuroMechFly(name="cam_fly7")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world3")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        parent_body = mj.mj_id2name(
+            mj_model, mj.mjtObj.mjOBJ_BODY, mj_model.cam_bodyid[cam_id]
+        )
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_body_id, (
+            f"Tracking camera parent is '{parent_body}', expected the root body "
+            f"'{fly.name}/{fly.root_segment.name}'."
+        )
+
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
+    )
+    def test_camera_follows_moving_body(self, skeleton_ypr, neutral_pose):
+        """End-to-end check that ``track`` mode keeps the camera at a constant offset
+        from the fly as the fly translates."""
+        fly = NeuroMechFly(name="cam_fly8")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world4")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, mj_data = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+
+        renderer = mj.Renderer(mj_model, 64, 64)
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_before = np.array(renderer.scene.camera[0].pos)
+        body_pos_before = mj_data.xpos[root_body_id].copy()
+
+        # Translate the fly via its free joint (qpos layout: x, y, z, qw, qx, qy, qz).
+        free_adr = mj_model.jnt_qposadr[
+            mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_JOINT, fly.name)
+        ]
+        mj_data.qpos[free_adr + 1] += 5.0  # move +5 mm in y
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_after = np.array(renderer.scene.camera[0].pos)
+        body_pos_after = mj_data.xpos[root_body_id]
+        renderer.close()
+
+        body_shift = body_pos_after - body_pos_before
+        cam_shift = cam_pos_after - cam_pos_before
+        np.testing.assert_allclose(cam_shift, body_shift, atol=1e-3)
+
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
+    )
+    def test_pos_offset_is_relative_to_root_segment(self, skeleton_ypr, neutral_pose):
+        """``pos_offset`` is expressed in the root segment's body frame: the camera
+        sits at ``root_body_pos + pos_offset``. With an upright spawn the root frame is
+        world-aligned, so the world-space camera-to-root offset equals ``pos_offset``.
+        """
+        fly = NeuroMechFly(name="cam_off_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        offset = (1.0, 2.0, 3.0)
+        fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+        world = FlatGroundWorld(name="cam_off_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, mj_data = world.compile()
+        mj.mj_forward(mj_model, mj_data)
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        root_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        np.testing.assert_allclose(
+            mj_data.cam_xpos[cam_id] - mj_data.xpos[root_id], offset, atol=1e-4
+        )
+
+    def test_pos_offset_invariant_across_compile_contexts(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """The same ``pos_offset`` places the camera identically relative to the fly
+        whether the root is free-jointed (``FlatGroundWorld``), rigidly held
+        (``TetheredWorld``), or the fly is compiled on its own. This guards the
+        fusestatic/tracking-camera handling that keeps the offset frame consistent."""
+        offset = (1.0, 2.0, 3.0)
+
+        def cam_offset_relative_to_root(mj_model, mj_data, cam_name, root_name):
+            mj.mj_forward(mj_model, mj_data)
+            cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_name)
+            root_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, root_name)
+            assert cam_id >= 0 and root_id >= 0
+            return mj_data.cam_xpos[cam_id] - mj_data.xpos[root_id]
+
+        # Standalone fly (no world, no free joint).
+        fly = NeuroMechFly(name="inv_fly_standalone")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+        mj_model, mj_data = fly.compile()
+        offsets = [
+            cam_offset_relative_to_root(
+                mj_model,
+                mj_data,
+                fly.cameraname_to_mjcfcamera["trackcam"].name,
+                fly.root_segment.name,
+            )
+        ]
+
+        # Attached to each world type.
+        for i, world_cls in enumerate((FlatGroundWorld, TetheredWorld)):
+            fly = NeuroMechFly(name=f"inv_fly_{i}")
+            fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+            fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+            world = world_cls(name=f"inv_world_{i}")
+            world.add_fly(
+                fly,
+                spawn_position=[0, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
+            mj_model, mj_data = world.compile()
+            offsets.append(
+                cam_offset_relative_to_root(
+                    mj_model,
+                    mj_data,
+                    fly.cameraname_to_mjcfcamera["trackcam"].name,
+                    f"{fly.name}/{fly.root_segment.name}",
+                )
+            )
+
+        for other in offsets[1:]:
+            np.testing.assert_allclose(other, offsets[0], atol=1e-4)
+        np.testing.assert_allclose(offsets[0], offset, atol=1e-4)
+
+    def test_standalone_fly_compile_keeps_root_segment(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """A fly compiled on its own (e.g. for ``preview_model``) keeps its root
+        segment instead of fusing it into the worldbody, so the tracking camera is
+        parented to the root rather than silently falling back to the world body."""
+        fly = NeuroMechFly(name="standalone_cam_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        mj_model, _ = fly.compile()
+        root_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, fly.root_segment.name)
+        assert root_id >= 0, "Root segment must survive standalone compilation"
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_id, (
+            "Standalone tracking camera must be parented to the root segment, "
+            "not the world body."
+        )
+
+    def test_tethered_world_keeps_root_segment_as_mocap(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """In a ``TetheredWorld`` the root has no free joint and would be fused into
+        the worldbody. It is kept as a mocap body so the tracking camera still follows
+        it instead of tracking the (stationary) worldbody."""
+        fly = NeuroMechFly(name="teth_keep_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="teth_keep_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        root_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        assert root_id >= 0, "Root segment must survive (not be fused) in TetheredWorld"
+        assert mj_model.body_mocapid[root_id] >= 0, (
+            "Root segment should be a mocap body"
+        )
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_id
+
+    def test_tethered_world_still_fuses_other_static_bodies(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """Only the root segment is exempted from fusing. Other jointless segments
+        (e.g. the head in a legs-only model) are still fused, preserving the
+        ``fusestatic`` performance optimization rather than disabling it wholesale."""
+        fly = NeuroMechFly(name="teth_fuse_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="teth_fuse_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        head_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/c_head")
+        assert head_id == -1, (
+            "A jointless non-root segment (head) should be fused away, confirming "
+            "fusestatic is still active for everything but the root segment."
+        )
 
 
 # ==============================================================================
@@ -462,7 +700,7 @@ class TestFlyColorize:
         fly = NeuroMechFly(name="color_fly2")
         fly.colorize()
         # After colorize, there should be materials in the MJCF asset section
-        materials = fly.mjcf_root.find_all("material")
+        materials = fly.mjcf_root.materials
         assert len(materials) > 0
 
     def test_colorize_compiles(self):
@@ -470,6 +708,41 @@ class TestFlyColorize:
         fly.colorize()
         mj_model, _ = fly.compile()
         assert mj_model is not None
+
+
+# ==============================================================================
+# save_xml_with_assets
+# ==============================================================================
+
+
+class TestSaveXmlWithAssets:
+    def test_exports_xml_and_assets(self, tmp_path):
+        fly = NeuroMechFly(name="export_fly")
+        fly.save_xml_with_assets(tmp_path)
+        assert list(tmp_path.glob("*.xml")), "expected an exported XML file"
+        assert list(tmp_path.glob("*.stl")), "expected exported mesh assets"
+
+    def test_exported_xml_is_self_contained(self, tmp_path, skeleton_ypr, neutral_pose):
+        import mujoco as mj
+
+        fly = NeuroMechFly(name="export_fly2")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        xml_path = next(tmp_path.glob("*.xml"))
+        # Loadable on its own with assets resolved relative to the XML directory.
+        model = mj.MjModel.from_xml_path(str(xml_path))
+        assert model.nbody > 1
+
+    def test_save_does_not_break_later_compile(
+        self, tmp_path, skeleton_ypr, neutral_pose
+    ):
+        # save_xml_with_assets must not mutate the live spec (it previously
+        # relativized mesh paths in place, breaking subsequent compile()).
+        fly = NeuroMechFly(name="export_fly3")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        mj_model, _ = fly.compile()
+        assert mj_model.nbody > 1
 
 
 # ==============================================================================

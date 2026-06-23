@@ -1,4 +1,4 @@
-"""Smoke tests for flygym_demo.complex_terrain locomotion helpers."""
+"""End-to-end tests for flygym_demo.complex_terrain locomotion helpers."""
 
 import numpy as np
 import pytest

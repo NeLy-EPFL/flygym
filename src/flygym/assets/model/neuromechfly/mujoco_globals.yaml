@@ -21,8 +21,8 @@ option:
 # default:
 #   mesh:
 #     scale: [1000, 1000, 1000]
-statistic: 
-  extent: '5' # camera can view from closer
+statistic:
+  extent: 1  # mm; pins scale so znear/zfar below are directly in mm
 
 visual:
   headlight:
@@ -34,8 +34,8 @@ visual:
     stiffnessrot: 5e6
     force: 1e-5
     torque: 2e-4
-    znear: 1e-4
-    zfar: 3.0
+    znear: 5e-4  # 5e-4 mm; allows close-up camera views near fly body
+    zfar: 250.0  # 250 mm
   global:
     offwidth: 2048
     offheight: 2048

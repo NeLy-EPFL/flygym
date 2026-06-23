@@ -16,12 +16,12 @@ For more information, see our [NeuroMechFly v2 paper](https://www.nature.com/art
 
 ## Interact with NeuroMechFly
 
-<iframe src="../wasm_viewer/viewer.html" title="Interactive NeuroMechFly viewer"
+<iframe src="../wasm/viewer/viewer.html" title="Interactive NeuroMechFly viewer"
         style="width:100%;height:640px;border:1px solid var(--md-default-fg-color--lightest);border-radius:8px;">
 </iframe>
 
 <div style="text-align:center;margin:1.2em 0;">
-<a href="../wasm_viewer/viewer.html" target="_blank" rel="noopener"
+<a href="../wasm/viewer/viewer.html" target="_blank" rel="noopener"
    style="display:inline-block;padding:0.75em 2.2em;font-size:1.1em;font-weight:700;background:var(--md-primary-fg-color);color:var(--md-primary-bg-color);border-radius:6px;text-decoration:none;">
 Open viewer in full-screen ↗</a>
 </div>
@@ -60,9 +60,9 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
 
 ## Getting Started
 
-!!! tip "March 2026 Update"
+!!! tip "April 2026 Update"
 
-    We introduced a new FlyGym 2.x.x API in March 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
+    We introduced a new FlyGym 2.x.x API in April 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
 
     - **~10x speed-up** for CPU-based simulations (~2x real-time throughput)
     - **~300x speed-up** for GPU-based simulation via Warp/MJWarp (~60x real-time throughput)

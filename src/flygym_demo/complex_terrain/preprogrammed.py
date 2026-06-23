@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from importlib.resources import files
+import io
 import pickle
 
 import numpy as np
@@ -218,9 +219,11 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
        end-of-cycle closure for a smooth loop); estimate swing fraction as the
        fraction of timesteps where the body-frame anteroposterior velocity is
        positive (``np.diff(claw_ap) > 0``).
-    5. Keep the picked side's trajectory verbatim and fill the opposite side by
-       mirroring it across the sagittal plane, giving one canonical
-       ``(7, n_phase_bins)`` trajectory and one scalar swing fraction per leg.
+    5. Store one canonical ``(7, n_phase_bins)`` trajectory and one scalar swing
+       fraction per leg *position* (F/M/H) -- not per leg. Left and right reuse
+       the same trajectory verbatim at load time (no sign flip -- the FlyBody
+       leg joint axes are symmetric across the sagittal plane, so identical
+       joint angles already produce a mirror-symmetric step).
 
     Conventions
     -----------
@@ -230,9 +233,13 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
     ``_DOFS_PER_LEG`` (the parent class layout): no DOF reshuffling is
     needed compared to ``PreprogrammedSteps``.
 
-    The pickled asset embeds the full provenance under ``meta["description"]``
-    and ``meta["source_clip"]``; inspect it with ``pickle.load`` if you need to
-    audit a specific build.
+    Asset format
+    ------------
+    The asset is ``assets/single_steps_flybody.npz`` -- a pickle-free,
+    ``savez_compressed`` archive holding two numeric arrays ordered by leg
+    position: ``joint_angles`` ``(3, 7, n_phase_bins)`` and ``swing_fractions``
+    ``(3,)``. Human-readable provenance (source clip, picks, DOF order, ...)
+    lives in the sibling ``single_steps_flybody.meta.json``.
     """
 
     # Nominal step duration kept around so `step_cycle_frequency_hz` stays
@@ -254,20 +261,29 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
     ) -> None:
         if path is None:
             path = (
-                files("flygym_demo.complex_terrain") / "assets/single_steps_flybody.pkl"
+                files("flygym_demo.complex_terrain") / "assets/single_steps_flybody.npz"
             )
+        # The asset is a pickle-free ``.npz`` holding two numeric arrays ordered
+        # by leg position (F/M/H): ``joint_angles`` (3, 7, n_phase_bins) and
+        # ``swing_fractions`` (3,). Provenance lives in the sibling .meta.json.
         if hasattr(path, "open"):
             with path.open("rb") as f:
-                data = pickle.load(f)
+                src = io.BytesIO(f.read())
         else:
-            with open(path, "rb") as f:
-                data = pickle.load(f)
+            src = path
+        with np.load(src, allow_pickle=False) as npz:
+            pos_joint_angles = npz["joint_angles"]  # (3, 7, n_phase_bins)
+            pos_swing_fractions = npz["swing_fractions"]  # (3,)
 
-        joint_angles = data["joint_angles"]  # dict: leg -> (7, n_phase_bins)
-        swing_fractions = data["swing_fractions"]
-        self._length = int(data["meta"]["n_phase_bins"])
+        self._length = pos_joint_angles.shape[-1]
         self.duration = self._NOMINAL_CYCLE_DURATION_S
         self._timestep = self.duration / self._length
+
+        # Map each of the six legs to its F/M/H position (index 0/1/2). Left and
+        # right reuse the same trajectory verbatim: the FlyBody leg joint axes
+        # are symmetric across the sagittal plane, so identical joint angles
+        # already produce a mirror-symmetric step (no roll/yaw sign flip).
+        _pos_index = {"f": 0, "m": 1, "h": 2}
 
         # CubicSpline with periodic BC requires the last sample to coincide
         # with the first. The asset stores cycles with `endpoint=False`, so
@@ -276,7 +292,7 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
         phase_grid = np.concatenate([phase_inner, [2 * np.pi]])
         self._psi_funcs = {}
         for leg in self.legs:
-            angles = joint_angles[leg]  # (7, n_phase_bins)
+            angles = pos_joint_angles[_pos_index[leg[1]]]  # (7, n_phase_bins)
             angles_periodic = np.concatenate([angles, angles[:, :1]], axis=1)
             self._psi_funcs[leg] = CubicSpline(
                 phase_grid, angles_periodic, axis=1, bc_type="periodic"
@@ -287,10 +303,13 @@ class FlyBodyPreprogrammedSteps(PreprogrammedSteps):
             for leg, theta_neutral in zip(self.legs, neutral_pose_phases)
         }
 
-        # Phase 0 is AEP, so the cycle is laid out as
+        # Phase 0 is PEP, so the cycle is laid out as
         #   [0, swing_end]  -> swing  (leg in air)
         #   [swing_end, 2π] -> stance (leg planted)
         self.swing_period = {
-            leg: np.array([0.0, float(swing_fractions[leg]) * 2 * np.pi], dtype=float)
+            leg: np.array(
+                [0.0, float(pos_swing_fractions[_pos_index[leg[1]]]) * 2 * np.pi],
+                dtype=float,
+            )
             for leg in self.legs
         }

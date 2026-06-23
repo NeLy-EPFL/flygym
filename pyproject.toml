@@ -1,8 +1,8 @@
 [project]
 name = "flygym"
-version = "2.0.3"
+version = "2.1.0"
 description = "NeuroMechFly, a framework for simulating embodied sensorimotor control in adult Drosophila."
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12,<3.15"
 authors = [
     { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
     { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch" },
@@ -21,9 +21,8 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "mujoco>=3.6,<3.7",
+    "mujoco>=3.9,<3.10",
     "numpy>=2.0,<3.0",
-    "dm_control>=1.0.38,<1.0.39",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
     "imageio>=2.37,<3.0",
@@ -34,12 +33,13 @@ dependencies = [
     "pillow>=11,<13",
     "matplotlib>=3.10,<4.0",
     "numba>=0.65.1",
+    "scipy>=1.15,<2.0",
 ]
 
 [project.optional-dependencies]
 warp = [
-    "warp-lang>=1.12,<1.13",
-    "mujoco_warp>=3.6,<3.7",
+    "warp-lang>=1.14,<1.15",
+    "mujoco_warp>=3.9,<3.10",
 ]
 imitation = [
     "gymnasium>=1.0,<2.0",
@@ -60,8 +60,8 @@ dev = [
     "mkdocs-material>=9.7,<10.0",
     "mkdocstrings[python]>=1.0.0,<2",
     "mkdocs-gen-files==0.6.0",
-    "mkdocs-literate-nav==0.6.2",
-    "mkdocs-section-index==0.3.0",
+    "mkdocs-literate-nav==0.6.3",
+    "mkdocs-section-index==0.3.12",
     "mkdocs-jupyter==0.26.1",
     # Mesh simplification
     "trimesh>=4.0,<5.0",
@@ -73,11 +73,17 @@ dev = [
     # Git pre-commit filter: strips output from ipynb notebooks
     "nbstripout==0.9.1",
     "rasterio>=1.5.0",
+    # Profiling (see scripts/replay_behavior_{cpu,gpu}.py --profile)
+    "py-spy>=0.4,<0.5",  # CPU sampling profiler -> speedscope
+    "nvtx>=0.2,<0.3",  # NVTX ranges for the GPU script's Nsight timeline
 ]
 examples = [
     "ipykernel>=7.1.0",
     "ipython>=9.10,<10.0",
     "pandas>=3.0,<4.0",
+    "tqdm>=4.67,<5.0",
+]
+rl = [
     "stable_baselines3>=2.7,<3.0",
     "tensorboard>=2.20,<3.0",
     # tensorboard still imports pkg_resources, which setuptools removed in 81.
@@ -97,6 +103,14 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mode=importlib"
+# Test selection is driven by markers, not by which directory a test lives in,
+# so a test can declare an optional-dependency requirement wherever it lives and
+# be excluded with e.g. `pytest -m "not warp"`.
+markers = [
+    "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
+    "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
+    "network: talks to the live S3 asset bucket (skips itself if unreachable)",
+]
 
 [tool.coverage.run]
 source = ["flygym", "flygym_demo"]
@@ -109,11 +123,17 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-flygym = ["assets/**"]
 flygym_demo = [
     "spotlight_data/assets/**",
     "complex_terrain/assets/**",
     "muscle_imitation/assets/**",
+    "ball_flybody_data/assets/**",
+]
+
+[tool.setuptools.exclude-package-data]
+flygym = [
+    "assets/model/neuromechfly/meshes/fullsize/*",
+    "assets/model/flybody/meshes/**/*",
 ]
 
 [tool.ruff.lint]

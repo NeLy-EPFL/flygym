@@ -36,6 +36,7 @@ __all__ = [
     "FlyBodyRotationAxis",
     "WingFlyBodyRotationAxis",
     "FlyBodyAxesSet",
+    "WingFlyBodyAxesSet",
     "FlyBodyAxisOrder",
     "WingFlyBodyAxisOrder",
     "FlyBodyBodySegment",
@@ -44,6 +45,7 @@ __all__ = [
     "FlyBodyContactBodiesPreset",
     "FlyBodySkeleton",
     "FlyBodyJointDOF",
+    "FlyBodyAnatomicalJoint",
 ]
 
 
@@ -385,7 +387,7 @@ class FlyBodyActuatedDOFPreset(BaseActuatedDOFPreset):
 
 
 class FlyBodyContactBodiesPreset(BaseContactBodiesPreset):
-    """Presets for flybody body segments that should be able to collide with the ground."""
+    """Presets for which flybody segments can collide with the ground."""
 
     ALL = "all"
     LEGS_THORAX_ABDOMEN_HEAD = "legs_thorax_abdomen_head"

@@ -1,7 +1,7 @@
 * [Home](index.md)
 * [Installation](installation.md)
 * [FlyGym v1 vs. v2 API](migration.md)
-* Tutorials
+* [Tutorials](tutorials/tutorials.md)
     * 1&#46; Composing models and scenes
         * [1a. Basic model composition](tutorials/1a_basic_model_composition.ipynb)
         * [1b. Advanced model composition](tutorials/1b_advanced_model_composition.ipynb)
@@ -16,6 +16,7 @@
         * [5a. Replaying experimental recordings](tutorials/5a_replaying_experimental_flybody_onball.ipynb)
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
     * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
+    * [7. Performance profiling](tutorials/7_performance_profiling.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
@@ -48,7 +49,7 @@
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Live & Outreach](outreach.md)
-* [Changelog](https://github.com/NeLy-EPFL/flygym/blob/main/CHANGELOG.md)
-* [Contributing to FlyGym](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTING.md)
-* [Contributors](https://github.com/NeLy-EPFL/flygym/blob/main/CONTRIBUTORS.md)
+* [Changelog](changelog.md)
+* [Contributing to FlyGym](contributing.md)
+* [Contributors](contributors.md)
 * [Citing NeuroMechFly](citation.md)
