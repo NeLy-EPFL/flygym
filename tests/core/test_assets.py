@@ -227,7 +227,9 @@ def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
 
 
 @pytest.mark.network
-@pytest.mark.parametrize("mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys())
+@pytest.mark.parametrize(
+    "mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys()
+)
 def test_real_s3_roundtrip(mesh_dir):
     """Opt-in: list and download a single small object from the live bucket, for
     each model's remote mesh set."""
