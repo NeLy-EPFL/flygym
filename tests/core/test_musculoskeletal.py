@@ -1,6 +1,8 @@
 """Tests for the musculoskeletal (FlyMimic) body-model wrappers."""
 
 import platform
+import shutil
+from pathlib import Path
 
 import mujoco as mj
 import numpy as np
@@ -17,6 +19,7 @@ from flygym.compose import (
     build_musculoskeletal_simulation,
     check_mjwarp_compatibility,
 )
+from flygym.compose.fly import musculoskeletal
 from flygym.simulation import Simulation
 
 
@@ -90,6 +93,61 @@ def test_add_vision_attaches_eye_cameras():
     added = fly.add_vision()
     assert set(added) == {"LEye", "REye"}
     assert len(fly.eyecameraname_to_mjcfcamera) == 2
+
+
+# -----------------------------------------------------------------------------
+# Mesh loading: the large body meshes live on S3, not in the package
+# -----------------------------------------------------------------------------
+
+
+def test_meshes_pulled_from_s3_cache(monkeypatch, tmp_path):
+    """The body meshes are not bundled with the package: building the default
+    model downloads them from S3 (once) and rewrites every mesh `file` to a
+    bare-filename path inside the returned cache directory."""
+    fake_cache = tmp_path / "muscle_meshes"
+    fake_cache.mkdir()
+    requested = []
+
+    def fake_lazy(rel_path):
+        requested.append(rel_path)
+        return fake_cache
+
+    monkeypatch.setattr(musculoskeletal, "lazy_load_asset_dir", fake_lazy)
+    fly = MusculoskeletalFly()
+
+    # Downloaded exactly the versioned musculoskeletal mesh set, once.
+    assert requested == [musculoskeletal.MUSCULOSKELETAL_MESH_DIR]
+    mesh_files = [Path(m.file) for m in fly.mjcf_root.meshes]
+    assert mesh_files, "expected the model to reference body meshes"
+    assert all(f.parent == fake_cache for f in mesh_files)
+    assert all(f.suffix == ".stl" for f in mesh_files)
+
+
+def test_local_meshes_short_circuit_download(monkeypatch, tmp_path):
+    """A custom XML that ships its meshes alongside it (under `meshdir`) must be
+    used as-is, without any S3 download."""
+    # Discover which meshes the bundled XML references. (A raw MjSpec parse does
+    # not load mesh data or hit the network; keep the spec alive while reading
+    # `.file`, since the mesh views borrow from it.)
+    probe_spec = mj.MjSpec.from_file(str(DEFAULT_MUSCULOSKELETAL_XML))
+    mesh_names = [Path(m.file).name for m in probe_spec.meshes]
+
+    # Stage a self-contained copy: the XML plus (empty placeholder) mesh files at
+    # the relative path it references. MjSpec parsing only needs the files to
+    # exist; mesh geometry is read at compile time, which this test does not do.
+    model_dir = tmp_path / "model"
+    mesh_dir = model_dir / "meshes" / "stl"
+    mesh_dir.mkdir(parents=True)
+    shutil.copy(DEFAULT_MUSCULOSKELETAL_XML, model_dir / "model.xml")
+    for name in mesh_names:
+        (mesh_dir / name).write_bytes(b"")
+
+    def boom(*args, **kwargs):
+        raise AssertionError("local meshes are present -> must not download")
+
+    monkeypatch.setattr(musculoskeletal, "lazy_load_asset_dir", boom)
+    fly = MusculoskeletalFly(model_dir / "model.xml")
+    assert all(Path(m.file).parent == mesh_dir for m in fly.mjcf_root.meshes)
 
 
 # -----------------------------------------------------------------------------

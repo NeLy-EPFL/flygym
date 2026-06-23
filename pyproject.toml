@@ -134,6 +134,7 @@ flygym_demo = [
 flygym = [
     "assets/model/neuromechfly/meshes/fullsize/*",
     "assets/model/flybody/meshes/**/*",
+    "assets/model/musculoskeletal/meshes/**/*",
 ]
 
 [tool.ruff.lint]
