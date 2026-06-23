@@ -124,7 +124,7 @@ Reproduce:
 
 ```bash
 # quick check: random-policy rollout (no training dependencies)
-uv run python -m flygym_demo.muscle_imitation --no-train
+uv run python -m flygym_demo.muscle_imitation --no-train --video-path random.mp4
 
 # train a policy with logging + checkpointing, then record a video of it
 uv run python -m flygym_demo.muscle_imitation \
