@@ -104,7 +104,27 @@
 
 === "Online using Google Colab"
 
-    Forthcoming.
+    You can run the tutorials in [Google Colab](https://colab.research.google.com/) without installing anything locally. Most tutorial notebook has an "Open in Colab" badge at the top:
+
+    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/colab/tutorials/1a_basic_model_composition.ipynb)
+
+    Click the badge to open the notebook in Colab, then run the first code cell (titled *Google Colab setup*). It installs FlyGym from GitHub (matching the version of the notebook) and configures headless (EGL) rendering for you:
+
+    ```python
+    import os
+    import sys
+
+    if "google.colab" in sys.modules:
+        os.environ["MUJOCO_GL"] = "egl"
+        os.environ["PYOPENGL_PLATFORM"] = "egl"
+        %pip install -q "flygym[examples] @ git+https://github.com/NeLy-EPFL/flygym.git@colab"
+    ```
+
+    After the setup cell finishes, run the rest of the notebook as usual. FlyGym downloads the fly meshes from S3 on first use, so no large files need to be uploaded.
+
+    !!! tip "GPU-accelerated tutorial"
+
+        The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) tutorial uses the `flygym.warp` backend, which requires a GPU. Before running it, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Its setup cell installs the `warp` extra automatically.
 
 !!! warning "Special notes for rendering on machines without a display"
 
