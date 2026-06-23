@@ -1,10 +1,10 @@
-"""MkDocs hooks: ensure vendor and generated assets are present before build/serve.
+"""ProperDocs hooks: ensure vendor and generated assets are present before build/serve.
 
 The WASM apps (interactive viewer + game) live in the top-level ``wasm/`` tree,
-*outside* the MkDocs ``docs/`` dir, so they are not picked up automatically.
+*outside* the ProperDocs ``docs/`` dir, so they are not picked up automatically.
 ``on_post_build`` copies ``wasm/`` into the built site (as ``<site>/wasm/``) so
 the iframes in the docs (e.g. ``../wasm/viewer/viewer.html``) resolve, and
-``on_serve`` watches the tree so edits trigger a rebuild during ``mkdocs serve``.
+``on_serve`` watches the tree so edits trigger a rebuild during ``properdocs serve``.
 """
 
 import io
@@ -39,11 +39,11 @@ def on_post_build(config, **kwargs):
     shutil.copytree(
         _WASM_DIR, dest, ignore=shutil.ignore_patterns(".gitignore", "README.md")
     )
-    print(f"mkdocs: copied wasm/ -> {dest}")
+    print(f"properdocs: copied wasm/ -> {dest}")
 
 
 def on_serve(server, config, builder, **kwargs):
-    """Rebuild when anything in wasm/ changes during `mkdocs serve`."""
+    """Rebuild when anything in wasm/ changes during `properdocs serve`."""
     server.watch(str(_WASM_DIR))
     return server
 
@@ -54,7 +54,7 @@ def _ensure_vendor():
     ).exists():
         return
 
-    print("mkdocs: downloading WASM viewer vendor files...")
+    print("properdocs: downloading WASM viewer vendor files...")
     try:
         _fetch_npm_files(
             f"https://registry.npmjs.org/@mujoco/mujoco/-/mujoco-{_MUJOCO_VERSION}.tgz",
@@ -76,12 +76,12 @@ def _ensure_vendor():
         (three_dir / "VERSION.txt").write_text(f"three@{_THREE_VERSION}\n")
     except Exception as exc:
         raise SystemExit(
-            f"mkdocs: failed to download vendor files: {exc}\n"
+            f"properdocs: failed to download vendor files: {exc}\n"
             f"  @mujoco/mujoco@{_MUJOCO_VERSION} and three@{_THREE_VERSION} are required.\n"
             f"  Run: npm install @mujoco/mujoco@{_MUJOCO_VERSION} three@{_THREE_VERSION}\n"
             f"  and copy the files into {_VENDOR_DIR}/"
         ) from exc
-    print("mkdocs: vendor files ready.")
+    print("properdocs: vendor files ready.")
 
 
 def _fetch_npm_files(url, members):
@@ -110,10 +110,10 @@ def _ensure_assets():
 def _build_assets_if_missing(sentinel: Path, script: Path, label: str):
     if sentinel.exists():
         return
-    print(f"mkdocs: building WASM {label} assets (MJCF + STL meshes)...")
+    print(f"properdocs: building WASM {label} assets (MJCF + STL meshes)...")
     result = subprocess.run([sys.executable, str(script)], cwd=_REPO)
     if result.returncode != 0:
-        raise SystemExit(f"mkdocs: {script.name} failed.")
+        raise SystemExit(f"properdocs: {script.name} failed.")
 
 
 if __name__ == "__main__":

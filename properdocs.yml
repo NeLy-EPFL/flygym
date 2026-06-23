@@ -37,7 +37,7 @@ theme:
     repo: fontawesome/brands/github
 
 hooks:
-  - scripts/dev/mkdocs_hooks.py
+  - scripts/dev/properdocs_hooks.py
 
 plugins:
   - search

@@ -1,6 +1,6 @@
 # Vendored third-party binaries (MuJoCo WASM + Three.js), shared by the viewer
 # and the game. Heavy and not meant to be tracked in git; downloaded by
-# scripts/dev/mkdocs_hooks.py (see ../README.md). The deploy script
+# scripts/dev/properdocs_hooks.py (see ../README.md). The deploy script
 # (scripts/dev/push_doc_site.sh) ensures they exist before mkdocs bundles them
 # into the gh-pages site.
 /vendor/

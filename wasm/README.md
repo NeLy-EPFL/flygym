@@ -28,7 +28,7 @@ wasm/
 ## How it's wired into the docs
 
 `wasm/` lives at the repo root, *outside* MkDocs' `docs/` dir. The MkDocs hook
-[`scripts/dev/mkdocs_hooks.py`](../scripts/dev/mkdocs_hooks.py):
+[`scripts/dev/properdocs_hooks.py`](../scripts/dev/properdocs_hooks.py):
 
 1. **Downloads `shared/vendor/`** on first build/serve (`@mujoco/mujoco@3.9.0` +
    `three@0.169.0` from npm) — heavy binaries kept out of git.
@@ -38,20 +38,20 @@ wasm/
    model, also kept out of git.
 3. **Copies `wasm/` into the built site** (`on_post_build`), so the docs iframes
    (`../wasm/viewer/viewer.html`, `../wasm/game/game.html`) resolve, and
-   **watches `wasm/`** during `mkdocs serve`.
+   **watches `wasm/`** during `properdocs serve`.
 
 You can fetch the vendor files manually with:
 
 ```sh
-uv run python scripts/dev/mkdocs_hooks.py            # vendor + assets
-uv run python scripts/dev/mkdocs_hooks.py --vendor-only
+uv run python scripts/dev/properdocs_hooks.py            # vendor + assets
+uv run python scripts/dev/properdocs_hooks.py --vendor-only
 ```
 
 ## Deploying
 
 [`scripts/dev/push_doc_site.sh`](../scripts/dev/push_doc_site.sh) is the single
 entry point: it ensures `shared/vendor/` is present, offers to regenerate the
-viewer + game `assets/`, runs `mkdocs build` (whose hook bundles `wasm/` into the
+viewer + game `assets/`, runs `properdocs build` (whose hook bundles `wasm/` into the
 site), and force-pushes `site/` to the orphan `gh-pages` branch. The heavy
 vendor + generated assets therefore live only on `gh-pages`, never bloating
 `main`.

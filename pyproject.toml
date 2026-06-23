@@ -56,7 +56,11 @@ dev = [
     # PyPI publishing
     "build>=1.0,<2.0",
     "twine>=6.0,<7.0",
-    # Documentation site
+    # Documentation site — built with ProperDocs, a drop-in continuation of
+    # MkDocs 1.x (the upstream MkDocs project is moving to a backwards-
+    # incompatible 2.0). ProperDocs reads properdocs.yml and loads the
+    # mkdocs.* theme/plugin entry points below unchanged.
+    "properdocs>=1.6.7,<2",
     "mkdocs-material>=9.7,<10.0",
     "mkdocstrings[python]>=1.0.0,<2",
     "mkdocs-gen-files==0.6.0",
