@@ -104,7 +104,8 @@
 
 === "Online using Google Colab"
 
-    You can run the tutorials in [Google Colab](https://colab.research.google.com/) without installing anything locally. Most tutorial notebook has an "Open in Colab" badge at the top:
+    You can run the tutorials in [Google Colab](https://colab.research.google.com/) without installing anything locally. Every tutorial notebook (excluding text-only ones) has an "Open in Colab" badge at
+    the top:
 
     [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/colab/tutorials/1a_basic_model_composition.ipynb)
 
@@ -117,8 +118,12 @@
     if "google.colab" in sys.modules:
         os.environ["MUJOCO_GL"] = "egl"
         os.environ["PYOPENGL_PLATFORM"] = "egl"
-        %pip install -q "flygym[examples] @ git+https://github.com/NeLy-EPFL/flygym.git@colab"
+        %pip install -q tqdm "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@colab"
     ```
+
+    !!! note
+
+        On Colab we install plain `flygym` (rather than `flygym[examples]`) because the `examples` extra would upgrade `ipython`, `ipykernel`, and `pandas` over the versions Colab ships, triggering dependency-conflict warnings. The tutorials only need `tqdm` on top of base FlyGym, so we install that explicitly.
 
     After the setup cell finishes, run the rest of the notebook as usual. FlyGym downloads the fly meshes from S3 on first use, so no large files need to be uploaded.
 
