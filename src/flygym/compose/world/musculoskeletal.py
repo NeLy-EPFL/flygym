@@ -17,8 +17,6 @@ plain `flygym.Simulation` (CPU) consumes. `GPUSimulation` (``flygym.warp``) is
 also supported but requires the ``[warp]`` extra and is not the default path.
 """
 
-import dm_control.mjcf as mjcf
-
 from flygym.compose.world.base_world import BaseWorld
 from flygym.compose.fly.musculoskeletal import MusculoskeletalFly
 from flygym.utils.math import Rotation3D, Vec3
@@ -57,7 +55,8 @@ class MusculoskeletalWorld(BaseWorld):
             by contact-force queries to filter ground hits).
         legpos_to_groundcontactsensors_by_fly: Always ``None`` — FlyMimic
             ships no per-leg ground-contact sensors.
-        world_dof_neutral_states: Empty dict (no extra world DoFs).
+        world_dof_neutral_states: Empty set (no extra world DoFs; the thorax is
+            anchored, so there is no free joint to manage).
     """
 
     def __init__(self, fly: MusculoskeletalFly) -> None:
@@ -70,11 +69,12 @@ class MusculoskeletalWorld(BaseWorld):
         self._mjcf_root = fly.mjcf_root
         self._fly_lookup = {fly.name: fly}
         # Expose the floor geom so contact-force queries can filter on ground.
-        floor = fly.mjcf_root.find("geom", "floor")
+        # ``MjSpec.geom()`` returns ``None`` when no such geom exists.
+        floor = fly.mjcf_root.geom("floor")
         self.ground_geoms = [floor] if floor is not None else []
         # FlyMimic ships no per-leg ground-contact sensors.
         self.legpos_to_groundcontactsensors_by_fly = None
-        self.world_dof_neutral_states: dict[str, list[float]] = {}
+        self.world_dof_neutral_states: set[str] = set()
 
     def _attach_fly_mjcf(
         self,
@@ -83,7 +83,7 @@ class MusculoskeletalWorld(BaseWorld):
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
-    ) -> mjcf.Element:
+    ) -> set[str]:
         raise NotImplementedError(
             "MusculoskeletalWorld wraps a self-contained musculoskeletal MJCF "
             "in which the fly is already present; add_fly()/attachment is not "
