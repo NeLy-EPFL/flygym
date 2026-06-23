@@ -17,7 +17,6 @@ from flygym.anatomy import (
     AxisOrder,
     JointPreset,
     ContactBodiesPreset,
-    ALL_SEGMENT_NAMES,
     LEGS,
     LEG_LINKS,
 )
@@ -664,36 +663,13 @@ class BaseFly(BaseCompositionElement):
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
     ) -> None:
+        """Add this model's body meshes to the MJCF spec.
 
-        # Decide which folder to load mesh files from
-        mesh_dir = mesh_basedir / mesh_type.value
-        mesh_fallback_dir = mesh_basedir / MeshType.FULLSIZE.value
-        for d in [mesh_dir, mesh_fallback_dir]:
-            if not d.exists():
-                raise FileNotFoundError(f"Mesh directory not found: {d}")
-
-        for segment_name in ALL_SEGMENT_NAMES:
-            if mirror_left2right and segment_name[0] == "r":
-                mesh_to_use = f"l{segment_name[1:]}"
-                y_sign = -1
-            else:
-                mesh_to_use = segment_name
-                y_sign = 1
-
-            mesh_path = (mesh_dir / f"{mesh_to_use}.stl").resolve()
-            if not mesh_path.exists():
-                mesh_path = (mesh_fallback_dir / f"{mesh_to_use}.stl").resolve()
-                if not mesh_path.exists():
-                    raise FileNotFoundError(
-                        f"Mesh file not found for segment {segment_name}: "
-                        f"tried {mesh_dir} and {mesh_fallback_dir}."
-                    )
-
-            self.bodyseg_to_mjcfmesh[segment_name] = self.mjcf_root.add_mesh(
-                name=segment_name,
-                file=str(mesh_path),
-                scale=(self.SCALE, y_sign * self.SCALE, self.SCALE),
-            )
+        Implemented by each concrete model: mesh file naming and the choice between
+        package-bundled (simplified) and S3-hosted (fullsize) mesh directories are
+        model-specific.
+        """
+        raise NotImplementedError
 
     def _all_possible_joint_preset(self):
         return JointPreset.ALL_POSSIBLE

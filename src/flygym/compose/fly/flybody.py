@@ -30,6 +30,7 @@ from flygym.compose.fly.base_fly import (
 )
 from flygym.compose.pose import KinematicPose, KinematicPosePreset
 from flygym.utils.mjcf import add_actuator, GEOM_TYPES, JOINT_TYPES
+from flygym.utils.assets_lazy_loading import lazy_load_asset_dir
 
 __all__ = ["FlyBody"]
 
@@ -42,6 +43,9 @@ FLYBODY_ALL_GEOM_SUFFIXES_PATH = assets_dir / "model/flybody/all_geom_suffixes.y
 FLYBODY_JOINT_CONFIG_PATH = assets_dir / "model/flybody/joints.yaml"
 FLYBODY_ACTUATOR_CONFIG_PATH = assets_dir / "model/flybody/actuators.yaml"
 FLYBODY_DEFAULT_VISION_CONFIG_PATH = assets_dir / "model/flybody/vision.yaml"
+
+# Mesh path relative to the flygym_assets/ dir on the S3 bucket and local cache dir
+FLYBODY_FULLSIZE_MESH_DIR = "flybody_fullsize_meshes_20260623a"
 
 
 class FlyBody(BaseFly):
@@ -276,13 +280,15 @@ class FlyBody(BaseFly):
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType
     ) -> None:
-
-        # Decide which folder to load mesh files from
-        mesh_dir = mesh_basedir / mesh_type.value
-        mesh_fallback_dir = mesh_basedir / MeshType.FULLSIZE.value
-        for d in [mesh_dir, mesh_fallback_dir]:
-            if not d.exists():
-                raise FileNotFoundError(f"Mesh directory not found: {d}")
+        # FlyBody's high-resolution meshes are downloaded from S3 and cached on
+        # first use; only the (default) fullsize set exists for this model.
+        if mesh_type == MeshType.FULLSIZE:
+            mesh_dir = lazy_load_asset_dir(FLYBODY_FULLSIZE_MESH_DIR)
+        else:
+            raise NotImplementedError(
+                f"Mesh type {mesh_type} not supported for FlyBody; "
+                "only FULLSIZE is available."
+            )
 
         for segment_name in FLYBODY_ALL_SEGMENT_NAMES:
             if mirror_left2right and segment_name[0] == "r":
@@ -302,12 +308,9 @@ class FlyBody(BaseFly):
                     mesh_name = mesh_to_use
                 mesh_path = (mesh_dir / f"{mesh_name}.obj").resolve()
                 if not mesh_path.exists():
-                    mesh_path = (mesh_fallback_dir / f"{mesh_name}.obj").resolve()
-                    if not mesh_path.exists():
-                        raise FileNotFoundError(
-                            f"Mesh file not found for segment {segment_name}: "
-                            f"tried {mesh_dir} and {mesh_fallback_dir}."
-                        )
+                    raise FileNotFoundError(
+                        f"Mesh file not found for segment {segment_name}: {mesh_path}"
+                    )
 
                 mesh = self.mjcf_root.add_mesh(
                     name=mesh_name,
