@@ -33,6 +33,7 @@
             * [complex_terrain](api_reference/flygym/compose/world/complex_terrain.md)
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
             * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
+            * [tethered_world](api_reference/flygym/compose/world/tethered_world.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils
