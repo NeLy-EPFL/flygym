@@ -399,6 +399,152 @@ class FlyBody(BaseFly):
         self._rebuild_neutral_keyframe()
         return return_dict
 
+    def translate_generalactparams_to_specificactparams(
+        self, general_params: dict[str, Any], actuator_type: ActuatorType
+    ) -> dict[str, Any]:
+        """Full gainprm/biasprm/dynprm -> kp/kv/timeconst translation.
+
+        NOTE: As of v2.1.0 this is dead code -- nothing calls it. `add_actuators`
+        uses the simplified
+        `translate_generaljointparams_to_specificjointparams_simplified` instead.
+        It is intentionally retained as the intended complete implementation, to be
+        wired up in a future release. See #272 for details.
+        """
+
+        def _parse_param_values(raw_value: Any, name: str) -> list[float]:
+            if isinstance(raw_value, str):
+                tokens = raw_value.split()
+            elif isinstance(raw_value, (list, tuple, np.ndarray)):
+                tokens = list(raw_value)
+            else:
+                tokens = [raw_value]
+
+            try:
+                return [float(x) for x in tokens]
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Invalid {name} value {raw_value!r}. Expected a whitespace-delimited string or a numeric list."
+                ) from exc
+
+        specific_params = general_params.copy()
+        if actuator_type == ActuatorType.POSITION:
+            # Set kp and kv from gainprm, biasprm and dynprm as specified here:
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-position
+            if "gainprm" in general_params:
+                gainprm = general_params["gainprm"]
+                gainprm_parsed = _parse_param_values(gainprm, "gainprm")
+                kp = gainprm_parsed[0]
+                if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
+                    warnings.warn(
+                        "gainprm has more than one value with non-zero entries after "
+                        "the first; only the first value is used as kp for position "
+                        "actuators (per MuJoCo docs)."
+                    )
+            else:
+                kp = 1.0
+            if "biasprm" in general_params:
+                biasprm = general_params["biasprm"]
+                biasprm_parsed = _parse_param_values(biasprm, "biasprm")
+                assert (
+                    len(biasprm_parsed) >= 2
+                    and biasprm_parsed[0] == 0.0
+                    and biasprm_parsed[1] == -1 * kp
+                ), "Conflicting kp: according to MuJoCo docs biasprm is [0, -kp, -kv]"
+                if len(biasprm_parsed) > 2:
+                    kv = -biasprm_parsed[2]
+                else:
+                    kv = 0.0  # default for position according to mujoco
+                if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
+                    warnings.warn(
+                        "biasprm has non-zero entries after the third; only the first "
+                        "three values are used as biasprm for position actuators "
+                        "(per MuJoCo docs)."
+                    )
+            else:
+                kv = 0.0
+            if "dynprm" in general_params:
+                dynprm = general_params["dynprm"]
+                dynprm_parsed = _parse_param_values(dynprm, "dynprm")
+                timeconst = dynprm_parsed[0]
+                if len(dynprm_parsed) > 1 and np.sum(dynprm_parsed[1:]) != 0:
+                    warnings.warn(
+                        "dynprm has non-zero entries after the first; only the first "
+                        "value is used as timeconst for position actuators "
+                        "(per MuJoCo docs)."
+                    )
+            else:
+                timeconst = 1.0  # default for general according to mujoco
+            specific_params = {
+                "kp": kp,
+                "kv": kv,
+                "timeconst": timeconst,
+            }
+        elif actuator_type == ActuatorType.VELOCITY:
+            # Setting parameters values according to
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-velocity
+            if "gainprm" in general_params:
+                gainprm = general_params["gainprm"]
+                gainprm_parsed = _parse_param_values(gainprm, "gainprm")
+                kv = gainprm_parsed[0]
+                if len(gainprm_parsed) > 1 and np.sum(gainprm_parsed[1:]) != 0:
+                    warnings.warn(
+                        "gainprm has non-zero entries after the first; only the first "
+                        "value is used as kv for velocity actuators (per MuJoCo docs)."
+                    )
+            else:
+                kv = 1.0
+            if "biasprm" in general_params:
+                biasprm = general_params["biasprm"]
+                biasprm_parsed = _parse_param_values(biasprm, "biasprm")
+                assert (
+                    len(biasprm_parsed) >= 3
+                    and biasprm_parsed[0] == 0.0
+                    and biasprm_parsed[1] == 0.0
+                    and biasprm_parsed[2] == -1 * kv
+                ), "Conflicting kvs: according to MuJoCo docs biasprm is [0, 0, -kv]"
+                if len(biasprm_parsed) > 3 and np.sum(biasprm_parsed[3:]) != 0:
+                    warnings.warn(
+                        "biasprm has non-zero entries after the fourth; only the first "
+                        "four values are used as biasprm for velocity actuators "
+                        "(per MuJoCo docs)."
+                    )
+            if "dynprm" in general_params:
+                warnings.warn(
+                    "dynprm is not used for velocity actuators (per MuJoCo docs); "
+                    "ignoring the dynprm values from the general actuator config."
+                )
+            specific_params = {
+                "kv": kv,
+            }
+        elif actuator_type == ActuatorType.MOTOR:
+            # Setting parameters values according to
+            # https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-motor
+            if "gainprm" in general_params:
+                warnings.warn(
+                    "Ignoring default gainprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
+            if "biasprm" in general_params:
+                warnings.warn(
+                    "Ignoring default biasprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
+            if "dynprm" in general_params:
+                warnings.warn(
+                    "Ignoring default dynprm: it is not used by classical motor "
+                    "actuators (per MuJoCo docs)."
+                )
+            specific_params = {}
+        else:
+            raise ValueError(f"Unsupported actuator type: {actuator_type}")
+
+        for params in ["gainprm", "biasprm", "dynprm"]:
+            if params in specific_params:
+                # remove them from specific params
+                specific_params.pop(params)
+
+        return specific_params
+
     def translate_generaljointparams_to_specificjointparams_simplified(
         self, general_params: dict[str, Any], actuator_type: ActuatorType
     ) -> dict[str, Any]:
