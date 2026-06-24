@@ -30,44 +30,28 @@ assets/              (gitignored, generated)
   model_meta.json    timestep, neutral keyframe, per-actuator slider metadata, colors
 ```
 
-The shared `../shared/scene.js` (MuJoCo load, FS write, mesh build, per-frame
-geom sync) and `../shared/vendor/` (MuJoCo-WASM + Three.js) are used by both the
-viewer and the game.
-
 ## Rebuilding the assets
 
-`assets/` is generated from the live model and is **gitignored** (see
-`.gitignore` here): it is 39 STL meshes + `model_meta.json` that are regenerated
-on every model tweak, so it is kept out of the `main` branch's history. Instead
-it is published only to the `gh-pages` branch — `scripts/dev/push_doc_site.sh`
-regenerates it and `properdocs build` bundles it into the deployed site.
-
-Regenerate it whenever the model or its viewer config changes (also needed once
-to preview locally with `properdocs serve`):
+`assets/` is generated and **gitignored** (regenerated for the `gh-pages` site by
+`scripts/dev/push_doc_site.sh`). Regenerate whenever the model or viewer config
+changes (also needed once to preview locally with `properdocs serve`):
 
 ```sh
 uv run python scripts/dev/build_wasm_viewer_assets.py
 ```
 
 The script mirrors the body configuration in
-`scripts/launch_interactive_viewer.py`. Keep the two in sync.
-
-`viewer.html`, `viewer.js`, and this README are committed to `main`.
-`../shared/vendor/` is **not** committed — it is downloaded automatically by the
-ProperDocs hook in `scripts/dev/properdocs_hooks.py` when you run `properdocs serve` or
-`properdocs build` for the first time (see [`../README.md`](../README.md)).
+`scripts/launch_interactive_viewer.py` — keep the two in sync.
 
 ## Deploying
 
-Deployment is described once in [`../README.md`](../README.md#deploying):
+Deployment is described in [`../README.md`](../README.md#deploying):
 `scripts/dev/push_doc_site.sh` regenerates the assets above, runs `properdocs build`,
 and force-pushes the site to `gh-pages` (so the heavy assets live only there).
 
 ## Attribution
 
 - **Model** (`assets/model/`): the NeuroMechFly v2 biomechanical model, generated
-  from [flygym](https://github.com/NeLy-EPFL/flygym) (Apache-2.0). If you use it,
-  please cite the NeuroMechFly v2 publication (see https://neuromechfly.org/).
-- **`../shared/vendor/mujoco/`**: [MuJoCo](https://github.com/google-deepmind/mujoco)
-  by Google DeepMind, compiled to WebAssembly (Apache-2.0).
-- **`../shared/vendor/three/`**: [Three.js](https://threejs.org/) (MIT).
+  from [flygym](https://github.com/NeLy-EPFL/flygym) (Apache-2.0). Please cite the
+  NeuroMechFly v2 publication (see https://neuromechfly.org/).
+- MuJoCo-WASM and Three.js: see [`../README.md`](../README.md).
