@@ -52,6 +52,10 @@
 ### Bug fixes
 - Fixed geom fitting that forced claw (tarsus5) geoms to capsules even when `UNMODIFIED` ([#274](https://github.com/NeLy-EPFL/flygym/issues/274)).
 
+### Housekeeping
+- Switch from MkDocs to [ProperDocs](https://properdocs.org/), a fork of MkDocs 1.x.x that will continue to support for plugins like Material for MkDocs (see [this note](https://github.com/orgs/ProperDocs/discussions/33)).
+
+
 ## Version 2.0.2
 
 !!! danger "API-breaking changes"
