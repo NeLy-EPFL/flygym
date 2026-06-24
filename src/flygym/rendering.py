@@ -148,15 +148,18 @@ class Renderer:
                 frame = self.mj_renderer.render()
                 if self.buffer_frames:
                     if self.render_segmentation:
-                        # Segmentation renders 2 channels:
-                        # one is body the other is fly vs background
+                        # MuJoCo segmentation returns two channels; channel 0 is the
+                        # object (segmentation) id, with -1 marking background. Keep
+                        # the ids as int16 so background stays -1 -- casting to uint8
+                        # would wrap -1 to 255 and collide with a real object id 255.
                         frame = frame[:, :, 0]
-                        if not np.all(frame <= 255):
+                        if frame.max() > np.iinfo(np.int16).max:
                             raise ValueError(
-                                "Segmentation rendering supports at most 255 bodies "
-                                "(uint8 frames); the scene exceeds this."
+                                "Segmentation rendering supports object ids up to "
+                                f"{np.iinfo(np.int16).max} (int16 frames); the scene "
+                                "exceeds this."
                             )
-                        frame = frame.astype(np.uint8)
+                        frame = frame.astype(np.int16)
                     self.frames[cam_name].append(frame)
             return True
         else:
