@@ -1,3 +1,4 @@
+import warnings
 from multiprocessing import Process
 from pathlib import Path
 from typing import Any
@@ -26,11 +27,12 @@ class Renderer:
         buffer_frames: If True, store frames in ``self.frames``.
         scene_option: MuJoCo scene options. Uses defaults if None.
         render_depth: If True, render depth maps instead of RGB frames. Depth
-            frames are kept as raw float arrays in ``self.frames`` and cannot be
-            saved/shown as video (see ``save_video``/``show_in_notebook``).
+            frames are kept as raw float arrays in ``self.frames``; they are not
+            saved/shown as video (``save_video``/``show_in_notebook`` warn and
+            skip them).
         render_segmentation: If True, render segmentation masks instead of RGB
             frames. Like depth, these are kept as raw int arrays in ``self.frames``
-            and cannot be saved/shown as video.
+            and are not saved/shown as video.
         **kwargs: Passed to ``mujoco.Renderer``.
 
     Attributes:
@@ -208,7 +210,8 @@ class Renderer:
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            self._check_frames_are_video_encodable(frames, cam_name)
+            if not self._frames_are_video_encodable(frames, cam_name):
+                continue
             mediapy.show_video(frames, fps=self.output_fps, title=cam_name, **kwargs)
 
     def save_video(
@@ -230,7 +233,8 @@ class Renderer:
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            self._check_frames_are_video_encodable(frames, cam_name)
+            if not self._frames_are_video_encodable(frames, cam_name):
+                continue
 
             path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -239,24 +243,26 @@ class Renderer:
             )
 
     @staticmethod
-    def _check_frames_are_video_encodable(frames: list[np.ndarray], cam_name: str):
-        """Reject non-RGB frames before encoding/displaying them as a video.
+    def _frames_are_video_encodable(frames: list[np.ndarray], cam_name: str) -> bool:
+        """Whether frames are uint8 RGB and can be saved/displayed as video.
 
-        Only uint8 RGB frames can be written to an H.264 video (or shown with
-        mediapy). Depth (float) and segmentation (int) renders are kept as their
-        raw arrays in ``self.frames`` -- casting them to uint8 to fit a video
-        would be lossy and silently ambiguous (e.g. depth in meters squashed to
-        0-255, or segmentation id 255 colliding with the -1 background).
+        A Renderer is single-mode, so a camera's frames are uniformly RGB
+        (uint8), depth (float), or segmentation (int) -- never a mix. Only uint8
+        RGB can be encoded as an H.264 video (or shown with mediapy); depth and
+        segmentation are kept as raw arrays in ``self.frames`` rather than
+        lossily cast to uint8 (e.g. depth in meters squashed to 0-255, or
+        segmentation id 255 colliding with the -1 background). For those, warn
+        and skip so callers can still save/show their other (RGB) cameras.
         """
-        if frames[0].dtype != np.uint8:
-            raise RuntimeError(
-                f"Camera '{cam_name}' holds {frames[0].dtype} frames. Only uint8 "
-                "RGB frames can be saved or displayed as video; depth and "
-                "segmentation renders are kept as raw arrays in `Renderer.frames` "
-                "to avoid a lossy uint8 conversion. Read them from "
-                "`renderer.frames` and save or visualize them directly (e.g. with "
-                "numpy or matplotlib)."
-            )
+        if frames[0].dtype == np.uint8:
+            return True
+        warnings.warn(
+            f"Camera '{cam_name}' holds {frames[0].dtype} frames (depth or "
+            "segmentation); these are not saved or displayed as video. Read the "
+            "raw arrays from `Renderer.frames` and handle them directly (e.g. "
+            "with numpy or matplotlib)."
+        )
+        return False
 
     def _normalize_camera_spec(
         self,
