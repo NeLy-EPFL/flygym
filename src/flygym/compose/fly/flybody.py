@@ -456,17 +456,7 @@ class FlyBody(BaseFly):
             Dictionary mapping JointDOF to created MJCF actuator elements.
         """
         actuator_type = ActuatorType(actuator_type)
-
-        if actuator_type == ActuatorType.POSITION:
-            neutral_input = self.get_pose_lookup(neutral_input)
-        else:
-            if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
-                raise ValueError(
-                    "When actuator_type is not POSITION, neutral_input cannot be a "
-                    "KinematicPose or KinematicPosePreset since those specify joint "
-                    "angles, not actuator inputs."
-                )
-            neutral_input = {} if neutral_input is None else neutral_input
+        neutral_input = self._resolve_neutral_input(actuator_type, neutral_input)
 
         remove_ctrl_limits = False
         if (

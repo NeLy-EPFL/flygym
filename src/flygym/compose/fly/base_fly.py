@@ -308,6 +308,28 @@ class BaseFly(BaseCompositionElement):
                 "`KinematicPose` or `KinematicPosePreset`."
             )
 
+    def _resolve_neutral_input(
+        self,
+        actuator_type: "ActuatorType",
+        neutral_input: "dict[str, float] | KinematicPose | KinematicPosePreset | None",
+    ) -> dict[str, float]:
+        """Resolve ``neutral_input`` to a ``{DoF name: value}`` lookup.
+
+        For POSITION actuators the values are joint angles, so a ``KinematicPose`` /
+        ``KinematicPosePreset`` is accepted and resolved via :meth:`get_pose_lookup`.
+        For other actuator types the values are raw actuator inputs (torque,
+        velocity, ...), for which a pose object is meaningless and so rejected.
+        """
+        if actuator_type == ActuatorType.POSITION:
+            return self.get_pose_lookup(neutral_input)
+        if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
+            raise ValueError(
+                "When actuator_type is not POSITION, neutral_input cannot be a "
+                "KinematicPose or KinematicPosePreset since those specify joint "
+                "angles, not actuator inputs."
+            )
+        return {} if neutral_input is None else neutral_input
+
     def get_sites_order(self) -> list[AnatomicalJoint]:
         """Get the canonical order of anatomical joints with associated MJCF sites.
 
@@ -423,18 +445,7 @@ class BaseFly(BaseCompositionElement):
             Dictionary mapping JointDOF to created MJCF actuator elements.
         """
         actuator_type = ActuatorType(actuator_type)
-
-        if actuator_type == ActuatorType.POSITION:
-            neutral_input = self.get_pose_lookup(neutral_input)
-        else:
-            if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
-                raise ValueError(
-                    "When actuator_type is not POSITION, neutral_input cannot be a "
-                    "KinematicPose or KinematicPosePreset since those specify joint "
-                    "angles, not actuator inputs."
-                )
-            else:
-                neutral_input = {} if neutral_input is None else neutral_input
+        neutral_input = self._resolve_neutral_input(actuator_type, neutral_input)
 
         return_dict = {}
         for jointdof in jointdofs:
