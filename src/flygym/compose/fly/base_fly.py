@@ -315,12 +315,18 @@ class BaseFly(BaseCompositionElement):
     ) -> dict[str, float]:
         """Resolve ``neutral_input`` to a ``{DoF name: value}`` lookup.
 
-        For POSITION actuators the values are joint angles, so a ``KinematicPose`` /
-        ``KinematicPosePreset`` is accepted and resolved via :meth:`get_pose_lookup`.
-        For other actuator types the values are raw actuator inputs (torque,
-        velocity, ...), for which a pose object is meaningless and so rejected.
+        A ``dict`` is already a ``{DoF name: value}`` lookup and is used as-is for
+        any actuator type. For POSITION actuators the values are joint angles, so a
+        ``KinematicPose`` / ``KinematicPosePreset`` is also accepted and resolved via
+        :meth:`get_pose_lookup`. For other actuator types the values are raw actuator
+        inputs (torque, velocity, ...), for which a pose object is meaningless and so
+        rejected.
         """
         if actuator_type == ActuatorType.POSITION:
+            # A dict already maps DoF names to angles; pass it through. Only
+            # None / KinematicPose / KinematicPosePreset need resolving.
+            if isinstance(neutral_input, dict):
+                return neutral_input
             return self.get_pose_lookup(neutral_input)
         if isinstance(neutral_input, (KinematicPose, KinematicPosePreset)):
             raise ValueError(
