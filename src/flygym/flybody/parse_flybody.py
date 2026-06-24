@@ -801,7 +801,9 @@ def parse_globals(xml_path, yaml_path):
             for g in parsed_globals["option"]["gravity"]
         ]
 
-    parsed_globals["compiler"]["fusestatic"] = "true"
+    # The source XML may have no <compiler> element, in which case the loop above
+    # never created this key; setdefault avoids a KeyError.
+    parsed_globals.setdefault("compiler", {})["fusestatic"] = "true"
     parsed_globals["statistic"] = {"extent": "5"}
     parsed_globals["visual"] = {
         "headlight": {
