@@ -672,9 +672,11 @@ class FlyBody(BaseFly):
                     ("kp", has_kp)
                 ]:  # , ("kv", has_kv), ("timeconst", has_timeconst)]:
                     if not has_it:
-                        warning_str += f"{param} not specified, using default value "
-                        "from general actuator config if specified there, otherwise "
-                        "using MuJoCo default. "
+                        warning_str += (
+                            f"{param} not specified, using default value from "
+                            "general actuator config if specified there, otherwise "
+                            "using MuJoCo default. "
+                        )
                         has_missing_param = True
                 if has_missing_param:
                     warnings.warn(warning_str)
