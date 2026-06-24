@@ -130,14 +130,8 @@ def build_model() -> mj.MjModel:
     world.mjcf_root.option.noslip_iterations = NOSLIP_ITERATIONS
     world.mjcf_root.option.iterations = SOLVER_ITERATIONS
     world.mjcf_root.option.impratio = IMPRATIO
-    for pair in world.mjcf_root.contact.all_children():
-        if pair.tag != "pair":
-            continue
-        fr = (
-            list(pair.friction)
-            if pair.friction is not None
-            else [1, 1, 2e-2, 1e-4, 1e-4]
-        )
+    for pair in world.mjcf_root.pairs:
+        fr = list(pair.friction)
         fr[0] = fr[1] = SLIDING_FRICTION  # tangential (x2)
         pair.friction = fr
 
