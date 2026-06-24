@@ -276,7 +276,7 @@ def main() -> None:
     )
     n_dofs = target_angles_all_worlds.shape[-1]
 
-    sim = GPUSimulation(world, n_worlds)
+    sim = GPUSimulation(world, n_worlds, timestep=timestep)
     assert sim.mj_model.opt.timestep == timestep
 
     renderer = None

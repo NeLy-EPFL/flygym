@@ -302,7 +302,7 @@ def print_mujoco_timing(mj_data) -> None:
     )
 
 
-def build_model(actuator_gain: float):
+def build_model(actuator_gain: float, timestep: float):
     """Build the fly, world, and simulation, mirroring tutorial 2."""
     axis_order = AxisOrder.YAW_PITCH_ROLL
     articulated_joints = JointPreset.LEGS_ONLY
@@ -333,7 +333,7 @@ def build_model(actuator_gain: float):
     world = FlatGroundWorld()
     world.add_fly(fly, spawn_pos, spawn_rot)
 
-    sim = Simulation(world)
+    sim = Simulation(world, timestep=timestep)
     sim.set_renderer(tracking_cam)
     return fly, sim, sites, actuator_type
 
@@ -415,7 +415,7 @@ def main() -> None:
         data_dir.mkdir(parents=True, exist_ok=True)  # overwrite if it exists
 
     snippet = MotionSnippet()
-    fly, sim, sites, actuator_type = build_model(args.actuator_gain)
+    fly, sim, sites, actuator_type = build_model(args.actuator_gain, args.timestep)
     fly_name = fly.name
 
     if args.mujoco_timing:

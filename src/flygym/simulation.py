@@ -21,6 +21,8 @@ class Simulation:
 
     Args:
         world: A fully configured world with at least one fly attached.
+        timestep: Physics timestep in seconds. If None, the model's compiled-in
+            timestep (from ``mujoco_globals.yaml``) is used.
 
     Attributes:
         world: The world used to construct this simulation.
@@ -29,12 +31,14 @@ class Simulation:
         mj_data: Associated MuJoCo data.
     """
 
-    def __init__(self, world: BaseWorld) -> None:
+    def __init__(self, world: BaseWorld, *, timestep: float | None = None) -> None:
         if len(world.fly_lookup) == 0:
             raise ValueError("The world must contain at least one fly.")
         self.renderer = None
         self.world = world
         self.mj_model, self.mj_data = world.compile()
+        if timestep is not None:
+            self.mj_model.opt.timestep = timestep
         self._neutral_keyframe_id = mj.mj_name2id(
             self.mj_model, mj.mjtObj.mjOBJ_KEY, "neutral"
         )

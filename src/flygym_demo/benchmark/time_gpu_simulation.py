@@ -115,7 +115,7 @@ def run_simulation(
 
     fly, world, cam = make_model(simplify_geom=simplify_geom)
     fly_name = fly.name
-    sim = GPUSimulation(world, n_worlds)
+    sim = GPUSimulation(world, n_worlds, timestep=timestep)
     assert sim.mj_model.opt.timestep == timestep
 
     if enable_rendering:
