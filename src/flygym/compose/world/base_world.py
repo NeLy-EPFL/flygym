@@ -266,6 +266,18 @@ class _GroundContactMixin:
         )
 
         if isinstance(bodysegs_with_ground_contact, BaseContactBodiesPreset):
+            # A preset's segments belong to one fly type; passing another fly's
+            # preset would yield segments missing from this fly's
+            # bodyseg_to_mjcfgeom and fail later with an opaque KeyError.
+            expected_cls = type(fly).CONTACT_BODIES_PRESET_CLASS
+            if not isinstance(bodysegs_with_ground_contact, expected_cls):
+                raise TypeError(
+                    f"bodysegs_with_ground_contact is a "
+                    f"{type(bodysegs_with_ground_contact).__name__}, but "
+                    f"{type(fly).__name__} expects a {expected_cls.__name__} (or "
+                    "its string value); body segments are not shared across fly "
+                    "types."
+                )
             bodysegs_with_ground_contact = (
                 bodysegs_with_ground_contact.to_body_segments_list()
             )
