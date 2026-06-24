@@ -111,18 +111,32 @@ markers = [
     "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
     "network: talks to the live S3 asset bucket (skips itself if unreachable)",
 ]
+filterwarnings = [
+    # warp 1.14.0 defines ctypes.Structure subclasses with `_pack_` but no
+    # `_layout_`; Python 3.14 deprecates the implicit default. Third-party code,
+    # don't fix here.
+    "ignore:Due to '_pack_':DeprecationWarning:warp",
+]
 
 [tool.coverage.run]
 source = ["flygym", "flygym_demo"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-include-package-data = true
+# Disabled on purpose: with no MANIFEST.in and no setuptools-scm, the auto-include
+# finds no data files. Instead, use the explicit ``package-data`` globs below.
+include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
+# List every bundled asset explicitly to reliably get them into the wheel/sdist.
+# Larger data files excluded below are instead fetched lazily from an S3 bucket at
+# runtime (see ``flygym.utils.assets_lazy_loading``).
+flygym = [
+    "assets/**",
+]
 flygym_demo = [
     "spotlight_data/assets/**",
     "complex_terrain/assets/**",

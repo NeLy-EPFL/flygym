@@ -316,7 +316,8 @@ class TestLegAdhesion:
 
 class TestGroundContactInfo:
     @pytest.fixture(scope="class")
-    def flat_sim(self, flat_world_with_fly, fly_with_joints):
+    @staticmethod
+    def flat_sim(flat_world_with_fly, fly_with_joints):
         sim = Simulation(flat_world_with_fly)
         sim.reset()
         return sim

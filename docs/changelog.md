@@ -51,9 +51,11 @@
 
 ### Bug fixes
 - Fixed geom fitting that forced claw (tarsus5) geoms to capsules even when `UNMODIFIED` ([#274](https://github.com/NeLy-EPFL/flygym/issues/274)).
+- Fixed packaging so the `flygym` package's bundled assets (simplified meshes, poses, configs, and the musculoskeletal MJCF) are reliably shipped in the built wheel/sdist. They are now declared explicitly under `[tool.setuptools.package-data]` rather than relying on `include-package-data`, which silently included nothing on a clean build (no MANIFEST.in / setuptools-scm).
 
 ### Housekeeping
 - Switch from MkDocs to [ProperDocs](https://properdocs.org/), a fork of MkDocs 1.x.x that will continue to support for plugins like Material for MkDocs (see [this note](https://github.com/orgs/ProperDocs/discussions/33)).
+- Added packaging tests (`tests/core/test_packaging.py`) that build a wheel and assert every bundled asset is shipped (large lazily-downloaded meshes excluded), with `flygym_demo` assets checked separately.
 
 
 ## Version 2.0.2
