@@ -198,11 +198,11 @@ class Renderer:
         camera_names = self._normalize_camera_spec(camera)
 
         for cam_name in camera_names:
-            if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
-                self._depth_frames_to_uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
+            if self.render_depth and frames[0].dtype != np.uint8:
+                self._depth_frames_to_uint8(cam_name)
             mediapy.show_video(frames, fps=self.output_fps, title=cam_name, **kwargs)
 
     def save_video(
@@ -221,11 +221,11 @@ class Renderer:
         path_by_camera = self._resolve_output_paths(output_path)
 
         for cam_name, path in path_by_camera.items():
-            if self.render_depth and not self.frames[cam_name][0].dtype == np.uint8:
-                self._depth_frames_to_uint8(cam_name)
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
+            if self.render_depth and frames[0].dtype != np.uint8:
+                self._depth_frames_to_uint8(cam_name)
 
             path.parent.mkdir(parents=True, exist_ok=True)
 
