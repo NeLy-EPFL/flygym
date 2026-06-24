@@ -75,7 +75,7 @@ How it differs from FlyGym's default rigid-body fly:
 | Passive joints | spring/damper from config | `stiffness = 0.4` + per-joint spring reference angles |
 | Other legs | all six actuated | LF muscle-driven; RF locked to 0; LM/LH passive |
 | Base | thorax free-floating | thorax tethered (anchored to world) |
-| Sensors | vision, contact, proprioception | proprioception + body kinematics; vision optional (see §3) |
+| Sensors | vision, contact, proprioception | proprioception + body kinematics; vision optional (see *Environment, reward, and sensors*) |
 
 `build_musculoskeletal_simulation()` loads this model and returns a standard `flygym.Simulation`, so the rest of FlyGym works against it unchanged.
 
@@ -113,7 +113,7 @@ policy on clip `0002` with FlyMimic's own hyperparameters (`stable-baselines3`,
 `lr = 1e-5`, `gamma = 0.99`, ReLU `[512, 512, 256]` actor/critic) drives the
 mean episode reward steadily upward, and the muscle-actuated LF leg learns to
 track the reference kinematics — the reward formula and weights match FlyMimic
-exactly (§3), and the reward ceiling on this clip is ~1.0.
+exactly (see the *Reward* section), and the reward ceiling on this clip is ~1.0.
 
 Per-step reward climbs from the random-activation baseline (~0.06) to ~0.21,
 with episode length growing in step (the policy both tracks better and holds
@@ -151,7 +151,7 @@ test mode (full clip, no early termination), rendering FlyMimic's world camera
 driven from Python via `flygym_demo.muscle_imitation.record_rollout` /
 `load_policy`.
 
-Training is CPU-only on most workstations (see §5 for the GPU path). At higher
+Training is CPU-only on most workstations. At higher
 learning rates, set PPO `target_kl ≈ 0.05` and keep the best checkpoint by
 periodic evaluation to avoid late instability.
 
