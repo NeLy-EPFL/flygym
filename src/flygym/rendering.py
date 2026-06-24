@@ -25,8 +25,12 @@ class Renderer:
         output_fps: Output video frame rate.
         buffer_frames: If True, store frames in ``self.frames``.
         scene_option: MuJoCo scene options. Uses defaults if None.
-        render_depth: If True, render depth maps instead of RGB frames.
-        render_segmentation: If True, render segmentation masks instead of RGB frames.
+        render_depth: If True, render depth maps instead of RGB frames. Depth
+            frames are kept as raw float arrays in ``self.frames`` and cannot be
+            saved/shown as video (see ``save_video``/``show_in_notebook``).
+        render_segmentation: If True, render segmentation masks instead of RGB
+            frames. Like depth, these are kept as raw int arrays in ``self.frames``
+            and cannot be saved/shown as video.
         **kwargs: Passed to ``mujoco.Renderer``.
 
     Attributes:
@@ -204,8 +208,7 @@ class Renderer:
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            if self.render_depth and frames[0].dtype != np.uint8:
-                self._depth_frames_to_uint8(cam_name)
+            self._check_frames_are_video_encodable(frames, cam_name)
             mediapy.show_video(frames, fps=self.output_fps, title=cam_name, **kwargs)
 
     def save_video(
@@ -227,8 +230,7 @@ class Renderer:
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            if self.render_depth and frames[0].dtype != np.uint8:
-                self._depth_frames_to_uint8(cam_name)
+            self._check_frames_are_video_encodable(frames, cam_name)
 
             path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -236,28 +238,25 @@ class Renderer:
                 path, frames, fps=self.output_fps, codec="libx264", quality=8, **kwargs
             )
 
-    def _depth_frames_to_uint8(self, cam_name: str) -> None:
-        """
-        Convert depth frames from float32 to uint8.
-        This is necessary because depth frames are rendered as 32-bit floats, but
-        we want to save them as 8-bit videos.
-        We treat the global maximum depth (over all frames) as the background and
-        scale from the largest non-background value down to the global minimum
-        (mapped to 0-255).
-        """
+    @staticmethod
+    def _check_frames_are_video_encodable(frames: list[np.ndarray], cam_name: str):
+        """Reject non-RGB frames before encoding/displaying them as a video.
 
-        all_frames = np.stack(self.frames[cam_name])
-        max_val = np.max(all_frames)  # background depth (far plane)
-        non_background = all_frames[all_frames != max_val]
-        # If every pixel is at the background depth, there is nothing to scale.
-        max_no_max_val = np.max(non_background) if non_background.size else max_val
-        min_val = np.min(all_frames)
-        for i in range(len(self.frames[cam_name])):
-            frame = self.frames[cam_name][i]
-            frame_norm = np.clip(
-                (frame - min_val) / (max_no_max_val + 0.2 - min_val), 0, 1
+        Only uint8 RGB frames can be written to an H.264 video (or shown with
+        mediapy). Depth (float) and segmentation (int) renders are kept as their
+        raw arrays in ``self.frames`` -- casting them to uint8 to fit a video
+        would be lossy and silently ambiguous (e.g. depth in meters squashed to
+        0-255, or segmentation id 255 colliding with the -1 background).
+        """
+        if frames[0].dtype != np.uint8:
+            raise RuntimeError(
+                f"Camera '{cam_name}' holds {frames[0].dtype} frames. Only uint8 "
+                "RGB frames can be saved or displayed as video; depth and "
+                "segmentation renders are kept as raw arrays in `Renderer.frames` "
+                "to avoid a lossy uint8 conversion. Read them from "
+                "`renderer.frames` and save or visualize them directly (e.g. with "
+                "numpy or matplotlib)."
             )
-            self.frames[cam_name][i] = (frame_norm * 255).astype(np.uint8)
 
     def _normalize_camera_spec(
         self,
