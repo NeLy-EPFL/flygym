@@ -645,10 +645,16 @@ class FlyBody(BaseFly):
             else:
                 # recover ctrllimits from joint limits
                 jnt = self.jointdof_to_mjcfjoint[jointdof]
-                assert jnt.range is not None, (
-                    f"Joint {jointdof.name} must have range specified in order to use "
-                    "default ctrlrange for its actuator."
-                )
+                # MjSpec returns an all-zero range (not None) for joints with no
+                # range, so check the value rather than `is not None`. Deriving a
+                # [0, 0] ctrlrange would silently pin the actuator's input to 0.
+                if "ctrlrange" not in kwargs and np.allclose(jnt.range, 0.0):
+                    raise ValueError(
+                        f"Joint {jointdof.name} has no range specified, so a "
+                        "default ctrlrange cannot be derived for its actuator. "
+                        "Specify a range on the joint, or pass an explicit "
+                        "`ctrlrange`."
+                    )
                 default_actuator_params_specific["ctrlrange"] = jnt.range
 
             if forcelimited:
