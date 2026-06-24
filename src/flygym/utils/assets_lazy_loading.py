@@ -190,7 +190,8 @@ def lazy_load_asset_dir(rel_path: os.PathLike | str) -> Path:
     The directory is cached under :func:`get_cache_root` keyed by ``rel_path``. If
     the cached copy already exists it is returned as-is (no network access);
     otherwise the whole directory is downloaded into a temporary location and moved
-    into place atomically, so an interrupted download never leaves a partial cache.
+    into place atomically, so an interrupted or concurrent download never leaves a
+    partial cache.
 
     Raises:
         FileNotFoundError: If ``rel_path`` does not exist in the bucket.
@@ -204,7 +205,14 @@ def lazy_load_asset_dir(rel_path: os.PathLike | str) -> Path:
     staging = Path(tempfile.mkdtemp(dir=cache_dir.parent, suffix=".partial"))
     try:
         _download_prefix(f"{S3_ROOT_PREFIX}/{rel_path.as_posix()}", staging)
-        staging.replace(cache_dir)
+        try:
+            staging.replace(cache_dir)
+        except OSError:
+            # Another process finished downloading the same asset while we were
+            # working: os.replace cannot move onto the now-populated directory.
+            # Their copy is equivalent to ours, so use it instead of failing.
+            if not cache_dir.is_dir():
+                raise
     finally:
         shutil.rmtree(staging, ignore_errors=True)
     return cache_dir
