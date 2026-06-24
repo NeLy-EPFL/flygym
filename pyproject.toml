@@ -50,7 +50,11 @@ dev = [
     # PyPI publishing
     "build>=1.0,<2.0",
     "twine>=6.0,<7.0",
-    # Documentation site
+    # Documentation site — built with ProperDocs, a drop-in continuation of
+    # MkDocs 1.x (the upstream MkDocs project is moving to a backwards-
+    # incompatible 2.0). ProperDocs reads properdocs.yml and loads the
+    # mkdocs.* theme/plugin entry points below unchanged.
+    "properdocs>=1.6.7,<2",
     "mkdocs-material>=9.7,<10.0",
     "mkdocstrings[python]>=1.0.0,<2",
     "mkdocs-gen-files==0.6.0",
@@ -77,6 +81,13 @@ examples = [
     "pandas>=3.0,<4.0",
     "tqdm>=4.67,<5.0",
 ]
+rl = [
+    "gymnasium>=1.0,<2.0",
+    "stable_baselines3>=2.7,<3.0",
+    "tensorboard>=2.20,<3.0",
+    # tensorboard still imports pkg_resources, which setuptools removed in 81.
+    "setuptools<81",
+]
 
 [project.urls]
 homepage = "https://neuromechfly.org/"
@@ -96,6 +107,7 @@ addopts = "--cov=flygym --cov=flygym_demo --cov-report=term-missing --import-mod
 # be excluded with e.g. `pytest -m "not warp"`.
 markers = [
     "warp: requires the warp (GPU) extra (skip with -m 'not warp')",
+    "rl: requires the rl extra (gymnasium + Stable-Baselines3 + TensorBoard) (skip with -m 'not rl')",
     "tutorial: executes a tutorial notebook end-to-end; slow (skip with -m 'not tutorial')",
     "network: talks to the live S3 asset bucket (skips itself if unreachable)",
 ]
@@ -111,17 +123,18 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-flygym = ["assets/**"]
 flygym_demo = [
-    "ball_flybody_data/assets/**",
     "spotlight_data/assets/**",
     "complex_terrain/assets/**",
+    "muscle_imitation/assets/**",
+    "ball_flybody_data/assets/**",
 ]
 
 [tool.setuptools.exclude-package-data]
 flygym = [
     "assets/model/neuromechfly/meshes/fullsize/*",
     "assets/model/flybody/meshes/**/*",
+    "assets/model/musculoskeletal/meshes/**/*",
 ]
 
 [tool.ruff.lint]

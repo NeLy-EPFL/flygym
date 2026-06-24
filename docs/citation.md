@@ -39,3 +39,17 @@ NeuroMechFly v2: This library, MuJoCo version, leg adhesion, rule-based controll
     pages = {2353--2362}
 }
 ```
+
+---
+
+If you use the musculoskeletal model or muscle-based imitation learning, please also cite FlyMimic: Musculoskeletal model of *Drosophila* limb movement biomechanics, Hill-type muscle actuators, motion-capture imitation learning:
+
+```bibtex
+@inproceedings{Ozdil2026,
+  title={Musculoskeletal simulation of limb movement biomechanics in Drosophila melanogaster},
+  author={Ozdil, Pembe Gizem and Ning, Chuanfang and Phelps, Jasper S and Wang-Chen, Sibo and Elisha, Guy and Blanke, Alexander and Ijspeert, Auke and Ramdya, Pavan},
+  booktitle={The Fourteenth International Conference on Learning Representations},
+  year={2026},
+  url={https://arxiv.org/abs/2509.06426},
+}
+```

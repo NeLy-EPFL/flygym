@@ -40,10 +40,10 @@ viewer and the game.
 `.gitignore` here): it is 39 STL meshes + `model_meta.json` that are regenerated
 on every model tweak, so it is kept out of the `main` branch's history. Instead
 it is published only to the `gh-pages` branch — `scripts/dev/push_doc_site.sh`
-regenerates it and `mkdocs build` bundles it into the deployed site.
+regenerates it and `properdocs build` bundles it into the deployed site.
 
 Regenerate it whenever the model or its viewer config changes (also needed once
-to preview locally with `mkdocs serve`):
+to preview locally with `properdocs serve`):
 
 ```sh
 uv run python scripts/dev/build_wasm_viewer_assets.py
@@ -54,14 +54,14 @@ The script mirrors the body configuration in
 
 `viewer.html`, `viewer.js`, and this README are committed to `main`.
 `../shared/vendor/` is **not** committed — it is downloaded automatically by the
-MkDocs hook in `scripts/dev/mkdocs_hooks.py` when you run `mkdocs serve` or
-`mkdocs build` for the first time (see [`../README.md`](../README.md)).
+ProperDocs hook in `scripts/dev/properdocs_hooks.py` when you run `properdocs serve` or
+`properdocs build` for the first time (see [`../README.md`](../README.md)).
 
 ## Deploying
 
 `scripts/dev/push_doc_site.sh` is the single entry point: it offers to
 regenerate the assets above, verifies `../shared/vendor/` is present, runs
-`mkdocs build` (whose hook copies `wasm/` into the site), and force-pushes the
+`properdocs build` (whose hook copies `wasm/` into the site), and force-pushes the
 resulting `site/` to the orphan `gh-pages` branch. So the heavy assets live only
 on `gh-pages`, never bloating `main`.
 

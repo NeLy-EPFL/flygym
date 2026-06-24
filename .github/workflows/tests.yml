@@ -45,14 +45,18 @@ jobs:
             libegl1-mesa-dev libgles2-mesa-dev libosmesa6-dev ffmpeg
 
       - name: Install Python dependencies
-        run: uv sync --extra dev --extra examples
+        # rl is its own extra (not pulled in by dev) so the muscle-imitation
+        # tests can run in CI; the GPU-only `warp` group is still excluded and
+        # deselected via `-m "not warp"` below.
+        run: uv sync --extra dev --extra examples --extra rl
 
-      # The high-resolution "fullsize" meshes (FlyBody + fullsize NeuroMechFly)
-      # are not shipped with the package; flygym.utils.assets downloads them from
-      # S3 on first use. actions/cache persists this directory in GitHub's cache
-      # storage across runs (the runner VM is ephemeral, the cache is not), so we
-      # only download ~140 MB once per cache key. Default cache root is
-      # ~/.cache/flygym_assets on all runners.
+      # The high-resolution meshes (FlyBody + fullsize NeuroMechFly + the FlyMimic
+      # musculoskeletal body) are not shipped with the package;
+      # flygym.utils.assets_lazy_loading downloads them from S3 on first use.
+      # actions/cache persists this directory in GitHub's cache storage across
+      # runs (the runner VM is ephemeral, the cache is not), so we only download
+      # ~150 MB once per cache key. Default cache root is ~/.cache/flygym_assets
+      # on all runners.
       - name: Cache FlyGym remote assets
         uses: actions/cache@v4
         with:

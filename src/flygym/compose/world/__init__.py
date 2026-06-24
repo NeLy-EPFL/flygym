@@ -6,6 +6,7 @@ from .complex_terrain import (
     BlocksTerrainWorld,
     MixedTerrainWorld,
 )
+from .musculoskeletal import MusculoskeletalWorld
 
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "BlocksTerrainWorld",
     "MixedTerrainWorld",
     "TetheredWorld",
+    "MusculoskeletalWorld",
 ]

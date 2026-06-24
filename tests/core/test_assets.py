@@ -200,17 +200,45 @@ def test_default_neuromechfly_needs_no_download(monkeypatch):
     assert len(fly.bodyseg_to_mjcfmesh) > 0
 
 
-@pytest.mark.network
-def test_real_s3_roundtrip():
-    """Opt-in: list and download a single small object from the live bucket."""
+def _remote_mesh_dirs():
+    """The versioned S3 sub-prefix each model pulls its large meshes from."""
     from flygym.compose.fly.neuromechfly import NEUROMECHFLY_FULLSIZE_MESH_DIR
+    from flygym.compose.fly.flybody import FLYBODY_FULLSIZE_MESH_DIR
+    from flygym.compose.fly.musculoskeletal import MUSCULOSKELETAL_MESH_DIR
 
-    prefix = f"{assets_lazy_loading.S3_ROOT_PREFIX}/{NEUROMECHFLY_FULLSIZE_MESH_DIR}/"
+    return {
+        "neuromechfly_fullsize": NEUROMECHFLY_FULLSIZE_MESH_DIR,
+        "flybody_fullsize": FLYBODY_FULLSIZE_MESH_DIR,
+        "musculoskeletal": MUSCULOSKELETAL_MESH_DIR,
+    }
+
+
+def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
+    """`prefetch_meshes` must warm every model's remote mesh set (so a CI cache
+    or offline environment is fully primed in one call)."""
+    requested = []
+    monkeypatch.setattr(
+        assets_lazy_loading,
+        "lazy_load_asset_dir",
+        lambda rel: requested.append(str(rel)) or Path("/cache") / rel,
+    )
+    assets_lazy_loading.prefetch_meshes()
+    assert set(requested) == set(_remote_mesh_dirs().values())
+
+
+@pytest.mark.network
+@pytest.mark.parametrize(
+    "mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys()
+)
+def test_real_s3_roundtrip(mesh_dir):
+    """Opt-in: list and download a single small object from the live bucket, for
+    each model's remote mesh set."""
+    prefix = f"{assets_lazy_loading.S3_ROOT_PREFIX}/{mesh_dir}/"
     try:
         objects = assets_lazy_loading._list_s3_prefix(prefix)
     except Exception as e:  # network unavailable in this environment
         pytest.skip(f"S3 endpoint unreachable: {e}")
-    assert objects, "expected objects under the fullsize prefix"
+    assert objects, f"expected objects under prefix {prefix!r}"
     smallest = min(objects, key=lambda o: o["size"])
     import tempfile
 

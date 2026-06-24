@@ -24,10 +24,16 @@
     pip install flygym[examples]
     ```
 
+    Add the `rl` optional dependency for reinforcement-learning training (e.g. the muscle imitation tutorial), which installs Gymnasium, Stable-Baselines3, and TensorBoard:
+
+    ```sh
+    pip install flygym[rl]
+    ```
+
     You can combine multiple optional dependencies in one command. For example:
 
     ```sh
-    pip install flygym[warp,examples]
+    pip install flygym[warp,examples,rl]
     ```
 
 
@@ -64,7 +70,7 @@
     !!! tip "Profiling FlyGym simulations"
 
         For instructions on CPU/GPU performance profiling (including the `nsys`
-        prerequisite), see the [Performance profiling](tutorials/6_performance_profiling.md)
+        prerequisite), see the [Performance profiling](tutorials/7_performance_profiling.md)
         guide.
 
 

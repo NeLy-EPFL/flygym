@@ -65,7 +65,7 @@ uv run pytest tests/ -m tutorial
 ## Profiling
 
 The replay end-to-end test scripts double as performance-profiling targets. See the
-[Performance profiling](tutorials/6_performance_profiling.md) guide for the CPU and GPU
+[Performance profiling](tutorials/7_performance_profiling.md) guide for the CPU and GPU
 workflows.
 
 ## Submitting changes
