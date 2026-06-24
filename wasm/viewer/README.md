@@ -59,11 +59,9 @@ ProperDocs hook in `scripts/dev/properdocs_hooks.py` when you run `properdocs se
 
 ## Deploying
 
-`scripts/dev/push_doc_site.sh` is the single entry point: it offers to
-regenerate the assets above, verifies `../shared/vendor/` is present, runs
-`properdocs build` (whose hook copies `wasm/` into the site), and force-pushes the
-resulting `site/` to the orphan `gh-pages` branch. So the heavy assets live only
-on `gh-pages`, never bloating `main`.
+Deployment is described once in [`../README.md`](../README.md#deploying):
+`scripts/dev/push_doc_site.sh` regenerates the assets above, runs `properdocs build`,
+and force-pushes the site to `gh-pages` (so the heavy assets live only there).
 
 ## Attribution
 
