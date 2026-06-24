@@ -40,12 +40,14 @@ in. Use pytest's `-m` flag to select or exclude groups:
 | ---------- | ------------------------------------------- | --------------------------------- |
 | `warp`     | GPU-accelerated (warp) backend tests        | the `warp` extra **and** a CUDA GPU |
 | `tutorial` | executes each tutorial notebook end-to-end  | the `examples` extra; slow        |
+| `rl`       | imitation-learning / RL tests               | the `rl` extra (Gymnasium + SB3)  |
+| `network`  | hits the live S3 asset bucket               | network access (self-skips if unreachable) |
 
 ```bash
-# Skip the GPU tests (e.g. no CUDA GPU available):
+# Skip the GPU tests -- this is what CI runs (no GPU, but notebooks included):
 uv run pytest tests/ -m "not warp"
 
-# Skip both GPU and the slow notebook tests (what CI runs):
+# Also skip the slow notebook tests (faster local iteration):
 uv run pytest tests/ -m "not warp and not tutorial"
 
 # Run only one group:
