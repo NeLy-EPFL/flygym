@@ -4,7 +4,9 @@
 
 !!! danger "API-breaking changes"
 
-    FlyGym 2.1.0 drops the `dm-control` PyMJCF backend in favour of MuJoCo's native `MjSpec` API. Model elements (cameras, materials, bodies, joints, …) are now `mujoco._specs.Mjs*` objects rather than `dm_control.mjcf` wrappers. The following changes may require updates:
+    FlyGym 2.1.0 drops the `dm-control` PyMJCF backend in favour of MuJoCo's native `MjSpec` API
+    ([#282](https://github.com/NeLy-EPFL/flygym/issues/282), [#285](https://github.com/NeLy-EPFL/flygym/pull/285)).
+    Model elements (cameras, materials, bodies, joints, …) are now `mujoco._specs.Mjs*` objects rather than `dm_control.mjcf` wrappers. The following changes may require updates:
 
     - **`element.full_identifier` → `element.name`:** PyMJCF exposed `full_identifier` to return the fully-scoped compiled name (e.g. `"fly/trackcam"`). MjSpec mutates `.name` in place when a child spec is attached with a prefix, so `.name` already returns the prefixed name after `world.add_fly()`. Replace every occurrence of `.full_identifier` with `.name`.
 
@@ -34,8 +36,21 @@
 
         *Migration:* If you read this attribute, iterate it as a set of names (iterating a `dict` already yielded its keys, so plain `for name in world.world_dof_neutral_states` is unaffected); subscripting it (`world.world_dof_neutral_states[name]`) no longer works. If you implement a custom `World` subclass, return a `set[str]` from `_attach_fly_mjcf`.
 
+### Additions
+- [Experimental feature] Integrated **FlyMimic** (Özdil et al., 2026): an imitation-learning task and a muscle-actuated musculoskeletal fly model ([#270](https://github.com/NeLy-EPFL/flygym/pull/270)). A tutorial is also added.
+- [Experimental feature] Integrated the **FlyBody** model ([#272](https://github.com/NeLy-EPFL/flygym/pull/272)). Two tutorials are also added.
+- Added an in-browser interactive viewer using WebAssembly ([#273](https://github.com/NeLy-EPFL/flygym/pull/273)).
+- Moved the NeuroMechFly Live game into FlyGym and reimplemented it to run in-browser using WebAssembly ([#277](https://github.com/NeLy-EPFL/flygym/issues/277), [#278](https://github.com/NeLy-EPFL/flygym/pull/278)).
+- Added standalone kinematic-replay scripts for end-to-end testing and profiling ([#283](https://github.com/NeLy-EPFL/flygym/issues/283)). A tutorial on profiling is also added.
+- Added Docker installation instructions.
+- Tutorial are now runnable in Google Colab ([#284](https://github.com/NeLy-EPFL/flygym/issues/284)).
+- Bumped MuJoCo and MuJoCo Warp versions to 3.9 ([#281](https://github.com/NeLy-EPFL/flygym/issues/281), [#291](https://github.com/NeLy-EPFL/flygym/issues/291)).
+- FlyGym now supports Python 3.12 – 3.14.
+- Moved large asset files to an S3 bucket and made FlyGym download them lazily ([#280](https://github.com/NeLy-EPFL/flygym/issues/280), [#292](https://github.com/NeLy-EPFL/flygym/issues/292)).
+- Added unit tests that execute the tutorial notebooks and check for errors ([#286](https://github.com/NeLy-EPFL/flygym/issues/286)).
+
 ### Bug fixes
-- Fixed `AttributeError: 'mujoco._specs.MjsCamera' object has no attribute 'full_identifier'` in tutorials 4a–4d and 5b caused by the PyMJCF → MjSpec migration ([#285](https://github.com/NeLy-EPFL/flygym/pull/285)).
+- Fixed geom fitting that forced claw (tarsus5) geoms to capsules even when `UNMODIFIED` ([#274](https://github.com/NeLy-EPFL/flygym/issues/274)).
 
 ## Version 2.0.2
 
