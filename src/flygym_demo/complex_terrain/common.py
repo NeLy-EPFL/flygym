@@ -14,7 +14,7 @@ from flygym.anatomy import (
     RotationAxis,
     Skeleton,
 )
-from flygym.compose import ActuatorType, Fly, KinematicPosePreset
+from flygym.compose import ActuatorType, NeuroMechFly, KinematicPosePreset
 from flygym.simulation import Simulation
 
 
@@ -57,7 +57,7 @@ def make_locomotion_fly(
     add_adhesion: bool = True,
     adhesion_gain: float = 40.0,
     colorize: bool = False,
-) -> Fly:
+) -> NeuroMechFly:
     """Create a standard legs-only, position-controlled fly."""
     neutral_pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(
         AxisOrder.YAW_PITCH_ROLL
@@ -66,7 +66,7 @@ def make_locomotion_fly(
         axis_order=AxisOrder.YAW_PITCH_ROLL,
         joint_preset=JointPreset.LEGS_ONLY,
     )
-    fly = Fly(name=name)
+    fly = NeuroMechFly(name=name)
     joints = fly.add_joints(
         skeleton,
         neutral_pose=neutral_pose,
@@ -75,8 +75,10 @@ def make_locomotion_fly(
     )
     for jointdof, joint in joints.items():
         if jointdof.child.link in PASSIVE_TARSAL_LINKS:
-            joint.stiffness = passive_tarsus_stiffness
-            joint.damping = passive_tarsus_damping
+            # MuJoCo 3.7+ widened MjsJoint stiffness/damping to polynomial-
+            # coefficient arrays; the linear term lives at index 0.
+            joint.stiffness[0] = passive_tarsus_stiffness
+            joint.damping[0] = passive_tarsus_damping
     actuated_dofs = skeleton.get_actuated_dofs_from_preset(
         ActuatedDOFPreset.LEGS_ACTIVE_ONLY
     )

@@ -158,13 +158,16 @@ def get_rgb_selected_worlds_and_cameras(
     camids: wp.array(dtype=int),  # type: ignore
     rgb_out: wp.array4d(dtype=wp.vec3),  # type: ignore
 ):
-    """Get the RGB data output from the render context buffers for a given camera index.
+    """Get the RGB data output from the render context buffers for the selected worlds
+    and cameras.
 
     Args:
         rc:
             The render context on device.
-        worldids: TODO
-        camids: TODO
+        worldids:
+            Indices of the worlds to read RGB data for.
+        camids:
+            Indices of the cameras to read RGB data for.
         rgb_out:
             The output array to store the RGB data in, with shape
             (len(worldids), len(camids), height, width).

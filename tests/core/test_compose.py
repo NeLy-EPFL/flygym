@@ -1,6 +1,10 @@
-"""Integration tests for flygym.compose (Fly, World)."""
+"""Integration tests for flygym.compose (NeuroMechFly, World)."""
+
+import warnings
+import os
 
 import pytest
+import numpy as np
 import mujoco as mj
 
 from flygym.anatomy import (
@@ -10,7 +14,15 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.compose.fly import Fly, ActuatorType, GeomFittingOption
+from flygym.flybody.anatomy_flybody import FlyBodyContactBodiesPreset
+from flygym.compose.fly import (
+    BaseFly,
+    NeuroMechFly,
+    FlyBody,
+    Fly,
+    ActuatorType,
+    GeomFittingOption,
+)
 from flygym.compose.world import (
     BlocksTerrainWorld,
     FlatGroundWorld,
@@ -24,21 +36,52 @@ from flygym.utils.math import Rotation3D
 
 
 # ==============================================================================
-# Fly construction
+# Fly class hierarchy and deprecated aliases
+# ==============================================================================
+
+
+class TestFlyHierarchy:
+    def test_concrete_models_subclass_basefly(self):
+        assert issubclass(NeuroMechFly, BaseFly)
+        assert issubclass(FlyBody, BaseFly)
+
+    def test_flybody_does_not_subclass_neuromechfly(self):
+        assert not issubclass(FlyBody, NeuroMechFly)
+
+    def test_fly_is_deprecated_alias_for_neuromechfly(self):
+        assert issubclass(Fly, NeuroMechFly)
+        with pytest.warns(DeprecationWarning, match="NeuroMechFly"):
+            fly = Fly()
+        assert isinstance(fly, NeuroMechFly)
+        assert fly.name == "nmf"
+
+    def test_new_names_do_not_warn(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            NeuroMechFly()
+            FlyBody()
+
+
+# ==============================================================================
+# NeuroMechFly construction
 # ==============================================================================
 
 
 class TestFlyConstruction:
     def test_fly_default_name(self):
-        fly = Fly()
+        fly = NeuroMechFly()
         assert fly.name == "nmf"
 
+    def test_flybodyfly_default_name(self):
+        fly = FlyBody()
+        assert fly.name == "flybody"
+
     def test_fly_custom_name(self):
-        fly = Fly(name="myfly")
+        fly = NeuroMechFly(name="myfly")
         assert fly.name == "myfly"
 
     def test_body_segments_populated(self):
-        fly = Fly()
+        fly = NeuroMechFly()
         # All body segments should have a corresponding MJCF body and geom
         assert len(fly.bodyseg_to_mjcfbody) > 0
         assert len(fly.bodyseg_to_mjcfgeom) > 0
@@ -49,23 +92,23 @@ class TestFlyConstruction:
     def test_all_segment_names_present(self):
         from flygym.anatomy import ALL_SEGMENT_NAMES
 
-        fly = Fly()
+        fly = NeuroMechFly()
         body_names = {seg.name for seg in fly.bodyseg_to_mjcfbody}
         assert set(ALL_SEGMENT_NAMES) == body_names
 
     def test_no_joints_before_add_joints(self):
-        fly = Fly()
+        fly = NeuroMechFly()
         assert fly.skeleton is None
         assert len(fly.jointdof_to_mjcfjoint) == 0
 
     def test_no_actuators_before_add_actuators(self):
-        fly = Fly()
+        fly = NeuroMechFly()
         for ty in ActuatorType:
             assert len(fly.jointdof_to_mjcfactuator_by_type[ty]) == 0
 
     def test_compile_before_joints(self):
         """Should be able to compile a bare fly (no joints/actuators)."""
-        fly = Fly()
+        fly = NeuroMechFly()
         mj_model, mj_data = fly.compile()
         assert mj_model is not None
         assert mj_data is not None
@@ -87,13 +130,13 @@ class TestFlyAddJoints:
         assert len(fly_with_joints.jointdof_to_neutralangle) > 0
 
     def test_add_joints_with_no_neutral_pose_defaults_to_zero(self, skeleton_ypr):
-        fly = Fly(name="noposefly")
+        fly = NeuroMechFly(name="noposefly")
         fly.add_joints(skeleton_ypr, neutral_pose=None)
         for angle in fly.jointdof_to_neutralangle.values():
             assert angle == 0.0
 
     def test_add_joints_invalid_neutral_pose_raises(self, skeleton_ypr):
-        fly = Fly(name="badposefly")
+        fly = NeuroMechFly(name="badposefly")
         with pytest.raises(ValueError, match="KinematicPose"):
             fly.add_joints(skeleton_ypr, neutral_pose={"not": "a_pose"})
 
@@ -145,7 +188,7 @@ class TestFlyAddLegAdhesion:
 
 class TestFlyAddJointSites:
     def test_add_joint_sites_registers_sites(self):
-        fly = Fly(name="joint_sites_fly")
+        fly = NeuroMechFly(name="joint_sites_fly")
         joints = [
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
@@ -155,14 +198,14 @@ class TestFlyAddJointSites:
         assert len(fly.anatomicaljoint_to_mjcfsites) == len(joints)
 
     def test_add_joint_sites_duplicate_raises(self):
-        fly = Fly(name="joint_sites_dup_fly")
+        fly = NeuroMechFly(name="joint_sites_dup_fly")
         joint = AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa"))
         fly.add_joint_sites([joint])
         with pytest.raises(ValueError, match="already been added"):
             fly.add_joint_sites([joint])
 
     def test_add_joint_sites_compiles(self):
-        fly = Fly(name="joint_sites_compile_fly")
+        fly = NeuroMechFly(name="joint_sites_compile_fly")
         joints = [
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
@@ -172,7 +215,7 @@ class TestFlyAddJointSites:
         assert mj_model.nsite >= len(joints)
 
     def test_get_sites_order_matches_add_order(self):
-        fly = Fly(name="joint_sites_order_fly")
+        fly = NeuroMechFly(name="joint_sites_order_fly")
         joints = [
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("lf_coxa")),
             AnatomicalJoint(BodySegment("c_thorax"), BodySegment("rf_coxa")),
@@ -222,16 +265,16 @@ class TestFlatGroundWorld:
 
     def test_custom_name(self):
         world = FlatGroundWorld(name="myworld")
-        assert world.mjcf_root.model == "myworld"
+        assert world.mjcf_root.modelname == "myworld"
 
     def test_add_fly_registers_in_lookup(self, flat_world_with_fly, fly_with_joints):
         assert fly_with_joints.name in flat_world_with_fly.fly_lookup
 
     def test_duplicate_fly_name_raises(self):
-        # Use fresh Fly instances and TetheredWorld (no ground-contact sensors)
+        # Use fresh NeuroMechFly instances and TetheredWorld (no ground-contact sensors)
         # so bare flies compile cleanly. The name-uniqueness check is world-agnostic.
-        fly_a = Fly(name="dupfly")
-        fly_b = Fly(name="dupfly")
+        fly_a = NeuroMechFly(name="dupfly")
+        fly_b = NeuroMechFly(name="dupfly")
         world = TetheredWorld(name="dupworld")
         world.add_fly(
             fly_a,
@@ -247,7 +290,7 @@ class TestFlatGroundWorld:
 
     def test_spawn_rotation_must_be_quat(self):
         # Use a fresh, unattached fly so dm_control doesn't error first
-        fly = Fly(name="quatfly")
+        fly = NeuroMechFly(name="quatfly")
         world = TetheredWorld(name="rotworld")
         with pytest.raises(ValueError, match="quaternion"):
             world.add_fly(
@@ -262,7 +305,7 @@ class TestFlatGroundWorld:
         assert isinstance(mj_data, mj.MjData)
 
     def test_compiled_model_has_freejoint(self, flat_world_with_fly):
-        """Fly should be attached with a 6-DoF free joint (7 qpos, 6 qvel)."""
+        """NeuroMechFly should be attached with a 6-DoF free joint (7 qpos, 6 qvel)."""
         mj_model, _ = flat_world_with_fly.compile()
         # Free joint: 7 qpos (xyz + quat) + n_leg_dofs
         assert mj_model.nq > 7
@@ -275,7 +318,24 @@ class TestFlatGroundWorld:
         assert len(sensors) == 6  # one per leg
 
     def test_world_dof_neutral_states_set(self, flat_world_with_fly):
-        assert len(flat_world_with_fly.world_dof_neutral_states) > 0
+        # world_dof_neutral_states is a set of the world-level DoF (joint) names;
+        # a free-jointed fly contributes its free joint, named after the fly.
+        dof_names = flat_world_with_fly.world_dof_neutral_states
+        assert isinstance(dof_names, set)
+        fly_name = list(flat_world_with_fly.fly_lookup.keys())[0]
+        assert fly_name in dof_names
+
+    def test_accepts_flybody_contact_preset(self):
+        fly = FlyBody(name="flybody_contact_test")
+        world = FlatGroundWorld(name="flybody_contact_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            bodysegs_with_ground_contact=FlyBodyContactBodiesPreset.LEGS_ONLY,
+            add_ground_contact_sensors=False,
+        )
+        assert fly.name in world.fly_lookup
 
 
 class TestMixedTerrainWorld:
@@ -333,36 +393,36 @@ class TestTetheredWorld:
 
 
 # ==============================================================================
-# Fly.add_tracking_camera
+# NeuroMechFly.add_tracking_camera
 # ==============================================================================
 
 
 class TestFlyAddTrackingCamera:
     def test_camera_registered_in_lookup(self):
-        fly = Fly(name="cam_fly")
+        fly = NeuroMechFly(name="cam_fly")
         fly.add_tracking_camera(name="trackcam")
         assert "trackcam" in fly.cameraname_to_mjcfcamera
 
     def test_returns_mjcf_element(self):
-        fly = Fly(name="cam_fly2")
+        fly = NeuroMechFly(name="cam_fly2")
         cam = fly.add_tracking_camera()
         assert cam is not None
 
     def test_custom_name(self):
-        fly = Fly(name="cam_fly3")
+        fly = NeuroMechFly(name="cam_fly3")
         fly.add_tracking_camera(name="sidecam")
         assert "sidecam" in fly.cameraname_to_mjcfcamera
         assert "trackcam" not in fly.cameraname_to_mjcfcamera
 
     def test_multiple_cameras(self):
-        fly = Fly(name="cam_fly4")
+        fly = NeuroMechFly(name="cam_fly4")
         fly.add_tracking_camera(name="front")
         fly.add_tracking_camera(name="back")
         assert "front" in fly.cameraname_to_mjcfcamera
         assert "back" in fly.cameraname_to_mjcfcamera
 
     def test_camera_compiles_in_model(self, skeleton_ypr, neutral_pose):
-        fly = Fly(name="cam_fly5")
+        fly = NeuroMechFly(name="cam_fly5")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         fly.add_tracking_camera(name="trackcam")
         world = TetheredWorld(name="cam_world")
@@ -374,11 +434,9 @@ class TestFlyAddTrackingCamera:
         mj_model, _ = world.compile()
         assert mj_model.ncam == 1
 
-    def test_camera_full_identifier_after_world_attachment(
-        self, skeleton_ypr, neutral_pose
-    ):
-        """After attaching to a world, the camera's full_identifier gets the fly's prefix."""
-        fly = Fly(name="cam_fly6")
+    def test_camera_name_after_world_attachment(self, skeleton_ypr, neutral_pose):
+        """After attaching to a world, the camera's .name includes the fly's prefix."""
+        fly = NeuroMechFly(name="cam_fly6")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         fly.add_tracking_camera(name="trackcam")
         world = TetheredWorld(name="cam_world2")
@@ -389,44 +447,312 @@ class TestFlyAddTrackingCamera:
         )
         mj_model, _ = world.compile()
         cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
-        cam_id = mj.mj_name2id(
-            mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.full_identifier
-        )
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
         assert cam_id >= 0, "Camera should be findable in the compiled model"
+
+    def test_camera_parented_to_root_body(self, skeleton_ypr, neutral_pose):
+        """The tracking camera must be a child of the fly's root body so that
+        ``track`` mode follows the fly. A camera in the world body would not move
+        (the world never moves), which is the bug this guards against. A freely
+        spawned fly keeps its root body dynamic (not fused into the world), so the
+        camera stays parented to it."""
+        fly = NeuroMechFly(name="cam_fly7")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world3")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        parent_body = mj.mj_id2name(
+            mj_model, mj.mjtObj.mjOBJ_BODY, mj_model.cam_bodyid[cam_id]
+        )
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_body_id, (
+            f"Tracking camera parent is '{parent_body}', expected the root body "
+            f"'{fly.name}/{fly.root_segment.name}'."
+        )
+
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
+    )
+    def test_camera_follows_moving_body(self, skeleton_ypr, neutral_pose):
+        """End-to-end check that ``track`` mode keeps the camera at a constant offset
+        from the fly as the fly translates."""
+        fly = NeuroMechFly(name="cam_fly8")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = FlatGroundWorld(name="cam_world4")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, mj_data = world.compile()
+        cam_element = fly.cameraname_to_mjcfcamera["trackcam"]
+        cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_element.name)
+        root_body_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+
+        renderer = mj.Renderer(mj_model, 64, 64)
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_before = np.array(renderer.scene.camera[0].pos)
+        body_pos_before = mj_data.xpos[root_body_id].copy()
+
+        # Translate the fly via its free joint (qpos layout: x, y, z, qw, qx, qy, qz).
+        free_adr = mj_model.jnt_qposadr[
+            mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_JOINT, fly.name)
+        ]
+        mj_data.qpos[free_adr + 1] += 5.0  # move +5 mm in y
+        mj.mj_forward(mj_model, mj_data)
+        renderer.update_scene(mj_data, cam_id)
+        cam_pos_after = np.array(renderer.scene.camera[0].pos)
+        body_pos_after = mj_data.xpos[root_body_id]
+        renderer.close()
+
+        body_shift = body_pos_after - body_pos_before
+        cam_shift = cam_pos_after - cam_pos_before
+        np.testing.assert_allclose(cam_shift, body_shift, atol=1e-3)
+
+    @pytest.mark.skipif(
+        os.environ.get("SKIP_RENDERING_TESTS") == "1",
+        reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
+    )
+    def test_pos_offset_is_relative_to_root_segment(self, skeleton_ypr, neutral_pose):
+        """``pos_offset`` is expressed in the root segment's body frame: the camera
+        sits at ``root_body_pos + pos_offset``. With an upright spawn the root frame is
+        world-aligned, so the world-space camera-to-root offset equals ``pos_offset``.
+        """
+        fly = NeuroMechFly(name="cam_off_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        offset = (1.0, 2.0, 3.0)
+        fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+        world = FlatGroundWorld(name="cam_off_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, mj_data = world.compile()
+        mj.mj_forward(mj_model, mj_data)
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        root_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        np.testing.assert_allclose(
+            mj_data.cam_xpos[cam_id] - mj_data.xpos[root_id], offset, atol=1e-4
+        )
+
+    def test_pos_offset_invariant_across_compile_contexts(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """The same ``pos_offset`` places the camera identically relative to the fly
+        whether the root is free-jointed (``FlatGroundWorld``), rigidly held
+        (``TetheredWorld``), or the fly is compiled on its own. This guards the
+        fusestatic/tracking-camera handling that keeps the offset frame consistent."""
+        offset = (1.0, 2.0, 3.0)
+
+        def cam_offset_relative_to_root(mj_model, mj_data, cam_name, root_name):
+            mj.mj_forward(mj_model, mj_data)
+            cam_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_CAMERA, cam_name)
+            root_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, root_name)
+            assert cam_id >= 0 and root_id >= 0
+            return mj_data.cam_xpos[cam_id] - mj_data.xpos[root_id]
+
+        # Standalone fly (no world, no free joint).
+        fly = NeuroMechFly(name="inv_fly_standalone")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+        mj_model, mj_data = fly.compile()
+        offsets = [
+            cam_offset_relative_to_root(
+                mj_model,
+                mj_data,
+                fly.cameraname_to_mjcfcamera["trackcam"].name,
+                fly.root_segment.name,
+            )
+        ]
+
+        # Attached to each world type.
+        for i, world_cls in enumerate((FlatGroundWorld, TetheredWorld)):
+            fly = NeuroMechFly(name=f"inv_fly_{i}")
+            fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+            fly.add_tracking_camera(name="trackcam", pos_offset=offset)
+            world = world_cls(name=f"inv_world_{i}")
+            world.add_fly(
+                fly,
+                spawn_position=[0, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
+            mj_model, mj_data = world.compile()
+            offsets.append(
+                cam_offset_relative_to_root(
+                    mj_model,
+                    mj_data,
+                    fly.cameraname_to_mjcfcamera["trackcam"].name,
+                    f"{fly.name}/{fly.root_segment.name}",
+                )
+            )
+
+        for other in offsets[1:]:
+            np.testing.assert_allclose(other, offsets[0], atol=1e-4)
+        np.testing.assert_allclose(offsets[0], offset, atol=1e-4)
+
+    def test_standalone_fly_compile_keeps_root_segment(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """A fly compiled on its own (e.g. for ``preview_model``) keeps its root
+        segment instead of fusing it into the worldbody, so the tracking camera is
+        parented to the root rather than silently falling back to the world body."""
+        fly = NeuroMechFly(name="standalone_cam_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        mj_model, _ = fly.compile()
+        root_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, fly.root_segment.name)
+        assert root_id >= 0, "Root segment must survive standalone compilation"
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_id, (
+            "Standalone tracking camera must be parented to the root segment, "
+            "not the world body."
+        )
+
+    def test_tethered_world_keeps_root_segment_as_mocap(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """In a ``TetheredWorld`` the root has no free joint and would be fused into
+        the worldbody. It is kept as a mocap body so the tracking camera still follows
+        it instead of tracking the (stationary) worldbody."""
+        fly = NeuroMechFly(name="teth_keep_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="teth_keep_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        root_id = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/{fly.root_segment.name}"
+        )
+        assert root_id >= 0, "Root segment must survive (not be fused) in TetheredWorld"
+        assert mj_model.body_mocapid[root_id] >= 0, (
+            "Root segment should be a mocap body"
+        )
+        cam_id = mj.mj_name2id(
+            mj_model,
+            mj.mjtObj.mjOBJ_CAMERA,
+            fly.cameraname_to_mjcfcamera["trackcam"].name,
+        )
+        assert mj_model.cam_bodyid[cam_id] == root_id
+
+    def test_tethered_world_still_fuses_other_static_bodies(
+        self, skeleton_ypr, neutral_pose
+    ):
+        """Only the root segment is exempted from fusing. Other jointless segments
+        (e.g. the head in a legs-only model) are still fused, preserving the
+        ``fusestatic`` performance optimization rather than disabling it wholesale."""
+        fly = NeuroMechFly(name="teth_fuse_fly")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.add_tracking_camera(name="trackcam")
+        world = TetheredWorld(name="teth_fuse_world")
+        world.add_fly(
+            fly,
+            spawn_position=[0, 0, 1.5],
+            spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+        )
+        mj_model, _ = world.compile()
+        head_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_BODY, f"{fly.name}/c_head")
+        assert head_id == -1, (
+            "A jointless non-root segment (head) should be fused away, confirming "
+            "fusestatic is still active for everything but the root segment."
+        )
 
 
 # ==============================================================================
-# Fly.colorize
+# NeuroMechFly.colorize
 # ==============================================================================
 
 
 class TestFlyColorize:
     def test_colorize_succeeds(self):
-        fly = Fly(name="color_fly")
+        fly = NeuroMechFly(name="color_fly")
         fly.colorize()  # should not raise
 
     def test_colorize_adds_materials(self):
-        fly = Fly(name="color_fly2")
+        fly = NeuroMechFly(name="color_fly2")
         fly.colorize()
         # After colorize, there should be materials in the MJCF asset section
-        materials = fly.mjcf_root.find_all("material")
+        materials = fly.mjcf_root.materials
         assert len(materials) > 0
 
     def test_colorize_compiles(self):
-        fly = Fly(name="color_fly3")
+        fly = NeuroMechFly(name="color_fly3")
         fly.colorize()
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
 
 # ==============================================================================
-# Fly.add_leg_adhesion with per-leg dict gain
+# save_xml_with_assets
+# ==============================================================================
+
+
+class TestSaveXmlWithAssets:
+    def test_exports_xml_and_assets(self, tmp_path):
+        fly = NeuroMechFly(name="export_fly")
+        fly.save_xml_with_assets(tmp_path)
+        assert list(tmp_path.glob("*.xml")), "expected an exported XML file"
+        assert list(tmp_path.glob("*.stl")), "expected exported mesh assets"
+
+    def test_exported_xml_is_self_contained(self, tmp_path, skeleton_ypr, neutral_pose):
+        import mujoco as mj
+
+        fly = NeuroMechFly(name="export_fly2")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        xml_path = next(tmp_path.glob("*.xml"))
+        # Loadable on its own with assets resolved relative to the XML directory.
+        model = mj.MjModel.from_xml_path(str(xml_path))
+        assert model.nbody > 1
+
+    def test_save_does_not_break_later_compile(
+        self, tmp_path, skeleton_ypr, neutral_pose
+    ):
+        # save_xml_with_assets must not mutate the live spec (it previously
+        # relativized mesh paths in place, breaking subsequent compile()).
+        fly = NeuroMechFly(name="export_fly3")
+        fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
+        fly.save_xml_with_assets(tmp_path)
+        mj_model, _ = fly.compile()
+        assert mj_model.nbody > 1
+
+
+# ==============================================================================
+# NeuroMechFly.add_leg_adhesion with per-leg dict gain
 # ==============================================================================
 
 
 class TestFlyAddLegAdhesionDictGain:
     def test_per_leg_gain_applied(self):
-        fly = Fly(name="dict_gain_fly")
+        fly = NeuroMechFly(name="dict_gain_fly")
         gains = {leg: float(i + 1) for i, leg in enumerate(LEGS)}
         fly.add_leg_adhesion(gain=gains)
         assert len(fly.leg_to_adhesionactuator) == 6
@@ -434,7 +760,7 @@ class TestFlyAddLegAdhesionDictGain:
             assert leg in fly.leg_to_adhesionactuator
 
     def test_per_leg_gain_compiles(self):
-        fly = Fly(name="dict_gain_fly2")
+        fly = NeuroMechFly(name="dict_gain_fly2")
         gains = {leg: 2.0 for leg in LEGS}
         fly.add_leg_adhesion(gain=gains)
         mj_model, _ = fly.compile()
@@ -442,33 +768,33 @@ class TestFlyAddLegAdhesionDictGain:
 
 
 # ==============================================================================
-# Fly.add_joints with KinematicPosePreset
+# NeuroMechFly.add_joints with KinematicPosePreset
 # ==============================================================================
 
 
 class TestFlyAddJointsWithPreset:
     def test_add_joints_with_preset_neutral_pose(self, skeleton_ypr):
-        fly = Fly(name="preset_pose_fly")
+        fly = NeuroMechFly(name="preset_pose_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
         assert fly.skeleton is not None
         assert len(fly.jointdof_to_neutralangle) > 0
 
     def test_preset_neutral_angles_nonzero(self, skeleton_ypr):
         """Neutral angles loaded from preset should not all be zero."""
-        fly = Fly(name="preset_pose_fly2")
+        fly = NeuroMechFly(name="preset_pose_fly2")
         fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
         angles = list(fly.jointdof_to_neutralangle.values())
         assert any(a != 0.0 for a in angles)
 
 
 # ==============================================================================
-# Fly.add_actuators with KinematicPosePreset as neutral_input
+# NeuroMechFly.add_actuators with KinematicPosePreset as neutral_input
 # ==============================================================================
 
 
 class TestFlyAddActuatorsWithPreset:
     def test_neutral_input_from_preset(self, skeleton_ypr):
-        fly = Fly(name="preset_act_fly")
+        fly = NeuroMechFly(name="preset_act_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=KinematicPosePreset.NEUTRAL)
         actuated_dofs = skeleton_ypr.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -493,7 +819,7 @@ class TestFlyAddActuatorsWithPreset:
 
 class TestFlatGroundWorldContactOptions:
     def test_add_fly_with_custom_contact_params(self, skeleton_ypr, neutral_pose):
-        fly = Fly(name="custom_contact_fly")
+        fly = NeuroMechFly(name="custom_contact_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         world = FlatGroundWorld(name="custom_contact_world")
         custom_params = ContactParams(sliding_friction=2.0)
@@ -507,7 +833,7 @@ class TestFlatGroundWorldContactOptions:
         assert mj_model is not None
 
     def test_add_fly_legs_only_contact_preset(self, skeleton_ypr, neutral_pose):
-        fly = Fly(name="legs_only_fly")
+        fly = NeuroMechFly(name="legs_only_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         world = FlatGroundWorld(name="legs_only_world")
         world.add_fly(
@@ -520,7 +846,7 @@ class TestFlatGroundWorldContactOptions:
         assert mj_model is not None
 
     def test_add_fly_without_ground_contact_sensors(self, skeleton_ypr, neutral_pose):
-        fly = Fly(name="nosensor_fly")
+        fly = NeuroMechFly(name="nosensor_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         world = FlatGroundWorld(name="nosensor_world")
         world.add_fly(
@@ -532,7 +858,7 @@ class TestFlatGroundWorldContactOptions:
         assert world.legpos_to_groundcontactsensors_by_fly is None
 
     def test_add_fly_tibia_tarsus_contact_preset(self, skeleton_ypr, neutral_pose):
-        fly = Fly(name="tt_fly")
+        fly = NeuroMechFly(name="tt_fly")
         fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
         world = FlatGroundWorld(name="tt_world")
         world.add_fly(
@@ -546,7 +872,7 @@ class TestFlatGroundWorldContactOptions:
 
 
 # ==============================================================================
-# Fly construction options
+# NeuroMechFly construction options
 # ==============================================================================
 
 
@@ -554,13 +880,13 @@ class TestFlyConstructionOptions:
     def test_fullsize_mesh_type(self):
         from flygym.compose.fly import MeshType
 
-        fly = Fly(name="fullsize_fly", mesh_type=MeshType.FULLSIZE)
+        fly = NeuroMechFly(name="fullsize_fly", mesh_type=MeshType.FULLSIZE)
         assert fly is not None
         mj_model, _ = fly.compile()
         assert mj_model is not None
 
     def test_claws_to_capsules_fitting(self):
-        fly = Fly(
+        fly = NeuroMechFly(
             name="capsule_fly", geom_fitting_option=GeomFittingOption.CLAWS_TO_CAPSULES
         )
         assert fly is not None
@@ -568,7 +894,7 @@ class TestFlyConstructionOptions:
         assert mj_model is not None
 
     def test_all_to_capsules_fitting(self):
-        fly = Fly(
+        fly = NeuroMechFly(
             name="all_capsule_fly",
             geom_fitting_option=GeomFittingOption.ALL_TO_CAPSULES,
         )

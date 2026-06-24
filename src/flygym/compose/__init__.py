@@ -1,16 +1,44 @@
-from .fly import Fly, ActuatorType, MeshType, GeomFittingOption
+from .fly import (
+    BaseFly,
+    NeuroMechFly,
+    FlyBody,
+    MusculoskeletalFly,
+    DEFAULT_MUSCULOSKELETAL_XML,
+    DEFAULT_SCENE_CAMERA,
+    MUSCULOSKELETAL_MODEL_DIR,
+    build_musculoskeletal_simulation,
+    build_musculoskeletal_gpu_simulation,
+    check_mjwarp_compatibility,
+    MjWarpCompatibilityReport,
+    Fly,
+    ActuatorType,
+    MeshType,
+    GeomFittingOption,
+)
 from .world import (
     BaseWorld,
     BlocksTerrainWorld,
     FlatGroundWorld,
     GappedTerrainWorld,
     MixedTerrainWorld,
+    MusculoskeletalWorld,
     TetheredWorld,
 )
 from .pose import KinematicPose, KinematicPosePreset
 from .physics import ContactParams
 
 __all__ = [
+    "BaseFly",
+    "NeuroMechFly",
+    "FlyBody",
+    "MusculoskeletalFly",
+    "DEFAULT_MUSCULOSKELETAL_XML",
+    "DEFAULT_SCENE_CAMERA",
+    "MUSCULOSKELETAL_MODEL_DIR",
+    "build_musculoskeletal_simulation",
+    "build_musculoskeletal_gpu_simulation",
+    "check_mjwarp_compatibility",
+    "MjWarpCompatibilityReport",
     "Fly",
     "ActuatorType",
     "MeshType",
@@ -20,6 +48,7 @@ __all__ = [
     "GappedTerrainWorld",
     "BlocksTerrainWorld",
     "MixedTerrainWorld",
+    "MusculoskeletalWorld",
     "TetheredWorld",
     "KinematicPose",
     "KinematicPosePreset",

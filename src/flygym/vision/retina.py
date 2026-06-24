@@ -75,15 +75,15 @@ class Retina:
         ncols: Optional[int] = None,
     ) -> None:
         # Load parameters from config file if not supplied
-        with open(assets_dir / "model/vision.yaml", "r") as f:
+        with open(assets_dir / "model/neuromechfly/vision.yaml", "r") as f:
             vision_config = yaml.safe_load(f)
 
         if ommatidia_id_map is None:
-            with np.load(assets_dir / "model/compound_eye.npz") as data:
+            with np.load(assets_dir / "model/neuromechfly/compound_eye.npz") as data:
                 ommatidia_id_map = data["ommatidia_id_map"]
 
         if pale_type_mask is None:
-            with np.load(assets_dir / "model/compound_eye.npz") as data:
+            with np.load(assets_dir / "model/neuromechfly/compound_eye.npz") as data:
                 pale_type_mask = data["pale_mask"].astype(int)
 
         if distortion_coefficient is None:
@@ -189,7 +189,7 @@ class Retina:
 
     def correct_fisheye(self, img: np.ndarray) -> np.ndarray:
         """
-        The raw imaged rendered by the MuJoCo camera is rectilinear. This
+        The raw image rendered by the MuJoCo camera is rectilinear. This
         distorts the image and overrepresents the periphery of the field of
         view (the same angle near the periphery is reflected by a greater
         angle in the rendered image). This method applies a fisheye effect

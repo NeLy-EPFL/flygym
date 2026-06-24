@@ -3,9 +3,15 @@
 import warnings
 import pytest
 import numpy as np
+import mujoco as mj
+
+# These tests require the optional warp (GPU) extra; tag them so they can be
+# excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
+pytestmark = pytest.mark.warp
+pytest.importorskip("warp")
 
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
-from flygym.compose import Fly, FlatGroundWorld, KinematicPosePreset
+from flygym.compose import NeuroMechFly, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
 from flygym.warp import WarpCPURenderer
 from flygym.warp.rendering import modify_world_for_batch_rendering
@@ -239,7 +245,7 @@ class TestSubworldRendering:
 
 class TestModifyWorldForBatchRendering:
     def _plain_world_with_fly(self, fly_name: str):
-        fly = Fly(name=fly_name)
+        fly = NeuroMechFly(name=fly_name)
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL,
             joint_preset=JointPreset.LEGS_ONLY,
@@ -263,7 +269,7 @@ class TestModifyWorldForBatchRendering:
 
     def test_strips_textures_from_colorized_fly(self):
         """After modification fly body materials should have no texture."""
-        fly = Fly(name="tex_fly")
+        fly = NeuroMechFly(name="tex_fly")
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL,
             joint_preset=JointPreset.LEGS_ONLY,
@@ -281,16 +287,17 @@ class TestModifyWorldForBatchRendering:
             warnings.simplefilter("ignore")
             modify_world_for_batch_rendering(world)
 
-        for material in world.mjcf_root.asset.find_all("material"):
-            if material.full_identifier.startswith(fly.name + "/"):
-                assert material.texture is None, (
-                    f"Fly material {material.full_identifier!r} still has a texture."
+        rgb_role = int(mj.mjtTextureRole.mjTEXROLE_RGB)
+        for material in world.mjcf_root.materials:
+            if material.name.startswith(fly.name + "/"):
+                assert material.textures[rgb_role] == "", (
+                    f"NeuroMechFly material {material.name!r} still has a texture."
                 )
 
     def test_is_modified_true_for_colorized_fly(self):
         """modify_world_for_batch_rendering should report a modification when
         a colorized fly (with textures) is present."""
-        fly = Fly(name="mod_fly")
+        fly = NeuroMechFly(name="mod_fly")
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL,
             joint_preset=JointPreset.LEGS_ONLY,

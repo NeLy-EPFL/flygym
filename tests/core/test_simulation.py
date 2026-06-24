@@ -1,6 +1,6 @@
 """Integration tests for flygym.simulation (Simulation)."""
 
-import platform
+import os
 
 import pytest
 import numpy as np
@@ -14,7 +14,7 @@ from flygym.anatomy import (
     AnatomicalJoint,
     BodySegment,
 )
-from flygym.compose.fly import Fly, ActuatorType
+from flygym.compose.fly import NeuroMechFly, ActuatorType
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
@@ -189,7 +189,7 @@ class TestGetBodyRotations:
 
 @pytest.fixture(scope="module")
 def simulation_with_joint_sites(neutral_pose, skeleton_ypr):
-    fly = Fly(name="sites_sim_fly")
+    fly = NeuroMechFly(name="sites_sim_fly")
     fly.add_joints(skeleton_ypr, neutral_pose=neutral_pose)
     fly.add_joint_sites(
         [
@@ -316,7 +316,8 @@ class TestLegAdhesion:
 
 class TestGroundContactInfo:
     @pytest.fixture(scope="class")
-    def flat_sim(self, flat_world_with_fly, fly_with_joints):
+    @staticmethod
+    def flat_sim(flat_world_with_fly, fly_with_joints):
         sim = Simulation(flat_world_with_fly)
         sim.reset()
         return sim
@@ -453,18 +454,15 @@ class TestSimulationCloseMethods:
 
 
 @pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 class TestSetRenderer:
     def test_set_renderer_returns_renderer(self, simulation, fly_with_adhesion):
         from flygym.rendering import Renderer
 
         # Build a world with a camera for this test
-        from flygym.compose.fly import Fly, ActuatorType
+        from flygym.compose.fly import NeuroMechFly, ActuatorType
         from flygym.compose.world import TetheredWorld
         from flygym.compose.pose import KinematicPosePreset
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
@@ -475,7 +473,7 @@ class TestSetRenderer:
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
-        fly = Fly(name="renderer_test_fly")
+        fly = NeuroMechFly(name="renderer_test_fly")
         fly.add_joints(skeleton, neutral_pose=pose)
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -495,7 +493,7 @@ class TestSetRenderer:
         from flygym.simulation import Simulation
 
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         renderer = sim.set_renderer(cam_name, camera_res=(64, 64))
 
@@ -504,7 +502,7 @@ class TestSetRenderer:
         assert sim.renderer is renderer
 
     def test_render_as_needed_with_profile_tracks_frames(self, simulation):
-        from flygym.compose.fly import Fly, ActuatorType
+        from flygym.compose.fly import NeuroMechFly, ActuatorType
         from flygym.compose.world import TetheredWorld
         from flygym.compose.pose import KinematicPosePreset
         from flygym.anatomy import AxisOrder, JointPreset, Skeleton, ActuatedDOFPreset
@@ -516,7 +514,7 @@ class TestSetRenderer:
         skeleton = Skeleton(
             axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
         )
-        fly = Fly(name="profrender_fly")
+        fly = NeuroMechFly(name="profrender_fly")
         fly.add_joints(skeleton, neutral_pose=pose)
         actuated_dofs = skeleton.get_actuated_dofs_from_preset(
             ActuatedDOFPreset.LEGS_ACTIVE_ONLY
@@ -534,7 +532,7 @@ class TestSetRenderer:
             spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
         )
         sim = Simulation(world)
-        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+        cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
 
         sim.set_renderer(cam_name, camera_res=(64, 64))
 

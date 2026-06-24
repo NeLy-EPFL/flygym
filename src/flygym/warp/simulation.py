@@ -4,7 +4,6 @@ from typing import Any, Literal, override
 import warp as wp
 import mujoco as mj
 import mujoco_warp as mjw
-import dm_control.mjcf as mjcf
 import numpy as np
 from jaxtyping import Float
 
@@ -37,6 +36,8 @@ class GPUSimulation(Simulation):
     Args:
         world: A fully configured world with at least one fly attached.
         n_worlds: Number of parallel simulation instances.
+        timestep: Physics timestep in seconds. If None, the model's compiled-in
+            timestep (from ``mujoco_globals.yaml``) is used.
         max_constraints: Maximum number of constraints per world.
         max_contacts: Maximum number of contacts per world.
 
@@ -51,11 +52,15 @@ class GPUSimulation(Simulation):
         self,
         world: BaseWorld,
         n_worlds: int,
+        *,
+        timestep: float | None = None,
         max_constraints: int = 500,
         max_contacts: int = 500,
     ) -> None:
         self._strip_unsupported_options_for_mjwarp(world)
-        super().__init__(world)
+        # Set the timestep on the CPU model before the GPU structs are built below,
+        # so the override propagates into the GPU-side model.
+        super().__init__(world, timestep=timestep)
         self.n_worlds = n_worlds
         self.max_constraints = max_constraints
         self.max_contacts = max_contacts
@@ -266,7 +271,7 @@ class GPUSimulation(Simulation):
     @override
     def set_renderer(
         self,
-        cameras: str | mjcf.Element | list[str | mjcf.Element],
+        cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -333,12 +338,11 @@ class GPUSimulation(Simulation):
         return self.renderer
 
     @override
-    def render_as_needed(self) -> dict[str, Float[np.ndarray, "height width 3"]]:
+    def render_as_needed(self) -> bool:
         """Render frames for all configured cameras if enough time has elapsed.
 
         Returns:
-            Dict mapping camera name to rendered frame array ``(height, width, 3)``,
-            or an empty dict if no render occurred.
+            True if a render occurred, False otherwise.
         """
         return self.renderer.render_as_needed(self.mjw_data)
 

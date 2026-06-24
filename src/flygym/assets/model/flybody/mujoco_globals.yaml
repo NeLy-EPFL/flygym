@@ -1,0 +1,27 @@
+compiler:
+  autolimits: 'true'
+  angle: radian
+  eulerseq: XYZ
+  meshdir: assets
+  fusestatic: 'false'
+option:
+  timestep: '0.0001'
+  gravity: ['0', '0', '-9810']  # mm/s^2 (source XML is cm: -981 cm/s^2 x10 -> mm)
+  density: '0.00128'
+  viscosity: '0.000185'
+  cone: elliptic
+  noslip_iterations: '3'
+size:
+  njmax: '300'
+  nconmax: '100'
+  nkey: '1'
+statistic:
+  extent: '5'
+visual:
+  headlight:
+    ambient: 0.5 0.5 0.5
+    diffuse: 0.6 0.6 0.6
+    specular: 0. 0. 0.
+  global:
+    offwidth: 2048
+    offheight: 2048

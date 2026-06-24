@@ -1,9 +1,9 @@
+import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 from os import PathLike
 
 import mujoco as mj
-import dm_control.mjcf as mjcf
 
 __all__ = ["BaseCompositionElement"]
 
@@ -14,22 +14,74 @@ class BaseCompositionElement(ABC):
 
     @property
     @abstractmethod
-    def mjcf_root(self) -> mjcf.RootElement:
-        """The root MJCF element of this composition element."""
+    def mjcf_root(self) -> mj.MjSpec:
+        """The root MjSpec of this composition element."""
         pass
 
     def compile(self) -> tuple[mj.MjModel, mj.MjData]:
-        """Compile the MJCF model into MuJoCo MjModel and MjData objects. This is where
-        `dm_control.mjcf` "hands off" the model that it composes to `mujoco` for
+        """Compile the MjSpec into MuJoCo MjModel and MjData objects. This is where
+        the model edited via `mujoco.MjSpec` is "handed off" to `mujoco` for
         simulation. Things like the ordering of generalized coordinates (qpos) are
-        determined here."""
-        physics = mjcf.Physics.from_mjcf_model(self.mjcf_root)
-        return physics.model._model, physics.data._data
+        determined here.
+
+        We compile a copy of the spec rather than the spec itself: with
+        `compiler/fusestatic` enabled, compiling mutates the spec in place by fusing
+        static bodies into their parent. During composition (e.g. before a fly is
+        given a free joint by the world) the root body is still static, so compiling
+        the live spec would destroy it and invalidate the element references FlyGym
+        holds. Compiling a copy keeps the editable spec intact while producing an
+        equivalent compiled model."""
+        model = self.mjcf_root.copy().compile()
+        data = mj.MjData(model)
+        return model, data
 
     def save_xml_with_assets(
         self, output_dir: PathLike, xml_filename: str = None
     ) -> None:
-        """Export the MJCF model to a directory, including a XML file (filename defaults
-        to the model name if not specified) and all associated assets (e.g. meshes)."""
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        mjcf.export_with_assets(self.mjcf_root, str(output_dir), xml_filename)
+        """Export the model to a directory, including an XML file (filename defaults
+        to the model name if not specified) and all associated assets (e.g. meshes).
+
+        File-based assets are copied next to the XML and their references are
+        relativized so the exported model is self-contained (e.g. loadable via
+        `mj_loadXML` in the browser).
+        """
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        # Operate on a copy: relativizing asset paths and clearing the asset search
+        # dirs mutates the spec, which would break later compile() calls on the live
+        # model (it would no longer find its meshes).
+        spec = self.mjcf_root.copy()
+
+        # Copy file-based assets (meshes, file textures) next to the XML and rewrite
+        # their `file` attributes to bare filenames so the export is self-contained.
+        # The same bytes are stashed in the spec's in-memory asset dict (keyed by the
+        # bare filename) so `to_xml()` below can resolve them without touching the
+        # filesystem -- see the serialization note.
+        in_memory_assets = dict(spec.assets)
+        asset_collections = [spec.meshes, spec.textures]
+        for collection in asset_collections:
+            for asset in collection:
+                src = getattr(asset, "file", None)
+                if not src:
+                    continue
+                src_path = Path(src)
+                dst_path = output_dir / src_path.name
+                if src_path.resolve() != dst_path.resolve():
+                    shutil.copy(src_path, dst_path)
+                asset.file = src_path.name
+                in_memory_assets[src_path.name] = dst_path.read_bytes()
+        # Assets now sit alongside the XML, so clear the asset search dirs. The
+        # emitted XML then references assets by bare filename, resolved relative to
+        # the XML's own directory when later loaded with `mj_loadXML`.
+        spec.meshdir = ""
+        spec.texturedir = ""
+
+        # `to_xml()` validates assets by loading them and would otherwise resolve bare
+        # filenames against the process working directory. Rather than chdir into
+        # `output_dir` (a process-global, non-thread-safe side effect), we hand the
+        # asset bytes to the spec's in-memory asset dict, which `to_xml()` consults
+        # first -- keeping `meshdir`/`texturedir` empty so the export stays portable.
+        spec.assets = in_memory_assets
+        xml_filename = xml_filename or f"{spec.modelname}.xml"
+        xml_string = spec.to_xml()
+        (output_dir / xml_filename).write_text(xml_string)

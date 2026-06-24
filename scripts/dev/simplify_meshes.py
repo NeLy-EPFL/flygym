@@ -1,3 +1,35 @@
+"""Regenerate the bundled simplified NeuroMechFly meshes from the fullsize set.
+
+This is a maintenance/dev script, not part of the runtime package. It reads the
+high-resolution ``fullsize`` NeuroMechFly meshes and writes decimated copies (at
+most ``MAX_FACES`` faces each) into
+``assets/model/neuromechfly/meshes/simplified_max2000faces/``. That simplified set
+is the default mesh resolution and *is* shipped with the package (tracked in git),
+so re-running this script and committing its output is how the bundled meshes are
+updated.
+
+The fullsize meshes are **not** in the repo -- they are hosted on S3 and pulled
+into the local cache on demand via ``flygym.utils.assets.lazy_load_asset_dir``.
+
+To publish a NEW version of the meshes:
+
+1. Upload the new fullsize meshes to the S3 bucket under a fresh versioned
+   directory, e.g. ``flygym_assets/neuromechfly_fullsize_meshes_<YYYYMMDD><x>/``
+   (the bucket uses immutable, dated directories so existing releases keep
+   working).
+2. Bump ``NEUROMECHFLY_FULLSIZE_MESH_DIR`` in
+   ``flygym/compose/fly/neuromechfly.py`` to the new directory name.
+3. Re-run this script to regenerate the simplified meshes from the new fullsize
+   set, then commit the updated ``simplified_max2000faces/`` directory.
+
+Remember to update ``metadata.yaml`` and, if applicable ``README`` files before
+uploading data to the S3 bucket.
+
+Usage:
+    python scripts/dev/simplify_meshes.py
+"""
+
+import shutil
 from dataclasses import dataclass, field
 
 import trimesh
@@ -140,9 +172,16 @@ def mesh_similarity(
 
 
 if __name__ == "__main__":
-    MESH_DIR_FULLSIZE = assets_dir / "model/meshes/fullsize/"
+    from flygym.utils.assets_lazy_loading import lazy_load_asset_dir
+    from flygym.compose.fly.neuromechfly import NEUROMECHFLY_FULLSIZE_MESH_DIR
+
+    # The fullsize meshes are hosted on S3, not shipped with the package; pull
+    # them into the local cache if they are not already present.
+    MESH_DIR_FULLSIZE = lazy_load_asset_dir(NEUROMECHFLY_FULLSIZE_MESH_DIR)
     MAX_FACES = 2000
-    MESH_DIR_REDUCED = assets_dir / f"model/meshes/simplified_max{MAX_FACES}faces/"
+    MESH_DIR_REDUCED = (
+        assets_dir / f"model/neuromechfly/meshes/simplified_max{MAX_FACES}faces/"
+    )
 
     MESH_DIR_REDUCED.mkdir(exist_ok=True, parents=True)
 
@@ -172,11 +211,11 @@ if __name__ == "__main__":
     df["pct_mse"] = np.nan
     df["pct_hausdorff_dist"] = np.nan
     for name, mesh in meshes_orig.items():
+        output_path = MESH_DIR_REDUCED / f"{name}.stl"
         if len(mesh.faces) > MAX_FACES:
             print(f"Simplifying {name}")
             mirror_by_xzplane = name.startswith("c_")
             simplified_mesh = simplify_mesh(mesh, MAX_FACES, mirror_by_xzplane)
-            output_path = MESH_DIR_REDUCED / f"{name}.stl"
             simplified_mesh.export(output_path)
             file_size_kb = int(output_path.stat().st_size / 1e3)
             similarity = mesh_similarity(mesh, simplified_mesh)
@@ -185,6 +224,12 @@ if __name__ == "__main__":
             df.loc[name, "pct_mean_dist"] = similarity.mean_distance_rel * 100
             df.loc[name, "pct_mse"] = similarity.rms_distance_rel * 100
             df.loc[name, "pct_hausdorff_dist"] = similarity.hausdorff_distance_rel * 100
+        else:
+            # Already within the face budget. Copy the original verbatim so the
+            # simplified set is self-contained: the fullsize meshes are no longer
+            # shipped, so there is nothing to fall back to at load time.
+            print(f"Copying {name} verbatim (already <= {MAX_FACES} faces)")
+            shutil.copy2(MESH_DIR_FULLSIZE / f"{name}.stl", output_path)
     total_faces_reduced = df["n_faces_reduced"].sum()
     df["n_faces_reduced"][df["pct_mean_dist"].isna()] = np.nan
     df["face_pct_of_total_reduced"] = df["n_faces_reduced"] / total_faces_reduced * 100

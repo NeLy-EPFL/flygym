@@ -1,22 +1,20 @@
 """Tests for flygym.rendering (Renderer class)."""
 
-import platform
+import os
 
 import pytest
 
 # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create a
-# headless OpenGL context without a physical GPU.  Skip the whole module on
-# those platforms so CI doesn't fail on macOS/Windows GitHub-hosted runners.
+# headless OpenGL context without a physical GPU.  GitHub CI sets
+# SKIP_RENDERING_TESTS=1 on those runners so the whole module is skipped there,
+# while local macOS/Windows machines (with a GPU) can still run it.
 pytestmark = pytest.mark.skipif(
-    platform.system() != "Linux",
-    reason=(
-        "mujoco hardcodes CGL on macOS and GLFW on Windows; "
-        "neither works headlessly in CI without a GPU"
-    ),
+    os.environ.get("SKIP_RENDERING_TESTS") == "1",
+    reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 
 from flygym.anatomy import AxisOrder, JointPreset, Skeleton
-from flygym.compose.fly import Fly
+from flygym.compose.fly import NeuroMechFly
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
 from flygym.utils.math import Rotation3D
@@ -35,7 +33,7 @@ def compiled_model_with_camera():
     skeleton = Skeleton(
         axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=JointPreset.LEGS_ONLY
     )
-    fly = Fly(name="render_fly")
+    fly = NeuroMechFly(name="render_fly")
     fly.add_joints(skeleton, neutral_pose=pose)
     fly.add_tracking_camera(name="trackcam")
     world = TetheredWorld(name="render_world")
@@ -50,9 +48,9 @@ def compiled_model_with_camera():
 
 @pytest.fixture(scope="module")
 def cam_name(compiled_model_with_camera):
-    """Full identifier of the tracking camera after world attachment."""
+    """Name of the tracking camera after world attachment (includes fly prefix)."""
     _, _, fly = compiled_model_with_camera
-    return fly.cameraname_to_mjcfcamera["trackcam"].full_identifier
+    return fly.cameraname_to_mjcfcamera["trackcam"].name
 
 
 @pytest.fixture(scope="module")
