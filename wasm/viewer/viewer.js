@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../shared/vendor/three/OrbitControls.js';
 import {
-  loadMujoco, setupTheme, loadModel, writeModelToFS,
+  loadScene, makeFailOverlay, makeStepper, makeStatsMeter,
   buildMeshes, syncMeshes, pool,
 } from '../shared/scene.js';
 
@@ -23,37 +23,15 @@ const ASSETS = './assets';
 const overlayEl = document.getElementById('overlay');
 const overlayMsg = document.getElementById('overlay-msg');
 
-const fail = (msg, err) => {
-  console.error(err || msg);
-  overlayEl.classList.remove('hidden');
-  overlayEl.innerHTML = `<div class="err"><strong>Could not load the viewer.</strong>` +
-    `<br>${msg}${err ? `<br><br><code>${String(err)}</code>` : ''}</div>`;
-};
+const fail = makeFailOverlay(overlayEl, 'viewer');
 
 main().catch((e) => fail('Unexpected error while starting up.', e));
 
 async function main() {
-  setupTheme();
-  overlayMsg.textContent = 'Loading MuJoCo (WebAssembly)…';
-  const mj = await loadMujoco();
-
-  overlayMsg.textContent = 'Fetching the fly model…';
-  const [xmlText, meta] = await Promise.all([
-    fetch(`${ASSETS}/model/fly.xml`).then((r) => r.text()),
-    fetch(`${ASSETS}/model_meta.json`).then((r) => r.json()),
-  ]);
-
-  const xmlPath = await writeModelToFS(mj, {
-    xmlText, xmlName: 'fly.xml', modelBaseUrl: `${ASSETS}/model`,
-    onProgress: (_stage, n) => { overlayMsg.textContent = `Loading ${n} meshes…`; },
+  const { mj, model, data, meta } = await loadScene({
+    assetsDir: ASSETS, xmlName: 'fly.xml',
+    onStage: (msg) => { overlayMsg.textContent = msg; },
   });
-
-  overlayMsg.textContent = 'Compiling the model…';
-  const model = loadModel(mj, xmlPath);
-  const data = new mj.MjData(model);
-  mj.mj_resetDataKeyframe(model, data, 0); // the "neutral" keyframe
-  mj.mj_forward(model, data);
-
   buildApp(mj, model, data, meta);
   overlayEl.classList.add('hidden');
 }
@@ -169,8 +147,13 @@ function buildApp(mj, model, data, meta) {
   // --- main loop ---
   const dt = meta.timestep;
   const statsEl = document.getElementById('stats');
+  const stepper = makeStepper(dt, MAX_SUBSTEPS);
+  const statsMeter = makeStatsMeter(dt, ({ fps, rtf }) => {
+    statsEl.textContent =
+      `${fps.toFixed(0)} fps · ${rtf.toFixed(2)}× realtime · ${data.ncon} contacts` +
+      (sim.paused ? ' · paused' : '');
+  });
   let lastWall = performance.now();
-  let acc = 0, frames = 0, simStepsWindow = 0, lastStatsWall = lastWall;
 
   function frame() {
     requestAnimationFrame(frame);
@@ -180,19 +163,13 @@ function buildApp(mj, model, data, meta) {
 
     let nSteps = 0;
     if (!sim.paused) {
-      acc += wallDt;
-      const want = Math.floor(acc / dt);
-      nSteps = Math.min(want, MAX_SUBSTEPS);
-      acc -= nSteps * dt;
-      if (want > MAX_SUBSTEPS) acc = 0; // fell behind: drop the backlog
-      for (let i = 0; i < nSteps; i++) {
+      nSteps = stepper.advance(wallDt, () => {
         perturb.apply();
         mj.mj_step(model, data);
-      }
+      });
     } else {
       mj.mj_forward(model, data);
     }
-    simStepsWindow += nSteps;
 
     syncMeshes(meshGroup, data);
     viz.update(mj, model, data, flags);
@@ -200,17 +177,7 @@ function buildApp(mj, model, data, meta) {
     controls.update();
     renderer.render(scene, camera);
 
-    // stats once a second
-    frames++;
-    if (now - lastStatsWall > 500) {
-      const secs = (now - lastStatsWall) / 1000;
-      const fps = frames / secs;
-      const rtf = (simStepsWindow * dt) / secs; // achieved real-time factor
-      statsEl.textContent =
-        `${fps.toFixed(0)} fps · ${rtf.toFixed(2)}× realtime · ${data.ncon} contacts` +
-        (sim.paused ? ' · paused' : '');
-      frames = 0; simStepsWindow = 0; lastStatsWall = now;
-    }
+    statsMeter(now / 1000, nSteps);
   }
   requestAnimationFrame(frame);
 }

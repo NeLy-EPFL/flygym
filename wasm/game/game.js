@@ -17,7 +17,7 @@
 
 import * as THREE from 'three';
 import {
-  loadMujoco, setupTheme, loadModel, writeModelToFS, buildMeshes, syncMeshes,
+  loadScene, makeFailOverlay, makeStepper, makeStatsMeter, buildMeshes, syncMeshes,
 } from '../shared/scene.js';
 
 const ASSETS = './assets';
@@ -57,37 +57,15 @@ const HELP_PAD = {
   single: '🎮 One button per leg — forward and reverse button rows',
 };
 
-const fail = (msg, err) => {
-  console.error(err || msg);
-  overlayEl.classList.remove('hidden');
-  overlayEl.innerHTML = `<p class="err"><strong>Could not load the game.</strong><br>${msg}` +
-    `${err ? `<br><br><code>${String(err)}</code>` : ''}</p>`;
-};
+const fail = makeFailOverlay(overlayEl, 'game', 'p');
 
 main().catch((e) => fail('Unexpected error while starting up.', e));
 
 async function main() {
-  setupTheme();
-  overlayMsg.textContent = 'Loading MuJoCo (WebAssembly)…';
-  const mj = await loadMujoco();
-
-  overlayMsg.textContent = 'Fetching the fly + arena…';
-  const [xmlText, meta] = await Promise.all([
-    fetch(`${ASSETS}/model/fly.xml`).then((r) => r.text()),
-    fetch(`${ASSETS}/model_meta.json`).then((r) => r.json()),
-  ]);
-
-  const xmlPath = await writeModelToFS(mj, {
-    xmlText, xmlName: 'fly.xml', modelBaseUrl: `${ASSETS}/model`,
-    onProgress: (_s, n) => { overlayMsg.textContent = `Loading ${n} meshes…`; },
+  const { mj, model, data, meta } = await loadScene({
+    assetsDir: ASSETS, xmlName: 'fly.xml',
+    onStage: (msg) => { overlayMsg.textContent = msg; },
   });
-
-  overlayMsg.textContent = 'Compiling the model…';
-  const model = loadModel(mj, xmlPath);
-  const data = new mj.MjData(model);
-  mj.mj_resetDataKeyframe(model, data, 0);
-  mj.mj_forward(model, data);
-
   new Game(mj, model, data, meta).start();
 }
 
@@ -396,6 +374,11 @@ class Game {
 
     this._singleAct = new Float64Array(6);
     this._tripodAct = new Float64Array(2);
+    this._stepper = makeStepper(this.dt, MAX_SUBSTEPS);
+    this._statsMeter = makeStatsMeter(this.dt, ({ fps, rtf }) => {
+      document.getElementById('stats').innerHTML =
+        `${fps.toFixed(0)} fps · ${rtf.toFixed(2)}× realtime<br>${this.data.ncon} contacts`;
+    });
     this._buildScene();
     this._wireUi();
   }
@@ -664,18 +647,14 @@ class Game {
 
     let nSteps = 0;
     if (this.phase === 'running') {
-      this._acc = (this._acc || 0) + wallDt * PLAYBACK_SPEED; // owed sim seconds
-      const want = Math.floor(this._acc / this.dt);
-      nSteps = Math.min(want, MAX_SUBSTEPS);
-      this._acc -= nSteps * this.dt;
-      if (want > MAX_SUBSTEPS) this._acc = 0;           // fell behind: drop backlog
       const b = this.bodyId;
-      for (let i = 0; i < nSteps; i++) {
+      // wallDt is scaled by PLAYBACK_SPEED so the sim advances in slow motion.
+      nSteps = this._stepper.advance(wallDt * PLAYBACK_SPEED, () => {
         this._physicsStep();
         const cx = this.data.xpos[3 * b], cy = this.data.xpos[3 * b + 1];
-        if (this._crossed(cx, cy)) { this.prevXY = [cx, cy]; this._finishRun(); break; }
+        if (this._crossed(cx, cy)) { this.prevXY = [cx, cy]; this._finishRun(); return false; }
         this.prevXY = [cx, cy];
-      }
+      });
     }
 
     syncMeshes(this.meshGroup, this.data);
@@ -683,19 +662,6 @@ class Game {
     this.renderer.render(this.scene, this.camera);
 
     if (this.phase === 'running') document.getElementById('timer').textContent = this._controlTime().toFixed(2);
-    this._updateStats(now, nSteps);
-  }
-
-  _updateStats(now, nSteps) {
-    this._frames = (this._frames || 0) + 1;
-    this._stepsWin = (this._stepsWin || 0) + nSteps;
-    if (this._statsT === undefined) this._statsT = now;
-    if (now - this._statsT > 0.5) {
-      const secs = now - this._statsT;
-      const fps = this._frames / secs, rtf = (this._stepsWin * this.dt) / secs;
-      document.getElementById('stats').innerHTML =
-        `${fps.toFixed(0)} fps · ${rtf.toFixed(2)}× realtime<br>${this.data.ncon} contacts`;
-      this._frames = 0; this._stepsWin = 0; this._statsT = now;
-    }
+    this._statsMeter(now, nSteps);
   }
 }

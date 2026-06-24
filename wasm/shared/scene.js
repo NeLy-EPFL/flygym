@@ -9,7 +9,8 @@
 // reached through the page's import map ("three").
 
 import * as THREE from 'three';
-export { default as loadMujoco } from './vendor/mujoco/mujoco.js';
+import loadMujoco from './vendor/mujoco/mujoco.js';
+export { loadMujoco };
 
 // The panel defaults to dark; when embedded in the MkDocs Material docs (same
 // origin) mirror the site's light/dark palette and follow its toggle live.
@@ -49,6 +50,34 @@ export async function writeModelToFS(mj, { xmlText, xmlName = 'model.xml', model
     mj.FS.writeFile(`/work/${f}`, buf);
   }));
   return `/work/${xmlName}`;
+}
+
+// One-call load sequence shared by both apps: apply the docs theme, start the
+// MuJoCo runtime, fetch the flattened MJCF + its meta, write them into MuJoCo's
+// FS, compile, and return a reset + forwarded MjData. `onStage(text)` (optional)
+// drives a loading overlay.
+export async function loadScene({ assetsDir, xmlName = 'fly.xml', onStage }) {
+  setupTheme();
+  onStage?.('Loading MuJoCo (WebAssembly)…');
+  const mj = await loadMujoco();
+
+  onStage?.('Fetching the fly model…');
+  const [xmlText, meta] = await Promise.all([
+    fetch(`${assetsDir}/model/${xmlName}`).then((r) => r.text()),
+    fetch(`${assetsDir}/model_meta.json`).then((r) => r.json()),
+  ]);
+
+  const xmlPath = await writeModelToFS(mj, {
+    xmlText, xmlName, modelBaseUrl: `${assetsDir}/model`,
+    onProgress: (_stage, n) => onStage?.(`Loading ${n} meshes…`),
+  });
+
+  onStage?.('Compiling the model…');
+  const model = loadModel(mj, xmlPath);
+  const data = new mj.MjData(model);
+  mj.mj_resetDataKeyframe(model, data, 0);
+  mj.mj_forward(model, data);
+  return { mj, model, data, meta };
 }
 
 // --- mesh building (one Three.js mesh per renderable MuJoCo geom) -----------
@@ -132,5 +161,57 @@ export function pool(make) {
     begin() { cur = 0; },
     next() { const o = items[cur] || (items[cur] = make()); cur++; return o; },
     end() { for (let i = cur; i < items.length; i++) items[i].visible = false; },
+  };
+}
+
+// --- app loop helpers shared by the viewer and the game ---------------------
+
+// Show a load error in the page's #overlay. `what` names the app ("game" /
+// "viewer"); `tag` matches the page's .err markup (the game styles `#overlay p`,
+// the viewer uses a div). Returns the `fail(msg, err)` handler.
+export function makeFailOverlay(overlayEl, what, tag = 'div') {
+  return (msg, err) => {
+    console.error(err || msg);
+    overlayEl.classList.remove('hidden');
+    overlayEl.innerHTML =
+      `<${tag} class="err"><strong>Could not load the ${what}.</strong>` +
+      `<br>${msg}${err ? `<br><br><code>${String(err)}</code>` : ''}</${tag}>`;
+  };
+}
+
+// Fixed-timestep accumulator with a backlog cap. Call advance() once per
+// animation frame with the elapsed wall time (already scaled by any desired
+// playback speed); it runs `step(i)` up to `maxSubsteps` times -- dropping any
+// further backlog so a stall can't spiral -- and returns the number of steps
+// taken. `step` may return false to stop early (e.g. on a finish-line crossing).
+export function makeStepper(dt, maxSubsteps) {
+  let acc = 0;
+  return {
+    advance(wallDt, step) {
+      acc += wallDt;
+      const want = Math.floor(acc / dt);
+      const nSteps = Math.min(want, maxSubsteps);
+      acc -= nSteps * dt;
+      if (want > maxSubsteps) acc = 0; // fell behind: drop the backlog
+      for (let i = 0; i < nSteps; i++) if (step(i) === false) return i + 1;
+      return nSteps;
+    },
+  };
+}
+
+// Windowed fps / real-time-factor meter. Feed it the current wall-clock time (in
+// seconds) and the steps taken since the last call; about every `windowSec` it
+// calls report({ fps, rtf }) and starts a fresh window. Formatting is left to
+// the caller (the two apps render the numbers differently).
+export function makeStatsMeter(dt, report, { windowSec = 0.5 } = {}) {
+  let frames = 0, steps = 0, t0;
+  return (nowSec, nSteps) => {
+    frames++; steps += nSteps;
+    if (t0 === undefined) t0 = nowSec;
+    const secs = nowSec - t0;
+    if (secs > windowSec) {
+      report({ fps: frames / secs, rtf: (steps * dt) / secs });
+      frames = 0; steps = 0; t0 = nowSec;
+    }
   };
 }
