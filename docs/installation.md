@@ -113,7 +113,7 @@
     You can run the tutorials in [Google Colab](https://colab.research.google.com/) without installing anything locally. Every tutorial notebook (excluding text-only ones) has an "Open in Colab" badge at
     the top:
 
-    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/colab/tutorials/1a_basic_model_composition.ipynb)
+    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/v2.1.0/tutorials/1a_basic_model_composition.ipynb)
 
     !!! warning "Colab is slow"
 
@@ -128,7 +128,7 @@
     if "google.colab" in sys.modules:
         os.environ["MUJOCO_GL"] = "egl"
         os.environ["PYOPENGL_PLATFORM"] = "egl"
-        %pip install -q tqdm "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@colab"
+        %pip install -q tqdm "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@v2.1.0"
     ```
 
     !!! note
