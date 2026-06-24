@@ -388,7 +388,12 @@ class Simulation:
             inputs: Control inputs, shape ``(n_tendon_actuators,)``, ordered as in
                 ``fly.get_actuated_jointdofs_order(ActuatorType.TENDON)``.
         """
-        internal_ids = self._intern_tendonactuatorids_by_fly[fly_name]
+        # Flies without tendon actuators have no entry in the lookup, so default to
+        # an empty id array: the length check below then turns an empty input into a
+        # clean no-op and a non-empty one into a clear "expected 0" error.
+        internal_ids = self._intern_tendonactuatorids_by_fly.get(
+            fly_name, np.empty(0, dtype=np.int32)
+        )
         if len(inputs) != len(internal_ids):
             raise ValueError(
                 f"Expected {len(internal_ids)} tendon actuator inputs, but got "
