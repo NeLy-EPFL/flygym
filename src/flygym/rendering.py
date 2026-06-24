@@ -24,20 +24,25 @@ class Renderer:
         camera_res: ``(height, width)`` in pixels.
         playback_speed: Video playback speed relative to real time.
         output_fps: Output video frame rate.
-        buffer_frames: If True, store frames in ``self.frames``.
+        buffer_frames: If True, store rendered frames on the renderer.
         scene_option: MuJoCo scene options. Uses defaults if None.
-        render_depth: If True, render depth maps instead of RGB frames. Depth
-            frames are kept as raw float arrays in ``self.frames``; they are not
-            saved/shown as video (``save_video``/``show_in_notebook`` warn and
-            skip them).
-        render_segmentation: If True, render segmentation masks instead of RGB
-            frames. Like depth, these are kept as raw int arrays in ``self.frames``
-            and are not saved/shown as video.
+        render_rgb: If True, render RGB frames (stored in ``self.frames``).
+        render_depth: If True, render depth maps (raw float arrays in
+            ``self.depth_frames``). Not saved/shown as video.
+        render_segmentation: If True, render segmentation masks (raw int arrays in
+            ``self.segmentation_frames``). Not saved/shown as video.
         **kwargs: Passed to ``mujoco.Renderer``.
 
+    ``render_rgb``, ``render_depth``, and ``render_segmentation`` are independent;
+    enable any combination. At least one must be True.
+
     Attributes:
-        frames: Dict mapping camera name to list of rendered frames.
-            Only populated when ``buffer_frames=True``.
+        frames: Dict mapping camera name to list of RGB frames (uint8), or None if
+            ``render_rgb`` is False. Only populated when ``buffer_frames=True``.
+        depth_frames: Like ``frames`` but float depth maps; None unless
+            ``render_depth``.
+        segmentation_frames: Like ``frames`` but int32 segmentation object ids
+            (-1 = background); None unless ``render_segmentation``.
     """
 
     def __init__(
@@ -50,6 +55,7 @@ class Renderer:
         output_fps: int = 25,
         buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
+        render_rgb: bool = True,
         render_depth: bool = False,
         render_segmentation: bool = False,
         **kwargs: Any,
@@ -60,12 +66,18 @@ class Renderer:
         self.buffer_frames = buffer_frames
 
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+        # RGB / depth / segmentation are independent and may be enabled in any
+        # combination. Each is produced by its own render() pass (mujoco renders
+        # one output type per call), so we don't enable a mode here -- the mode is
+        # toggled per pass in render_as_needed and left in the default RGB state.
+        self.render_rgb = render_rgb
         self.render_depth = render_depth
-        if self.render_depth:
-            self.mj_renderer.enable_depth_rendering()
         self.render_segmentation = render_segmentation
-        if self.render_segmentation:
-            self.mj_renderer.enable_segmentation_rendering()
+        if not (render_rgb or render_depth or render_segmentation):
+            raise ValueError(
+                "At least one of render_rgb, render_depth, or "
+                "render_segmentation must be True."
+            )
 
         if scene_option is None:
             self.scene_option = mj.MjvOption()
@@ -90,13 +102,20 @@ class Renderer:
         self._secs_between_renders = 1 / (output_fps / playback_speed)
 
         self._last_render_time_sec = -np.inf
-        if self.buffer_frames:
-            self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
-        else:
-            self.frames = None
+        buffer = self.buffer_frames
+        self.frames = self._new_frame_buffer() if buffer and render_rgb else None
+        self.depth_frames = (
+            self._new_frame_buffer() if buffer and render_depth else None
+        )
+        self.segmentation_frames = (
+            self._new_frame_buffer() if buffer and render_segmentation else None
+        )
 
         # Avoid floating point issues when comparing times
         self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
+
+    def _new_frame_buffer(self) -> dict[str, list]:
+        return {cam_name: [] for cam_name in self._cameras_names2id}
 
     def get_camera_matrix(
         self, camera: str | mj.MjsCamera, mj_data: mj.MjData, mj_model: mj.MjModel
@@ -145,37 +164,49 @@ class Renderer:
             + self._secs_between_renders
             - self.rendering_rounding_tolerance
         )
-        if mj_data.time >= min_next_render_time:
-            self._last_render_time_sec = float(mj_data.time)
-            for cam_name, internal_cam_id in self._cameras_names2id.items():
-                self.mj_renderer.update_scene(
-                    mj_data, internal_cam_id, self.scene_option
-                )
-                frame = self.mj_renderer.render()
-                if self.buffer_frames:
-                    if self.render_segmentation:
-                        # MuJoCo segmentation returns two channels; channel 0 is the
-                        # object (segmentation) id, with -1 marking background. Keep
-                        # the ids as int16 so background stays -1 -- casting to uint8
-                        # would wrap -1 to 255 and collide with a real object id 255.
-                        frame = frame[:, :, 0]
-                        if frame.max() > np.iinfo(np.int16).max:
-                            raise ValueError(
-                                "Segmentation rendering supports object ids up to "
-                                f"{np.iinfo(np.int16).max} (int16 frames); the scene "
-                                "exceeds this."
-                            )
-                        frame = frame.astype(np.int16)
-                    self.frames[cam_name].append(frame)
-            return True
-        else:
+        if mj_data.time < min_next_render_time:
             return False
+
+        self._last_render_time_sec = float(mj_data.time)
+        for cam_name, internal_cam_id in self._cameras_names2id.items():
+            self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
+            # One render() pass per enabled output. mujoco renders a single output
+            # type per call, so toggle the mode for each and always restore the
+            # default (RGB) state afterwards.
+            if self.render_rgb:
+                rgb = self.mj_renderer.render()
+                if self.buffer_frames:
+                    self.frames[cam_name].append(rgb)
+            if self.render_depth:
+                self.mj_renderer.enable_depth_rendering()
+                depth = self.mj_renderer.render()
+                self.mj_renderer.disable_depth_rendering()
+                if self.buffer_frames:
+                    self.depth_frames[cam_name].append(depth)
+            if self.render_segmentation:
+                self.mj_renderer.enable_segmentation_rendering()
+                # MuJoCo segmentation returns int32 (H, W, 2): channel 0 is the
+                # object id, channel 1 the object type, with -1 marking background.
+                # Keep channel 0 only (assumes objects are geoms, so the id is
+                # unambiguous), copied to a standalone int32 array so the unused
+                # second channel isn't retained.
+                seg = self.mj_renderer.render()[:, :, 0].copy()
+                self.mj_renderer.disable_segmentation_rendering()
+                if self.buffer_frames:
+                    self.segmentation_frames[cam_name].append(seg)
+        return True
 
     def reset(self) -> None:
         """Clear buffered frames and reset the render timer."""
         self._last_render_time_sec = -np.inf
-        if self.buffer_frames:
-            self.frames = {cam_name: [] for cam_name in self._cameras_names2id}
+        if not self.buffer_frames:
+            return
+        if self.render_rgb:
+            self.frames = self._new_frame_buffer()
+        if self.render_depth:
+            self.depth_frames = self._new_frame_buffer()
+        if self.render_segmentation:
+            self.segmentation_frames = self._new_frame_buffer()
 
     def close(self) -> None:
         """Release the underlying MuJoCo renderer resources."""
@@ -200,18 +231,21 @@ class Renderer:
     ) -> None:
         """Display recorded frames in a Jupyter notebook.
 
+        Only RGB frames are displayed. Depth/segmentation renders are kept as raw
+        arrays in ``self.depth_frames`` / ``self.segmentation_frames``.
+
         Args:
             camera: Camera(s) to display. If None, displays all cameras.
             **kwargs: Additional arguments passed to mediapy.show_video
         """
+        if not self._warn_unless_rgb("displayed"):
+            return
         camera_names = self._normalize_camera_spec(camera)
 
         for cam_name in camera_names:
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            if not self._frames_are_video_encodable(frames, cam_name):
-                continue
             mediapy.show_video(frames, fps=self.output_fps, title=cam_name, **kwargs)
 
     def save_video(
@@ -221,20 +255,23 @@ class Renderer:
     ) -> None:
         """Save recorded frames as video files.
 
+        Only RGB frames are saved. Depth/segmentation renders are kept as raw
+        arrays in ``self.depth_frames`` / ``self.segmentation_frames``.
+
         Args:
             output_path: Either a dict mapping camera specs to file paths, or:
                 - If single camera: a file path to save to
                 - If multiple cameras: a directory path to save all videos to
             **kwargs: Additional arguments passed to imageio.imwrite
         """
+        if not self._warn_unless_rgb("saved"):
+            return
         path_by_camera = self._resolve_output_paths(output_path)
 
         for cam_name, path in path_by_camera.items():
             frames = self.frames[cam_name]
             if len(frames) == 0:
                 raise RuntimeError(f"No frames recorded yet for camera '{cam_name}'.")
-            if not self._frames_are_video_encodable(frames, cam_name):
-                continue
 
             path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -242,27 +279,27 @@ class Renderer:
                 path, frames, fps=self.output_fps, codec="libx264", quality=8, **kwargs
             )
 
-    @staticmethod
-    def _frames_are_video_encodable(frames: list[np.ndarray], cam_name: str) -> bool:
-        """Whether frames are uint8 RGB and can be saved/displayed as video.
+    def _warn_unless_rgb(self, verb: str) -> bool:
+        """Return True if RGB frames exist to save/show; warn and return False if not.
 
-        A Renderer is single-mode, so a camera's frames are uniformly RGB
-        (uint8), depth (float), or segmentation (int) -- never a mix. Only uint8
-        RGB can be encoded as an H.264 video (or shown with mediapy); depth and
-        segmentation are kept as raw arrays in ``self.frames`` rather than
-        lossily cast to uint8 (e.g. depth in meters squashed to 0-255, or
-        segmentation id 255 colliding with the -1 background). For those, warn
-        and skip so callers can still save/show their other (RGB) cameras.
+        Only RGB frames can be encoded as video; depth (float) and segmentation
+        (int) are kept as raw arrays rather than lossily cast to uint8. Warn when
+        such buffers exist so they are not silently expected in the video.
         """
-        if frames[0].dtype == np.uint8:
-            return True
-        warnings.warn(
-            f"Camera '{cam_name}' holds {frames[0].dtype} frames (depth or "
-            "segmentation); these are not saved or displayed as video. Read the "
-            "raw arrays from `Renderer.frames` and handle them directly (e.g. "
-            "with numpy or matplotlib)."
-        )
-        return False
+        if not self.render_rgb:
+            warnings.warn(
+                f"No RGB frames to be {verb} as video (render_rgb=False). Depth/"
+                "segmentation frames are raw arrays in `Renderer.depth_frames` / "
+                "`Renderer.segmentation_frames`."
+            )
+            return False
+        if self.render_depth or self.render_segmentation:
+            warnings.warn(
+                f"Only RGB frames are {verb} as video; depth/segmentation frames "
+                "are kept as raw arrays in `Renderer.depth_frames` / "
+                "`Renderer.segmentation_frames`."
+            )
+        return True
 
     def _normalize_camera_spec(
         self,
