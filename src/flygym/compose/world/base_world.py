@@ -265,27 +265,22 @@ class _GroundContactMixin:
             name=fly.name
         )
 
+        # Each Fly subclass (nmf, flybody, ...) has its own contact-bodies preset
+        # enum, so resolve strings against this fly's class and reject a preset
+        # belonging to a different fly type (its segments would be missing from
+        # this fly's bodyseg_to_mjcfgeom and fail later with an opaque KeyError).
+        preset_cls = type(fly).CONTACT_BODIES_PRESET_CLASS
+        if isinstance(bodysegs_with_ground_contact, str):
+            bodysegs_with_ground_contact = preset_cls(bodysegs_with_ground_contact)
         if isinstance(bodysegs_with_ground_contact, BaseContactBodiesPreset):
-            # A preset's segments belong to one fly type; passing another fly's
-            # preset would yield segments missing from this fly's
-            # bodyseg_to_mjcfgeom and fail later with an opaque KeyError.
-            expected_cls = type(fly).CONTACT_BODIES_PRESET_CLASS
-            if not isinstance(bodysegs_with_ground_contact, expected_cls):
+            if not isinstance(bodysegs_with_ground_contact, preset_cls):
                 raise TypeError(
-                    f"bodysegs_with_ground_contact is a "
-                    f"{type(bodysegs_with_ground_contact).__name__}, but "
-                    f"{type(fly).__name__} expects a {expected_cls.__name__} (or "
-                    "its string value); body segments are not shared across fly "
-                    "types."
+                    f"{type(fly).__name__} expects a {preset_cls.__name__}, got "
+                    f"{type(bodysegs_with_ground_contact).__name__}."
                 )
             bodysegs_with_ground_contact = (
                 bodysegs_with_ground_contact.to_body_segments_list()
             )
-        elif isinstance(bodysegs_with_ground_contact, str):
-            # Resolve the string against the fly's own contact-bodies preset enum
-            # so each Fly subclass (nmf, flybody, ...) selects the right segments.
-            preset = type(fly).CONTACT_BODIES_PRESET_CLASS(bodysegs_with_ground_contact)
-            bodysegs_with_ground_contact = preset.to_body_segments_list()
 
         self._set_ground_contact(
             fly, bodysegs_with_ground_contact, ground_contact_params
