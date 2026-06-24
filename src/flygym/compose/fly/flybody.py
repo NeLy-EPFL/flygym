@@ -587,10 +587,13 @@ class FlyBody(BaseFly):
                 defaults to 0 for all actuators. For position actuators the values
                 are joint angles and must match the skeleton axis order.
             forcelimited:
-                If True, clamp actuator force to ``forcerange``. If False, fall back to
-                the ``forcerange`` from ``actuator_config.yaml`` if one is specified.
+                If True, clamp actuator force to ``forcerange``. If False (default),
+                the actuator force is unlimited; both this ``forcerange`` argument and
+                any ``forcerange`` in ``actuator_config.yaml`` are ignored (the
+                simplified parameter translation does not apply config force limits).
             forcerange:
-                Force limit as a (min, max) tuple.
+                Force limit as a (min, max) tuple. Only applied when
+                ``forcelimited=True``.
             **kwargs:
                 MJCF actuator attributes (e.g. ``kp`` for position actuators, ``kv`` for
                 velocity actuators) that override the defaults from
