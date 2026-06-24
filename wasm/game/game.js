@@ -265,12 +265,15 @@ const PAD = {
 class Gamepad {
   constructor(onChange) {
     this.index = null;
+    this._disconnected = false; // active pad was unplugged; don't auto-adopt another
     this.single = new Float64Array(6);
     this.tripod = new Float64Array(2);
     this._legs = new Float64Array(6);
-    addEventListener('gamepadconnected', (e) => { this.index = e.gamepad.index; onChange?.(); });
+    addEventListener('gamepadconnected', (e) => {
+      this.index = e.gamepad.index; this._disconnected = false; onChange?.();
+    });
     addEventListener('gamepaddisconnected', (e) => {
-      if (this.index === e.gamepad.index) this.index = null;
+      if (this.index === e.gamepad.index) { this.index = null; this._disconnected = true; }
       onChange?.();
     });
   }
@@ -280,7 +283,12 @@ class Gamepad {
   _pad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     if (this.index != null && pads[this.index]) return pads[this.index];
-    for (const p of pads) if (p) { this.index = p.index; return p; } // pad present pre-load
+    // Discover a pad already connected before page load (no 'gamepadconnected'
+    // event). Skip once the active pad has been unplugged, so input doesn't
+    // silently jump to a different controller the player isn't holding.
+    if (!this._disconnected) {
+      for (const p of pads) if (p) { this.index = p.index; return p; }
+    }
     return null;
   }
 
