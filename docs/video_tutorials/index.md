@@ -1,6 +1,6 @@
 # Video tutorials
 
-!!! warning "Refer to documentation site for up-to-date information"
+!!! warning "Refer to the documentation site for up-to-date information"
 
     Coding tutorials were recorded for FlyGym v2.1.0. Future versions may deviate from the tutorials. For updated information, refer to the tutorial notebooks on [neuromechfly.org](https://neuromechfly.org/).
 
