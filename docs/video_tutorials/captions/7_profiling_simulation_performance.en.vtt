@@ -1,0 +1,309 @@
+WEBVTT
+
+00:00:01.360 --> 00:00:09.500
+Okay, now in this tutorial, we will cover how to profile your NeuroMechFly simulation,
+
+00:00:10.180 --> 00:00:15.540
+namely how to understand which part of the simulation is taking a lot of time.
+
+00:00:17.240 --> 00:00:21.620
+We'll start by profiling your simulation on the CPU.
+
+00:00:24.760 --> 00:00:31.140
+If you have cloned the FlyGym repository, you'll find in the scripts folder
+
+00:00:31.140 --> 00:00:35.190
+replay_behaviour_cpu[.py] and replay_behaviour_gpu[.py].
+
+00:00:35.190 --> 00:00:38.820
+Essentially, these are the same behavior replay task
+
+00:00:38.820 --> 00:00:46.653
+from the previous tutorials, but now let's say integrated as a single script
+
+00:00:46.653 --> 00:00:48.160
+that you can simply run.
+
+00:00:50.120 --> 00:00:58.133
+You can run the simulations outside of a Jupyter notebook and save
+
+00:00:58.133 --> 00:01:01.180
+the output data to a certain folder.
+
+00:01:03.500 --> 00:01:10.920
+Here you will see basically the same joint-angle visualization observation data over time,
+
+00:01:11.160 --> 00:01:14.500
+pose over time, and the replay video in this folder.
+
+00:01:16.449 --> 00:01:23.550
+And if you want to profile the performance of it without any external tool,
+
+00:01:23.550 --> 00:01:29.127
+you can already use MuJoCo's internal profiling tool
+
+00:01:30.000 --> 00:01:32.920
+by adding this flag to the end of the script.
+
+00:01:34.571 --> 00:01:36.571
+Very nicely, MoJoCo will you that...
+
+00:01:36.571 --> 00:01:38.021
+for example, you're spending
+
+00:01:40.380 --> 00:01:45.259
+this many milliseconds in total or this many microseconds per step
+
+00:01:45.259 --> 00:01:48.541
+computing the positions of different vertices on your meshes.
+
+00:01:48.541 --> 00:01:52.760
+And this amount of time is spent on collision detection,
+
+00:01:52.760 --> 00:01:54.200
+so on and so forth.
+
+00:01:55.740 --> 00:02:00.472
+Now, if we do use an external tool,
+
+00:02:02.112 --> 00:02:06.873
+namely py-spy,
+
+00:02:11.900 --> 00:02:17.860
+a profiler for Python program, you can get this kind of result.
+
+00:02:31.640 --> 00:02:40.678
+So now you'll find this new file, speedscope.json, which contains more detailed information on
+
+00:02:40.678 --> 00:02:41.240
+not just MuJoCo,
+
+00:02:41.240 --> 00:02:47.840
+but everything that has happened during this simulation. So I'm actually running this on a remote
+
+00:02:47.840 --> 00:02:58.960
+workstation. So let me start by copying it to my local computer.
+
+00:03:06.640 --> 00:03:12.000
+And the nice thing about it is that you can go to this website called speedscope.app,
+
+00:03:17.280 --> 00:03:25.420
+which helps visualize the data that has been recorded. So
+
+00:03:26.660 --> 00:03:32.700
+simply by dragging it into this browser, you can see something like this. I think I've
+
+00:03:32.700 --> 00:03:35.760
+sent over the course of two or maybe three seconds,
+
+00:03:35.760 --> 00:03:46.900
+you can zoom into a small maybe 0.1 second each window and see what's taking
+
+00:03:46.900 --> 00:03:48.740
+the simulation time.
+
+00:03:49.320 --> 00:03:56.250
+So for example, here you'll see that in a set_actuat[or]_inputs, it took
+
+00:03:57.450 --> 00:04:08.150
+two milliseconds, followed by step. But within step, you have the different steps, solving for
+
+00:04:08.150 --> 00:04:12.006
+kinematics, etc. etc., constraints...
+
+00:04:14.576 --> 00:04:16.930
+And then you have this render_as_needed function.
+
+00:04:17.210 --> 00:04:21.920
+Typically, probably it doesn't render anything, or maybe in this case it did.
+
+00:04:23.500 --> 00:04:33.340
+But in most cases when you call render as needed, depending on whether that frame
+
+00:04:34.520 --> 00:04:38.760
+should actually be rendered, it probably doesn't do much.
+
+00:04:40.640 --> 00:04:47.200
+Similarly, when you call get_joint_angles, you can see how much time it's taking and
+
+00:04:47.200 --> 00:04:48.660
+this kind of information.
+
+00:04:52.200 --> 00:04:56.800
+The thing that is really useful is that, let's say,
+
+00:04:59.680 --> 00:05:03.299
+if in my simulation I'm also doing something else,
+
+00:05:03.299 --> 00:05:07.580
+for example, let's say my simulation within the loop.
+
+00:05:09.640 --> 00:05:20.600
+Let's say for some reason I decided to create a thousand Python lists within each iteration.
+
+00:05:34.240 --> 00:05:36.960
+And we run this again.
+
+00:05:41.880 --> 00:05:45.100
+That's not efficient enough.
+
+00:05:48.220 --> 00:05:50.580
+Maybe we create
+
+00:05:53.240 --> 00:05:59.140
+a thousand lists of a thousand elements just to emulate something that might be not so
+
+00:05:59.140 --> 00:06:00.440
+efficient in our code.
+
+00:06:02.460 --> 00:06:05.420
+OK, that's how much we don't have time for that.
+
+00:06:33.040 --> 00:06:36.060
+And once again, we can put this in this visualizer.
+
+00:06:36.980 --> 00:06:39.640
+And now you can see that
+
+00:06:50.120 --> 00:06:56.220
+you have these steps, but also after steps, there's a bunch of weird stuff
+
+00:06:56.720 --> 00:07:04.260
+that's probably our list creation and copying things that's taking a lot of time.
+
+00:07:04.620 --> 00:07:09.620
+If you go to this left heavy part, it's going to show you
+
+00:07:09.620 --> 00:07:14.220
+exactly which part of it. Instead of sorting it sequentially over
+
+00:07:14.220 --> 00:07:17.680
+time,
+it's going to tell you this much time.
+
+00:07:17.780 --> 00:07:20.280
+Five seconds is spent doing this thing.
+
+00:07:20.420 --> 00:07:27.120
+Of course, here it's not very informative because it's just memory addresses for the lines of code.
+
+00:07:27.120 --> 00:07:30.100
+But if we, let's say, define a...
+
+00:07:33.220 --> 00:07:35.960
+inefficient_stuff
+
+00:08:24.460 --> 00:08:30.660
+It's going to tell you that out of your seven, not even seven seconds simulation,
+
+00:08:30.820 --> 00:08:32.360
+you waste all your time on this.
+
+00:08:33.320 --> 00:08:40.720
+In summary, the MuJoCo native timing is very good at telling you which part of the
+
+00:08:40.720 --> 00:08:42.780
+physics simulation is taking a lot of time.
+
+00:08:43.060 --> 00:08:44.420
+MuJoCo is super optimized.
+
+00:08:44.800 --> 00:08:48.880
+It's probably not doing something ridiculous like the thing that we are doing.
+
+00:08:51.820 --> 00:09:01.822
+The profiling tool with py-spy tells you what kind of operation
+
+00:09:01.822 --> 00:09:05.020
+from your own code outside of MuJoCo costs.
+
+00:09:05.500 --> 00:09:07.280
+It's taking a lot of time,
+
+00:09:07.520 --> 00:09:11.500
+so it's more useful for spotting inefficiencies from your own code.
+
+00:09:12.540 --> 00:09:16.300
+We can do something similar with the GPU.
+
+00:09:17.480 --> 00:09:20.260
+Very similar script. Okay,
+
+00:09:20.820 --> 00:09:22.980
+you don't have to do profiling.
+
+00:09:23.040 --> 00:09:28.740
+You can just run this quickly to generate, to replicate the tutorials, the earlier tutorials.
+
+00:09:29.340 --> 00:09:34.780
+But let's say you do want to profile something, you can run a script like this.
+
+00:09:39.480 --> 00:09:46.840
+Maybe while it runs, I can explain that to view the GPU profiling output, we actually
+
+00:09:46.840 --> 00:09:49.440
+need to use this NVIDIA Nsight Systems.
+
+00:09:49.840 --> 00:09:57.020
+And because it is a GUI, I'm actually just using this remote desktop to view it.
+
+00:09:58.560 --> 00:10:03.540
+Okay,
+so the result has been saved to flygym_outputs/gpu_profile[.nsys_rep].
+
+00:10:10.960 --> 00:10:20.500
+You can drag and drop this file into the Nsight viewer and see what's happening.
+
+00:10:21.540 --> 00:10:27.540
+So probably during those eight seconds, it's doing some setup steps
+
+00:10:27.980 --> 00:10:31.380
+and those 10 seconds, it's actually running the simulation.
+
+00:10:37.640 --> 00:10:49.120
+And you can see things like, okay, now there's a graph launch that's taking some time.
+
+00:10:49.360 --> 00:10:52.440
+And then there's more presumably computation
+
+00:10:58.760 --> 00:11:04.580
+where you have different lower level GPU operations.
+
+00:11:05.580 --> 00:11:12.640
+Now, of course, it's a little bit harder to interpret GPU computation, especially if we're
+
+00:11:12.640 --> 00:11:13.660
+doing a graph capture.
+
+00:11:13.740 --> 00:11:18.246
+But at least you can see that there's a lot of time spent
+
+00:11:18.246 --> 00:11:19.640
+launching the CUDA graph.
+
+00:11:19.640 --> 00:11:29.920
+And then there's some time spent copying things probably related to copying the target joint positions.
+
+00:11:30.920 --> 00:11:33.137
+And I mean, you can dig deeper,
+
+00:11:33.137 --> 00:11:36.620
+but this is the kind of things that you can get
+
+00:11:36.620 --> 00:11:39.260
+out of this kind of profiling.
+
+00:11:40.260 --> 00:11:41.340
+Okay, that's all.
+
+00:11:41.360 --> 00:11:43.180
+I hope this has been helpful.
+
+00:11:43.180 --> 00:11:52.340
+If you have any questions, feel free to leave an issue under the issues page or
+
+00:11:52.340 --> 00:11:54.960
+post a thread on the discussion board.
+
+00:11:56.060 --> 00:11:56.740
+Thank you.

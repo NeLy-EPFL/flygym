@@ -1,0 +1,1222 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:07.300
+Welcome to the fifth NeuroMechFly video tutorial. In the previous tutorial, or rather video number
+
+00:00:07.300 --> 00:00:15.140
+four, we followed tutorial notebook number two, where we replayed some experimental data of a fruit
+
+00:00:15.140 --> 00:00:19.160
+fly walking system that we call Spotlight.
+
+00:00:21.680 --> 00:00:25.360
+So we use this kind of fly behavior data data
+
+00:00:27.480 --> 00:00:29.760
+and replayed it in FlyGym.
+
+00:00:32.720 --> 00:00:39.820
+The outcome of that notebook was that we could generate videos of a fly walking
+
+00:00:39.820 --> 00:00:40.780
+in a virtual environment.
+
+00:00:43.360 --> 00:00:50.509
+And we could also quantitatively analyze variables such as joint angles during the simulation
+
+00:00:50.509 --> 00:00:52.560
+and compare it with experimental data.
+
+00:00:53.640 --> 00:01:00.100
+In this tutorial, we'll basically do the same thing, but this time using GPU accelerated simulation.
+
+00:01:01.320 --> 00:01:07.520
+The current FlyGym version at the time of this recording is 2.1.0. Future versions
+
+00:01:07.520 --> 00:01:13.440
+might deviate from this tutorial, so it's recommended that you always go to neuromechfly.org and
+
+00:01:13.440 --> 00:01:17.920
+follow the up-to-date tutorial and only using this video as a reference.
+
+00:01:18.800 --> 00:01:24.741
+GPU accelerated simulation in FlyGym is enabled by MuJoCo Warp,
+
+00:01:24.741 --> 00:01:28.900
+a project developed jointly by NVIDIA
+
+00:01:28.900 --> 00:01:29.980
+and Google DeepMind.
+
+00:01:30.300 --> 00:01:34.780
+You can find more information about MuJoCo Warp on its project website.
+
+00:01:35.660 --> 00:01:39.047
+MuJoCo Warp is further based on NVIDIA Warp,
+
+00:01:39.047 --> 00:01:43.280
+which is a toolbox for all sorts of physical simulations,
+
+00:01:43.460 --> 00:01:45.840
+not just for biomechanical robotics simulations.
+
+00:01:45.840 --> 00:01:52.720
+You can find more information about it also on its project website.
+
+00:01:53.720 --> 00:01:59.940
+I'm not going to go into a lot of details of GPU accelerated computation, but I
+
+00:01:59.940 --> 00:02:07.040
+do want to refer the viewer to this project called Accelerated Computing Hub by NVIDIA, specifically
+
+00:02:07.040 --> 00:02:11.320
+this, I guess, sub-project called Accelerated Python User Guide,
+
+00:02:11.320 --> 00:02:17.340
+which is a crash course on GPU accelerated computation using Python.
+
+00:02:19.080 --> 00:02:24.320
+I think the most relevant tutorial is chapter number 12, which is specific to NVIDIA
+
+00:02:25.600 --> 00:02:33.700
+Warp. Before I start, maybe I can just give a brief explanation of the
+
+00:02:33.700 --> 00:02:36.720
+difference between CPU computing and GPU computing.
+
+00:02:37.120 --> 00:02:44.726
+For that, I'm going to use the pictures from the Cornell virtual workshop on
+
+00:02:44.726 --> 00:02:46.820
+Understanding GPU Architecture.
+
+00:02:48.380 --> 00:02:54.200
+Here what you're seeing is a schematic overview of a CPU and a GPU.
+
+00:02:54.820 --> 00:02:58.440
+Each green rectangle refers to a computing core.
+
+00:03:00.200 --> 00:03:05.440
+It is the part of, it is the collection of hardware that actually executes your code.
+
+00:03:06.400 --> 00:03:11.460
+On the CPU, each core executes your code line by line.
+
+00:03:11.540 --> 00:03:14.260
+It can do a lot of different things, complicated things,
+
+00:03:14.260 --> 00:03:19.520
+but they do execute your code sequentially, one line after another.
+
+00:03:20.180 --> 00:03:24.140
+It is true that you can have several core, if not dozens of cores on a
+
+00:03:24.140 --> 00:03:26.520
+modern computer, and you can do things in parallel,
+
+00:03:26.960 --> 00:03:29.950
+but still that number of cores is rather small
+
+00:03:29.950 --> 00:03:32.940
+compared to the level of parallelism on a GPU.
+
+00:03:34.400 --> 00:03:40.640
+Here you can see that there are hundreds, thousands, if not more cores on GPUs,
+
+00:03:41.460 --> 00:03:47.700
+but the caveat is that each core can, in terms of the types of computation that
+
+00:03:47.700 --> 00:03:51.923
+can be performed on the core, it is a little bit more simplistic
+
+00:03:51.923 --> 00:03:54.500
+compared to a modern CPU core.
+
+00:03:56.720 --> 00:04:01.780
+Still, the advantage of a GPU is that because you have so many cores, you can
+
+00:04:01.780 --> 00:04:03.100
+do a lot of things in parallel,
+
+00:04:03.200 --> 00:04:07.820
+and if the thing that you want to do is not that complicated, for example, if
+
+00:04:07.820 --> 00:04:10.460
+you want to multiply two matrices,
+
+00:04:10.460 --> 00:04:16.750
+then being able to utilize this parallelism of the
+
+00:04:16.750 --> 00:04:23.040
+GPU the GPU accelerates your computation by often
+
+00:04:23.040 --> 00:04:23.860
+orders of magnitude,
+
+00:04:24.200 --> 00:04:28.558
+and this is the reason why for deep
+
+00:04:28.558 --> 00:04:33.460
+learning inference and training often requires powerful GPUs, because
+
+00:04:33.460 --> 00:04:37.460
+to the core it's just a bunch of matrix multiplications.
+
+00:04:43.940 --> 00:04:51.400
+Now, going back to the FlyGym tutorial on GPU accelerated simulation, it is possible to run
+
+00:04:51.400 --> 00:04:56.140
+this tutorial on Google Colab without installing FlyGym locally.
+
+00:04:56.720 --> 00:05:00.852
+If you do that, you have to go to runtime, change runtime type,
+
+00:05:00.852 --> 00:05:02.300
+and select GPU runtime.
+
+00:05:03.480 --> 00:05:10.600
+Please be aware that Google Colab can be very slow compared to if you run it
+
+00:05:10.600 --> 00:05:12.100
+locally on your own computer,
+
+00:05:13.080 --> 00:05:17.920
+and there will be quite a bit of simulation going on, so I'm not going to
+
+00:05:17.920 --> 00:05:20.620
+be using Colab in this tutorial,
+
+00:05:20.620 --> 00:05:30.440
+and instead I'm going to connect to a remote workstation by SSH and run this tutorial from there,
+
+00:05:30.440 --> 00:05:35.020
+and on that tutorial from there, and on that computer I have an NVIDIA GPU,
+
+00:05:36.000 --> 00:05:42.700
+so of course that is a prerequisite for running this tutorial of GPU accelerated simulation.
+
+00:05:44.820 --> 00:05:53.260
+As before, we run this kind of empty block for installing FlyGym that's ignored unless
+
+00:05:53.260 --> 00:05:55.080
+you're running it on Colab.
+
+00:05:57.320 --> 00:06:05.006
+With FlyGym warp, we have provided this utility function that simply checks
+
+00:06:05.006 --> 00:06:06.920
+what kind of GPU you have.
+
+00:06:06.920 --> 00:06:11.475
+In this case, I have a NVIDIA GeForce RTX 3080 [Ti],
+
+00:06:11.475 --> 00:06:13.960
+which is not that new, but
+
+00:06:13.960 --> 00:06:15.780
+it's a quite reasonable GPU.
+
+00:06:20.100 --> 00:06:26.840
+As before, we will compose a fly model that is attached to the world.
+
+00:06:27.080 --> 00:06:32.660
+We'll add a tracking camera to the model, and I'll skip this part because it's been
+
+00:06:32.660 --> 00:06:34.340
+covered in previous tutorials.
+
+00:06:37.280 --> 00:06:43.620
+Now, as I said, the advantage of running a GPU-based simulation
+
+00:06:43.620 --> 00:06:45.040
+is that we can parallelize.
+
+00:06:46.040 --> 00:06:51.080
+In other words, we'll be simulating more than one world at a time.
+
+00:06:51.660 --> 00:06:58.000
+As a demonstration, let's say we want to simulate 100 different worlds in parallel.
+
+00:06:59.000 --> 00:07:04.231
+So, different from the previous tutorial on CPU simulation,
+
+00:07:04.231 --> 00:07:08.880
+we will create a GPU simulation class object
+
+00:07:08.880 --> 00:07:11.560
+instead of just simulation.
+
+00:07:12.240 --> 00:07:18.860
+And when you create this GPU simulation object, you want to specify both the world that
+
+00:07:18.860 --> 00:07:24.000
+you want to simulate and also the number of duplicates that you want to
+
+00:07:24.000 --> 00:07:25.220
+simulate in parallel.
+
+00:07:27.040 --> 00:07:30.600
+As before, we can add a renderer to the GPU simulation,
+
+00:07:32.160 --> 00:07:39.160
+but since we are simulating 100 worlds, if we had rendered the video for all of
+
+00:07:39.160 --> 00:07:41.380
+them, we would try to quickly run out of memory.
+
+00:07:41.760 --> 00:07:50.680
+So, we're just going to specify a list of world IDs, in this case, the first
+
+00:07:50.680 --> 00:07:53.380
+nine of them, and render only those.
+
+00:07:53.380 --> 00:07:57.360
+So, I'm going to run those two code blocks.
+
+00:08:03.680 --> 00:08:09.780
+We have already covered in the previous tutorial that we have shipped this
+
+00:08:09.780 --> 00:08:12.840
+flygym_demo.spotlight[_data].MotionSnippet helper class,
+
+00:08:13.140 --> 00:08:17.460
+so we're just going to load some experimental data,
+
+00:08:26.405 --> 00:08:30.060
+and let's say we have a 20,000 step data set, behavior data set,
+
+00:08:30.460 --> 00:08:33.740
+we're running the simulation at one millisecond step,
+
+00:08:34.020 --> 00:08:40.620
+in other words, we have two seconds, exactly two seconds of real experimental data,
+
+00:08:40.620 --> 00:08:52.240
+and since we have 100 worlds, let's say we want to split this two-second behavior
+
+00:08:52.240 --> 00:08:57.720
+recording into 0.1 second snippets with some repetition.
+
+00:08:58.740 --> 00:09:03.520
+In reality, you don't want to do this, but perhaps you want to split your, I
+
+00:09:03.520 --> 00:09:09.900
+don't know, five-minute experiment into 100 small chunks or something like that,
+
+00:09:10.620 --> 00:09:14.343
+but here in order to be able to finish running the simulation fast,
+
+00:09:14.343 --> 00:09:17.560
+we'll just run 0.1 second per world,
+
+00:09:18.280 --> 00:09:30.680
+and here we are just running this little helper function that generates 100 different sequences of
+
+00:09:30.680 --> 00:09:35.560
+motion with 0.1 second offsets.
+
+00:09:38.560 --> 00:09:44.555
+So, now we can expect that this array should have a shape of
+
+00:09:44.555 --> 00:09:47.840
+100 by 1000 by 42,
+
+00:09:48.400 --> 00:09:56.380
+100 because we have 100 worlds, 1000 because we are simulating at 10,000 Hz
+
+00:09:56.380 --> 00:09:58.740
+and 0.1 second,
+
+00:09:58.740 --> 00:10:04.220
+and 42 because we have 42 degrees of freedom, 7 per leg, 6 legs.
+
+00:10:07.260 --> 00:10:13.260
+As before, we can set up this simulation loop,
+
+00:10:13.640 --> 00:10:17.400
+it's pretty straightforward, very similar to what we wrote before.
+
+00:10:18.200 --> 00:10:19.700
+We reset the simulation,
+
+00:10:20.660 --> 00:10:22.820
+we enable leg alternation,
+
+00:10:22.820 --> 00:10:27.720
+we warm up the simulation a bit, and then we can start running the simulation loop.
+
+00:10:29.060 --> 00:10:36.320
+As before, we first batch the kind of control inputs or target join angles that we
+
+00:10:36.320 --> 00:10:37.200
+want for this step
+
+00:10:37.540 --> 00:10:44.900
+because we have 100 different worlds. We here have actually a 2D array
+
+00:10:46.620 --> 00:10:54.340
+where the first dimension is the 100 different worlds and the last dimension is the 42
+
+00:10:54.340 --> 00:10:55.280
+degrees of freedom.
+
+00:10:56.980 --> 00:11:02.940
+So, in the GPU case, when we call set actuator inputs on the simulation object,
+
+00:11:03.000 --> 00:11:08.280
+we still need to specify the name of the fly, the fact that we're setting the
+
+00:11:08.280 --> 00:11:10.340
+inputs for the position controllers,
+
+00:11:10.340 --> 00:11:15.360
+and then this 100 by 42 instead of just 42 dimensional control inputs. And
+
+00:11:17.080 --> 00:11:23.720
+we can call step and render as needed with this profile option.
+
+00:11:25.120 --> 00:11:28.030
+If we don't run it, it's a little bit faster because
+
+00:11:28.030 --> 00:11:32.160
+it doesn't time the different operations,
+
+00:11:32.160 --> 00:11:40.200
+but if you enable with profile suffix, then when you run the simulation, you get some
+
+00:11:40.200 --> 00:11:43.200
+statistical data of how fast the simulation is.
+
+00:11:44.660 --> 00:11:50.240
+Now, if we run it, we quickly realize that it's actually rather slow.
+
+00:11:51.640 --> 00:11:54.740
+First off, there's a bunch of things happening,
+
+00:11:54.740 --> 00:12:01.140
+and then the simulation took seven seconds, which is actually slower than our CPU simulation.
+
+00:12:02.080 --> 00:12:07.564
+There are a couple of reasons for this. First, Warp relies on something called
+
+00:12:07.564 --> 00:12:11.100
+just-in-time compilation, or JIT.
+
+00:12:11.480 --> 00:12:16.240
+The idea is that when you run something the first time, it spends a bit extra
+
+00:12:16.240 --> 00:12:20.820
+time to compile your operations into efficient machine code or binary code
+
+00:12:20.820 --> 00:12:25.945
+so that in subsequent executions, it becomes much faster because you don't need
+
+00:12:25.945 --> 00:12:29.920
+to interpret Python code line by line.
+
+00:12:30.600 --> 00:12:34.320
+Now, also other reasons, there are many things that we could optimize,
+
+00:12:35.540 --> 00:12:43.491
+but for now, let's run the GPU simulation very naively like so and
+
+00:12:43.491 --> 00:12:46.360
+print a report.
+
+00:12:48.300 --> 00:12:57.080
+So here, we'll see that our overall throughput is about 1.44 times real-time
+
+00:12:57.980 --> 00:13:05.420
+because we simulated 0.1 second for 100 different worlds, so it's a total of 10
+
+00:13:05.420 --> 00:13:08.760
+seconds simulated and that completed in seven seconds.
+
+00:13:08.760 --> 00:13:15.740
+Makes sense. About half of the time is spent on physics simulation and half of the
+
+00:13:15.740 --> 00:13:16.940
+time is spent on rendering.
+
+00:13:17.060 --> 00:13:21.720
+Note that we are only rendering for 10 worlds, so it's actually quite significant that we
+
+00:13:21.720 --> 00:13:23.020
+spent so much time rendering.
+
+00:13:25.940 --> 00:13:30.700
+As before, we can display the video that has been captured.
+
+00:13:32.440 --> 00:13:37.620
+Sorry, I said 10 worlds, but actually we only rendered the video for nine worlds,
+
+00:13:38.300 --> 00:13:43.100
+and here they are. You can see that the simulation is a bit different because they
+
+00:13:43.100 --> 00:13:45.700
+are different 0.1 second snippets.
+
+00:13:49.960 --> 00:13:55.499
+So, all right. Next, instead of simulating 100 worlds in parallel,
+
+00:13:55.499 --> 00:13:58.520
+what if we simulate a thousand
+
+00:13:58.520 --> 00:13:59.420
+worlds in parallel, right?
+
+00:14:00.780 --> 00:14:06.760
+Because naively, if we had done this on the CPU, we would have expected that it
+
+00:14:06.760 --> 00:14:13.440
+would have taken seven times 10th, what, 70 seconds for the simulation to complete.
+
+00:14:14.380 --> 00:14:16.880
+Now, is that really the case?
+
+00:14:17.700 --> 00:14:27.680
+We first define a function that takes as argument the number of worlds and then
+
+00:14:27.680 --> 00:14:30.820
+just runs the whole thing that we have just done,
+
+00:14:30.820 --> 00:14:32.820
+and we call this
+
+00:14:35.600 --> 00:14:42.300
+okay, spend some time compiling or building up the simulation, and then it runs.
+
+00:14:53.100 --> 00:15:00.460
+And there we go. When we increase the number of worlds by 10, the amount of
+
+00:15:00.460 --> 00:15:04.280
+time that it took only increased, only doubled,
+
+00:15:04.280 --> 00:15:11.340
+and that, again, is due to the fact that we have many, many cores.
+
+00:15:11.900 --> 00:15:16.600
+Perhaps when we are running only 100 simulations, we're only using this many cores,
+
+00:15:17.220 --> 00:15:23.140
+but if we use this many cores and we increase it by a factor of 10,
+
+00:15:23.660 --> 00:15:25.260
+then we use this many cores,
+
+00:15:25.260 --> 00:15:32.760
+but still, a lot of them are still idle and there's not really a real cost
+
+00:15:32.760 --> 00:15:36.740
+in terms of execution time to use more cores.
+
+00:15:37.560 --> 00:15:44.440
+Of course, there's still overhead and it took more than seven seconds, but it doesn't scale
+
+00:15:44.440 --> 00:15:47.880
+linearly with the number of worlds that you simulate in parallel.
+
+00:15:48.880 --> 00:15:58.100
+If we look at the statistics, the overall throughput for simulation has increased from 1.6
+
+00:15:58.100 --> 00:16:01.220
+times real time to 12 times real time.
+
+00:16:04.800 --> 00:16:10.880
+A hundred seconds of data simulated in 14 plus some rendering.
+
+00:16:12.720 --> 00:16:21.460
+This is the advantage to the first order of approximation of running simulations
+
+00:16:21.460 --> 00:16:26.040
+on the GPU because you can simply parallelize.
+
+00:16:27.380 --> 00:16:32.960
+Now, something that we didn't parallelize in this example is rendering.
+
+00:16:32.960 --> 00:16:42.100
+If you look into how this render is implemented, you'll find out that we're still
+
+00:16:42.100 --> 00:16:45.960
+sequentially capturing frames for those nine worlds that are being visualized.
+
+00:16:47.040 --> 00:16:50.160
+Can we do the visualization with the rendering also on the GPU?
+
+00:16:50.920 --> 00:16:51.760
+Yes, of course.
+
+00:16:52.440 --> 00:16:57.460
+In fact, the only thing that you need to change is to add this use GPU
+
+00:16:57.460 --> 00:17:02.860
+batch rendering equals true flag when you set the renderer.
+
+00:17:04.340 --> 00:17:11.240
+Because everything is parallelized, we don't really care if we're rendering every world.
+
+00:17:11.380 --> 00:17:19.500
+You can set the selection of worlds to render to none, in which case all
+
+00:17:19.500 --> 00:17:20.460
+worlds are rendered.
+
+00:17:21.360 --> 00:17:24.520
+Everything else is kind of the same. Let's run this.
+
+00:17:27.720 --> 00:17:32.380
+That defines the function. Let's actually run it for a hundred different worlds.
+
+00:17:41.280 --> 00:17:54.120
+Previously, for a hundred worlds, the rendering throughput is exactly one
+
+00:17:54.120 --> 00:17:57.660
+time real time.
+
+00:17:57.660 --> 00:18:02.800
+But when we use GPU rendering, it's about 50 times real time.
+
+00:18:03.240 --> 00:18:10.180
+That's impressive. You'll see that the quality of rendering is not as good because the
+
+00:18:10.180 --> 00:18:17.000
+GPU renderer has been optimized for performance instead of realism.
+
+00:18:17.580 --> 00:18:20.320
+I think for most scientific applications, this is okay.
+
+00:18:22.160 --> 00:18:26.600
+I hope you can appreciate that our simulation is now a lot faster on the GPU.
+
+00:18:26.600 --> 00:18:31.040
+Can we optimize it even further? Yes.
+
+00:18:31.480 --> 00:18:34.125
+But maybe a bit of warning is that
+
+00:18:34.125 --> 00:18:37.100
+doing so requires a somewhat significant rewrite of the
+
+00:18:37.100 --> 00:18:44.740
+code because ultimately GPU programming is quite different from CPU programming on a rather fundamental level.
+
+00:18:45.740 --> 00:18:49.420
+So far, we have minimized the amount of code change.
+
+00:18:49.920 --> 00:18:54.620
+Mainly, we just had to replace the CPU simulation class with the GPU simulation class.
+
+00:18:54.620 --> 00:19:02.080
+But now we want to go deeper and write the simulation loop from scratch.
+
+00:19:03.180 --> 00:19:09.720
+Before that, I want to reiterate that the real advantage of GPU computing really comes from
+
+00:19:09.720 --> 00:19:10.580
+the parallelism.
+
+00:19:10.720 --> 00:19:12.940
+You have so many cores, you can have many, many threads.
+
+00:19:14.040 --> 00:19:19.680
+So hypothetically, let's take a toy example where you have a list of numbers
+
+00:19:19.680 --> 00:19:21.540
+between one and one thousand
+
+00:19:21.540 --> 00:19:23.980
+and you want to take the square of each number.
+
+00:19:25.040 --> 00:19:30.640
+Essentially, what you want to do on the CPU is to run this operation a thousand
+
+00:19:30.640 --> 00:19:37.400
+times sequentially and modify the elements one at a time.
+
+00:19:38.840 --> 00:19:44.240
+Of course, in reality, you use NumPy or something like that, but conceptually, this is what
+
+00:19:44.240 --> 00:19:44.740
+happens.
+
+00:19:45.680 --> 00:19:51.760
+Now, on the GPU, what you want conceptually is a function that handles only a small
+
+00:19:51.760 --> 00:19:52.840
+piece of your data
+
+00:19:53.440 --> 00:19:58.420
+and then you initiate many, many invocations of this function in parallel.
+
+00:19:59.220 --> 00:20:01.580
+And together, they process the entire data.
+
+00:20:02.520 --> 00:20:07.140
+So let's write this function. Let's call it square
+
+00:20:07.140 --> 00:20:15.000
+that takes an input array and an output array.
+
+00:20:17.120 --> 00:20:26.440
+And in pseudocode, what we want to do is step one figure out which part of
+
+00:20:26.440 --> 00:20:31.700
+the input array I'm responsible for.
+
+00:20:31.700 --> 00:20:47.740
+And the second step would be to compute the square of only the element that I'm
+
+00:20:47.740 --> 00:20:49.080
+assigned to.
+
+00:20:49.680 --> 00:20:54.720
+Assigned is a bad word, let's say I'm responsible for.
+
+00:20:57.200 --> 00:21:04.540
+And maybe step three is to store the result.
+
+00:21:05.180 --> 00:21:10.720
+If we want to convert this to real code, first off, let's import warp.
+
+00:21:14.520 --> 00:21:18.810
+What we want to do here is to let's just call this x,
+
+00:21:18.810 --> 00:21:21.780
+to tell warp that you have an input which
+
+00:21:21.780 --> 00:21:27.200
+is an integer array and y which is also an integer array.
+
+00:21:29.960 --> 00:21:39.420
+And for step one, we can use something called a function called warp TID or thread
+
+00:21:39.420 --> 00:21:47.300
+ID, which tells this instance which index you have been assigned to.
+
+00:21:48.080 --> 00:21:55.900
+And in the second step, you do this, but I think in warp you actually have
+
+00:21:55.900 --> 00:21:57.300
+to write it out like that.
+
+00:21:57.820 --> 00:22:03.840
+And in step three, you assign this number to the same index of y, your output.
+
+00:22:04.880 --> 00:22:14.840
+And because this is a GPU operation, we have to use this warp kernel decorator.
+
+00:22:15.640 --> 00:22:18.920
+A kernel is basically the GPU equivalent of a function.
+
+00:22:20.420 --> 00:22:28.660
+Importantly, you actually do have to specify the data type and array format of your data.
+
+00:22:28.660 --> 00:22:32.920
+In Python, typically when you have this kind of type-ins, they're ignored.
+
+00:22:33.440 --> 00:22:39.240
+It's only for documentation, but in the case of warp, it is important.
+
+00:22:40.640 --> 00:22:45.760
+Okay, now that this operation is defined, we just need to tell the GPU to actually
+
+00:22:45.760 --> 00:22:46.760
+launch this operation.
+
+00:22:47.480 --> 00:22:50.540
+So for that, we use warp launch.
+
+00:22:50.540 --> 00:22:57.160
+We tell the GPU that I want you to run this.
+
+00:23:00.740 --> 00:23:05.640
+And if we go back a bit, we have used the TID function to figure out
+
+00:23:05.640 --> 00:23:09.340
+the index, right? The index on the data.
+
+00:23:10.060 --> 00:23:14.900
+But we haven't told the GPU how many of those threads it should create yet or
+
+00:23:14.900 --> 00:23:16.620
+how many elements there are in total.
+
+00:23:16.620 --> 00:23:20.620
+So now let's do that. It's just the length of...
+
+00:23:21.660 --> 00:23:26.240
+Actually, before we start, let's do input array.
+
+00:23:28.200 --> 00:23:34.460
+Sure, let's basically create a warp array version of this Python native list.
+
+00:23:36.840 --> 00:23:40.740
+And we observe that these arrays are on the GPU.
+
+00:23:43.980 --> 00:23:45.280
+It's on the GPU.
+
+00:23:47.800 --> 00:23:53.040
+So now we tell the GPU to launch this kernel, and we need to tell it
+
+00:23:53.040 --> 00:23:59.580
+that there are in total 1,000 threads that should be launched.
+
+00:23:59.580 --> 00:24:06.000
+So this, or rather, let's do it better. Like this.
+
+00:24:06.800 --> 00:24:11.740
+And we can say the input array is the input array and output array is the
+
+00:24:11.740 --> 00:24:12.400
+output array.
+
+00:24:12.520 --> 00:24:17.940
+Those are just simply concatenated and expanded and interpreted as those two things.
+
+00:24:18.880 --> 00:24:23.040
+Only by conversion in warp, it's always input first and output last.
+
+00:24:23.040 --> 00:24:30.220
+So the arguments of this kernel is simply the concatenation of those two lists.
+
+00:24:31.340 --> 00:24:35.540
+So we tell the GPU to start running that, and it's done. That's great.
+
+00:24:36.640 --> 00:24:41.040
+If we look at the output array, we can see that...
+
+00:24:41.760 --> 00:24:46.840
+Let's copy it to the CPU and operate it as a NumPy array.
+
+00:24:46.840 --> 00:24:50.760
+We can see that, indeed, we get our numbers.
+
+00:24:51.860 --> 00:24:52.780
+Good.
+
+00:24:54.080 --> 00:24:56.340
+Now, how fast is this?
+
+00:24:57.080 --> 00:25:03.200
+Let's try to run this same operation a million times.
+
+00:25:16.340 --> 00:25:17.660
+Eight seconds.
+
+00:25:21.240 --> 00:25:22.700
+It's not great.
+
+00:25:22.700 --> 00:25:37.100
+One reason of this rather slow execution throughput is that we're ultimately still running it
+
+00:25:37.100 --> 00:25:37.980
+in a Python loop.
+
+00:25:38.780 --> 00:25:44.740
+No matter how efficient this line of code is, we're doing something a million times in
+
+00:25:44.740 --> 00:25:45.500
+a Python loop.
+
+00:25:45.500 --> 00:25:55.760
+This is illustrated very well in this figure on the NVIDIA developer technical blog.
+
+00:25:56.380 --> 00:26:01.780
+What we are doing here essentially is to launch this kernel a million times.
+
+00:26:01.880 --> 00:26:03.620
+Each time we do it, there's an overhead.
+
+00:26:04.020 --> 00:26:09.920
+It does launch this computation task, but with a lot of overhead, and this is repeated
+
+00:26:09.920 --> 00:26:11.380
+literally a million times.
+
+00:26:13.060 --> 00:26:16.800
+What we can do instead is to use something called a graph. So
+
+00:26:17.440 --> 00:26:25.340
+on the GPU, there's a concept of graph, which is basically that for everything that you
+
+00:26:25.340 --> 00:26:28.580
+want to do on your data, every operation, so
+
+00:26:28.580 --> 00:26:36.360
+for example, multiplication, addition, you can represent it as a node, and you can chain them
+
+00:26:36.360 --> 00:26:45.040
+together sequentially and form what's called a directed acyclic graph containing everything you want to do
+
+00:26:45.040 --> 00:26:45.580
+with it.
+
+00:26:46.160 --> 00:26:52.420
+You can tell the GPU that this is what you want to do ahead of time,
+
+00:26:52.500 --> 00:26:59.580
+and then it can run a bunch of optimization to do it more efficiently.
+
+00:27:00.320 --> 00:27:07.740
+In the end, what happens is that you spend some time building the graph, telling the
+
+00:27:07.740 --> 00:27:09.600
+GPU what you want to do,
+
+00:27:09.600 --> 00:27:14.280
+and then you launch the graph once, and once you launch it, you just have everything
+
+00:27:14.280 --> 00:27:17.900
+that should happen happening without this launching overhead.
+
+00:27:19.500 --> 00:27:20.900
+So let's try that.
+
+00:27:21.760 --> 00:27:31.880
+You can create a graph capture using this ScopedCapture context,
+
+00:27:33.680 --> 00:27:35.220
+let's call it capture,
+
+00:27:37.180 --> 00:27:42.880
+and under this Python context, we do exactly what we want to do, but this time
+
+00:27:42.880 --> 00:27:49.600
+we don't actually, the GPU actually just, it doesn't really run it, it just remembers this
+
+00:27:49.600 --> 00:27:52.960
+is what you want to do, just records the set of operations,
+
+00:27:53.620 --> 00:27:57.440
+and it takes a similar amount of time because it still needs to run this whole
+
+00:27:57.440 --> 00:27:58.160
+Python loop.
+
+00:27:58.900 --> 00:28:06.320
+But then once it's recorded, you can launch it once with a capture launch.
+
+00:28:08.340 --> 00:28:12.480
+You just tell it capture, this is what I want you to do. Oh,
+
+00:28:15.920 --> 00:28:23.600
+sorry, actually the capture is just an object reflecting this capture that you did. The actual
+
+00:28:23.600 --> 00:28:25.320
+graph is capture graph,
+
+00:28:26.940 --> 00:28:29.240
+so let's launch this whole graph,
+
+00:28:30.240 --> 00:28:33.040
+and now it takes three seconds instead of eight.
+
+00:28:33.960 --> 00:28:38.760
+So now you might ask, why are we doing eight plus three instead of
+
+00:28:38.760 --> 00:28:39.840
+just sticking with eight?
+
+00:28:40.320 --> 00:28:46.040
+Well, the answer is the next time you run it, it's going to take basically no
+
+00:28:46.040 --> 00:28:46.540
+time.
+
+00:28:50.760 --> 00:28:56.600
+Warp uses a technique called just-in-time compilation, which basically says that every
+
+00:28:56.600 --> 00:29:03.840
+time you do something, it just-in-time compiles it to very efficient binary machine code,
+
+00:29:04.480 --> 00:29:09.040
+and the next time you run it, it doesn't have to go through the code line
+
+00:29:09.040 --> 00:29:10.020
+by line anymore,
+
+00:29:10.300 --> 00:29:15.100
+you can just use the pre-compiled machine code.
+
+00:29:16.260 --> 00:29:21.920
+So if you're running the same thing many, many times, for example, applying the
+
+00:29:21.920 --> 00:29:32.580
+same operation on a simulated fly or simulating many behavioral recordings, then it's quite advantageous because
+
+00:29:32.580 --> 00:29:39.780
+the execution time no longer scales quite the same way as having a naive loop.
+
+00:29:41.820 --> 00:29:48.340
+Now, going back to our NeuroMechFly simulation, what we need to do here is
+
+00:29:48.340 --> 00:29:58.160
+to define a kernel that takes as input the buffer of all this whole three-dimensional
+
+00:29:58.160 --> 00:30:02.920
+array of shape and number of worlds, number of steps,
+
+00:30:02.920 --> 00:30:11.000
+and number of degrees of freedom, and then the step count, the current step in the
+
+00:30:11.000 --> 00:30:11.780
+physics simulation.
+
+00:30:12.320 --> 00:30:19.880
+And finally, you have this two-dimensional array that just reflects the current target angles for
+
+00:30:19.880 --> 00:30:20.860
+the physics simulation.
+
+00:30:22.320 --> 00:30:24.420
+So just get rid of this.
+
+00:30:24.420 --> 00:30:31.700
+And what we want to do here, essentially, if we had written it as a CPU
+
+00:30:31.700 --> 00:30:37.220
+function, it would be something like this.
+
+00:30:42.360 --> 00:30:44.940
+Well, it would be something like this.
+
+00:30:47.080 --> 00:30:52.216
+We would be slicing this history of behavior recording and then step
+
+00:30:52.216 --> 00:30:56.924
+index and every degree of freedom. And then we would be
+
+00:30:56.924 --> 00:31:02.060
+slicing this history of behavior recording and then step index and every
+
+00:31:02.060 --> 00:31:08.380
+degree of freedom, and just assigning this, copying this to this buffer.
+
+00:31:08.380 --> 00:31:13.960
+This is literally what we would have done if we had implemented this with a CPU,
+
+00:31:14.460 --> 00:31:18.580
+but because we're running on the GPU, this is what we have to have.
+
+00:31:19.000 --> 00:31:24.420
+We have to use this TID function to now figure out which world and which degree
+
+00:31:24.420 --> 00:31:26.620
+of freedom I'm responsible for.
+
+00:31:26.620 --> 00:31:33.000
+Get these two numbers. We get the step counter, which is also a warp array.
+
+00:31:33.400 --> 00:31:36.820
+If it's on the GPU, it has to be placed in an array, except in this
+
+00:31:36.820 --> 00:31:41.200
+array, there's only a single number, which is the step counter, which we can access
+
+00:31:41.200 --> 00:31:42.080
+by indexing zero.
+
+00:31:44.260 --> 00:31:54.100
+And we fetch the number that we're interested in and literally copy it to this target
+
+00:31:54.100 --> 00:31:57.260
+position, this target buffer.
+
+00:31:59.340 --> 00:32:06.000
+Define this kernel. Similarly, even just for incrementing the step counter,
+
+00:32:06.000 --> 00:32:07.240
+we have to write a kernel for it.
+
+00:32:07.240 --> 00:32:11.380
+It's literally just taking the only number of this array and adding one to it,
+
+00:32:11.960 --> 00:32:13.280
+but still it's a kernel.
+
+00:32:14.980 --> 00:32:20.020
+And now we can define this function that runs the simulation with graph capture.
+
+00:32:21.020 --> 00:32:24.380
+So as before, we have a ScopedCapture,
+
+00:32:24.760 --> 00:32:27.080
+but first we define the fly, the simulation, blah, blah, blah.
+
+00:32:28.760 --> 00:32:36.760
+And then we define a graph capture reflecting what we need to do for each simulation
+
+00:32:36.760 --> 00:32:37.260
+step.
+
+00:32:37.760 --> 00:32:42.500
+So the first thing we need to do is to launch this kernel that copies data
+
+00:32:42.500 --> 00:32:48.820
+to the buffer for the target position buffer for the position actuators.
+
+00:32:48.820 --> 00:32:56.060
+And then we need to tell FlyGym that please use this as the actuator
+
+00:32:56.060 --> 00:32:56.560
+inputs.
+
+00:32:57.000 --> 00:33:01.800
+You don't need to launch a warp kernel for this because internally FlyGym is
+
+00:33:01.800 --> 00:33:03.400
+already implemented using kernel.
+
+00:33:04.340 --> 00:33:07.260
+And then as before, you call the step function.
+
+00:33:07.260 --> 00:33:13.360
+Again, you don't need to launch it as a, you don't need to call launch kernel
+
+00:33:13.360 --> 00:33:19.720
+explicitly because your fly is internally already doing that.
+
+00:33:20.560 --> 00:33:24.880
+Internally using MuJoCo Warp and MuJoCo Warp is already doing that.
+
+00:33:29.860 --> 00:33:32.540
+So it takes some time to build this graph.
+
+00:33:32.660 --> 00:33:36.440
+And once this graph is built, you as before have a Python loop
+
+00:33:36.960 --> 00:33:42.600
+and within the Python loop, you can just launch this captured graph of everything you need
+
+00:33:42.600 --> 00:33:44.120
+to do per iteration.
+
+00:33:45.380 --> 00:33:51.220
+Oh, let's not forget after stepping physics, you have to call this very small kernel of
+
+00:33:51.220 --> 00:33:53.540
+incrementing a step counter by one.
+
+00:33:55.200 --> 00:34:01.020
+We render as requested and we report the performance.
+
+00:34:01.640 --> 00:34:06.020
+And now let's run it for a thousand worlds with rendering enabled.
+
+00:34:17.200 --> 00:34:20.480
+They're running out of memory. Sorry.
+
+00:34:22.960 --> 00:34:28.660
+Let's restart this to clear the memory.
+
+00:34:28.940 --> 00:34:30.480
+Let me call this again.
+
+00:34:40.720 --> 00:34:48.140
+Okay. And now we have a performance of 10x real-time including rendering compared to the
+
+00:34:48.140 --> 00:34:53.060
+previous throughput of 1.53.
+
+00:34:54.100 --> 00:34:56.760
+This is nice.
+
+00:34:59.480 --> 00:35:09.980
+And this is further compared to the previous uh previous throughput for the rendering of 0.1.
+
+00:35:10.400 --> 00:35:13.440
+And now rendering is a lot faster, but not necessarily overall.
+
+00:35:13.900 --> 00:35:16.700
+And if we use the graph capture, then everything is fast,
+
+00:35:16.840 --> 00:35:19.520
+even with rendering is 10x real-time.
+
+00:35:19.520 --> 00:35:24.320
+If we disable rendering, then it's even faster.
+
+00:35:28.620 --> 00:35:36.260
+30x real-time on my NVIDIA GeForce 3080 Ti GPU,
+
+00:35:36.260 --> 00:35:38.740
+which has been five or six years old.
+
+00:35:39.500 --> 00:35:45.160
+We have actually already benchmarked the performance on different GPUs.
+
+00:35:45.160 --> 00:35:48.760
+On the x-axis, you have the overall throughput without rendering.
+
+00:35:49.460 --> 00:35:52.040
+And on the, sorry, on the y-axis, you have the throughput.
+
+00:35:52.160 --> 00:35:56.340
+And on the x-axis, you have the number of worlds that are simulated in parallel.
+
+00:35:56.700 --> 00:35:58.260
+Note that it's on a log scale.
+
+00:35:58.900 --> 00:36:01.120
+So now we are roughly here,
+
+00:36:02.840 --> 00:36:09.380
+about a thousand worlds on the 3080. In
+
+00:36:09.960 --> 00:36:12.460
+our example, it's actually around 30.
+
+00:36:12.460 --> 00:36:18.680
+We see that we get the overall, the highest throughput when we are simulating about 4,000
+
+00:36:18.680 --> 00:36:22.200
+to 8,000 worlds in parallel.
+
+00:36:23.280 --> 00:36:30.400
+And you don't actually need such fancy GPUs because even with a 4090, which is fancy
+
+00:36:30.400 --> 00:36:31.620
+but not that fancy,
+
+00:36:32.120 --> 00:36:35.460
+you already have the same performance basically as the H100.
+
+00:36:35.460 --> 00:36:41.760
+And that's because the type of computation in physics simulation is just a bit different from
+
+00:36:41.760 --> 00:36:45.560
+the types of computation in, for example, training an AI model.
+
+00:36:46.140 --> 00:36:55.400
+So I encourage you to benchmark the simulation before committing to running large jobs.
+
+00:36:55.400 --> 00:37:02.800
+And in the next tutorial, we will spend more time covering how to benchmark or rather
+
+00:37:02.800 --> 00:37:06.780
+how to profile your simulation to understand which part is taking a lot of time.
+
+00:37:07.720 --> 00:37:11.560
+One thing to note is that depending on exactly what you want to do, you might
+
+00:37:11.560 --> 00:37:17.460
+even be able to capture the computation outside of this Python loop.
+
+00:37:20.000 --> 00:37:25.600
+Because now what we have here is a little bit like the example here.
+
+00:37:25.940 --> 00:37:30.260
+We have the computation launched once only per iteration of the loop,
+
+00:37:31.000 --> 00:37:35.420
+but overall we're still running this native Python loop.
+
+00:37:36.540 --> 00:37:39.080
+So alternatively, you can do this capture.
+
+00:37:39.080 --> 00:37:43.580
+You can run this loop inside the capture and launch the whole thing once,
+
+00:37:43.900 --> 00:37:48.240
+but that is outside the scope of this present tutorial.

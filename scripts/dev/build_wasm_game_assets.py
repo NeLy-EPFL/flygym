@@ -45,6 +45,7 @@ from flygym import assets_dir
 from flygym.anatomy import ALL_SEGMENT_NAMES, ContactBodiesPreset
 from flygym.compose import ContactParams, FlatGroundWorld
 from flygym.utils.math import Rotation3D
+from flygym.utils.mjcf import GEOM_TYPES
 from flygym_demo.complex_terrain.common import make_locomotion_fly
 from flygym_demo.complex_terrain.preprogrammed import PreprogrammedSteps
 
@@ -142,11 +143,10 @@ class SlalomGroundWorld(FlatGroundWorld):
             # contype/conaffinity left at 0: like the ground, poles collide with
             # the fly via explicit pairs (see add_obstacle_contacts), not broadphase.
             self.pole_geoms.append(
-                wb.add(
-                    "geom",
-                    type="cylinder",
+                wb.add_geom(
+                    type=GEOM_TYPES["cylinder"],
                     name=name,
-                    size=[POLE_RADIUS, half_h],
+                    size=[POLE_RADIUS, half_h, 0.0],
                     pos=[x, y, z],
                     rgba=rgba,
                     contype=0,
@@ -195,10 +195,9 @@ class SlalomGroundWorld(FlatGroundWorld):
         n = 0
         for pole_geom in self.pole_geoms:
             for fly_geom in fly_geoms:
-                self.mjcf_root.contact.add(
-                    "pair",
-                    geom1=fly_geom,
-                    geom2=pole_geom,
+                self.mjcf_root.add_pair(
+                    geomname1=fly_geom.name,
+                    geomname2=pole_geom.name,
                     name=f"obstacle_pair_{n}",
                     friction=params.get_friction_tuple(),
                     solref=params.get_solref_tuple(),

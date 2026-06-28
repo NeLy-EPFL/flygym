@@ -1,7 +1,7 @@
 * [Home](index.md)
 * [Installation](installation.md)
 * [FlyGym v1 vs. v2 API](migration.md)
-* [Tutorials](tutorials/tutorials.md)
+* [Code Tutorials](tutorials/index.md)
     * 1&#46; Composing models and scenes
         * [1a. Basic model composition](tutorials/1a_basic_model_composition.ipynb)
         * [1b. Advanced model composition](tutorials/1b_advanced_model_composition.ipynb)
@@ -17,6 +17,7 @@
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
     * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
     * [7. Performance profiling](tutorials/7_performance_profiling.md)
+* [Video Tutorials](video_tutorials/index.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
     * compose
@@ -49,7 +50,7 @@
         * [rendering](api_reference/flygym/warp/rendering.md)
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)
-* [NeuroMechFly Live & Outreach](outreach.md)
+* [NeuroMechFly Game & Outreach](outreach.md)
 * [Changelog](changelog.md)
 * [Contributing to FlyGym](contributing.md)
 * [Contributors](contributors.md)

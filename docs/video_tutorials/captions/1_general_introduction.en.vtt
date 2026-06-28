@@ -1,0 +1,397 @@
+WEBVTT
+
+00:00:03.320 --> 00:00:06.300
+So, the goals for today are really didactic,
+
+00:00:06.440 --> 00:00:09.920
+so the idea is to try to give you a background of NeuroMechFly as a
+
+00:00:09.920 --> 00:00:11.120
+model, show you where you
+
+00:00:11.120 --> 00:00:15.380
+can find these resources, and incidentally, all of this, including this video, should
+
+00:00:15.380 --> 00:00:17.740
+be posted on our website after the workshop,
+
+00:00:18.080 --> 00:00:22.520
+so you can return back to it, including the slides, give you an overview of how
+
+00:00:22.520 --> 00:00:24.520
+we've actually used NeuroMechFly most recently,
+
+00:00:24.900 --> 00:00:29.200
+and then in blue we have the actual on-the-ground work, installation, and helping you
+
+00:00:29.200 --> 00:00:30.494
+to perform your own simulations.
+
+00:00:31.060 --> 00:00:34.480
+So, the last part of this workshop is going to be you just trying to implement
+
+00:00:34.480 --> 00:00:35.540
+things you find interesting.
+
+00:00:36.400 --> 00:00:37.860
+Okay, so why NeuroMechFly?
+
+00:00:38.880 --> 00:00:42.000
+This is the sort of historical aspect of it.
+
+00:00:42.700 --> 00:00:46.144
+So, I'm not going to bring up Feynman, even though I just brought up Feynman,
+
+00:00:46.869 --> 00:00:49.740
+but there's this idea of reverse engineering,
+
+00:00:49.740 --> 00:00:52.640
+or what I cannot create, I do not understand,
+
+00:00:52.640 --> 00:00:56.420
+and the idea of reverse engineering is to disassemble or analyze something in detail,
+
+00:00:56.420 --> 00:00:59.818
+and as a biologist, we're all reverse engineering in the sense that
+
+00:00:59.818 --> 00:01:02.560
+we're disassembling or analyzing something in detail.
+
+00:01:03.240 --> 00:01:08.560
+Ideally, we discover important concepts regarding those details that we can translate to robotics,
+
+00:01:08.700 --> 00:01:10.300
+artificial systems, or to humans,
+
+00:01:10.760 --> 00:01:14.386
+but the neat thing about what we're doing with NeuroMechFly and I think other body models
+
+00:01:14.400 --> 00:01:16.360
+is to produce something similar, right,
+
+00:01:16.360 --> 00:01:20.640
+and we have several people here from laboratories that are trying to build Drosophila-inspired
+
+00:01:20.640 --> 00:01:23.080
+robots and people working on simulations,
+
+00:01:23.080 --> 00:01:27.700
+and I think this is really one of the impetus for those works is to try
+
+00:01:27.700 --> 00:01:30.597
+to produce something similar, to have impact in the real world.
+
+00:01:32.180 --> 00:01:37.440
+And so, we're not the first people to generate fly or insect-inspired systems,
+
+00:01:37.740 --> 00:01:45.313
+so this is an old video from Quinn's Whegs II robot, where you have these hybrid Whegs,
+
+00:01:45.320 --> 00:01:51.412
+which are wheel or leg-like structures that allow this insect robot to travel over complex terrain.
+
+00:01:51.420 --> 00:01:55.300
+Of course, it looks nothing like the beautiful movements of a cockroach leg.
+
+00:01:56.680 --> 00:02:01.220
+As well, we've had simulations, 3D physics simulations of insect behavior,
+
+00:02:01.600 --> 00:02:05.917
+so this is for Ansgar Büschges's lab from 2004, where they built a
+
+00:02:05.917 --> 00:02:07.920
+model of the stick insect
+
+00:02:07.920 --> 00:02:13.580
+and have controllers based on what they understand about the underlying biology of the stick
+
+00:02:13.580 --> 00:02:16.140
+insect to drive movements of this controller.
+
+00:02:17.700 --> 00:02:21.273
+So this is not new, and indeed, we also developed
+
+00:02:21.283 --> 00:02:25.838
+a much simpler model of Drosophila in 2017 that I'm not going to show you,
+
+00:02:26.660 --> 00:02:30.400
+but of course, the question is why work with Drosophila instead of one of these other insects, right?
+
+00:02:30.400 --> 00:02:31.760
+We looked at the cockroach,
+
+00:02:31.760 --> 00:02:34.320
+they have this beautiful behavior where they can go over complex terrain,
+
+00:02:34.740 --> 00:02:37.980
+stick insect as well can move on stems in nature,
+
+00:02:38.540 --> 00:02:42.960
+and of course, I think everybody in this room is aware that flies generate complex behaviors
+
+00:02:42.960 --> 00:02:46.240
+and importantly, we can actually target neurons of interest.
+
+00:02:46.420 --> 00:02:48.320
+We have a small compact nervous system,
+
+00:02:49.060 --> 00:02:52.680
+and these are really the properties that allow us to dig really deeply into the underlying
+
+00:02:52.680 --> 00:02:54.740
+mechanisms of control in the fly.
+
+00:02:56.640 --> 00:03:02.531
+So the first resource that I would refer you to
+
+00:03:02.531 --> 00:03:03.640
+is the first original NeuroMechFly paper in 2022.
+
+00:03:03.640 --> 00:03:08.620
+This is the work that first defined our body model, led by Victor Lobato-Rios,
+
+00:03:08.620 --> 00:03:09.896
+a PhD student in my laboratory,
+
+00:03:10.600 --> 00:03:14.548
+and what that entailed was taking a real fly, embedding it here,
+
+00:03:14.548 --> 00:03:16.660
+and then performing a CT scan of the fly.
+
+00:03:20.960 --> 00:03:24.720
+So at this point, we are really interested in moving beyond ball and stick models to
+
+00:03:24.720 --> 00:03:28.560
+much more complex models in terms of morphological realism,
+
+00:03:29.060 --> 00:03:34.220
+and part of the reason is that we eventually want to actually make inferences about what
+
+00:03:34.220 --> 00:03:38.480
+the real animal experience is in terms of the mechanical feedback with the environment,
+
+00:03:38.480 --> 00:03:43.690
+as well as, for example, if the fly is grooming, as you would be interested in the Simpson lab,
+
+00:03:43.690 --> 00:03:47.940
+we need to have real potential interactions between the body parts during collisions between
+
+00:03:47.940 --> 00:03:49.580
+the antenna and the legs, for example.
+
+00:03:49.600 --> 00:03:53.140
+You can't do this as well with ball and stick models, which motivated us
+
+00:03:53.140 --> 00:03:54.952
+to buil this initial body model.
+
+00:03:57.040 --> 00:04:00.960
+So using this body model, we could actually do some really nice things in closed loop
+
+00:04:00.960 --> 00:04:01.620
+with real data.
+
+00:04:01.640 --> 00:04:03.760
+So here we have a fly on the ball,
+
+00:04:04.300 --> 00:04:08.780
+so we can make some inferences about the mechanical sensory feedback of this animal.
+
+00:04:08.840 --> 00:04:13.817
+So here we have 2D tracking, then 3D reconstruction, what we call kinematic replay, where we replay
+
+00:04:13.840 --> 00:04:17.916
+the behavior that we measured in a real fly, and then we can infer the collisions
+
+00:04:17.920 --> 00:04:20.120
+that occur between the different body parts of the animal.
+
+00:04:20.440 --> 00:04:24.410
+So this is one really nice early way in which the biomechanical model
+
+00:04:24.410 --> 00:04:25.440
+could be useful for science.
+
+00:04:27.080 --> 00:04:30.420
+But of course, if we want to understand how the nervous system works to drive behavior,
+
+00:04:30.420 --> 00:04:33.880
+we need something that can actually have neural network controllers as well,
+
+00:04:34.700 --> 00:04:38.800
+which leads us to the paper that is now in press in Nature Methods and was
+
+00:04:38.800 --> 00:04:44.420
+published in bioRxiv, another resource where we describe basically what I'm just going to very briefly
+
+00:04:44.420 --> 00:04:49.920
+overview in the following slides of the improvements on the initial model.
+
+00:04:51.140 --> 00:04:56.540
+This is kind of busy, but effectively what you can see that we've added vision, olfaction,
+
+00:04:57.080 --> 00:05:01.820
+we've added as well the opportunity of using descending and ascending signals, we've added
+
+00:05:01.820 --> 00:05:06.600
+leg adhesion, the possibility for rugged terrain as you see here in our new model, and
+
+00:05:06.600 --> 00:05:10.711
+that allowed us to do a variety of different things in terms of exploring
+
+00:05:10.711 --> 00:05:12.400
+mechanisms for neural control.
+
+00:05:13.240 --> 00:05:17.691
+Well, the first thing we wanted to do actually is to try to generate more realistic locomotion.
+
+00:05:17.980 --> 00:05:22.840
+So initially we had our locomotor controller driven by CPG controllers to try to emulate
+
+00:05:22.840 --> 00:05:25.800
+basically the joint degree of freedom ranges we saw in the real fly.
+
+00:05:26.480 --> 00:05:30.300
+Here what we did is we took a single step from a locomoting fly,
+
+00:05:30.300 --> 00:05:31.780
+performed 3D pose estimation,
+
+00:05:31.900 --> 00:05:35.640
+and then used this information to actually drive locomotion in the real fly.
+
+00:05:37.900 --> 00:05:39.820
+So the initial use cases were locomotor.
+
+00:05:39.960 --> 00:05:44.200
+So the first thing is by adding adhesion we can actually have our simulation walking on
+
+00:05:44.920 --> 00:05:46.560
+increasingly slanted surfaces.
+
+00:05:47.580 --> 00:05:52.240
+Another use case that I'll just briefly talk about is that we have CPG based locomotor
+
+00:05:52.240 --> 00:05:58.880
+control, or we can have feedback based control, so the sort of dichotomy between distributed
+
+00:05:58.880 --> 00:06:02.100
+control versus centrally generated control with CPGs.
+
+00:06:04.140 --> 00:06:07.200
+Another use case was to add vision and olfaction.
+
+00:06:07.620 --> 00:06:13.160
+So in this visual object following use case you can actually see what the simulation observes.
+
+00:06:13.200 --> 00:06:17.640
+So here we have the left eye and the right eye, the set of ommatidia, and
+
+00:06:17.640 --> 00:06:20.680
+you can actually watch what the fly is actually observing.
+
+00:06:20.680 --> 00:06:24.440
+So here we have this ball that it's following, and we're using a controller
+
+00:06:24.440 --> 00:06:25.300
+to actually follow the ball.
+
+00:06:26.980 --> 00:06:30.900
+In the olfactory avoidance and attraction we have the fly walking through an environment
+
+00:06:30.900 --> 00:06:35.240
+and detecting this aversive odorant and being attracted to this attractive odorant.
+
+00:06:37.300 --> 00:06:43.960
+We also incorporated head stabilization where we can actually, so if we observe our initial
+
+00:06:43.960 --> 00:06:49.260
+model walking through even flat terrain we see that the raw visual experience is actually
+
+00:06:49.260 --> 00:06:54.520
+quite turbulent, but we actually actuate the neck to try to reduce the turbulence in the
+
+00:06:54.520 --> 00:06:56.960
+way that a real insect would try to do that as well.
+
+00:06:59.040 --> 00:07:03.600
+We also use reinforcement learning to train a policy that allows our fly to try to
+
+00:07:03.600 --> 00:07:07.880
+reach an attractive orange odorant by passing this black pillar.
+
+00:07:07.920 --> 00:07:12.020
+You can see again visual experience of our simulation on the left and the right eye
+
+00:07:12.020 --> 00:07:17.160
+as well as the olfactory experience as shown by the amplitude of olfactory input.
+
+00:07:20.480 --> 00:07:24.420
+Two more cases that were more biologically realistic per se.
+
+00:07:24.500 --> 00:07:27.220
+This is actually an algorithm that's derived from Demir et al.
+
+00:07:27.300 --> 00:07:30.652
+eLife where we have our fly walking through an odor plume trying
+
+00:07:30.652 --> 00:07:31.840
+to get to the odor source.
+
+00:07:32.180 --> 00:07:34.940
+So you can see a zoom in of what the fly is doing as it's trying
+
+00:07:34.940 --> 00:07:36.361
+to actually reach the source here.
+
+00:07:38.160 --> 00:07:40.980
+And finally, it's great that Srini just walked in,
+
+00:07:41.260 --> 00:07:47.140
+we take the Lappalainen model, a visual system and use it for our fly to actually
+
+00:07:47.840 --> 00:07:50.480
+track the other fly through a rugged terrain.
+
+00:07:50.700 --> 00:07:55.000
+So here we can see the left eye input, right eye input and the activity patterns
+
+00:07:55.000 --> 00:07:56.460
+across an array of different sets of neurons.
+
+00:08:00.880 --> 00:08:04.860
+So additional resources that you could turn to, and again remember that the slides will
+
+00:08:04.860 --> 00:08:06.300
+be available for you on our website, you
+
+00:08:06.760 --> 00:08:08.420
+just go to neuromechfly.org.
+
+00:08:09.520 --> 00:08:12.570
+One of the really valuable things that I think if you want to follow up on some of the work
+
+00:08:12.580 --> 00:08:16.440
+that we've already done is these tutorials which follow through each of the points that
+
+00:08:16.440 --> 00:08:17.860
+I just showed you.
+
+00:08:18.320 --> 00:08:19.300
+Here are some examples.
+
+00:08:20.400 --> 00:08:24.120
+Interacting with NeuroMechFly, controlling with CPGs, rule-based controller etc.,
+
+00:08:24.320 --> 00:08:26.400
+vision, olfaction, path integration.
+
+00:08:27.160 --> 00:08:32.333
+So the hope is that after today, after installing thing s and trying them out, you can yourself
+
+00:08:32.340 --> 00:08:35.580
+just go home and try some of these tutorials yourself if you didn't manage to have
+
+00:08:35.580 --> 00:08:37.020
+the time currently.

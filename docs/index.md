@@ -10,7 +10,9 @@ FlyGym is the Python library for NeuroMechFly, a digital twin of the adult fruit
 For more information, see our [NeuroMechFly v2 paper](https://www.nature.com/articles/s41592-024-02497-y.epdf).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/overview_video.gif" alt="overview" />
+  <video src="https://raw.githubusercontent.com/NeLy-EPFL/_media/refs/heads/main/flygym/overview_video.mp4" width="500" controls autoplay loop muted playsinline>
+    Overview video (not supported by your browser).
+  </video>
 </p>
 
 
