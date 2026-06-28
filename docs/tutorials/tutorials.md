@@ -1,4 +1,4 @@
-# Tutorials
+# Code tutorials
 
 If you are new to FlyGym, we recommend that you get started with tutorials under the "Tutorials" section in the navigation bar.
 

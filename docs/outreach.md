@@ -1,4 +1,4 @@
-# NeuroMechFly Live & Outreach
+# NeuroMechFly Game & Outreach
 
 We have developed a video game demonstrating how animals control their behaviors at different levels of abstraction for education and outreach purposes. You can **play it right here in your browser** — it runs the same NeuroMechFly model with MuJoCo compiled to WebAssembly:
 

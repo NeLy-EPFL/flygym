@@ -536,7 +536,7 @@ function buildPhysicsSliders(mj, model) {
     for (let d = 0; d < nd; d++) model.dof_damping[d] = origDamping[d] * mult;
   });
 
-  makeSlider('Actuator kp', (mult) => {
+  makeSlider('Actuator gain', (mult) => {
     for (let u = 0; u < nu; u++) {
       model.actuator_gainprm[u * NGAIN] = origGainprm[u] * mult;
       model.actuator_biasprm[u * NGAIN + 1] = origBiasprm[u] * mult;
