@@ -1,0 +1,1187 @@
+<mujoco model="slalom_world">
+  <compiler angle="radian" boundmass="1e-06" boundinertia="1e-12"/>
+
+  <option timestep="0.0001" gravity="0 0 -9810" noslip_iterations="5">
+    <flag energy="enable"/>
+  </option>
+
+  <size nkey="1"/>
+
+  <visual>
+    <global offwidth="2048" offheight="2048"/>
+    <headlight ambient="0.5 0.5 0.5" diffuse="0.6 0.6 0.6" specular="0.3 0.3 0.3"/>
+    <map stiffness="1000000" stiffnessrot="5000000" force="1e-05" torque="0.0002" znear="0.0005" zfar="250"/>
+  </visual>
+
+  <statistic extent="1"/>
+
+  <default>
+    <default class="nmf/main"/>
+  </default>
+
+  <asset>
+    <texture type="skybox" colorspace="auto" name="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="10" height="60"/>
+    <texture type="2d" colorspace="auto" name="checker" builtin="checker" rgb1="0.3 0.3 0.3" rgb2="0.4 0.4 0.4" width="300" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/headthorax" builtin="flat" mark="random" rgb1="0.59 0.39 0.12" rgb2="0.59 0.39 0.12" markrgb="0.7 0.49 0.2" random="0.3" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/antennaproboscis" builtin="flat" mark="random" rgb1="0.59 0.39 0.12" rgb2="0.59 0.39 0.12" random="0.1" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/abdomen12345" builtin="gradient" mark="random" rgb1="0.59 0.39 0.12" rgb2="0.82 0.67 0.47" markrgb="0.7 0.49 0.2" random="0.3" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/abdomen6" builtin="gradient" mark="random" rgb1="0.39 0.2 0" rgb2="0.82 0.67 0.47" markrgb="0.7 0.49 0.2" random="0.3" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/coxa" builtin="flat" mark="random" rgb1="0.59 0.39 0.12" rgb2="0.59 0.39 0.12" random="0.05" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/trochanterfemur" builtin="flat" mark="random" rgb1="0.63 0.43 0.16" rgb2="0.63 0.43 0.16" random="0.05" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/tibia" builtin="flat" mark="random" rgb1="0.67 0.47 0.2" rgb2="0.67 0.47 0.2" random="0.05" width="50" height="300"/>
+    <texture type="cube" colorspace="auto" name="nmf/tarsus" builtin="flat" mark="random" rgb1="0.71 0.51 0.24" rgb2="0.71 0.51 0.24" random="0.05" width="50" height="300"/>
+    <material name="grid" texture="checker" texrepeat="250 250" reflectance="0.2"/>
+    <material name="nmf/wing" specular="0.2" shininess="0.2" rgba="0.8 0.8 0.9 0.3"/>
+    <material name="nmf/eye" specular="0.2" shininess="0.2" rgba="0.67 0.21 0.12 1"/>
+    <material name="nmf/arista" specular="0.2" shininess="0.2" rgba="0.26 0.2 0.16 1"/>
+    <material name="nmf/haltere" specular="0.2" shininess="0.2" rgba="0.59 0.43 0.24 1"/>
+    <material name="nmf/headthorax" texture="nmf/headthorax" specular="0.2" shininess="0.2"/>
+    <material name="nmf/antennaproboscis" texture="nmf/antennaproboscis" specular="0.2" shininess="0.2"/>
+    <material name="nmf/abdomen12345" texture="nmf/abdomen12345" specular="0.2" shininess="0.2"/>
+    <material name="nmf/abdomen6" texture="nmf/abdomen6" specular="0.2" shininess="0.2"/>
+    <material name="nmf/coxa" texture="nmf/coxa" specular="0.2" shininess="0.2"/>
+    <material name="nmf/trochanterfemur" texture="nmf/trochanterfemur" specular="0.2" shininess="0.2"/>
+    <material name="nmf/tibia" texture="nmf/tibia" specular="0.2" shininess="0.2"/>
+    <material name="nmf/tarsus" texture="nmf/tarsus" specular="0.2" shininess="0.2"/>
+    <mesh name="nmf/c_thorax" content_type="model/stl" file="c_thorax.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_head" content_type="model/stl" file="c_head.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_rostrum" content_type="model/stl" file="c_rostrum.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_haustellum" content_type="model/stl" file="c_haustellum.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_abdomen12" content_type="model/stl" file="c_abdomen12.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_abdomen3" content_type="model/stl" file="c_abdomen3.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_abdomen4" content_type="model/stl" file="c_abdomen4.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_abdomen5" content_type="model/stl" file="c_abdomen5.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/c_abdomen6" content_type="model/stl" file="c_abdomen6.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/l_eye" content_type="model/stl" file="l_eye.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/r_eye" content_type="model/stl" file="l_eye.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/l_pedicel" content_type="model/stl" file="l_pedicel.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/l_funiculus" content_type="model/stl" file="l_funiculus.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/l_arista" content_type="model/stl" file="l_arista.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/r_pedicel" content_type="model/stl" file="l_pedicel.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/r_funiculus" content_type="model/stl" file="l_funiculus.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/r_arista" content_type="model/stl" file="l_arista.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/l_wing" content_type="model/stl" file="l_wing.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/r_wing" content_type="model/stl" file="l_wing.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/l_haltere" content_type="model/stl" file="l_haltere.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/r_haltere" content_type="model/stl" file="l_haltere.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/lf_coxa" content_type="model/stl" file="lf_coxa.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_trochanterfemur" content_type="model/stl" file="lf_trochanterfemur.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tibia" content_type="model/stl" file="lf_tibia.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tarsus1" content_type="model/stl" file="lf_tarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tarsus2" content_type="model/stl" file="lf_tarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tarsus3" content_type="model/stl" file="lf_tarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tarsus4" content_type="model/stl" file="lf_tarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lf_tarsus5" content_type="model/stl" file="lf_tarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_coxa" content_type="model/stl" file="lm_coxa.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_trochanterfemur" content_type="model/stl" file="lm_trochanterfemur.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tibia" content_type="model/stl" file="lm_tibia.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tarsus1" content_type="model/stl" file="lm_tarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tarsus2" content_type="model/stl" file="lm_tarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tarsus3" content_type="model/stl" file="lm_tarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tarsus4" content_type="model/stl" file="lm_tarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lm_tarsus5" content_type="model/stl" file="lm_tarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_coxa" content_type="model/stl" file="lh_coxa.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_trochanterfemur" content_type="model/stl" file="lh_trochanterfemur.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tibia" content_type="model/stl" file="lh_tibia.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tarsus1" content_type="model/stl" file="lh_tarsus1.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tarsus2" content_type="model/stl" file="lh_tarsus2.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tarsus3" content_type="model/stl" file="lh_tarsus3.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tarsus4" content_type="model/stl" file="lh_tarsus4.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/lh_tarsus5" content_type="model/stl" file="lh_tarsus5.stl" scale="1000 1000 1000"/>
+    <mesh name="nmf/rf_coxa" content_type="model/stl" file="lf_coxa.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_trochanterfemur" content_type="model/stl" file="lf_trochanterfemur.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tibia" content_type="model/stl" file="lf_tibia.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tarsus1" content_type="model/stl" file="lf_tarsus1.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tarsus2" content_type="model/stl" file="lf_tarsus2.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tarsus3" content_type="model/stl" file="lf_tarsus3.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tarsus4" content_type="model/stl" file="lf_tarsus4.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rf_tarsus5" content_type="model/stl" file="lf_tarsus5.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_coxa" content_type="model/stl" file="lm_coxa.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_trochanterfemur" content_type="model/stl" file="lm_trochanterfemur.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tibia" content_type="model/stl" file="lm_tibia.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tarsus1" content_type="model/stl" file="lm_tarsus1.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tarsus2" content_type="model/stl" file="lm_tarsus2.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tarsus3" content_type="model/stl" file="lm_tarsus3.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tarsus4" content_type="model/stl" file="lm_tarsus4.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rm_tarsus5" content_type="model/stl" file="lm_tarsus5.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_coxa" content_type="model/stl" file="lh_coxa.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_trochanterfemur" content_type="model/stl" file="lh_trochanterfemur.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tibia" content_type="model/stl" file="lh_tibia.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tarsus1" content_type="model/stl" file="lh_tarsus1.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tarsus2" content_type="model/stl" file="lh_tarsus2.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tarsus3" content_type="model/stl" file="lh_tarsus3.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tarsus4" content_type="model/stl" file="lh_tarsus4.stl" scale="1000 -1000 1000"/>
+    <mesh name="nmf/rh_tarsus5" content_type="model/stl" file="lh_tarsus5.stl" scale="1000 -1000 1000"/>
+  </asset>
+
+  <worldbody>
+    <geom name="ground_plane" size="100 100 1" type="plane" contype="0" conaffinity="0" material="grid"/>
+    <geom name="start_pole_left" size="0.05 2.5" pos="0 -5 0" type="cylinder" contype="0" conaffinity="0" rgba="0 0 0 1"/>
+    <geom name="start_pole_right" size="0.05 2.5" pos="0 5 0" type="cylinder" contype="0" conaffinity="0" rgba="0 0 0 1"/>
+    <geom name="gate0_inside" size="0.05 2.55" pos="10 -3 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 0 0 1"/>
+    <geom name="gate0_outside" size="0.05 2.55" pos="10 7 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 0 0 1"/>
+    <geom name="gate1_inside" size="0.05 2.55" pos="20 3 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="0 0 1 1"/>
+    <geom name="gate1_outside" size="0.05 2.55" pos="20 -7 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="0 0 1 1"/>
+    <geom name="gate2_inside" size="0.05 2.55" pos="30 -3 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 0 0 1"/>
+    <geom name="gate2_outside" size="0.05 2.55" pos="30 7 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 0 0 1"/>
+    <geom name="gate3_inside" size="0.05 2.55" pos="40 3 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="0 0 1 1"/>
+    <geom name="gate3_outside" size="0.05 2.55" pos="40 -7 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="0 0 1 1"/>
+    <geom name="gate4_inside" size="0.05 2.55" pos="50 -3 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 1 1 1"/>
+    <geom name="gate4_outside" size="0.05 2.55" pos="50 7 -0.05" type="cylinder" contype="0" conaffinity="0" rgba="1 1 1 1"/>
+    <site name="nmf" pos="0 0 0.5"/>
+    <body name="nmf/c_thorax" pos="0.496 0 1.8">
+      <joint name="nmf" type="free"/>
+      <geom name="nmf/c_thorax" type="mesh" contype="0" conaffinity="0" group="2" mass="0.000307" material="nmf/headthorax" mesh="nmf/c_thorax"/>
+      <geom name="nmf/c_head" pos="0.0287 0 0.000698" quat="1 0 0 0" type="mesh" contype="0" conaffinity="0" group="2" mass="9.46e-05" material="nmf/headthorax" mesh="nmf/c_head"/>
+      <body name="nmf/c_rostrum" pos="0.4587 0 -0.273302">
+        <geom name="nmf/c_rostrum" type="mesh" contype="0" conaffinity="0" group="2" mass="1.82e-05" material="nmf/antennaproboscis" mesh="nmf/c_rostrum"/>
+        <body name="nmf/c_haustellum" pos="-0.371 0 -0.0196">
+          <geom name="nmf/c_haustellum" type="mesh" contype="0" conaffinity="0" group="2" mass="8.09e-06" material="nmf/antennaproboscis" mesh="nmf/c_haustellum"/>
+        </body>
+      </body>
+      <body name="nmf/l_eye" pos="0.2597 -9.31e-10 0.017698">
+        <geom name="nmf/l_eye" type="mesh" contype="0" conaffinity="0" group="2" mass="1.25e-05" material="nmf/eye" mesh="nmf/l_eye"/>
+      </body>
+      <body name="nmf/r_eye" pos="0.2597 9.31e-10 0.017698">
+        <geom name="nmf/r_eye" type="mesh" contype="0" conaffinity="0" group="2" mass="1.09e-05" material="nmf/eye" mesh="nmf/r_eye"/>
+      </body>
+      <body name="nmf/l_pedicel" pos="0.4577 0.086 0.083698" quat="0.962305 0.261301 0.0729004 -0.0194001">
+        <geom name="nmf/l_pedicel" type="mesh" contype="0" conaffinity="0" group="2" mass="8.66e-07" material="nmf/antennaproboscis" mesh="nmf/l_pedicel"/>
+        <body name="nmf/l_funiculus" pos="0.051 -0.000563 -0.0441">
+          <geom name="nmf/l_funiculus" type="mesh" contype="0" conaffinity="0" group="2" mass="1.1e-06" material="nmf/antennaproboscis" mesh="nmf/l_funiculus"/>
+          <body name="nmf/l_arista" pos="0.0198 0.0539 -0.0683">
+            <geom name="nmf/l_arista" type="mesh" contype="0" conaffinity="0" group="2" mass="1.1e-07" material="nmf/arista" mesh="nmf/l_arista"/>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/r_pedicel" pos="0.4577 -0.086 0.083698" quat="0.962305 -0.261301 0.0729004 0.0194001">
+        <geom name="nmf/r_pedicel" type="mesh" contype="0" conaffinity="0" group="2" mass="8.62e-07" material="nmf/antennaproboscis" mesh="nmf/r_pedicel"/>
+        <body name="nmf/r_funiculus" pos="0.051 0.000563 -0.0441">
+          <geom name="nmf/r_funiculus" type="mesh" contype="0" conaffinity="0" group="2" mass="1.1e-06" material="nmf/antennaproboscis" mesh="nmf/r_funiculus"/>
+          <body name="nmf/r_arista" pos="0.0198 -0.0539 -0.0683">
+            <geom name="nmf/r_arista" type="mesh" contype="0" conaffinity="0" group="2" mass="1.1e-07" material="nmf/arista" mesh="nmf/r_arista"/>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/c_abdomen12" pos="-0.862 0 0" quat="0.991376 0 -0.13105 0">
+        <geom name="nmf/c_abdomen12" type="mesh" contype="0" conaffinity="0" mass="8.57e-05" material="nmf/abdomen12345" mesh="nmf/c_abdomen12"/>
+        <body name="nmf/c_abdomen3" pos="-0.326 0 0.04" quat="0.999075 0 -0.0430032 0">
+          <geom name="nmf/c_abdomen3" type="mesh" contype="0" conaffinity="0" mass="0.000107" material="nmf/abdomen12345" mesh="nmf/c_abdomen3"/>
+          <body name="nmf/c_abdomen4" pos="-0.208 0 0.025" quat="0.999075 0 0.0430032 0">
+            <geom name="nmf/c_abdomen4" type="mesh" contype="0" conaffinity="0" mass="9.75e-05" material="nmf/abdomen12345" mesh="nmf/c_abdomen4"/>
+            <body name="nmf/c_abdomen5" pos="-0.174 0 0.009" quat="0.99996 0 0.00899964 0">
+              <geom name="nmf/c_abdomen5" type="mesh" contype="0" conaffinity="0" mass="9.7e-05" material="nmf/abdomen12345" mesh="nmf/c_abdomen5"/>
+              <body name="nmf/c_abdomen6" pos="-0.228 0 0.009" quat="0.99996 0 0.00899964 0">
+                <geom name="nmf/c_abdomen6" type="mesh" contype="0" conaffinity="0" mass="6.27e-05" material="nmf/abdomen6" mesh="nmf/c_abdomen6"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/l_wing" pos="-0.674 0.395 0.081" quat="0.649074 0.0360041 -0.0650074 0.757087">
+        <geom name="nmf/l_wing" type="mesh" contype="0" conaffinity="0" mass="2.5e-06" material="nmf/wing" mesh="nmf/l_wing"/>
+      </body>
+      <body name="nmf/r_wing" pos="-0.674 -0.395 0.081" quat="0.649074 -0.0360041 -0.0650074 -0.757087">
+        <geom name="nmf/r_wing" type="mesh" contype="0" conaffinity="0" mass="2.5e-06" material="nmf/wing" mesh="nmf/r_wing"/>
+      </body>
+      <body name="nmf/l_haltere" pos="-0.806 0.214 -0.149" quat="0.945708 0.123962 0.038988 0.297908">
+        <geom name="nmf/l_haltere" type="mesh" contype="0" conaffinity="0" mass="1.42e-06" material="nmf/haltere" mesh="nmf/l_haltere"/>
+      </body>
+      <body name="nmf/r_haltere" pos="-0.806 -0.214 -0.149" quat="0.945708 -0.123962 0.038988 -0.297908">
+        <geom name="nmf/r_haltere" type="mesh" contype="0" conaffinity="0" mass="1.42e-06" material="nmf/haltere" mesh="nmf/r_haltere"/>
+      </body>
+      <body name="nmf/lf_coxa" pos="-0.161 0.172 -0.23">
+        <joint name="nmf/c_thorax-lf_coxa-yaw" pos="0 0 0" axis="1 0 0" springref="-0.296706" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lf_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.331613" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lf_coxa-roll" pos="0 0 0" axis="0 0 1" springref="0.575959" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/lf_coxa" type="mesh" contype="0" conaffinity="0" group="2" mass="4.52e-06" material="nmf/coxa" mesh="nmf/lf_coxa"/>
+        <body name="nmf/lf_trochanterfemur" pos="-0.00181 -0.00172 -0.365">
+          <joint name="nmf/lf_coxa-lf_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-2.42601" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/lf_coxa-lf_trochanterfemur-roll" pos="0 0 0" axis="0 0 1" springref="-0.261799" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/lf_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="6.29e-06" material="nmf/trochanterfemur" mesh="nmf/lf_trochanterfemur"/>
+          <body name="nmf/lf_tibia" pos="-0.00465 -0.00149 -0.705">
+            <joint name="nmf/lf_trochanterfemur-lf_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.36136" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/lf_tibia" type="mesh" contype="0" conaffinity="0" mass="2.07e-06" material="nmf/tibia" mesh="nmf/lf_tibia"/>
+            <body name="nmf/lf_tarsus1" pos="-0.000144 -0.000952 -0.518">
+              <joint name="nmf/lf_tibia-lf_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.174533" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/lf_tarsus1" type="mesh" contype="0" conaffinity="0" mass="4.65e-07" material="nmf/tarsus" mesh="nmf/lf_tarsus1"/>
+              <body name="nmf/lf_tarsus2" pos="0.00182 -0.000977 -0.225">
+                <joint name="nmf/lf_tarsus1-lf_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/lf_tarsus2" type="mesh" contype="0" conaffinity="0" mass="2.09e-07" material="nmf/tarsus" mesh="nmf/lf_tarsus2"/>
+                <body name="nmf/lf_tarsus3" pos="0.00136 -0.000178 -0.154">
+                  <joint name="nmf/lf_tarsus2-lf_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/lf_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.19e-07" material="nmf/tarsus" mesh="nmf/lf_tarsus3"/>
+                  <body name="nmf/lf_tarsus4" pos="0.00169 0.000303 -0.0985">
+                    <joint name="nmf/lf_tarsus3-lf_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/lf_tarsus4" type="mesh" contype="0" conaffinity="0" mass="9.27e-08" material="nmf/tarsus" mesh="nmf/lf_tarsus4"/>
+                    <body name="nmf/lf_tarsus5" pos="0.00171 -0.000216 -0.087">
+                      <joint name="nmf/lf_tarsus4-lf_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/lf_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.15e-07" material="nmf/tarsus" mesh="nmf/lf_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/lm_coxa" pos="-0.557 0.125 -0.482">
+        <joint name="nmf/c_thorax-lm_coxa-yaw" pos="0 0 0" axis="1 0 0" springref="-0.174533" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lm_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.139626" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lm_coxa-roll" pos="0 0 0" axis="0 0 1" springref="1.51844" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/lm_coxa" type="mesh" contype="0" conaffinity="0" mass="2.6e-06" material="nmf/coxa" mesh="nmf/lm_coxa"/>
+        <body name="nmf/lm_trochanterfemur" pos="-0.000216 0.000149 -0.181">
+          <joint name="nmf/lm_coxa-lm_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-2.42601" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/lm_coxa-lm_trochanterfemur-roll" pos="0 0 0" axis="0 0 1" springref="0.261799" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/lm_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="6.48e-06" material="nmf/trochanterfemur" mesh="nmf/lm_trochanterfemur"/>
+          <body name="nmf/lm_tibia" pos="-0.000971 5.52e-05 -0.784">
+            <joint name="nmf/lm_trochanterfemur-lm_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.79769" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/lm_tibia" type="mesh" contype="0" conaffinity="0" mass="2.86e-06" material="nmf/tibia" mesh="nmf/lm_tibia"/>
+            <body name="nmf/lm_tarsus1" pos="6.58e-05 -0.00037 -0.667">
+              <joint name="nmf/lm_tibia-lm_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.349066" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/lm_tarsus1" type="mesh" contype="0" conaffinity="0" mass="5.25e-07" material="nmf/tarsus" mesh="nmf/lm_tarsus1"/>
+              <body name="nmf/lm_tarsus2" pos="0.000512 -9.8e-05 -0.292">
+                <joint name="nmf/lm_tarsus1-lm_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/lm_tarsus2" type="mesh" contype="0" conaffinity="0" mass="2.35e-07" material="nmf/tarsus" mesh="nmf/lm_tarsus2"/>
+                <body name="nmf/lm_tarsus3" pos="-2.81e-05 -0.000153 -0.16">
+                  <joint name="nmf/lm_tarsus2-lm_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/lm_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.18e-07" material="nmf/tarsus" mesh="nmf/lm_tarsus3"/>
+                  <body name="nmf/lm_tarsus4" pos="-0.000126 -0.000191 -0.0911">
+                    <joint name="nmf/lm_tarsus3-lm_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/lm_tarsus4" type="mesh" contype="0" conaffinity="0" mass="6.84e-08" material="nmf/tarsus" mesh="nmf/lm_tarsus4"/>
+                    <body name="nmf/lm_tarsus5" pos="0.000902 9.86e-05 -0.0635">
+                      <joint name="nmf/lm_tarsus4-lm_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/lm_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.14e-07" material="nmf/tarsus" mesh="nmf/lm_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/lh_coxa" pos="-0.784 0.087 -0.497">
+        <joint name="nmf/c_thorax-lh_coxa-yaw" pos="0 0 0" axis="1 0 0" springref="0.0523599" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lh_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.418879" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-lh_coxa-roll" pos="0 0 0" axis="0 0 1" springref="2.33874" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/lh_coxa" type="mesh" contype="0" conaffinity="0" mass="2.56e-06" material="nmf/coxa" mesh="nmf/lh_coxa"/>
+        <body name="nmf/lh_trochanterfemur" pos="-0.000177 -0.000227 -0.199">
+          <joint name="nmf/lh_coxa-lh_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-1.93732" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/lh_coxa-lh_trochanterfemur-roll" pos="0 0 0" axis="0 0 1" springref="0.0698132" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/lh_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="8.75e-06" material="nmf/trochanterfemur" mesh="nmf/lh_trochanterfemur"/>
+          <body name="nmf/lh_tibia" pos="0.000108 0.000294 -0.836">
+            <joint name="nmf/lh_trochanterfemur-lh_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.76278" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/lh_tibia" type="mesh" contype="0" conaffinity="0" mass="3.37e-06" material="nmf/tibia" mesh="nmf/lh_tibia"/>
+            <body name="nmf/lh_tarsus1" pos="-8.94e-07 -0.000324 -0.684">
+              <joint name="nmf/lh_tibia-lh_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/lh_tarsus1" type="mesh" contype="0" conaffinity="0" mass="1.04e-06" material="nmf/tarsus" mesh="nmf/lh_tarsus1"/>
+              <body name="nmf/lh_tarsus2" pos="9.69e-05 0.00051 -0.353">
+                <joint name="nmf/lh_tarsus1-lh_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/lh_tarsus2" type="mesh" contype="0" conaffinity="0" mass="3.52e-07" material="nmf/tarsus" mesh="nmf/lh_tarsus2"/>
+                <body name="nmf/lh_tarsus3" pos="0.000123 -0.000255 -0.175">
+                  <joint name="nmf/lh_tarsus2-lh_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/lh_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.35e-07" material="nmf/tarsus" mesh="nmf/lh_tarsus3"/>
+                  <body name="nmf/lh_tarsus4" pos="-0.000256 0.000331 -0.0967">
+                    <joint name="nmf/lh_tarsus3-lh_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/lh_tarsus4" type="mesh" contype="0" conaffinity="0" mass="9.01e-08" material="nmf/tarsus" mesh="nmf/lh_tarsus4"/>
+                    <body name="nmf/lh_tarsus5" pos="0.000214 5.86e-05 -0.0733">
+                      <joint name="nmf/lh_tarsus4-lh_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/lh_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.25e-07" material="nmf/tarsus" mesh="nmf/lh_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/rf_coxa" pos="-0.161 -0.172 -0.23">
+        <joint name="nmf/c_thorax-rf_coxa-yaw" pos="0 0 0" axis="-1 0 0" springref="-0.296706" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rf_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.331613" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rf_coxa-roll" pos="0 0 0" axis="0 0 -1" springref="0.575959" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/rf_coxa" type="mesh" contype="0" conaffinity="0" group="2" mass="4.52e-06" material="nmf/coxa" mesh="nmf/rf_coxa"/>
+        <body name="nmf/rf_trochanterfemur" pos="-0.00181 0.00172 -0.365">
+          <joint name="nmf/rf_coxa-rf_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-2.42601" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/rf_coxa-rf_trochanterfemur-roll" pos="0 0 0" axis="0 0 -1" springref="-0.261799" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/rf_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="6.29e-06" material="nmf/trochanterfemur" mesh="nmf/rf_trochanterfemur"/>
+          <body name="nmf/rf_tibia" pos="-0.00465 0.00149 -0.705">
+            <joint name="nmf/rf_trochanterfemur-rf_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.36136" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/rf_tibia" type="mesh" contype="0" conaffinity="0" mass="2.07e-06" material="nmf/tibia" mesh="nmf/rf_tibia"/>
+            <body name="nmf/rf_tarsus1" pos="-0.000144 0.000952 -0.518">
+              <joint name="nmf/rf_tibia-rf_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.174533" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/rf_tarsus1" type="mesh" contype="0" conaffinity="0" mass="4.65e-07" material="nmf/tarsus" mesh="nmf/rf_tarsus1"/>
+              <body name="nmf/rf_tarsus2" pos="0.00182 0.000977 -0.225">
+                <joint name="nmf/rf_tarsus1-rf_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/rf_tarsus2" type="mesh" contype="0" conaffinity="0" mass="2.09e-07" material="nmf/tarsus" mesh="nmf/rf_tarsus2"/>
+                <body name="nmf/rf_tarsus3" pos="0.00136 0.000178 -0.154">
+                  <joint name="nmf/rf_tarsus2-rf_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/rf_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.19e-07" material="nmf/tarsus" mesh="nmf/rf_tarsus3"/>
+                  <body name="nmf/rf_tarsus4" pos="0.00169 -0.000303 -0.0985">
+                    <joint name="nmf/rf_tarsus3-rf_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/rf_tarsus4" type="mesh" contype="0" conaffinity="0" mass="9.27e-08" material="nmf/tarsus" mesh="nmf/rf_tarsus4"/>
+                    <body name="nmf/rf_tarsus5" pos="0.00171 0.000216 -0.087">
+                      <joint name="nmf/rf_tarsus4-rf_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/rf_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.15e-07" material="nmf/tarsus" mesh="nmf/rf_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/rm_coxa" pos="-0.557 -0.125 -0.482">
+        <joint name="nmf/c_thorax-rm_coxa-yaw" pos="0 0 0" axis="-1 0 0" springref="-0.174533" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rm_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.139626" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rm_coxa-roll" pos="0 0 0" axis="0 0 -1" springref="1.51844" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/rm_coxa" type="mesh" contype="0" conaffinity="0" mass="2.6e-06" material="nmf/coxa" mesh="nmf/rm_coxa"/>
+        <body name="nmf/rm_trochanterfemur" pos="-0.000216 -0.000149 -0.181">
+          <joint name="nmf/rm_coxa-rm_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-2.42601" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/rm_coxa-rm_trochanterfemur-roll" pos="0 0 0" axis="0 0 -1" springref="0.261799" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/rm_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="6.48e-06" material="nmf/trochanterfemur" mesh="nmf/rm_trochanterfemur"/>
+          <body name="nmf/rm_tibia" pos="-0.000971 -5.52e-05 -0.784">
+            <joint name="nmf/rm_trochanterfemur-rm_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.79769" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/rm_tibia" type="mesh" contype="0" conaffinity="0" mass="2.86e-06" material="nmf/tibia" mesh="nmf/rm_tibia"/>
+            <body name="nmf/rm_tarsus1" pos="6.58e-05 0.00037 -0.667">
+              <joint name="nmf/rm_tibia-rm_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.349066" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/rm_tarsus1" type="mesh" contype="0" conaffinity="0" mass="5.25e-07" material="nmf/tarsus" mesh="nmf/rm_tarsus1"/>
+              <body name="nmf/rm_tarsus2" pos="0.000512 9.8e-05 -0.292">
+                <joint name="nmf/rm_tarsus1-rm_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/rm_tarsus2" type="mesh" contype="0" conaffinity="0" mass="2.35e-07" material="nmf/tarsus" mesh="nmf/rm_tarsus2"/>
+                <body name="nmf/rm_tarsus3" pos="-2.81e-05 0.000153 -0.16">
+                  <joint name="nmf/rm_tarsus2-rm_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/rm_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.18e-07" material="nmf/tarsus" mesh="nmf/rm_tarsus3"/>
+                  <body name="nmf/rm_tarsus4" pos="-0.000126 0.000191 -0.0911">
+                    <joint name="nmf/rm_tarsus3-rm_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/rm_tarsus4" type="mesh" contype="0" conaffinity="0" mass="6.84e-08" material="nmf/tarsus" mesh="nmf/rm_tarsus4"/>
+                    <body name="nmf/rm_tarsus5" pos="0.000902 -9.86e-05 -0.0635">
+                      <joint name="nmf/rm_tarsus4-rm_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/rm_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.14e-07" material="nmf/tarsus" mesh="nmf/rm_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="nmf/rh_coxa" pos="-0.784 -0.087 -0.497">
+        <joint name="nmf/c_thorax-rh_coxa-yaw" pos="0 0 0" axis="-1 0 0" springref="0.0523599" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rh_coxa-pitch" pos="0 0 0" axis="0 1 0" springref="0.418879" stiffness="10" armature="1e-06" damping="0.5"/>
+        <joint name="nmf/c_thorax-rh_coxa-roll" pos="0 0 0" axis="0 0 -1" springref="2.33874" stiffness="10" armature="1e-06" damping="0.5"/>
+        <geom name="nmf/rh_coxa" type="mesh" contype="0" conaffinity="0" mass="2.56e-06" material="nmf/coxa" mesh="nmf/rh_coxa"/>
+        <body name="nmf/rh_trochanterfemur" pos="-0.000177 0.000227 -0.199">
+          <joint name="nmf/rh_coxa-rh_trochanterfemur-pitch" pos="0 0 0" axis="0 1 0" springref="-1.93732" stiffness="10" armature="1e-06" damping="0.5"/>
+          <joint name="nmf/rh_coxa-rh_trochanterfemur-roll" pos="0 0 0" axis="0 0 -1" springref="0.0698132" stiffness="10" armature="1e-06" damping="0.5"/>
+          <geom name="nmf/rh_trochanterfemur" type="mesh" contype="0" conaffinity="0" mass="8.75e-06" material="nmf/trochanterfemur" mesh="nmf/rh_trochanterfemur"/>
+          <body name="nmf/rh_tibia" pos="0.000108 -0.000294 -0.836">
+            <joint name="nmf/rh_trochanterfemur-rh_tibia-pitch" pos="0 0 0" axis="0 1 0" springref="1.76278" stiffness="10" armature="1e-06" damping="0.5"/>
+            <geom name="nmf/rh_tibia" type="mesh" contype="0" conaffinity="0" mass="3.37e-06" material="nmf/tibia" mesh="nmf/rh_tibia"/>
+            <body name="nmf/rh_tarsus1" pos="-8.94e-07 0.000324 -0.684">
+              <joint name="nmf/rh_tibia-rh_tarsus1-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+              <geom name="nmf/rh_tarsus1" type="mesh" contype="0" conaffinity="0" mass="1.04e-06" material="nmf/tarsus" mesh="nmf/rh_tarsus1"/>
+              <body name="nmf/rh_tarsus2" pos="9.69e-05 -0.00051 -0.353">
+                <joint name="nmf/rh_tarsus1-rh_tarsus2-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                <geom name="nmf/rh_tarsus2" type="mesh" contype="0" conaffinity="0" mass="3.52e-07" material="nmf/tarsus" mesh="nmf/rh_tarsus2"/>
+                <body name="nmf/rh_tarsus3" pos="0.000123 0.000255 -0.175">
+                  <joint name="nmf/rh_tarsus2-rh_tarsus3-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                  <geom name="nmf/rh_tarsus3" type="mesh" contype="0" conaffinity="0" mass="1.35e-07" material="nmf/tarsus" mesh="nmf/rh_tarsus3"/>
+                  <body name="nmf/rh_tarsus4" pos="-0.000256 -0.000331 -0.0967">
+                    <joint name="nmf/rh_tarsus3-rh_tarsus4-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                    <geom name="nmf/rh_tarsus4" type="mesh" contype="0" conaffinity="0" mass="9.01e-08" material="nmf/tarsus" mesh="nmf/rh_tarsus4"/>
+                    <body name="nmf/rh_tarsus5" pos="0.000214 -5.86e-05 -0.0733">
+                      <joint name="nmf/rh_tarsus4-rh_tarsus5-pitch" pos="0 0 0" axis="0 1 0" springref="-0.0872665" stiffness="10" armature="1e-06" damping="0.5"/>
+                      <geom name="nmf/rh_tarsus5" type="mesh" contype="0" conaffinity="0" mass="1.25e-07" material="nmf/tarsus" mesh="nmf/rh_tarsus5"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <pair geom1="ground_plane" geom2="nmf/c_thorax" name="nmf/c_thorax-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_head" name="nmf/c_head-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_thorax" name="obstacle_pair_0" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_head" name="obstacle_pair_1" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_thorax" name="obstacle_pair_55" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_head" name="obstacle_pair_56" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_thorax" name="obstacle_pair_110" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_head" name="obstacle_pair_111" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_thorax" name="obstacle_pair_165" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_head" name="obstacle_pair_166" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_thorax" name="obstacle_pair_220" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_head" name="obstacle_pair_221" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_thorax" name="obstacle_pair_275" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_head" name="obstacle_pair_276" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_thorax" name="obstacle_pair_330" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_head" name="obstacle_pair_331" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_thorax" name="obstacle_pair_385" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_head" name="obstacle_pair_386" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_thorax" name="obstacle_pair_440" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_head" name="obstacle_pair_441" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_thorax" name="obstacle_pair_495" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_head" name="obstacle_pair_496" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_thorax" name="obstacle_pair_550" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_head" name="obstacle_pair_551" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_thorax" name="obstacle_pair_605" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_head" name="obstacle_pair_606" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_abdomen12" name="nmf/c_abdomen12-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_abdomen12" name="obstacle_pair_2" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_abdomen12" name="obstacle_pair_57" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_abdomen12" name="obstacle_pair_112" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_abdomen12" name="obstacle_pair_167" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_abdomen12" name="obstacle_pair_222" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_abdomen12" name="obstacle_pair_277" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_abdomen12" name="obstacle_pair_332" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_abdomen12" name="obstacle_pair_387" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_abdomen12" name="obstacle_pair_442" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_abdomen12" name="obstacle_pair_497" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_abdomen12" name="obstacle_pair_552" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_abdomen12" name="obstacle_pair_607" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_abdomen3" name="nmf/c_abdomen3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_abdomen3" name="obstacle_pair_3" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_abdomen3" name="obstacle_pair_58" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_abdomen3" name="obstacle_pair_113" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_abdomen3" name="obstacle_pair_168" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_abdomen3" name="obstacle_pair_223" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_abdomen3" name="obstacle_pair_278" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_abdomen3" name="obstacle_pair_333" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_abdomen3" name="obstacle_pair_388" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_abdomen3" name="obstacle_pair_443" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_abdomen3" name="obstacle_pair_498" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_abdomen3" name="obstacle_pair_553" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_abdomen3" name="obstacle_pair_608" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_abdomen4" name="nmf/c_abdomen4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_abdomen4" name="obstacle_pair_4" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_abdomen4" name="obstacle_pair_59" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_abdomen4" name="obstacle_pair_114" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_abdomen4" name="obstacle_pair_169" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_abdomen4" name="obstacle_pair_224" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_abdomen4" name="obstacle_pair_279" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_abdomen4" name="obstacle_pair_334" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_abdomen4" name="obstacle_pair_389" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_abdomen4" name="obstacle_pair_444" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_abdomen4" name="obstacle_pair_499" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_abdomen4" name="obstacle_pair_554" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_abdomen4" name="obstacle_pair_609" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_abdomen5" name="nmf/c_abdomen5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_abdomen5" name="obstacle_pair_5" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_abdomen5" name="obstacle_pair_60" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_abdomen5" name="obstacle_pair_115" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_abdomen5" name="obstacle_pair_170" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_abdomen5" name="obstacle_pair_225" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_abdomen5" name="obstacle_pair_280" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_abdomen5" name="obstacle_pair_335" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_abdomen5" name="obstacle_pair_390" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_abdomen5" name="obstacle_pair_445" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_abdomen5" name="obstacle_pair_500" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_abdomen5" name="obstacle_pair_555" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_abdomen5" name="obstacle_pair_610" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/c_abdomen6" name="nmf/c_abdomen6-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/c_abdomen6" name="obstacle_pair_6" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/c_abdomen6" name="obstacle_pair_61" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/c_abdomen6" name="obstacle_pair_116" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/c_abdomen6" name="obstacle_pair_171" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/c_abdomen6" name="obstacle_pair_226" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/c_abdomen6" name="obstacle_pair_281" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/c_abdomen6" name="obstacle_pair_336" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/c_abdomen6" name="obstacle_pair_391" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/c_abdomen6" name="obstacle_pair_446" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/c_abdomen6" name="obstacle_pair_501" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/c_abdomen6" name="obstacle_pair_556" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/c_abdomen6" name="obstacle_pair_611" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_coxa" name="nmf/lf_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_coxa" name="obstacle_pair_7" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_coxa" name="obstacle_pair_62" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_coxa" name="obstacle_pair_117" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_coxa" name="obstacle_pair_172" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_coxa" name="obstacle_pair_227" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_coxa" name="obstacle_pair_282" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_coxa" name="obstacle_pair_337" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_coxa" name="obstacle_pair_392" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_coxa" name="obstacle_pair_447" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_coxa" name="obstacle_pair_502" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_coxa" name="obstacle_pair_557" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_coxa" name="obstacle_pair_612" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_trochanterfemur" name="nmf/lf_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_8" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_63" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_118" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_173" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_228" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_283" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_338" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_393" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_448" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_503" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_558" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_trochanterfemur" name="obstacle_pair_613" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tibia" name="nmf/lf_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tibia" name="obstacle_pair_9" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tibia" name="obstacle_pair_64" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tibia" name="obstacle_pair_119" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tibia" name="obstacle_pair_174" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tibia" name="obstacle_pair_229" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tibia" name="obstacle_pair_284" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tibia" name="obstacle_pair_339" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tibia" name="obstacle_pair_394" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tibia" name="obstacle_pair_449" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tibia" name="obstacle_pair_504" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tibia" name="obstacle_pair_559" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tibia" name="obstacle_pair_614" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tarsus1" name="nmf/lf_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tarsus1" name="obstacle_pair_10" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tarsus1" name="obstacle_pair_65" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tarsus1" name="obstacle_pair_120" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tarsus1" name="obstacle_pair_175" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tarsus1" name="obstacle_pair_230" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tarsus1" name="obstacle_pair_285" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tarsus1" name="obstacle_pair_340" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tarsus1" name="obstacle_pair_395" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tarsus1" name="obstacle_pair_450" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tarsus1" name="obstacle_pair_505" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tarsus1" name="obstacle_pair_560" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tarsus1" name="obstacle_pair_615" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tarsus2" name="nmf/lf_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tarsus2" name="obstacle_pair_11" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tarsus2" name="obstacle_pair_66" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tarsus2" name="obstacle_pair_121" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tarsus2" name="obstacle_pair_176" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tarsus2" name="obstacle_pair_231" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tarsus2" name="obstacle_pair_286" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tarsus2" name="obstacle_pair_341" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tarsus2" name="obstacle_pair_396" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tarsus2" name="obstacle_pair_451" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tarsus2" name="obstacle_pair_506" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tarsus2" name="obstacle_pair_561" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tarsus2" name="obstacle_pair_616" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tarsus3" name="nmf/lf_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tarsus3" name="obstacle_pair_12" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tarsus3" name="obstacle_pair_67" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tarsus3" name="obstacle_pair_122" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tarsus3" name="obstacle_pair_177" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tarsus3" name="obstacle_pair_232" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tarsus3" name="obstacle_pair_287" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tarsus3" name="obstacle_pair_342" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tarsus3" name="obstacle_pair_397" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tarsus3" name="obstacle_pair_452" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tarsus3" name="obstacle_pair_507" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tarsus3" name="obstacle_pair_562" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tarsus3" name="obstacle_pair_617" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tarsus4" name="nmf/lf_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tarsus4" name="obstacle_pair_13" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tarsus4" name="obstacle_pair_68" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tarsus4" name="obstacle_pair_123" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tarsus4" name="obstacle_pair_178" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tarsus4" name="obstacle_pair_233" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tarsus4" name="obstacle_pair_288" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tarsus4" name="obstacle_pair_343" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tarsus4" name="obstacle_pair_398" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tarsus4" name="obstacle_pair_453" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tarsus4" name="obstacle_pair_508" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tarsus4" name="obstacle_pair_563" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tarsus4" name="obstacle_pair_618" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lf_tarsus5" name="nmf/lf_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lf_tarsus5" name="obstacle_pair_14" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lf_tarsus5" name="obstacle_pair_69" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lf_tarsus5" name="obstacle_pair_124" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lf_tarsus5" name="obstacle_pair_179" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lf_tarsus5" name="obstacle_pair_234" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lf_tarsus5" name="obstacle_pair_289" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lf_tarsus5" name="obstacle_pair_344" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lf_tarsus5" name="obstacle_pair_399" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lf_tarsus5" name="obstacle_pair_454" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lf_tarsus5" name="obstacle_pair_509" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lf_tarsus5" name="obstacle_pair_564" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lf_tarsus5" name="obstacle_pair_619" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_coxa" name="nmf/lm_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_coxa" name="obstacle_pair_15" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_coxa" name="obstacle_pair_70" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_coxa" name="obstacle_pair_125" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_coxa" name="obstacle_pair_180" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_coxa" name="obstacle_pair_235" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_coxa" name="obstacle_pair_290" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_coxa" name="obstacle_pair_345" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_coxa" name="obstacle_pair_400" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_coxa" name="obstacle_pair_455" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_coxa" name="obstacle_pair_510" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_coxa" name="obstacle_pair_565" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_coxa" name="obstacle_pair_620" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_trochanterfemur" name="nmf/lm_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_16" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_71" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_126" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_181" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_236" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_291" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_346" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_401" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_456" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_511" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_566" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_trochanterfemur" name="obstacle_pair_621" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tibia" name="nmf/lm_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tibia" name="obstacle_pair_17" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tibia" name="obstacle_pair_72" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tibia" name="obstacle_pair_127" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tibia" name="obstacle_pair_182" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tibia" name="obstacle_pair_237" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tibia" name="obstacle_pair_292" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tibia" name="obstacle_pair_347" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tibia" name="obstacle_pair_402" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tibia" name="obstacle_pair_457" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tibia" name="obstacle_pair_512" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tibia" name="obstacle_pair_567" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tibia" name="obstacle_pair_622" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tarsus1" name="nmf/lm_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tarsus1" name="obstacle_pair_18" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tarsus1" name="obstacle_pair_73" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tarsus1" name="obstacle_pair_128" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tarsus1" name="obstacle_pair_183" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tarsus1" name="obstacle_pair_238" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tarsus1" name="obstacle_pair_293" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tarsus1" name="obstacle_pair_348" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tarsus1" name="obstacle_pair_403" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tarsus1" name="obstacle_pair_458" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tarsus1" name="obstacle_pair_513" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tarsus1" name="obstacle_pair_568" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tarsus1" name="obstacle_pair_623" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tarsus2" name="nmf/lm_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tarsus2" name="obstacle_pair_19" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tarsus2" name="obstacle_pair_74" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tarsus2" name="obstacle_pair_129" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tarsus2" name="obstacle_pair_184" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tarsus2" name="obstacle_pair_239" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tarsus2" name="obstacle_pair_294" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tarsus2" name="obstacle_pair_349" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tarsus2" name="obstacle_pair_404" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tarsus2" name="obstacle_pair_459" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tarsus2" name="obstacle_pair_514" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tarsus2" name="obstacle_pair_569" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tarsus2" name="obstacle_pair_624" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tarsus3" name="nmf/lm_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tarsus3" name="obstacle_pair_20" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tarsus3" name="obstacle_pair_75" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tarsus3" name="obstacle_pair_130" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tarsus3" name="obstacle_pair_185" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tarsus3" name="obstacle_pair_240" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tarsus3" name="obstacle_pair_295" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tarsus3" name="obstacle_pair_350" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tarsus3" name="obstacle_pair_405" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tarsus3" name="obstacle_pair_460" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tarsus3" name="obstacle_pair_515" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tarsus3" name="obstacle_pair_570" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tarsus3" name="obstacle_pair_625" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tarsus4" name="nmf/lm_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tarsus4" name="obstacle_pair_21" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tarsus4" name="obstacle_pair_76" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tarsus4" name="obstacle_pair_131" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tarsus4" name="obstacle_pair_186" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tarsus4" name="obstacle_pair_241" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tarsus4" name="obstacle_pair_296" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tarsus4" name="obstacle_pair_351" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tarsus4" name="obstacle_pair_406" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tarsus4" name="obstacle_pair_461" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tarsus4" name="obstacle_pair_516" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tarsus4" name="obstacle_pair_571" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tarsus4" name="obstacle_pair_626" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lm_tarsus5" name="nmf/lm_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lm_tarsus5" name="obstacle_pair_22" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lm_tarsus5" name="obstacle_pair_77" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lm_tarsus5" name="obstacle_pair_132" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lm_tarsus5" name="obstacle_pair_187" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lm_tarsus5" name="obstacle_pair_242" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lm_tarsus5" name="obstacle_pair_297" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lm_tarsus5" name="obstacle_pair_352" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lm_tarsus5" name="obstacle_pair_407" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lm_tarsus5" name="obstacle_pair_462" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lm_tarsus5" name="obstacle_pair_517" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lm_tarsus5" name="obstacle_pair_572" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lm_tarsus5" name="obstacle_pair_627" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_coxa" name="nmf/lh_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_coxa" name="obstacle_pair_23" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_coxa" name="obstacle_pair_78" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_coxa" name="obstacle_pair_133" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_coxa" name="obstacle_pair_188" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_coxa" name="obstacle_pair_243" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_coxa" name="obstacle_pair_298" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_coxa" name="obstacle_pair_353" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_coxa" name="obstacle_pair_408" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_coxa" name="obstacle_pair_463" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_coxa" name="obstacle_pair_518" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_coxa" name="obstacle_pair_573" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_coxa" name="obstacle_pair_628" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_trochanterfemur" name="nmf/lh_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_24" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_79" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_134" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_189" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_244" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_299" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_354" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_409" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_464" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_519" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_574" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_trochanterfemur" name="obstacle_pair_629" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tibia" name="nmf/lh_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tibia" name="obstacle_pair_25" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tibia" name="obstacle_pair_80" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tibia" name="obstacle_pair_135" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tibia" name="obstacle_pair_190" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tibia" name="obstacle_pair_245" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tibia" name="obstacle_pair_300" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tibia" name="obstacle_pair_355" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tibia" name="obstacle_pair_410" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tibia" name="obstacle_pair_465" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tibia" name="obstacle_pair_520" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tibia" name="obstacle_pair_575" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tibia" name="obstacle_pair_630" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tarsus1" name="nmf/lh_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tarsus1" name="obstacle_pair_26" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tarsus1" name="obstacle_pair_81" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tarsus1" name="obstacle_pair_136" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tarsus1" name="obstacle_pair_191" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tarsus1" name="obstacle_pair_246" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tarsus1" name="obstacle_pair_301" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tarsus1" name="obstacle_pair_356" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tarsus1" name="obstacle_pair_411" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tarsus1" name="obstacle_pair_466" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tarsus1" name="obstacle_pair_521" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tarsus1" name="obstacle_pair_576" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tarsus1" name="obstacle_pair_631" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tarsus2" name="nmf/lh_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tarsus2" name="obstacle_pair_27" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tarsus2" name="obstacle_pair_82" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tarsus2" name="obstacle_pair_137" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tarsus2" name="obstacle_pair_192" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tarsus2" name="obstacle_pair_247" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tarsus2" name="obstacle_pair_302" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tarsus2" name="obstacle_pair_357" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tarsus2" name="obstacle_pair_412" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tarsus2" name="obstacle_pair_467" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tarsus2" name="obstacle_pair_522" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tarsus2" name="obstacle_pair_577" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tarsus2" name="obstacle_pair_632" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tarsus3" name="nmf/lh_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tarsus3" name="obstacle_pair_28" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tarsus3" name="obstacle_pair_83" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tarsus3" name="obstacle_pair_138" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tarsus3" name="obstacle_pair_193" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tarsus3" name="obstacle_pair_248" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tarsus3" name="obstacle_pair_303" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tarsus3" name="obstacle_pair_358" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tarsus3" name="obstacle_pair_413" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tarsus3" name="obstacle_pair_468" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tarsus3" name="obstacle_pair_523" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tarsus3" name="obstacle_pair_578" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tarsus3" name="obstacle_pair_633" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tarsus4" name="nmf/lh_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tarsus4" name="obstacle_pair_29" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tarsus4" name="obstacle_pair_84" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tarsus4" name="obstacle_pair_139" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tarsus4" name="obstacle_pair_194" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tarsus4" name="obstacle_pair_249" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tarsus4" name="obstacle_pair_304" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tarsus4" name="obstacle_pair_359" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tarsus4" name="obstacle_pair_414" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tarsus4" name="obstacle_pair_469" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tarsus4" name="obstacle_pair_524" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tarsus4" name="obstacle_pair_579" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tarsus4" name="obstacle_pair_634" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/lh_tarsus5" name="nmf/lh_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/lh_tarsus5" name="obstacle_pair_30" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/lh_tarsus5" name="obstacle_pair_85" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/lh_tarsus5" name="obstacle_pair_140" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/lh_tarsus5" name="obstacle_pair_195" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/lh_tarsus5" name="obstacle_pair_250" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/lh_tarsus5" name="obstacle_pair_305" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/lh_tarsus5" name="obstacle_pair_360" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/lh_tarsus5" name="obstacle_pair_415" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/lh_tarsus5" name="obstacle_pair_470" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/lh_tarsus5" name="obstacle_pair_525" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/lh_tarsus5" name="obstacle_pair_580" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/lh_tarsus5" name="obstacle_pair_635" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_coxa" name="nmf/rf_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_coxa" name="obstacle_pair_31" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_coxa" name="obstacle_pair_86" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_coxa" name="obstacle_pair_141" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_coxa" name="obstacle_pair_196" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_coxa" name="obstacle_pair_251" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_coxa" name="obstacle_pair_306" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_coxa" name="obstacle_pair_361" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_coxa" name="obstacle_pair_416" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_coxa" name="obstacle_pair_471" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_coxa" name="obstacle_pair_526" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_coxa" name="obstacle_pair_581" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_coxa" name="obstacle_pair_636" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_trochanterfemur" name="nmf/rf_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_32" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_87" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_142" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_197" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_252" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_307" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_362" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_417" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_472" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_527" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_582" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_trochanterfemur" name="obstacle_pair_637" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tibia" name="nmf/rf_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tibia" name="obstacle_pair_33" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tibia" name="obstacle_pair_88" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tibia" name="obstacle_pair_143" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tibia" name="obstacle_pair_198" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tibia" name="obstacle_pair_253" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tibia" name="obstacle_pair_308" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tibia" name="obstacle_pair_363" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tibia" name="obstacle_pair_418" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tibia" name="obstacle_pair_473" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tibia" name="obstacle_pair_528" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tibia" name="obstacle_pair_583" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tibia" name="obstacle_pair_638" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tarsus1" name="nmf/rf_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tarsus1" name="obstacle_pair_34" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tarsus1" name="obstacle_pair_89" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tarsus1" name="obstacle_pair_144" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tarsus1" name="obstacle_pair_199" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tarsus1" name="obstacle_pair_254" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tarsus1" name="obstacle_pair_309" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tarsus1" name="obstacle_pair_364" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tarsus1" name="obstacle_pair_419" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tarsus1" name="obstacle_pair_474" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tarsus1" name="obstacle_pair_529" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tarsus1" name="obstacle_pair_584" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tarsus1" name="obstacle_pair_639" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tarsus2" name="nmf/rf_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tarsus2" name="obstacle_pair_35" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tarsus2" name="obstacle_pair_90" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tarsus2" name="obstacle_pair_145" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tarsus2" name="obstacle_pair_200" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tarsus2" name="obstacle_pair_255" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tarsus2" name="obstacle_pair_310" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tarsus2" name="obstacle_pair_365" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tarsus2" name="obstacle_pair_420" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tarsus2" name="obstacle_pair_475" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tarsus2" name="obstacle_pair_530" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tarsus2" name="obstacle_pair_585" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tarsus2" name="obstacle_pair_640" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tarsus3" name="nmf/rf_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tarsus3" name="obstacle_pair_36" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tarsus3" name="obstacle_pair_91" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tarsus3" name="obstacle_pair_146" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tarsus3" name="obstacle_pair_201" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tarsus3" name="obstacle_pair_256" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tarsus3" name="obstacle_pair_311" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tarsus3" name="obstacle_pair_366" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tarsus3" name="obstacle_pair_421" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tarsus3" name="obstacle_pair_476" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tarsus3" name="obstacle_pair_531" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tarsus3" name="obstacle_pair_586" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tarsus3" name="obstacle_pair_641" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tarsus4" name="nmf/rf_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tarsus4" name="obstacle_pair_37" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tarsus4" name="obstacle_pair_92" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tarsus4" name="obstacle_pair_147" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tarsus4" name="obstacle_pair_202" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tarsus4" name="obstacle_pair_257" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tarsus4" name="obstacle_pair_312" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tarsus4" name="obstacle_pair_367" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tarsus4" name="obstacle_pair_422" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tarsus4" name="obstacle_pair_477" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tarsus4" name="obstacle_pair_532" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tarsus4" name="obstacle_pair_587" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tarsus4" name="obstacle_pair_642" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rf_tarsus5" name="nmf/rf_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rf_tarsus5" name="obstacle_pair_38" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rf_tarsus5" name="obstacle_pair_93" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rf_tarsus5" name="obstacle_pair_148" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rf_tarsus5" name="obstacle_pair_203" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rf_tarsus5" name="obstacle_pair_258" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rf_tarsus5" name="obstacle_pair_313" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rf_tarsus5" name="obstacle_pair_368" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rf_tarsus5" name="obstacle_pair_423" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rf_tarsus5" name="obstacle_pair_478" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rf_tarsus5" name="obstacle_pair_533" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rf_tarsus5" name="obstacle_pair_588" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rf_tarsus5" name="obstacle_pair_643" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_coxa" name="nmf/rm_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_coxa" name="obstacle_pair_39" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_coxa" name="obstacle_pair_94" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_coxa" name="obstacle_pair_149" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_coxa" name="obstacle_pair_204" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_coxa" name="obstacle_pair_259" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_coxa" name="obstacle_pair_314" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_coxa" name="obstacle_pair_369" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_coxa" name="obstacle_pair_424" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_coxa" name="obstacle_pair_479" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_coxa" name="obstacle_pair_534" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_coxa" name="obstacle_pair_589" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_coxa" name="obstacle_pair_644" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_trochanterfemur" name="nmf/rm_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_40" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_95" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_150" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_205" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_260" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_315" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_370" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_425" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_480" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_535" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_590" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_trochanterfemur" name="obstacle_pair_645" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tibia" name="nmf/rm_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tibia" name="obstacle_pair_41" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tibia" name="obstacle_pair_96" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tibia" name="obstacle_pair_151" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tibia" name="obstacle_pair_206" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tibia" name="obstacle_pair_261" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tibia" name="obstacle_pair_316" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tibia" name="obstacle_pair_371" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tibia" name="obstacle_pair_426" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tibia" name="obstacle_pair_481" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tibia" name="obstacle_pair_536" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tibia" name="obstacle_pair_591" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tibia" name="obstacle_pair_646" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tarsus1" name="nmf/rm_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tarsus1" name="obstacle_pair_42" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tarsus1" name="obstacle_pair_97" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tarsus1" name="obstacle_pair_152" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tarsus1" name="obstacle_pair_207" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tarsus1" name="obstacle_pair_262" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tarsus1" name="obstacle_pair_317" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tarsus1" name="obstacle_pair_372" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tarsus1" name="obstacle_pair_427" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tarsus1" name="obstacle_pair_482" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tarsus1" name="obstacle_pair_537" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tarsus1" name="obstacle_pair_592" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tarsus1" name="obstacle_pair_647" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tarsus2" name="nmf/rm_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tarsus2" name="obstacle_pair_43" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tarsus2" name="obstacle_pair_98" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tarsus2" name="obstacle_pair_153" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tarsus2" name="obstacle_pair_208" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tarsus2" name="obstacle_pair_263" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tarsus2" name="obstacle_pair_318" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tarsus2" name="obstacle_pair_373" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tarsus2" name="obstacle_pair_428" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tarsus2" name="obstacle_pair_483" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tarsus2" name="obstacle_pair_538" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tarsus2" name="obstacle_pair_593" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tarsus2" name="obstacle_pair_648" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tarsus3" name="nmf/rm_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tarsus3" name="obstacle_pair_44" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tarsus3" name="obstacle_pair_99" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tarsus3" name="obstacle_pair_154" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tarsus3" name="obstacle_pair_209" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tarsus3" name="obstacle_pair_264" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tarsus3" name="obstacle_pair_319" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tarsus3" name="obstacle_pair_374" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tarsus3" name="obstacle_pair_429" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tarsus3" name="obstacle_pair_484" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tarsus3" name="obstacle_pair_539" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tarsus3" name="obstacle_pair_594" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tarsus3" name="obstacle_pair_649" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tarsus4" name="nmf/rm_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tarsus4" name="obstacle_pair_45" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tarsus4" name="obstacle_pair_100" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tarsus4" name="obstacle_pair_155" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tarsus4" name="obstacle_pair_210" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tarsus4" name="obstacle_pair_265" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tarsus4" name="obstacle_pair_320" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tarsus4" name="obstacle_pair_375" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tarsus4" name="obstacle_pair_430" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tarsus4" name="obstacle_pair_485" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tarsus4" name="obstacle_pair_540" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tarsus4" name="obstacle_pair_595" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tarsus4" name="obstacle_pair_650" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rm_tarsus5" name="nmf/rm_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rm_tarsus5" name="obstacle_pair_46" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rm_tarsus5" name="obstacle_pair_101" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rm_tarsus5" name="obstacle_pair_156" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rm_tarsus5" name="obstacle_pair_211" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rm_tarsus5" name="obstacle_pair_266" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rm_tarsus5" name="obstacle_pair_321" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rm_tarsus5" name="obstacle_pair_376" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rm_tarsus5" name="obstacle_pair_431" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rm_tarsus5" name="obstacle_pair_486" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rm_tarsus5" name="obstacle_pair_541" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rm_tarsus5" name="obstacle_pair_596" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rm_tarsus5" name="obstacle_pair_651" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_coxa" name="nmf/rh_coxa-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_coxa" name="obstacle_pair_47" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_coxa" name="obstacle_pair_102" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_coxa" name="obstacle_pair_157" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_coxa" name="obstacle_pair_212" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_coxa" name="obstacle_pair_267" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_coxa" name="obstacle_pair_322" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_coxa" name="obstacle_pair_377" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_coxa" name="obstacle_pair_432" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_coxa" name="obstacle_pair_487" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_coxa" name="obstacle_pair_542" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_coxa" name="obstacle_pair_597" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_coxa" name="obstacle_pair_652" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_trochanterfemur" name="nmf/rh_trochanterfemur-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_48" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_103" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_158" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_213" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_268" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_323" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_378" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_433" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_488" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_543" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_598" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_trochanterfemur" name="obstacle_pair_653" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tibia" name="nmf/rh_tibia-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tibia" name="obstacle_pair_49" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tibia" name="obstacle_pair_104" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tibia" name="obstacle_pair_159" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tibia" name="obstacle_pair_214" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tibia" name="obstacle_pair_269" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tibia" name="obstacle_pair_324" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tibia" name="obstacle_pair_379" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tibia" name="obstacle_pair_434" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tibia" name="obstacle_pair_489" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tibia" name="obstacle_pair_544" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tibia" name="obstacle_pair_599" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tibia" name="obstacle_pair_654" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tarsus1" name="nmf/rh_tarsus1-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tarsus1" name="obstacle_pair_50" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tarsus1" name="obstacle_pair_105" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tarsus1" name="obstacle_pair_160" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tarsus1" name="obstacle_pair_215" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tarsus1" name="obstacle_pair_270" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tarsus1" name="obstacle_pair_325" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tarsus1" name="obstacle_pair_380" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tarsus1" name="obstacle_pair_435" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tarsus1" name="obstacle_pair_490" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tarsus1" name="obstacle_pair_545" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tarsus1" name="obstacle_pair_600" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tarsus1" name="obstacle_pair_655" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tarsus2" name="nmf/rh_tarsus2-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tarsus2" name="obstacle_pair_51" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tarsus2" name="obstacle_pair_106" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tarsus2" name="obstacle_pair_161" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tarsus2" name="obstacle_pair_216" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tarsus2" name="obstacle_pair_271" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tarsus2" name="obstacle_pair_326" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tarsus2" name="obstacle_pair_381" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tarsus2" name="obstacle_pair_436" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tarsus2" name="obstacle_pair_491" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tarsus2" name="obstacle_pair_546" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tarsus2" name="obstacle_pair_601" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tarsus2" name="obstacle_pair_656" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tarsus3" name="nmf/rh_tarsus3-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tarsus3" name="obstacle_pair_52" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tarsus3" name="obstacle_pair_107" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tarsus3" name="obstacle_pair_162" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tarsus3" name="obstacle_pair_217" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tarsus3" name="obstacle_pair_272" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tarsus3" name="obstacle_pair_327" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tarsus3" name="obstacle_pair_382" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tarsus3" name="obstacle_pair_437" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tarsus3" name="obstacle_pair_492" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tarsus3" name="obstacle_pair_547" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tarsus3" name="obstacle_pair_602" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tarsus3" name="obstacle_pair_657" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tarsus4" name="nmf/rh_tarsus4-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tarsus4" name="obstacle_pair_53" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tarsus4" name="obstacle_pair_108" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tarsus4" name="obstacle_pair_163" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tarsus4" name="obstacle_pair_218" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tarsus4" name="obstacle_pair_273" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tarsus4" name="obstacle_pair_328" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tarsus4" name="obstacle_pair_383" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tarsus4" name="obstacle_pair_438" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tarsus4" name="obstacle_pair_493" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tarsus4" name="obstacle_pair_548" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tarsus4" name="obstacle_pair_603" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tarsus4" name="obstacle_pair_658" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="ground_plane" geom2="nmf/rh_tarsus5" name="nmf/rh_tarsus5-ground_plane-ground" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_left" geom2="nmf/rh_tarsus5" name="obstacle_pair_54" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="start_pole_right" geom2="nmf/rh_tarsus5" name="obstacle_pair_109" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_inside" geom2="nmf/rh_tarsus5" name="obstacle_pair_164" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate0_outside" geom2="nmf/rh_tarsus5" name="obstacle_pair_219" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_inside" geom2="nmf/rh_tarsus5" name="obstacle_pair_274" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate1_outside" geom2="nmf/rh_tarsus5" name="obstacle_pair_329" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_inside" geom2="nmf/rh_tarsus5" name="obstacle_pair_384" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate2_outside" geom2="nmf/rh_tarsus5" name="obstacle_pair_439" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_inside" geom2="nmf/rh_tarsus5" name="obstacle_pair_494" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate3_outside" geom2="nmf/rh_tarsus5" name="obstacle_pair_549" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_inside" geom2="nmf/rh_tarsus5" name="obstacle_pair_604" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+    <pair geom1="gate4_outside" geom2="nmf/rh_tarsus5" name="obstacle_pair_659" margin="0.001" solref="0.0002" solimp="0.98 0.99 1e-05 0.5 3" friction="1 1 0.02 0.0001 0.0001"/>
+  </contact>
+
+  <actuator>
+    <general name="nmf/c_thorax-lf_coxa-yaw-position" joint="nmf/c_thorax-lf_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lf_coxa-pitch-position" joint="nmf/c_thorax-lf_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lf_coxa-roll-position" joint="nmf/c_thorax-lf_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lf_coxa-lf_trochanterfemur-pitch-position" joint="nmf/lf_coxa-lf_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lf_coxa-lf_trochanterfemur-roll-position" joint="nmf/lf_coxa-lf_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lf_trochanterfemur-lf_tibia-pitch-position" joint="nmf/lf_trochanterfemur-lf_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lf_tibia-lf_tarsus1-pitch-position" joint="nmf/lf_tibia-lf_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lm_coxa-yaw-position" joint="nmf/c_thorax-lm_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lm_coxa-pitch-position" joint="nmf/c_thorax-lm_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lm_coxa-roll-position" joint="nmf/c_thorax-lm_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lm_coxa-lm_trochanterfemur-pitch-position" joint="nmf/lm_coxa-lm_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lm_coxa-lm_trochanterfemur-roll-position" joint="nmf/lm_coxa-lm_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lm_trochanterfemur-lm_tibia-pitch-position" joint="nmf/lm_trochanterfemur-lm_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lm_tibia-lm_tarsus1-pitch-position" joint="nmf/lm_tibia-lm_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lh_coxa-yaw-position" joint="nmf/c_thorax-lh_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lh_coxa-pitch-position" joint="nmf/c_thorax-lh_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-lh_coxa-roll-position" joint="nmf/c_thorax-lh_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lh_coxa-lh_trochanterfemur-pitch-position" joint="nmf/lh_coxa-lh_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lh_coxa-lh_trochanterfemur-roll-position" joint="nmf/lh_coxa-lh_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lh_trochanterfemur-lh_tibia-pitch-position" joint="nmf/lh_trochanterfemur-lh_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lh_tibia-lh_tarsus1-pitch-position" joint="nmf/lh_tibia-lh_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rf_coxa-yaw-position" joint="nmf/c_thorax-rf_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rf_coxa-pitch-position" joint="nmf/c_thorax-rf_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rf_coxa-roll-position" joint="nmf/c_thorax-rf_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rf_coxa-rf_trochanterfemur-pitch-position" joint="nmf/rf_coxa-rf_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rf_coxa-rf_trochanterfemur-roll-position" joint="nmf/rf_coxa-rf_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rf_trochanterfemur-rf_tibia-pitch-position" joint="nmf/rf_trochanterfemur-rf_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rf_tibia-rf_tarsus1-pitch-position" joint="nmf/rf_tibia-rf_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rm_coxa-yaw-position" joint="nmf/c_thorax-rm_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rm_coxa-pitch-position" joint="nmf/c_thorax-rm_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rm_coxa-roll-position" joint="nmf/c_thorax-rm_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rm_coxa-rm_trochanterfemur-pitch-position" joint="nmf/rm_coxa-rm_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rm_coxa-rm_trochanterfemur-roll-position" joint="nmf/rm_coxa-rm_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rm_trochanterfemur-rm_tibia-pitch-position" joint="nmf/rm_trochanterfemur-rm_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rm_tibia-rm_tarsus1-pitch-position" joint="nmf/rm_tibia-rm_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rh_coxa-yaw-position" joint="nmf/c_thorax-rh_coxa-yaw" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rh_coxa-pitch-position" joint="nmf/c_thorax-rh_coxa-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/c_thorax-rh_coxa-roll-position" joint="nmf/c_thorax-rh_coxa-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rh_coxa-rh_trochanterfemur-pitch-position" joint="nmf/rh_coxa-rh_trochanterfemur-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rh_coxa-rh_trochanterfemur-roll-position" joint="nmf/rh_coxa-rh_trochanterfemur-roll" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rh_trochanterfemur-rh_tibia-pitch-position" joint="nmf/rh_trochanterfemur-rh_tibia-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/rh_tibia-rh_tarsus1-pitch-position" joint="nmf/rh_tibia-rh_tarsus1-pitch" forcelimited="true" forcerange="-30 30" biastype="affine" gainprm="150" biasprm="0 -150"/>
+    <general name="nmf/lf_tarsus5-adhesion" body="nmf/lf_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+    <general name="nmf/lm_tarsus5-adhesion" body="nmf/lm_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+    <general name="nmf/lh_tarsus5-adhesion" body="nmf/lh_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+    <general name="nmf/rf_tarsus5-adhesion" body="nmf/rf_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+    <general name="nmf/rm_tarsus5-adhesion" body="nmf/rm_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+    <general name="nmf/rh_tarsus5-adhesion" body="nmf/rh_tarsus5" ctrllimited="true" ctrlrange="0 1"/>
+  </actuator>
+
+  <sensor>
+    <contact subtree1="nmf/lf_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_lf_leg"/>
+    <contact subtree1="nmf/lm_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_lm_leg"/>
+    <contact subtree1="nmf/lh_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_lh_leg"/>
+    <contact subtree1="nmf/rf_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_rf_leg"/>
+    <contact subtree1="nmf/rm_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_rm_leg"/>
+    <contact subtree1="nmf/rh_coxa" geom2="ground_plane" data="found force torque pos normal tangent" reduce="netforce" name="ground_contact_rh_leg"/>
+  </sensor>
+
+  <keyframe>
+    <key name="neutral" qpos="0.496 0 1.8 1 0 0 0 -0.296706 0.331613 0.575959 -2.42601 -0.261799 1.36136 -0.174533 -0.0872665 -0.0872665 -0.0872665 -0.0872665 -0.174533 0.139626 1.51844 -2.42601 0.261799 1.79769 -0.349066 -0.0872665 -0.0872665 -0.0872665 -0.0872665 0.0523599 0.418879 2.33874 -1.93732 0.0698132 1.76278 -0.0872665 -0.0872665 -0.0872665 -0.0872665 -0.0872665 -0.296706 0.331613 0.575959 -2.42601 -0.261799 1.36136 -0.174533 -0.0872665 -0.0872665 -0.0872665 -0.0872665 -0.174533 0.139626 1.51844 -2.42601 0.261799 1.79769 -0.349066 -0.0872665 -0.0872665 -0.0872665 -0.0872665 0.0523599 0.418879 2.33874 -1.93732 0.0698132 1.76278 -0.0872665 -0.0872665 -0.0872665 -0.0872665 -0.0872665" ctrl="-0.296706 0.331613 0.575959 -2.42601 -0.261799 1.36136 -0.174533 -0.174533 0.139626 1.51844 -2.42601 0.261799 1.79769 -0.349066 0.0523599 0.418879 2.33874 -1.93732 0.0698132 1.76278 -0.0872665 -0.296706 0.331613 0.575959 -2.42601 -0.261799 1.36136 -0.174533 -0.174533 0.139626 1.51844 -2.42601 0.261799 1.79769 -0.349066 0.0523599 0.418879 2.33874 -1.93732 0.0698132 1.76278 -0.0872665 0 0 0 0 0 0"/>
+  </keyframe>
+</mujoco>
