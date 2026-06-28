@@ -1,0 +1,208 @@
+WEBVTT
+
+00:00:01.580 --> 00:00:05.900
+Hello and welcome to the video tutorials of NeuroMechFly.
+
+00:00:06.560 --> 00:00:11.460
+NeuroMechFly is a neuromechanical simulation of the fruit fly Drosophila melanogaster.
+
+00:00:11.640 --> 00:00:17.440
+It is developed here at the Neuroengineering Laboratory at EPFL, the Swiss Federal Institute
+
+00:00:17.440 --> 00:00:19.180
+of Technology in Lausanne.
+
+00:00:20.020 --> 00:00:25.080
+In this first tutorial, we'll briefly go through the body model of NeuroMechFly.
+
+00:00:27.840 --> 00:00:34.620
+You can start by visiting the NeuroMechFly website at neuromechfly.org.
+
+00:00:36.160 --> 00:00:41.440
+On the front page, you'll see a summary of the features and capabilities of our model,
+
+00:00:42.580 --> 00:00:46.080
+as well as an interactive viewer of NeuroMechFly.
+
+00:00:46.840 --> 00:00:49.300
+Let's view this in full screen.
+
+00:00:52.320 --> 00:00:59.260
+As indicated at the bottom left corner, you can drag an interactive viewer to orbit,
+
+00:01:00.260 --> 00:01:07.080
+scroll to zoom, and right drag to pan,
+
+00:01:08.080 --> 00:01:17.100
+and while pressing shift, you can drag different body segments to apply external perturbations.
+
+00:01:19.820 --> 00:01:27.400
+You can reset the physics simulation here, and reset the camera here.
+
+00:01:28.360 --> 00:01:40.480
+Lower down, in the position actuator section, you'll find sliders that control the joint
+
+00:01:40.480 --> 00:01:44.360
+angles on the six legs.
+
+00:01:45.360 --> 00:01:55.732
+For example, looking at the left front leg, we can move the sliders to change the joint angles.
+
+00:01:57.400 --> 00:02:03.660
+The positions of the sliders indicate the desired joint angles, in this case, specified
+
+00:02:03.660 --> 00:02:05.980
+by the user in the web interface.
+
+00:02:07.280 --> 00:02:13.120
+In simulations, typically, it is the target joint angles desired by the controller.
+
+00:02:15.880 --> 00:02:20.980
+And the green triangles indicate the current actual angles of the joints.
+
+00:02:21.770 --> 00:02:28.000
+You'll notice that the green triangle and the slider don't always overlap,
+
+00:02:28.620 --> 00:02:33.100
+and that is because the position actuators have a finite gain.
+
+00:02:34.100 --> 00:02:42.020
+That is, position actuators apply a finite amount of force to make the joint angles consistent
+
+00:02:42.020 --> 00:02:43.760
+with what the user desires.
+
+00:02:46.940 --> 00:02:55.620
+The more drastic the pose of the fly is, the greater the distance between the target position
+
+00:02:55.620 --> 00:02:57.720
+and the actual position.
+
+00:03:00.380 --> 00:03:06.580
+Higher up, in the physics parameters section, you'll see, in this case, three important
+
+00:03:06.580 --> 00:03:08.640
+physics parameters that you can tune.
+
+00:03:09.560 --> 00:03:11.120
+We'll start with actuator gain.
+
+00:03:11.120 --> 00:03:18.440
+This is the ability or the amount of force that the simulation applies to make the
+
+00:03:18.440 --> 00:03:20.060
+green arrow follow the slider.
+
+00:03:20.700 --> 00:03:28.860
+The greater the actuator gain, the closer the green triangle is to the slider.
+
+00:03:32.740 --> 00:03:34.440
+Let's reset the simulation.
+
+00:03:37.000 --> 00:03:41.299
+It's important to note that
+
+00:03:41.299 --> 00:03:52.010
+the NeuroMechFly model in this demo has many joints indicated here,
+
+00:03:52.010 --> 00:03:56.340
+but not every joint is actively actuated.
+
+00:03:57.560 --> 00:04:06.140
+Here the pink markers indicate the active joints, where there is an actuator that actually
+
+00:04:06.140 --> 00:04:13.780
+applies a force, whereas the yellow ones are only subjected to passive dynamics, such as
+
+00:04:13.780 --> 00:04:15.540
+joint stiffness and joint damping.
+
+00:04:20.020 --> 00:04:31.540
+If we reduce the joint stiffness, we'll observe that the passive joints become basically entirely
+
+00:04:31.540 --> 00:04:37.660
+soft in that, not soft in that they deform, but soft in the sense that they
+
+00:04:37.660 --> 00:04:41.020
+become more subjected to gravity,
+
+00:04:41.020 --> 00:04:50.320
+whereas you increase the stiffness the closer they are to the preset neutral angles.
+
+00:04:56.940 --> 00:05:04.540
+If you shift drag a body segment to apply a perturbation force, the fly will eventually
+
+00:05:04.540 --> 00:05:07.460
+recover to the neutral position.
+
+00:05:07.460 --> 00:05:14.040
+In fact, we can visualize this by looking at the contact points and contact forces.
+
+00:05:17.200 --> 00:05:24.340
+As we push this leg downward, you can see more contact points between this leg and the ground,
+
+00:05:24.340 --> 00:05:34.220
+and if we enable contact forces, we'll see that these forces are also being visualized.
+
+00:05:37.460 --> 00:05:39.720
+Let's reset the physics.
+
+00:05:44.300 --> 00:05:51.460
+The timescale of this restoration to the neutral pose is determined or impacted by
+
+00:05:51.460 --> 00:05:53.060
+the joint damping parameter.
+
+00:05:53.500 --> 00:05:58.960
+If we increase the damping, then this process becomes slower,
+
+00:06:06.280 --> 00:06:15.280
+whereas if we decrease damping, if we set it to literally zero, I suspect the physics
+
+00:06:15.280 --> 00:06:17.040
+simulation is simply going to crash,
+
+00:06:17.100 --> 00:06:19.540
+so let's keep it at 0.01,
+
+00:06:20.240 --> 00:06:23.180
+then this process becomes very fast.
+
+00:06:29.820 --> 00:06:35.060
+It's important to set sensible values to this physics parameter.
+
+00:06:36.060 --> 00:06:41.820
+Unfortunately, it's not always possible to experimentally calibrate every single one
+
+00:06:41.820 --> 00:06:42.400
+of them,
+
+00:06:43.140 --> 00:06:49.020
+but we have to somehow make an educated guess,
+
+00:06:49.020 --> 00:06:59.800
+and if we choose very obviously wrong parameters such as a combination of very
+
+00:06:59.800 --> 00:07:05.040
+high stiffness and very low damping, then we get this kind of behavior. Let me
+
+00:07:07.880 --> 00:07:09.240
+reset the simulation.
+
+00:07:11.040 --> 00:07:15.400
+This kind of fast oscillation is just not very realistic at all.
+
+00:07:15.400 --> 00:07:20.260
+So maybe the lesson learned here is that NeuroMechFly is a physics simulation.
+
+00:07:20.500 --> 00:07:21.860
+It is not an animation.
+
+00:07:22.740 --> 00:07:26.080
+The fly in simulation is subjected to the laws of physics,
+
+00:07:26.420 --> 00:07:27.880
+not everything is possible,
+
+00:07:28.520 --> 00:07:32.220
+and it's important to tune the physics parameters correctly.

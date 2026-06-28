@@ -1,0 +1,451 @@
+WEBVTT
+
+00:00:01.240 --> 00:00:08.720
+Welcome to our second NeuroMechFly video tutorial. In this tutorial, we will cover how to —
+
+00:00:08.720 --> 00:00:12.400
+different ways to install NeuroMechFly on your local computer.
+
+00:00:14.360 --> 00:00:18.860
+You can start by visiting our documentation site at neuromechfly.org.
+
+00:00:19.420 --> 00:00:26.080
+On the top right corner, you'll see a link to the FlyGym GitHub repository where our
+
+00:00:26.080 --> 00:00:27.280
+code actually resides.
+
+00:00:27.280 --> 00:00:34.420
+You'll notice that the name of the package is FlyGym. The difference between FlyGym and NeuroMechFly
+
+00:00:34.420 --> 00:00:39.760
+is that NeuroMechFly is what we call our model, whereas FlyGym is the name
+
+00:00:39.760 --> 00:00:42.240
+of the software implementation of it.
+
+00:00:45.140 --> 00:00:54.920
+The current version of FlyGym is 2.1.0. Future releases of FlyGym might differ from
+
+00:00:54.920 --> 00:01:02.580
+this tutorial, so it's recommended that you always follow the instructions here on the installation page
+
+00:01:02.580 --> 00:01:09.540
+instead of what I will do verbatim in this video tutorial.
+
+00:01:12.380 --> 00:01:18.740
+There are four different ways to install NeuroMechFly, or rather FlyGym. I'll cover all of
+
+00:01:18.740 --> 00:01:22.213
+them. If you simply want it to work,
+
+00:01:22.213 --> 00:01:26.120
+and if you don't want to change the code
+
+00:01:26.120 --> 00:01:30.520
+base of NeuroMechFly, then the easiest way to do it is to use pip.
+
+00:01:30.520 --> 00:01:38.680
+If you have experience with Python, you're probably already familiar with the pip install syntax.
+
+00:01:41.000 --> 00:01:44.820
+The FlyGym package is published on the Python package index.
+
+00:01:48.320 --> 00:01:55.700
+Now we'll follow this method of installation. It's recommended that you always create a Python virtual
+
+00:01:55.700 --> 00:01:58.200
+environment for every project that you work on.
+
+00:01:58.200 --> 00:02:04.060
+You can use any virtual environment manager. In this case, we'll use Conda.
+
+00:02:08.520 --> 00:02:10.660
+Let's create a Conda environment.
+
+00:02:10.660 --> 00:02:18.840
+Let's call it FlyGym and use Python 3.14, which is the latest Python version that's
+
+00:02:18.840 --> 00:02:20.700
+supported by FlyGym.
+
+00:02:20.700 --> 00:02:25.800
+As of now, it is also the latest Python version in general.
+
+00:02:39.580 --> 00:02:43.400
+Conda environment is ready. Let's activate it.
+
+00:02:43.400 --> 00:02:51.420
+We can simply run this command, pip install flygym.
+
+00:03:05.800 --> 00:03:08.980
+Let's start a Python interactive loop.
+
+00:03:08.980 --> 00:03:17.940
+Here we can simply import FlyGym. The first time you run it after installing it,
+
+00:03:17.940 --> 00:03:19.180
+it's going to take some time.
+
+00:03:19.640 --> 00:03:24.900
+This is because it needs to internally build up some cache files and just set up
+
+00:03:24.900 --> 00:03:25.640
+a few things.
+
+00:03:27.560 --> 00:03:32.820
+The second time you run it, it should be much faster already. Let's try it again.
+
+00:03:35.420 --> 00:03:36.620
+Much better.
+
+00:03:39.200 --> 00:03:45.540
+There are optional dependency groups that you may choose to install along with the standard FlyGym base package.
+
+00:03:46.620 --> 00:03:54.140
+For example, if you want to run GPU-accelerated simulation on a computer with NVIDIA GPUs,
+
+00:03:54.420 --> 00:04:02.200
+you simply append this part to FlyGym.
+
+00:04:02.200 --> 00:04:09.280
+If you want to follow examples that are provided with it, you can include the example,
+
+00:04:09.460 --> 00:04:11.180
+optional dependencies, etc.
+
+00:04:12.300 --> 00:04:15.060
+Now let's try this.
+
+00:04:17.140 --> 00:04:23.000
+Sorry, on the Mac you actually have to put this in double quotation marks.
+
+00:04:26.440 --> 00:04:35.220
+If you're using zsh in general instead of Bash, it's not just because you're on macOS.
+
+00:04:38.880 --> 00:04:45.580
+Now we will also have optional dependencies to run some tutorials that are included with
+
+00:04:45.580 --> 00:04:46.820
+the FlyGym package.
+
+00:04:48.440 --> 00:04:54.880
+If you are running NeuroMechFly on a headless machine, so a machine without a display,
+
+00:04:55.220 --> 00:04:59.300
+this might be a server that your university or your institution might provide,
+
+00:04:59.300 --> 00:05:08.740
+or some cloud virtual machine, then you might need to set up a few environment variables
+
+00:05:08.740 --> 00:05:14.340
+to use the correct rendering backend.
+
+00:05:18.540 --> 00:05:25.817
+The second way of installing FlyGym is using uv, which is a very, very fast package manager.
+
+00:05:25.820 --> 00:05:32.920
+We recommend this for people who wish to change the NeuroMechFly or FlyGym codebase
+
+00:05:32.920 --> 00:05:38.320
+or people who wish to contribute their changes back to our FlyGym project.
+
+00:05:41.720 --> 00:05:52.800
+Let's start by deactivating the FlyGym Conda environment that we created.
+
+00:05:53.620 --> 00:05:57.970
+If you use uv, you actually need to clone the GitHub repository.
+
+00:06:17.250 --> 00:06:23.130
+Let's go into the FlyGym folder that has been created.
+
+00:06:23.130 --> 00:06:27.310
+Now, we see that everything from the repository is here.
+
+00:06:31.170 --> 00:06:37.210
+This method of installation obviously requires that you have uv already installed. If you don't have
+
+00:06:37.210 --> 00:06:43.630
+it installed, please follow the installation instruction from the uv documentation site.
+
+00:06:43.630 --> 00:06:51.210
+Assuming you have uv, you can run uv sync to install the package.
+
+00:06:52.270 --> 00:07:00.610
+As before, you can select optional dependency groups. In this case, we will use examples, but
+
+00:07:00.610 --> 00:07:05.430
+we'll also include an optional dependency group called Dev
+
+00:07:05.430 --> 00:07:17.770
+for developers. Under this group, you'll get development tools like the packages that
+
+00:07:17.770 --> 00:07:23.172
+are used to build this very documentation site
+
+00:07:23.172 --> 00:07:30.467
+and also just linters and unit testing tools and things like that.
+
+00:07:30.470 --> 00:07:35.350
+uv is very fast. This is why we chose it.
+
+00:07:38.090 --> 00:07:46.790
+Now, we should have a venv folder that uv has created. There are two ways to
+
+00:07:46.790 --> 00:07:49.850
+run things using the virtual environment.
+
+00:07:49.850 --> 00:07:56.230
+The first one is to source this activation script in the virtual environment.
+
+00:07:57.110 --> 00:08:01.910
+From there, you can simply run Python, for example,
+
+00:08:01.910 --> 00:08:09.017
+and import FlyGym. Again, the first time you run it after installation, it's going to take some time.
+
+00:08:24.890 --> 00:08:26.810
+Let's deactivate this environment.
+
+00:08:28.330 --> 00:08:34.470
+The second way of running things with this virtual environment is to prepend uv run
+
+00:08:34.470 --> 00:08:43.010
+to the script, which is commands in general that you wish to run.
+
+00:08:43.410 --> 00:08:49.510
+For example, we can also launch a Python interactive loop like this
+
+00:08:51.610 --> 00:08:54.370
+and import FlyGym. This time it's also a lot faster.
+
+00:08:57.270 --> 00:09:04.250
+The advantage of cloning the actual repository is that you also have access to a couple
+
+00:09:04.250 --> 00:09:13.367
+of scripts that I think are not included in the package that's published to the Python Package Index (PyPI).
+
+00:09:13.370 --> 00:09:19.650
+For example, there's this very handy interactive viewer that you may launch.
+
+00:09:29.070 --> 00:09:37.550
+This is basically what we demonstrated in the first tutorial in the interactive viewer on
+
+00:09:37.550 --> 00:09:39.238
+the FlyGym website, but it runs locally.
+
+00:09:44.130 --> 00:09:50.950
+Well, technically here it also runs locally because the simulation happens in your browser. It doesn't
+
+00:09:50.950 --> 00:09:52.930
+happen on our server,
+
+00:09:53.290 --> 00:10:06.570
+but here it's a Python program that uses the official interactive viewer from MuJoCo.
+
+00:10:06.570 --> 00:10:12.370
+All of this entire interface comes with MuJoCo. We didn't develop it.
+
+00:10:16.670 --> 00:10:22.050
+Okay, so this is the second way of installing FlyGym.
+
+00:10:23.470 --> 00:10:26.312
+Maybe one thing to note is that if
+
+00:10:26.312 --> 00:10:29.510
+you wish to contribute back to our FlyGym code
+
+00:10:29.510 --> 00:10:34.950
+or code repository, this also follows the instruction here.
+
+00:10:35.710 --> 00:10:44.210
+Basically what it does is that it installs a git filter that excludes large output cells
+
+00:10:44.210 --> 00:10:48.050
+in tutorial notebooks when you make commits.
+
+00:10:48.050 --> 00:10:57.610
+This prevents very large files like videos from being pushed to the FlyGym GitHub repository, which
+
+00:10:57.610 --> 00:11:00.980
+would make cloning the repository much, much slower. The third way of installing
+
+00:11:00.980 --> 00:11:04.350
+FlyGym is that you can also use the git filter to install it.
+
+00:11:07.030 --> 00:11:09.380
+So this is the second way of doing it.
+
+00:11:11.200 --> 00:11:14.880
+Maybe I will cover the fourth way first.
+
+00:11:15.640 --> 00:11:22.000
+The fourth way of using FlyGym actually doesn't require you to install anything at all.
+
+00:11:22.380 --> 00:11:34.200
+You can run it online using Google's cloud-based notebook service, Google Colab.
+
+00:11:34.200 --> 00:11:39.620
+What you do here is actually you just go to the tutorial that you're interested
+
+00:11:39.620 --> 00:11:45.200
+in, for example tutorial 1a, and you just click this open in Colab button.
+
+00:11:52.100 --> 00:11:56.500
+You can simply run the notebook here. Let's run ourselves.
+
+00:11:56.500 --> 00:12:02.260
+The first cell block is going to take some time, like maybe a minute.
+
+00:12:02.820 --> 00:12:05.559
+It's going to install, or rather,
+
+00:12:05.559 --> 00:12:10.580
+FlyGym on this Colab session. You don't really need to do
+
+00:12:10.580 --> 00:12:11.620
+much except waiting.
+
+00:12:17.920 --> 00:12:22.780
+If you wish to use a different FlyGym version, just change this number here.
+
+00:12:25.100 --> 00:12:32.780
+This is actually an example of having to change this environment variable here.
+
+00:12:46.600 --> 00:12:48.782
+Now we can go down the notebook.
+
+00:12:48.782 --> 00:12:51.900
+Since we clicked run all, everything should be ready. And
+
+00:12:54.740 --> 00:13:01.000
+without covering the details of this notebook, I'll just show you that it works.
+
+00:13:01.300 --> 00:13:05.760
+You can run simulation simply in the browser on the Google Colab server.
+
+00:13:07.480 --> 00:13:12.120
+Maybe one thing to note is that Colab can be very slow. It can be, in
+
+00:13:12.120 --> 00:13:16.780
+our experience, up to 50 times slower depending on service availability on Google's side.
+
+00:13:17.240 --> 00:13:21.520
+So please use this only for testing and following the documentation.
+
+00:13:22.780 --> 00:13:29.820
+Maybe one thing that's worth noting is that for the specific tutorial that uses GPU acceleration,
+
+00:13:30.720 --> 00:13:32.130
+you have to first
+
+00:13:35.800 --> 00:13:39.840
+select a Colab instance with a GPU attached.
+
+00:13:40.420 --> 00:13:47.040
+So you can do this by going to runtime, change runtime type, and select
+
+00:13:49.800 --> 00:13:55.134
+one of these with a GPU with the free version. As of now, you only get T4.
+
+00:13:56.960 --> 00:14:01.320
+As before, we can click run all. I'm not going to wait until the whole thing
+
+00:14:01.320 --> 00:14:04.240
+executes, but you get the gist.
+
+00:14:06.640 --> 00:14:15.600
+The last way to install FlyGym is to do it using Docker.
+
+00:14:18.860 --> 00:14:26.760
+Docker is a container service, or rather a software for containerized software.
+
+00:14:27.740 --> 00:14:37.020
+If you're not already familiar with the idea of using containers for software, it basically takes
+
+00:14:37.020 --> 00:14:39.600
+the inspiration from
+
+00:14:39.600 --> 00:14:46.580
+actual shipping containers, which are standardized, and it makes shipping much more efficient and cheaper.
+
+00:14:46.580 --> 00:14:56.860
+Similarly, containerization in software development means that applications are packaged into a consistent format
+
+00:14:57.580 --> 00:15:02.371
+called containers, and this basically separates the task
+
+00:15:02.371 --> 00:15:07.760
+of building an application from building an application that
+
+00:15:07.760 --> 00:15:09.180
+runs those containers.
+
+00:15:09.180 --> 00:15:15.760
+So Docker is one of the software that runs such applications, and we have prepackaged FlyGym
+
+00:15:15.760 --> 00:15:20.020
+as an image on Docker Hub.
+
+00:15:23.780 --> 00:15:27.861
+You can use currently, the latest version is 2.1.0.
+
+00:15:29.069 --> 00:15:33.100
+ I wouldn't recommend this for most users.
+
+00:15:34.140 --> 00:15:40.280
+However, if you're trying to run FlyGym on a supercomputer or a cluster from institution
+
+00:15:40.280 --> 00:15:43.700
+or some containerized service providers,
+
+00:15:43.880 --> 00:15:51.140
+maybe follow this tutorial. We have only in fact tested this on Linux, so now I'm
+
+00:15:51.140 --> 00:15:59.280
+going to SSH into my Linux machine.
+
+00:16:05.720 --> 00:16:10.700
+The first thing to make sure of is to make sure that you have Docker installed.
+
+00:16:11.400 --> 00:16:19.920
+If you do, you may download the FlyGym image,
+
+00:16:19.920 --> 00:16:29.420
+either the latest version or a specific version. Let's just be explicit here. I have
+
+00:16:29.420 --> 00:16:34.280
+it already on my computer, so this didn't take much time at all.
+
+00:16:34.440 --> 00:16:39.360
+Depending on your network connection and how much data has already been cached, this can take,
+
+00:16:39.360 --> 00:16:40.600
+I don't know, one minute.
+
+00:16:43.220 --> 00:16:52.200
+Once you have that, you can run this image by running this command.
+
+00:16:52.200 --> 00:17:04.017
+I means interactive, and T means you'll get a TTY session, namely basically a shell.
+
+00:17:05.800 --> 00:17:09.220
+You can specify that the program you specifically want to run
+
+00:17:09.220 --> 00:17:12.640
+is a TTY session. A shell. You can specify that the
+
+00:17:12.640 --> 00:17:16.060
+program you specifically want to run in this image is bash,
+
+00:17:16.060 --> 00:17:24.534
+simply to get a shell, and you want to run this image that we have just called.
+
+00:17:24.540 --> 00:17:35.380
+Now you get a shell. And all you need to do is to activate the
+
+00:17:35.380 --> 00:17:42.080
+virtual environment that already exists, or instead, use uv run.
+
+00:17:46.980 --> 00:17:51.660
+I'm sorry. Without that extra activate. Thank you.

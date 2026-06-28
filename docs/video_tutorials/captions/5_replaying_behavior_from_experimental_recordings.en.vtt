@@ -1,0 +1,610 @@
+WEBVTT
+
+00:00:01.340 --> 00:00:08.560
+Welcome to the [fourth] NeuroMechFly video tutorial. In this tutorial, we'll cover how to run
+
+00:00:08.560 --> 00:00:15.680
+a simulation where the simulated fly replays the behavior of a real fly that's being recorded
+
+00:00:15.680 --> 00:00:17.820
+in a real experiment.
+
+00:00:17.820 --> 00:00:25.580
+Again, the current version of FlyGym is 2.1.0. Future versions might deviate from this
+
+00:00:25.580 --> 00:00:33.180
+tutorial, therefore it's recommended that you always follow the tutorials on the website instead of repeating
+
+00:00:33.180 --> 00:00:38.220
+what I will do in this video recording verbatim.
+
+00:00:38.220 --> 00:00:44.560
+For the purpose of this tutorial, we'll follow code tutorial notebook number two, because we are
+
+00:00:44.560 --> 00:00:51.220
+going to run actual simulations and performance kind of matters. We're not going to do it
+
+00:00:51.220 --> 00:00:58.120
+on Google Colab, which can be up to 50 times slower than running the notebook locally.
+
+00:00:59.880 --> 00:01:10.420
+So I will use a local installation of FlyGym and I'm going to do it in
+
+00:01:10.420 --> 00:01:17.500
+VS Code. So this is a cloned version of FlyGym. You can go to tutorials and
+
+00:01:17.500 --> 00:01:19.760
+open this tutorial notebook.
+
+00:01:22.080 --> 00:01:25.120
+Select a kernel in this case.
+
+00:01:27.260 --> 00:01:29.480
+UV environment that we have created.
+
+00:01:31.000 --> 00:01:36.240
+The first sub block is for it only runs if you're if you're on Google Colab,
+
+00:01:36.240 --> 00:01:41.020
+because we are not, it simply finishes in zero second and does nothing.
+
+00:01:42.020 --> 00:01:45.080
+And then we go to the main content of the tutorial.
+
+00:01:47.920 --> 00:01:56.420
+One way to use or rather one advantage of running neuromechanical simulations is that we can
+
+00:01:56.420 --> 00:02:05.320
+replicate the observable behavior from real experiments and infer latent quantities that we cannot directly measure.
+
+00:02:05.320 --> 00:02:11.940
+For example, we can record a movement sequence in a real fly.
+
+00:02:13.500 --> 00:02:19.680
+But that recording itself doesn't tell us, for example, ground reaction forces that the fly is experiencing.
+
+00:02:19.680 --> 00:02:28.600
+But if we replay that behavior snippet, then we can measure ground reaction forces from the
+
+00:02:28.600 --> 00:02:35.520
+physics simulation. But because the simulation being in silico, we have free access to basically
+
+00:02:35.520 --> 00:02:36.020
+everything we want.
+
+00:02:36.020 --> 00:02:39.240
+Of course, validation is crucial.
+
+00:02:40.560 --> 00:02:47.160
+It's enough. It's not enough. But one validation that we might use is to see if
+
+00:02:47.160 --> 00:02:52.700
+the observed behavior is faithfully replicated in the simulation.
+
+00:02:52.700 --> 00:03:02.620
+So in this particular example, we will use a, we'll use FlyGym to replay a
+
+00:03:02.620 --> 00:03:10.700
+recording that's been recorded in our, in our fly behavior quantification system called Spotlight.
+
+00:03:11.940 --> 00:03:14.920
+You can read more about it here.
+
+00:03:16.260 --> 00:03:23.220
+In essence, this experimental system allows us to record behavior of a freely
+
+00:03:23.220 --> 00:03:29.120
+walking fly at very high resolution, but also recording muscle activities at the same time.
+
+00:03:30.480 --> 00:03:34.300
+In this case, we don't use muscle data. We only use the behavior data.
+
+00:03:36.180 --> 00:03:41.380
+So the first thing we want to do is to import from flygym_demo.spotlight_data,
+
+00:03:41.380 --> 00:03:46.220
+this pre-programmed utility class called Motion Snippet.
+
+00:03:48.800 --> 00:04:03.920
+And this is going to load a default data snippet with metadata that you can see
+
+00:04:03.920 --> 00:04:08.380
+from this object.
+
+00:04:08.380 --> 00:04:17.120
+So in this case, we have behavior data on all six legs. We have these degrees
+
+00:04:17.120 --> 00:04:18.780
+of freedom per leg.
+
+00:04:19.060 --> 00:04:25.183
+The data is recorded at 330 frames per second. This is the name, et cetera, etc.
+
+00:04:25.940 --> 00:04:32.200
+And in this data set, we have joint angles. So this many frames over two seconds,
+
+00:04:32.600 --> 00:04:35.660
+six legs and seven degrees of freedom per leg.
+
+00:04:35.660 --> 00:04:41.840
+We have egocentric X, Y, Z position of each leg joint or rather. Is it?
+
+00:04:45.560 --> 00:04:50.540
+Yes. So we tracked five key points per leg and we have six legs. So we
+
+00:04:50.540 --> 00:04:54.960
+have 30 key points and for each of them, we have X, Y and Z.
+
+00:04:56.880 --> 00:05:03.660
+The difference between forward kinematics and raw prediction is not as critical. We're just going to
+
+00:05:03.660 --> 00:05:06.060
+skip it in this video tutorial.
+
+00:05:07.500 --> 00:05:11.160
+We can visualize the data that we have.
+
+00:05:12.380 --> 00:05:18.080
+For example, here we're visualizing the X, Y, Z positions of the tip of the leg
+
+00:05:18.080 --> 00:05:20.520
+or the claw of the left front leg.
+
+00:05:20.940 --> 00:05:26.820
+So over time, this is how the fly is, how this claw is moving in
+
+00:05:26.820 --> 00:05:31.600
+space in egocentric coordinates relative to the thorax of the fly.
+
+00:05:34.080 --> 00:05:42.000
+We can also plot this in 3D, but we only plot a single frame. But in
+
+00:05:42.000 --> 00:05:44.560
+this frame, this is the pose of the fly.
+
+00:05:53.520 --> 00:05:59.760
+So if we don't look at the colored lines for now and only look at the
+
+00:05:59.760 --> 00:06:06.740
+dashed line, this is the results from our pose estimation model from the experiment directly.
+
+00:06:06.740 --> 00:06:12.260
+The problem with it is that you have X, Y and Z position for each joint
+
+00:06:12.260 --> 00:06:14.740
+key point, but you don't have joint angles.
+
+00:06:15.400 --> 00:06:22.260
+And in fact, it's difficult to have it because there could be errors in the
+
+00:06:22.260 --> 00:06:27.080
+3D pose prediction. The distance between two key points,
+
+00:06:27.080 --> 00:06:33.860
+which reflects the physical length of a leg segment, which should remain constant over time, might
+
+00:06:33.860 --> 00:06:36.360
+change over time because of these inaccuracies.
+
+00:06:36.820 --> 00:06:43.340
+So we apply a step called inverse kinematics, which basically involves fitting or optimizing for joint
+
+00:06:43.340 --> 00:06:46.960
+angles from raw X, Y, Z predictions.
+
+00:06:46.960 --> 00:06:54.400
+And if we reapply the set of joint angles, we can reconstruct the pose of each
+
+00:06:54.400 --> 00:07:00.680
+leg showing in colored lines and see that even though it's not perfect, it agrees mostly
+
+00:07:00.680 --> 00:07:02.100
+with the raw predictions.
+
+00:07:04.800 --> 00:07:12.580
+And similar to the previous plot, we can generate a figure showing the joint angles over
+
+00:07:12.580 --> 00:07:18.020
+time. In this case, it's the seven degrees of freedom of the left front leg.
+
+00:07:23.740 --> 00:07:27.640
+Now we basically repeat what we did in tutorial one. I'm
+
+00:07:29.120 --> 00:07:34.380
+just going to skip the details of it and let the viewer refer to tutorial one
+
+00:07:34.380 --> 00:07:35.660
+if it's not unclear.
+
+00:07:35.660 --> 00:07:42.400
+And different from tutorial one, we're also going to add leg adhesion for this simulation.
+
+00:07:42.820 --> 00:07:51.580
+So in the biological reality of fly locomotion is that flies have adhesive structures at the
+
+00:07:51.580 --> 00:07:57.840
+tips of their legs, which allow them to maintain a stronger grip on surfaces and work
+
+00:07:57.840 --> 00:08:00.580
+on walls and ceilings.
+
+00:08:01.860 --> 00:08:10.020
+Again, we define a spawn position and orientation. We create a flat ground world and attach
+
+00:08:10.020 --> 00:08:11.700
+the fly to the flat ground world.
+
+00:08:13.600 --> 00:08:20.560
+Once that is done, we can create a simulation object imported from FlyGym. So from now
+
+00:08:20.560 --> 00:08:25.020
+on, this is new compared to tutorial one.
+
+00:08:27.080 --> 00:08:32.827
+We import a simulation, we create a simulation on the world, and we can also set a renderer.
+
+00:08:33.580 --> 00:08:40.180
+Recall that when we created the fly, we attached a camera to it. Where is it?
+
+00:08:40.180 --> 00:08:42.920
+Here. We attached a tracking camera to the fly.
+
+00:08:43.580 --> 00:08:48.685
+And now once we have created the simulation, we can set a renderer. Let's just run that.
+
+00:08:50.260 --> 00:08:55.020
+Now once we have the simulation created, the next thing we need to do is to
+
+00:08:55.020 --> 00:09:00.720
+extrapolate the experimental data to the time grid of the simulation.
+
+00:09:02.100 --> 00:09:09.448
+So for physics simulation, we typically use very, very small time steps. For example, 0.1 millisecond.
+
+00:09:10.040 --> 00:09:17.360
+This is because if you integrate the physics at a coarser level, then the physics becomes
+
+00:09:17.360 --> 00:09:18.160
+very unstable.
+
+00:09:18.860 --> 00:09:26.020
+However, the behavior data is not recorded at 1000 FPS or rather 10,000 FPS.
+
+00:09:26.800 --> 00:09:35.180
+And therefore what we need to do is to extrapolate, excuse me, interpolate the experimental data
+
+00:09:35.180 --> 00:09:36.560
+to this timestamp.
+
+00:09:37.520 --> 00:09:45.640
+Again, this function has been, the interpolation function has been provided as part of
+
+00:09:45.640 --> 00:09:50.980
+this utility class called MotionSnippet from flygym_demo.spotlight_data.
+
+00:09:51.100 --> 00:10:00.420
+Once we created the snippet class or rather the snippet object, we can simply call
+
+00:10:01.420 --> 00:10:10.920
+get_joint_angles by giving it a desired output time step of 0.1 millisecond.
+
+00:10:11.160 --> 00:10:18.820
+And by specifying the order of actuators from NeuroMechFly from the fly simulation, we can
+
+00:10:18.820 --> 00:10:30.400
+get an array with 20,000 time steps to simulate. Recall that our behavior snippet is
+
+00:10:30.400 --> 00:10:36.720
+2 seconds long and we are simulating at 10,000 hertz. So this is what we
+
+00:10:36.720 --> 00:10:37.460
+would expect.
+
+00:10:38.200 --> 00:10:44.780
+And the shape of target joint angles is 20,000 by 42 because we have 42
+
+00:10:44.780 --> 00:10:48.520
+actuators, 7 per leg and 6 legs.
+
+00:10:50.480 --> 00:10:55.020
+Now we have everything we need to run the simulation.
+
+00:10:55.640 --> 00:11:03.720
+What we can do is that we can reset the physics simulation.
+
+00:11:05.300 --> 00:11:13.031
+We can create some empty buffers to record the state of the simulation as we go.
+
+00:11:14.740 --> 00:11:19.980
+And to start, we can already enable the leg adhesion actuators.
+
+00:11:20.880 --> 00:11:28.520
+We set them to a constant of 1. So in other words, the leg adhesion forces
+
+00:11:28.520 --> 00:11:31.380
+are always on as we simulate.
+
+00:11:31.620 --> 00:11:36.180
+So when the fly lifts and like it, it actually needs to apply a force that
+
+00:11:36.180 --> 00:11:40.300
+is stronger than the adhesion force in order to lift the legs.
+
+00:11:40.300 --> 00:11:47.200
+We can warm up the simulation. Basically, what this does is that it drops the fly
+
+00:11:47.200 --> 00:11:51.600
+from the spawn point and the fly lands on the ground.
+
+00:11:52.820 --> 00:12:01.280
+And I think for a 0.05 second time period, the latent forces of spawning the
+
+00:12:01.280 --> 00:12:05.280
+fly, the fly landing on the ground, mostly settle.
+
+00:12:05.280 --> 00:12:11.500
+And after this period, we can start running our simulation from a cleaner state.
+
+00:12:12.900 --> 00:12:20.340
+Now, what we do next is to implement our main physics simulation loop.
+
+00:12:25.540 --> 00:12:34.580
+So we want to write a for loop that iterates over this many time steps, in
+
+00:12:34.580 --> 00:12:35.740
+our case 20,000.
+
+00:12:36.600 --> 00:12:43.540
+If you don't know this already, using the tqdm package, you can replace range with trange,
+
+00:12:43.540 --> 00:12:49.560
+which allows you to basically get a progress bar as you iterate over this loop,
+
+00:12:49.560 --> 00:12:57.700
+which is handy. And within each iteration of the loop, we fetch the target joint angles.
+
+00:12:58.480 --> 00:13:08.360
+Recall that we have this this array called joint angles, interpolated to NeuroMechFly time that
+
+00:13:08.360 --> 00:13:09.780
+is 20,000 by 42.
+
+00:13:09.780 --> 00:13:20.500
+And we are iterating over the simulation time steps. So for each simulation time step, the
+
+00:13:20.500 --> 00:13:27.840
+target joint angles is simply this, with the step index being applied to the
+
+00:13:27.840 --> 00:13:29.460
+0th dimension of this array.
+
+00:13:29.460 --> 00:13:36.200
+Once we have these target angles, we can call the set_actuator_inputs method to the
+
+00:13:36.200 --> 00:13:37.460
+simulation object.
+
+00:13:37.980 --> 00:13:45.240
+We apply it to the fly identified by its name. We apply it to the position actuators.
+
+00:13:49.380 --> 00:13:53.380
+So actuator type here, I think it's defined a little bit earlier.
+
+00:13:54.380 --> 00:13:56.940
+It's simply position, yes, here.
+
+00:13:58.880 --> 00:14:02.580
+And we set the target angles, target positions.
+
+00:14:03.580 --> 00:14:13.740
+Once we have set the target joint actuator target states, we can step the physics simulation.
+
+00:14:13.740 --> 00:14:22.840
+You can run this sim.step with no argument. Or alternatively, you can run step_with_profile,
+
+00:14:22.840 --> 00:14:31.500
+which simply runs some time counter to report the model performance to you.
+
+00:14:32.920 --> 00:14:39.780
+But in reality, you can completely, it's recommended that you run sim.step
+
+00:14:39.780 --> 00:14:43.812
+because it's a little bit faster, because in order to time the simulation,
+
+00:14:43.812 --> 00:14:45.920
+there's a little bit of overhead.
+
+00:14:47.440 --> 00:14:52.120
+Now we have told the simulator what we want the actuators to do.
+
+00:14:52.300 --> 00:14:56.360
+We have stepped the physics forward by a time step. The next step,
+
+00:14:56.580 --> 00:15:00.940
+what we can do now is to get the information that we want to have, such
+
+00:15:00.940 --> 00:15:09.160
+as joint angles, actuator forces, and positions of different key points or sites on the fly.
+
+00:15:09.160 --> 00:15:20.040
+And we can write these values to these three pre-existing buffers that we created
+
+00:15:20.040 --> 00:15:20.760
+before this loop.
+
+00:15:23.180 --> 00:15:29.840
+And finally, we have provided a render_as_needed function or method on the simulation class
+
+00:15:29.840 --> 00:15:31.040
+that you can call.
+
+00:15:32.100 --> 00:15:35.360
+It captures the frame if necessary.
+
+00:15:36.500 --> 00:15:41.820
+The reason why a frame is not always captured for every time step is simply that
+
+00:15:41.820 --> 00:15:48.980
+we're running 20,000 time steps and we don't need an output video of 20,000 FPS.
+
+00:15:49.840 --> 00:15:53.080
+It's only going to make the simulation very, very slow.
+
+00:15:53.760 --> 00:16:03.100
+So here, this method encapsulates the calculation of at which simulation time steps
+
+00:16:03.100 --> 00:16:04.620
+a render is needed.
+
+00:16:05.360 --> 00:16:12.720
+Again, we can use render_as_needed with profile to get some timing information.
+
+00:16:13.700 --> 00:16:15.860
+And now let's run the simulation. At
+
+00:16:16.580 --> 00:16:21.900
+the progress bar, we're simulating 4,000 iterations per second.
+
+00:16:24.120 --> 00:16:29.960
+In other words, we're simulating roughly half a second of physics per second.
+
+00:16:31.420 --> 00:16:40.680
+And because we used the with profile versions of step and render_as_needed, we can
+
+00:16:40.680 --> 00:16:48.160
+call this little method to get a table indicating how fast our simulation is.
+
+00:16:48.720 --> 00:16:54.720
+You can see a breakdown that 39% of the simulated time is used to actually
+
+00:16:54.720 --> 00:16:56.280
+advance the physics simulation.
+
+00:16:57.240 --> 00:17:02.060
+It's running at just a bit more than 10,000 iterations per second.
+
+00:17:02.640 --> 00:17:10.880
+In other words, it's about 107% of real time.
+
+00:17:12.020 --> 00:17:16.380
+But the simulation is spending 61% of the time rendering.
+
+00:17:17.280 --> 00:17:23.080
+So 61% of the time is just spent on video generation. And overall, with rendering,
+
+00:17:23.080 --> 00:17:29.660
+the overall throughput is 42% of real time.
+
+00:17:30.800 --> 00:17:36.000
+There's a note saying that out of the 20,000 steps, only 250 frames were rendered.
+
+00:17:37.820 --> 00:17:47.300
+You can actually adjust this by going back to the set_renderer call.
+
+00:17:48.080 --> 00:17:55.127
+Here you can actually see that by default we're generating the video that's played at 20% speed.
+
+00:17:55.920 --> 00:18:02.040
+So five times slower than real time and we're rendering the video at 25 frames per second.
+
+00:18:02.040 --> 00:18:07.720
+In other words, we are rendering 125 frames —
+
+00:18:07.720 --> 00:18:13.400
+25 times 5 — per second simulated, which would
+
+00:18:13.400 --> 00:18:16.700
+make sense because over two seconds we simulated 250 frames.
+
+00:18:17.100 --> 00:18:26.180
+By adjusting the playback speed and output FPS, you can potentially reduce the number of frames
+
+00:18:26.180 --> 00:18:27.200
+that need to be rendered.
+
+00:18:28.020 --> 00:18:37.200
+Now going back to the renderer class that we created when we called sim.set_renderer.
+
+00:18:43.040 --> 00:18:50.760
+We can use the show_in_notebook method to display the video describing the simulation.
+
+00:18:53.220 --> 00:18:58.520
+So two seconds of simulation played at 20% speed, we have a 10-second video.
+
+00:18:59.060 --> 00:19:06.700
+We see a somewhat natural-looking behavior of flywalking and executing a turn.
+
+00:19:11.620 --> 00:19:22.140
+Alternatively, you can also call this save_video method on the renderer.
+
+00:19:25.860 --> 00:19:31.220
+So after we save the video, instead of in addition to showing it in the notebook.
+
+00:19:33.680 --> 00:19:38.120
+Now it's an mp4 file on your hard drive.
+
+00:19:40.820 --> 00:19:47.140
+Now, recall that we didn't just set the actuator input and simulate and render.
+
+00:19:47.140 --> 00:19:56.300
+We also recorded joint angles, forces applied by position actuators and key point positions as we simulated.
+
+00:19:56.300 --> 00:20:05.100
+So now we can create a plot that compares the trajectory of joint angles to the target.
+
+00:20:05.720 --> 00:20:12.320
+So in this case, the blue dotted lines indicate the target positions.
+
+00:20:12.840 --> 00:20:19.960
+If we go back to this interactive viewer, it's basically where the sliders are, where we
+
+00:20:19.960 --> 00:20:21.340
+want the joints to be.
+
+00:20:22.180 --> 00:20:26.240
+And the orange line indicates the actual position in the simulation.
+
+00:20:26.240 --> 00:20:31.860
+In other words, where the green triangles would be in our interactive demo.
+
+00:20:33.220 --> 00:20:36.500
+We see that it's pretty close, which is good.
+
+00:20:37.340 --> 00:20:45.020
+And we can also plot the pose of the fly over time by looking at the
+
+00:20:45.020 --> 00:20:48.820
+key point positions in X, Y, Z.
+
+00:20:48.820 --> 00:20:55.540
+So in this case, we selected just a couple of snapshots.
+
+00:20:55.980 --> 00:20:59.840
+And for each of them, we plotted all six legs.
+
+00:21:02.880 --> 00:21:04.780
+And there you go.
+
+00:21:07.440 --> 00:21:15.000
+We have taken some data from a real experiment and replayed it in FlyGym.
+
+00:21:15.000 --> 00:21:27.260
+For more information, you can actually see the Spotlight —
+
+00:21:27.260 --> 00:21:28.660
+where is it —
+
+00:21:30.280 --> 00:21:34.620
+yes, this website describing our Spotlight system.
+
+00:21:35.140 --> 00:21:38.600
+Let's see a brief preprint on bioRxiv.
+
+00:21:39.480 --> 00:21:47.980
+There's also a little bit of discussion on replay of behavior in NeuroMechFly.
+
+00:21:49.720 --> 00:21:51.700
+And that's it in the next tutorial.
+
+00:21:52.140 --> 00:21:56.000
+We'll basically do the same thing, but this time with GPU acceleration. Thanks for watching.
