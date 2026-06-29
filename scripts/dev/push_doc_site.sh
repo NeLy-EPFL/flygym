@@ -67,8 +67,9 @@ else
         -F properdocs.yml "$VERSION"
 fi
 
-# NOTE: after the very first deploy, run once to make neuromechfly.org/ redirect
-# to the latest version:
-#   uv run mike set-default --push --remote flygym-docs latest
+# NOTE: after the very first deploy, run once to set the root redirect:
+#   uv run mike set-default --push --remote flygym-docs -F properdocs.yml "2.1.1 (dev)"
+# Once a stable release is deployed as 'latest', switch to:
+#   uv run mike set-default --push --remote flygym-docs -F properdocs.yml latest
 
 echo "Done. Documentation deployed successfully (version '$VERSION')."
