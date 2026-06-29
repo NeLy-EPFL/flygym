@@ -443,21 +443,23 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
             material.texrepeat = tuple(tr / 1000 for tr in material.texrepeat)
             is_modified = True
 
-    # Add light above each fly explicitly
-    for body in world.mjcf_root.bodies:
-        if body.name.split("/")[-1] == "c_thorax":
-            warnings.warn(f"Adding overhead light for body {body.name}")
-            body.add_light(
-                name=body.name.replace("/", "-") + "-overheadlight",
-                mode=mj.mjtCamLight.mjCAMLIGHT_TRACK,
-                targetbody=body.name,
-                pos=(0, 0, 30),
-                dir=(0, 0, -1),
-                type=mj.mjtLightType.mjLIGHT_DIRECTIONAL,
-                ambient=(10, 10, 10),
-                diffuse=(10, 10, 10),
-                specular=(0.3, 0.3, 0.3),
-            )
-            is_modified = True
+    # Add light above each fly explicitly (only until MuJoCo Warp 3.9)
+    mujoco_warp_version = tuple(int(x) for x in mjw.__version__.split(".")[:2])
+    if mujoco_warp_version < (3, 10):
+        for body in world.mjcf_root.bodies:
+            if body.name.split("/")[-1] == "c_thorax":
+                warnings.warn(f"Adding overhead light for body {body.name}")
+                body.add_light(
+                    name=body.name.replace("/", "-") + "-overheadlight",
+                    mode=mj.mjtCamLight.mjCAMLIGHT_TRACK,
+                    targetbody=body.name,
+                    pos=(0, 0, 30),
+                    dir=(0, 0, -1),
+                    type=mj.mjtLightType.mjLIGHT_DIRECTIONAL,
+                    ambient=(10, 10, 10),
+                    diffuse=(10, 10, 10),
+                    specular=(0.3, 0.3, 0.3),
+                )
+                is_modified = True
 
     return is_modified
