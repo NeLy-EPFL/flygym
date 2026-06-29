@@ -14,11 +14,22 @@ from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
 from flygym.rendering import (
     RecordedTrajectory,
-    save_trajectories,
-    load_trajectories,
     render_trajectories,
 )
 from flygym.rendering.recorded_trajectory import _render_trajectory_frames
+
+
+def _save_all(trajectories, folder):
+    """Save a list of trajectories as traj_XXXX.npz in a folder (test helper)."""
+    folder.mkdir(parents=True, exist_ok=True)
+    for i, traj in enumerate(trajectories):
+        traj.save(folder / f"traj_{i:04d}.npz")
+
+
+def _load_all(folder):
+    """Load all trajectories from a folder of traj_*.npz (test helper)."""
+    return [RecordedTrajectory.from_file(p) for p in sorted(folder.glob("traj_*.npz"))]
+
 
 # Rendering (rasterization) needs a headless GL context; skip those on CI runners
 # that set SKIP_RENDERING_TESTS=1. Recording and serialization need no GL.
@@ -124,44 +135,34 @@ class TestTrajectoryRecorder:
 
 
 class TestSaveLoad:
-    def test_roundtrip(self, recorded, tmp_path):
+    def test_save_from_file_roundtrip(self, recorded, tmp_path):
         traj, _, _ = recorded
-        save_trajectories(traj, tmp_path)
-        assert (tmp_path / "traj_0000.npz").exists()
-        trajs = load_trajectories(tmp_path)
-        assert len(trajs) == 1
-        assert np.array_equal(trajs[0].qpos, traj.qpos)
-        assert trajs[0].camera_res == traj.camera_res
-        assert trajs[0].camera_names == traj.camera_names
-        assert trajs[0].output_fps == traj.output_fps
+        path = tmp_path / "one.npz"
+        traj.save(path)
+        assert path.exists()
+        loaded = RecordedTrajectory.from_file(path)
+        assert np.array_equal(loaded.qpos, traj.qpos)
+        assert loaded.camera_res == traj.camera_res
+        assert loaded.camera_names == traj.camera_names
+        assert loaded.output_fps == traj.output_fps
+        assert loaded.world_id == traj.world_id
 
     def test_mocap_roundtrip(self, recorded, tmp_path):
         traj, _, _ = recorded
-        save_trajectories(traj, tmp_path)
-        loaded = load_trajectories(tmp_path)[0]
+        path = tmp_path / "m.npz"
+        traj.save(path)
+        loaded = RecordedTrajectory.from_file(path)
         assert loaded.has_mocap == traj.has_mocap
         if traj.has_mocap:
             assert np.array_equal(loaded.mocap_pos, traj.mocap_pos)
             assert np.array_equal(loaded.mocap_quat, traj.mocap_quat)
 
-    def test_save_list(self, recorded, tmp_path):
+    def test_save_load_multiple(self, recorded, tmp_path):
         traj, _, _ = recorded
-        save_trajectories([traj, traj], tmp_path)
+        _save_all([traj, traj], tmp_path)
         assert (tmp_path / "traj_0001.npz").exists()
-        trajs = load_trajectories(tmp_path)
+        trajs = _load_all(tmp_path)
         assert len(trajs) == 2
-
-    def test_load_empty_folder_raises(self, tmp_path):
-        with pytest.raises(ValueError, match="No trajectory files"):
-            load_trajectories(tmp_path)
-
-    def test_single_trajectory_save_load(self, recorded, tmp_path):
-        traj, _, _ = recorded
-        path = tmp_path / "one.npz"
-        traj.save(path)
-        loaded = RecordedTrajectory.load(path)
-        assert np.array_equal(loaded.qpos, traj.qpos)
-        assert loaded.world_id == traj.world_id
 
 
 # ---------------------------------------------------------------------------
@@ -197,11 +198,11 @@ class TestRenderCPU:
         render_trajectories(sim.mj_model, traj, out)
         assert out.exists() and out.stat().st_size > 0
 
-    def test_render_from_folder_writes_video(self, recorded, tmp_path):
+    def test_render_from_saved_file_writes_video(self, recorded, tmp_path):
         traj, sim, _ = recorded
-        folder = tmp_path / "folder"
-        save_trajectories(traj, folder)
-        trajs = load_trajectories(folder)
+        path = tmp_path / "traj.npz"
+        traj.save(path)
+        trajs = [RecordedTrajectory.from_file(path)]
         out = tmp_path / "out.mp4"
         render_trajectories(sim.mj_model, trajs, out)
         assert out.exists() and out.stat().st_size > 0

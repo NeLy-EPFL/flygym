@@ -12,8 +12,7 @@ pytestmark = pytest.mark.warp
 pytest.importorskip("warp")
 
 from flygym.rendering import (
-    save_trajectories,
-    load_trajectories,
+    RecordedTrajectory,
     render_trajectories,
 )
 from flygym.warp import (
@@ -96,8 +95,11 @@ class TestSaveLoadGPU:
     def test_roundtrip(self, recorded_gpu, tmp_path):
         rec, _, _ = recorded_gpu
         trajs = rec.recorded_trajectories
-        save_trajectories(trajs, tmp_path)
-        loaded = load_trajectories(tmp_path)
+        for i, traj in enumerate(trajs):
+            traj.save(tmp_path / f"traj_{i:04d}.npz")
+        loaded = [
+            RecordedTrajectory.from_file(p) for p in sorted(tmp_path.glob("traj_*.npz"))
+        ]
         assert len(loaded) == 2
         for a, b in zip(loaded, trajs):
             assert np.array_equal(a.qpos, b.qpos)

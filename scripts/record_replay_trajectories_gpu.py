@@ -42,7 +42,7 @@ from flygym.warp import (
     modify_world_for_batch_rendering,
 )
 from flygym.warp.utils import check_gpu
-from flygym.rendering import save_trajectories, load_trajectories, render_trajectories
+from flygym.rendering import RecordedTrajectory, render_trajectories
 from flygym.compose import ActuatorType
 from flygym_demo.benchmark import (
     make_model,
@@ -160,8 +160,11 @@ def main() -> None:
     # --- Record ---
     trajectories, world, sim = record_trajectories()
 
-    # --- Persist: trajectories and model are independent artifacts ---
-    save_trajectories(trajectories, traj_dir)
+    # --- Persist: each trajectory is one self-describing .npz; the model is a
+    # separate artifact (a trajectory carries no model). ---
+    traj_dir.mkdir(parents=True, exist_ok=True)
+    for i, traj in enumerate(trajectories):
+        traj.save(traj_dir / f"traj_{i:04d}.npz")
     world.save_xml_with_assets(model_dir, "model.xml")
     print(
         f"Saved {len(trajectories)} trajectories to {traj_dir} and the model to "
@@ -169,7 +172,8 @@ def main() -> None:
     )
 
     # --- Replay post-hoc, reloading the trajectories from disk and sub-selecting ---
-    trajectories = load_trajectories(traj_dir)
+    traj_files = sorted(traj_dir.glob("traj_*.npz"))
+    trajectories = [RecordedTrajectory.from_file(p) for p in traj_files]
     n_render = min(RENDER_WORLDS, len(trajectories))
     trajectories = trajectories[:n_render]
     print(f"Reloaded trajectories; rendering {n_render} of them.")

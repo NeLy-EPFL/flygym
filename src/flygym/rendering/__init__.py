@@ -18,8 +18,6 @@ from flygym.rendering.live_rendering import (
 from flygym.rendering.recorded_trajectory import (
     RecordedTrajectory,
     TrajectoryRecorder,
-    save_trajectories,
-    load_trajectories,
     render_trajectories,
 )
 
@@ -27,8 +25,6 @@ __all__ = [
     "Renderer",
     "TrajectoryRecorder",
     "RecordedTrajectory",
-    "save_trajectories",
-    "load_trajectories",
     "render_trajectories",
     "launch_interactive_viewer",
     "preview_model",

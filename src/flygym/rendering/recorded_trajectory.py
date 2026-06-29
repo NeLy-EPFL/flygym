@@ -42,8 +42,6 @@ from flygym.utils.video import write_video_from_frames
 __all__ = [
     "RecordedTrajectory",
     "TrajectoryRecorder",
-    "save_trajectories",
-    "load_trajectories",
     "render_trajectories",
 ]
 
@@ -93,7 +91,9 @@ class RecordedTrajectory:
         """Save this trajectory to a single self-describing ``.npz`` file.
 
         Both the per-frame state and the replay metadata are stored, so the file can be
-        read back with `load` without any side information.
+        read back with `from_file` without any side information. The model is
+        intentionally not saved -- persist it yourself (e.g.
+        ``world.save_xml_with_assets(...)``) and recompile it at replay time.
         """
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,7 +111,7 @@ class RecordedTrajectory:
         np.savez_compressed(path, **arrays)
 
     @classmethod
-    def load(cls, path: PathLike) -> "RecordedTrajectory":
+    def from_file(cls, path: PathLike) -> "RecordedTrajectory":
         """Load a trajectory from a ``.npz`` file written by `save`."""
         with np.load(path, allow_pickle=False) as data:
             has_mocap = "mocap_pos" in data
@@ -228,47 +228,14 @@ class TrajectoryRecorder(Renderer):
     def show_in_notebook(self, *args: Any, **kwargs: Any) -> None:
         raise RuntimeError(
             "TrajectoryRecorder records state, not frames. Save it with "
-            "save_trajectories and replay with render_trajectories."
+            "RecordedTrajectory.save and replay with render_trajectories."
         )
 
     def save_video(self, *args: Any, **kwargs: Any) -> None:
         raise RuntimeError(
             "TrajectoryRecorder records state, not frames. Save it with "
-            "save_trajectories and replay with render_trajectories."
+            "RecordedTrajectory.save and replay with render_trajectories."
         )
-
-
-def save_trajectories(
-    trajectories: RecordedTrajectory | list[RecordedTrajectory],
-    output_dir: PathLike,
-) -> None:
-    """Save trajectories as individual ``.npz`` files in a folder.
-
-    Writes one ``traj_XXXX.npz`` per trajectory (see `RecordedTrajectory.save`); each
-    file is self-describing. The model is intentionally *not* saved here -- persist it
-    yourself (e.g. ``world.save_xml_with_assets(...)``) and recompile it at replay time.
-
-    Args:
-        trajectories: One trajectory or a list of them.
-        output_dir: Destination folder (created if needed).
-    """
-    trajectories = _as_trajectory_list(trajectories)
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for i, traj in enumerate(trajectories):
-        traj.save(output_dir / f"traj_{i:04d}.npz")
-
-
-def load_trajectories(source: PathLike) -> list[RecordedTrajectory]:
-    """Load all trajectories from a folder written by `save_trajectories`.
-
-    Returns the trajectories only; supply the compiled model yourself at replay time.
-    """
-    source = Path(source)
-    files = sorted(source.glob("traj_*.npz"))
-    if len(files) == 0:
-        raise ValueError(f"No trajectory files (traj_*.npz) found in {source}.")
-    return [RecordedTrajectory.load(f) for f in files]
 
 
 def _as_trajectory_list(
@@ -406,7 +373,8 @@ def render_trajectories(
             wherever you persisted it, e.g. a folder written by
             `BaseCompositionElement.save_xml_with_assets`). Its ``qpos`` layout must
             match the trajectories.
-        trajectories: One trajectory or a list of them (e.g. from `load_trajectories`).
+        trajectories: One trajectory or a list of them (load saved ones with
+            `RecordedTrajectory.from_file`).
         output_path: Where to write videos. See `_resolve_render_output_paths` for the
             file/directory layout.
         cameras: Camera name(s) to render. Defaults to each trajectory's recorded

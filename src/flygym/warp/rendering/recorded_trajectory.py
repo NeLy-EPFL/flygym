@@ -98,16 +98,16 @@ class WarpTrajectoryRecorder(_BaseWarpRenderer):
     @override
     def save_video(self, *args: Any, **kwargs: Any) -> None:
         raise RuntimeError(
-            "WarpTrajectoryRecorder records state, not frames. Save it with "
-            "flygym.rendering.save_trajectories and replay with "
+            "WarpTrajectoryRecorder records state, not frames. Save each with "
+            "RecordedTrajectory.save and replay with "
             "render_trajectories_gpu / flygym.rendering.render_trajectories."
         )
 
     @override
     def show_in_notebook(self, *args: Any, **kwargs: Any) -> None:
         raise RuntimeError(
-            "WarpTrajectoryRecorder records state, not frames. Save it with "
-            "flygym.rendering.save_trajectories and replay with "
+            "WarpTrajectoryRecorder records state, not frames. Save each with "
+            "RecordedTrajectory.save and replay with "
             "render_trajectories_gpu / flygym.rendering.render_trajectories."
         )
 
@@ -151,8 +151,8 @@ def render_trajectories_gpu(
     Args:
         mj_model: Compiled, batch-render-ready model (see note above). Its ``qpos``
             layout must match the trajectories.
-        trajectories: One trajectory or a list of them (e.g. from
-            `flygym.rendering.load_trajectories`).
+        trajectories: One trajectory or a list of them (load saved ones with
+            `flygym.rendering.RecordedTrajectory.from_file`).
         output_path: Where to write videos (see `_resolve_render_output_paths`).
         cameras: Camera name(s) to render. Defaults to each trajectory's recorded
             ``camera_names``. All trajectories must share the same camera set and
