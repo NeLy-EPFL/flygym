@@ -1,5 +1,7 @@
 """Tests for GPU trajectory recording (WarpTrajectoryRecorder) and GPU replay."""
 
+import warnings
+
 import numpy as np
 import mujoco as mj
 import pytest
@@ -46,7 +48,11 @@ def recorded_gpu(gpu_sim_factory):
 
 def _batch_render_model(sim) -> mj.MjModel:
     """Compile a batch-render-ready model from the sim's world (caller's job now)."""
-    modify_world_for_batch_rendering(sim.world)
+    with warnings.catch_warnings():
+        # modify_world_for_batch_rendering warns as it adds overhead lights/strips
+        # textures; that is expected here, so silence it (matches test_rendering.py).
+        warnings.simplefilter("ignore")
+        modify_world_for_batch_rendering(sim.world)
     return sim.world.compile()[0]
 
 
