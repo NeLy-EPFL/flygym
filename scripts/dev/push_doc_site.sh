@@ -31,6 +31,9 @@ VERSION="${VERSION_INPUT:-$VERSION}"
 read -p "Update 'latest' alias to '$VERSION'? (y/n) "
 UPDATE_LATEST=$REPLY
 
+read -p "Set '$VERSION' as the default version (root redirect)? (y/n) "
+SET_DEFAULT=$REPLY
+
 # Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
 # needed. Also offer to regenerate the MJCF/STL assets (viewer + game) from the
 # live model.
@@ -67,9 +70,14 @@ else
         -F properdocs.yml "$VERSION"
 fi
 
-# NOTE: after the very first deploy, run once to set the root redirect:
-#   uv run mike set-default --push --remote flygym-docs -F properdocs.yml "2.1.1 (dev)"
-# Once a stable release is deployed as 'latest', switch to:
-#   uv run mike set-default --push --remote flygym-docs -F properdocs.yml latest
+if [[ $SET_DEFAULT == "y" ]]; then
+    DEFAULT_TARGET="$VERSION"
+    if [[ $UPDATE_LATEST == "y" ]]; then
+        DEFAULT_TARGET="latest"
+    fi
+    echo "Setting '$DEFAULT_TARGET' as the default version..."
+    uv run mike set-default --push --remote "$DOCS_REMOTE_NAME" \
+        -F properdocs.yml "$DEFAULT_TARGET"
+fi
 
 echo "Done. Documentation deployed successfully (version '$VERSION')."
