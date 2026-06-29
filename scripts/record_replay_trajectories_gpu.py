@@ -1,11 +1,12 @@
 """Demo: record kinematic trajectories on GPU, then render them to video post-hoc.
 
 This demonstrates the trajectory recording / replay feature (issue #296): it
-decouples how many worlds are *simulated* from how many are *rendered*. Buffering
-full ``(n_worlds, n_cams, H, W, 3)`` RGB tensors during a large parallel run is
-hopeless at thousands of worlds, so instead we record only the generalized
-coordinates (``qpos``, plus mocap poses) of a small selected subset of worlds at the
-render cadence, and rasterize them afterwards.
+decouples how many worlds are *simulated* from how many are *rendered in one batch*.
+Buffering full ``(n_worlds, n_cams, H, W, 3)`` RGB tensors during a large parallel run
+is hopeless at thousands of worlds, so instead we record only the generalized
+coordinates (``qpos``, plus mocap poses) at the render cadence, and rasterize them
+afterwards in small GPU batches whose size is independent of the simulation's world
+count.
 
 It is the trajectory-recording counterpart of ``replay_behavior_gpu.py``: the same
 Spotlight kinematic recording is replayed across many parallel worlds with the same
@@ -16,13 +17,12 @@ render cadence instead of rendering frames.
 
 The script then shows the full decoupled pipeline:
 
-1. Simulate ``--n-worlds`` worlds, recording trajectories for ``--record-worlds`` of
-   them.
+1. Simulate ``--n-worlds`` worlds, recording a trajectory for *every* world.
 2. Save the trajectories (one ``.npz`` each) and the model (``save_xml_with_assets``)
    to disk -- they are independent artifacts; a trajectory carries no model.
-3. Reload the trajectories from disk and render them to video, on GPU
-   (``render_trajectories_gpu``) and optionally on CPU (``--cpu-replay``) to show that
-   a GPU-recorded trajectory is backend-agnostic.
+3. Reload the trajectories from disk and render every world to video, on GPU
+   (``render_trajectories_gpu``, in batches of ``--worlds-per-batch``) and optionally
+   on CPU (``--cpu-replay``) to show that a GPU-recorded trajectory is backend-agnostic.
 
 Example:
     uv run python scripts/record_replay_trajectories_gpu.py --output outputs/traj_demo
@@ -68,15 +68,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--n-worlds",
         type=int,
-        default=1000,
-        help="Number of parallel worlds to simulate (default: 1000).",
-    )
-    parser.add_argument(
-        "--record-worlds",
-        type=int,
-        default=5,
-        help="Number of worlds to record trajectories for and render (default: 5). "
-        "This is the whole point: simulate many, record/render few.",
+        default=50,
+        help="Number of parallel worlds to simulate; a trajectory is recorded for "
+        "every one (default: 50). Recording is cheap, but every world is rendered "
+        "afterwards, so keep this modest unless you want many output videos.",
     )
     parser.add_argument(
         "--sim-steps",
@@ -93,9 +88,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--worlds-per-batch",
         type=int,
-        default=None,
-        help="GPU batch size for post-hoc rendering (default: library heuristic). "
-        "Decoupled from --n-worlds; larger uses more GPU memory.",
+        default=10,
+        help="Number of frames staged into one GPU render batch (default: 10). This "
+        "is the render-time parallelism, decoupled from --n-worlds; larger uses more "
+        "GPU memory.",
     )
     parser.add_argument(
         "--cpu-replay",
@@ -107,16 +103,15 @@ def parse_args() -> argparse.Namespace:
 
 
 def record_trajectories(args: argparse.Namespace):
-    """Run the GPU simulation, recording qpos for a subset of worlds.
+    """Run the GPU simulation, recording qpos for every world.
 
-    Returns ``(trajectories, world, sim)``: the recorded trajectories (one per
-    recorded world), the world (kept so we can persist / re-compile the model), and
-    the simulation (kept for its unmodified ``mj_model``, used for CPU replay).
+    Returns ``(trajectories, world, sim)``: the recorded trajectories (one per world),
+    the world (kept so we can persist / re-compile the model), and the simulation
+    (kept for its unmodified ``mj_model``, used for CPU replay).
     """
     n_worlds = args.n_worlds
     sim_steps = args.sim_steps
     timestep = args.timestep
-    n_record = min(args.record_worlds, n_worlds)
     actuator_type = ActuatorType.POSITION
 
     fly, world, cam = make_model()
@@ -133,13 +128,12 @@ def record_trajectories(args: argparse.Namespace):
 
     sim = GPUSimulation(world, n_worlds, timestep=timestep)
 
-    # Swap the live batch renderer for a recorder: it stores qpos for the selected
-    # worlds at the render cadence instead of rasterizing frames.
+    # Swap the live batch renderer for a recorder: it stores qpos for every world at
+    # the render cadence instead of rasterizing frames. Omitting `worlds` records all.
     recorder = sim.set_renderer(
         cam,
         playback_speed=0.2,
         output_fps=25,
-        worlds=list(range(n_record)),
         record_trajectory_only=True,
     )
 
@@ -176,15 +170,12 @@ def record_trajectories(args: argparse.Namespace):
     step_counter.zero_()
     recorder.reset()
 
-    print(
-        f"Simulating {sim_steps} steps across {n_worlds} worlds, "
-        f"recording {n_record}..."
-    )
+    print(f"Simulating {sim_steps} steps across {n_worlds} worlds (recording all)...")
     wp.synchronize()
     start_time = perf_counter_ns()
     for _ in range(sim_steps):
         wp.capture_launch(advance_sim_capture.graph)
-        sim.render_as_needed()  # records qpos for the selected worlds at the cadence
+        sim.render_as_needed()  # records qpos for every world at the cadence
     wp.synchronize()
     walltime_s = (perf_counter_ns() - start_time) / 1e9
 
@@ -232,7 +223,10 @@ def main() -> None:
     # lights added). The recorder ran against the unmodified model, but those edits
     # don't change the qpos layout, so the trajectories stay valid.
     gpu_out = out / "replay_gpu"
-    print(f"Rendering on GPU to {gpu_out}...")
+    print(
+        f"Rendering {len(trajectories)} worlds on GPU to {gpu_out} "
+        f"(batches of {args.worlds_per_batch})..."
+    )
     modify_world_for_batch_rendering(world)
     batch_model = world.compile()[0]
     render_trajectories_gpu(
