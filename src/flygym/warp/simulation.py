@@ -14,6 +14,7 @@ from flygym.utils.profiling import print_perf_report_parallel
 from flygym.warp.rendering import (
     WarpGPUBatchRenderer,
     WarpCPURenderer,
+    WarpTrajectoryRecorder,
     modify_world_for_batch_rendering,
 )
 from flygym.warp.utils import (
@@ -280,8 +281,9 @@ class GPUSimulation(Simulation):
         scene_option: mj.MjvOption | None = None,
         worlds: list[int] | None = None,
         use_gpu_batch_rendering: bool = False,
+        record_trajectory_only: bool = False,
         **kwargs: Any,
-    ) -> WarpGPUBatchRenderer | WarpCPURenderer:
+    ) -> WarpGPUBatchRenderer | WarpCPURenderer | WarpTrajectoryRecorder:
         """Attach a renderer to this GPU simulation.
 
         Args:
@@ -293,14 +295,37 @@ class GPUSimulation(Simulation):
             scene_option: MuJoCo scene options. Uses defaults if None.
             worlds: Indices of worlds to render. Defaults to all worlds.
             use_gpu_batch_rendering: If True, use `WarpGPUBatchRenderer`;
-                otherwise use `WarpCPURenderer`.
-            **kwargs: Passed to the renderer.
+                otherwise use `WarpCPURenderer`. Ignored when
+                ``record_trajectory_only`` is True.
+            record_trajectory_only: If True, attach a `WarpTrajectoryRecorder` instead
+                of a renderer: it records ``qpos`` (and mocap poses) for the selected
+                worlds at the render cadence instead of rasterizing frames. Read the
+                result from ``self.renderer.recorded_trajectories`` (one per recorded
+                world) and replay it later with
+                `flygym.warp.rendering.render_trajectories_gpu` or
+                `flygym.rendering.render_trajectories`.
+            **kwargs: Passed to the renderer (ignored when recording only).
 
         Returns:
-            The created renderer instance.
+            The created renderer (or `WarpTrajectoryRecorder`) instance.
         """
         if worlds is None:
             worlds = list(range(self.n_worlds))
+
+        if record_trajectory_only:
+            self.renderer = WarpTrajectoryRecorder(
+                self.mj_model,
+                cameras,
+                n_worlds_total=self.n_worlds,
+                worlds=worlds,
+                camera_res=camera_res,
+                playback_speed=playback_speed,
+                output_fps=output_fps,
+                buffer_frames=True,
+                **kwargs,
+            )
+            return self.renderer
+
         self.use_gpu_batch_rendering = use_gpu_batch_rendering
 
         renderer_kwargs = {

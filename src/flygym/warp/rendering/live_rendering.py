@@ -1,3 +1,9 @@
+"""Live multi-world MuJoCo-Warp rendering (GPU batch and per-world CPU).
+
+For recording qpos trajectories on GPU and replaying them, see
+`flygym.warp.rendering.recorded_trajectory`.
+"""
+
 import warnings
 from typing import Any, override
 from os import PathLike
@@ -11,10 +17,17 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from flygym.compose import BaseWorld
-from flygym.rendering import Renderer
+from flygym.rendering.live_rendering import Renderer
 from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
 from flygym.utils.video import write_video_from_frames
 from flygym.utils.plot import find_font_path
+
+
+__all__ = [
+    "WarpGPUBatchRenderer",
+    "WarpCPURenderer",
+    "modify_world_for_batch_rendering",
+]
 
 
 class _BaseWarpRenderer(Renderer, ABC):
@@ -388,8 +401,15 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
 
     This may reduce texture and lighting realism.
 
-    Modification happens in place. Returns True if any modifications were made, False
-    otherwise.
+    Modification happens in place on ``world.mjcf_root``. Returns True if any
+    modifications were made, False otherwise. Only ``world.mjcf_root`` (the `MjSpec`)
+    and ``world.fly_lookup`` (the fly names) are used, so this can be called on any
+    object exposing those two attributes -- see `render_trajectories_gpu`, which
+    applies it to a spec reconstructed from a saved trajectory.
+
+    Note: these are material/texture/light edits only -- they do not change the joint
+    structure, so a model recompiled afterward keeps the same ``qpos`` layout and a
+    recorded trajectory stays valid against it.
 
     Note for developers: Check if anything here can be dropped upon new MJWarp releases.
     """

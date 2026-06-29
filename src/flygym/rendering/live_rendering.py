@@ -1,3 +1,9 @@
+"""Live (real-time) MuJoCo rendering: the `Renderer` and viewer helpers.
+
+For recording kinematic trajectories instead of rasterizing frames, and replaying
+them to video, see `flygym.rendering.recorded_trajectory`.
+"""
+
 import warnings
 from multiprocessing import Process
 from pathlib import Path
@@ -65,7 +71,7 @@ class Renderer:
         nrows, ncols = camera_res
         self.buffer_frames = buffer_frames
 
-        self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+        self.mj_renderer = self._build_mj_renderer(mj_model, nrows, ncols, **kwargs)
         # RGB / depth / segmentation are independent and may be enabled in any
         # combination. Each is produced by its own render() pass (mujoco renders
         # one output type per call), so we don't enable a mode here -- the mode is
@@ -114,8 +120,27 @@ class Renderer:
         # Avoid floating point issues when comparing times
         self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
 
+    def _build_mj_renderer(
+        self, mj_model: mj.MjModel, nrows: int, ncols: int, **kwargs: Any
+    ) -> mj.Renderer:
+        """Construct the underlying ``mujoco.Renderer``.
+
+        Factored out so subclasses that never rasterize (e.g. `TrajectoryRecorder`)
+        can skip allocating a GL/EGL context by overriding this to return None.
+        """
+        return mj.Renderer(mj_model, nrows, ncols, **kwargs)
+
     def _new_frame_buffer(self) -> dict[str, list]:
         return {cam_name: [] for cam_name in self._cameras_names2id}
+
+    def _due_for_render(self, time: float) -> bool:
+        """Whether enough time has elapsed since the last render for the next one."""
+        min_next_render_time = (
+            self._last_render_time_sec
+            + self._secs_between_renders
+            - self.rendering_rounding_tolerance
+        )
+        return time >= min_next_render_time
 
     def get_camera_matrix(
         self, camera: str | mj.MjsCamera, mj_data: mj.MjData, mj_model: mj.MjModel
@@ -159,12 +184,7 @@ class Renderer:
         Returns:
             True if frames were rendered, False otherwise.
         """
-        min_next_render_time = (
-            self._last_render_time_sec
-            + self._secs_between_renders
-            - self.rendering_rounding_tolerance
-        )
-        if mj_data.time < min_next_render_time:
+        if not self._due_for_render(mj_data.time):
             return False
 
         self._last_render_time_sec = float(mj_data.time)
