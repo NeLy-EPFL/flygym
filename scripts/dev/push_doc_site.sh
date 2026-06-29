@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
 
-BUILD_DIR="site"
-BRANCH="gh-pages"
-COMMIT_MSG="Deploy $(date '+%Y-%m-%d %H:%M:%S')"
+DOCS_REMOTE_NAME="flygym-docs"
+DOCS_REMOTE_URL="git@github.com:NeLy-EPFL/flygym-docs.git"
 
 read -p "Have you checked that all tutorial notebooks are properly executed and without errors? (y/n) "
 if [[ $REPLY != "y" ]]; then
@@ -23,14 +22,14 @@ if [[ $REPLY != "y" ]]; then
     exit 1
 fi
 
-if [ -d "$BUILD_DIR" ]; then
-    read -p "The build directory '$BUILD_DIR' already exists. Do you want to remove it and continue? (y/n) "
-    if [[ $REPLY != "y" ]]; then
-        echo "Stopping here."
-        exit 1
-    fi
-    rm -rf "$BUILD_DIR"
-fi
+# Read version from pyproject.toml and let the user confirm or override (e.g.
+# to deploy a dev preview as "2.1.1 (dev)" before the release).
+VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+read -p "Version label [$VERSION]: " VERSION_INPUT
+VERSION="${VERSION_INPUT:-$VERSION}"
+
+read -p "Update 'latest' alias to '$VERSION'? (y/n) "
+UPDATE_LATEST=$REPLY
 
 # Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
 # needed. Also offer to regenerate the MJCF/STL assets (viewer + game) from the
@@ -50,21 +49,26 @@ if [[ $REGEN_ASSETS == "y" ]]; then
 fi
 uv run python scripts/dev/properdocs_hooks.py --vendor-only
 
-# Build the documentation
-echo "Building documentation..."
-uv run properdocs build
+# Ensure the docs remote exists.
+if ! git remote get-url "$DOCS_REMOTE_NAME" &>/dev/null; then
+    echo "Adding remote '$DOCS_REMOTE_NAME' -> $DOCS_REMOTE_URL"
+    git remote add "$DOCS_REMOTE_NAME" "$DOCS_REMOTE_URL"
+fi
 
-# Push built site to a separate branch to be served by GitHub Pages
-cd "$BUILD_DIR"
-git init
-git checkout --orphan "$BRANCH"
-git add -A
-git commit -m "$COMMIT_MSG"
-git remote add origin $(git -C .. remote get-url origin)
-git push --force origin "$BRANCH"
+# Deploy via mike: builds with properdocs internally (mike calls the 'mkdocs'
+# entry point, which properdocs registers), commits the versioned site into
+# gh-pages on the docs repo, and pushes.
+echo "Deploying '$VERSION' to $DOCS_REMOTE_NAME/gh-pages..."
+if [[ $UPDATE_LATEST == "y" ]]; then
+    uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
+        -f properdocs.yml --update-aliases "$VERSION" latest
+else
+    uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
+        -f properdocs.yml "$VERSION"
+fi
 
-# Cleanup
-cd ..
-rm -rf "$BUILD_DIR/.git"
+# NOTE: after the very first deploy, run once to make neuromechfly.org/ redirect
+# to the latest version:
+#   uv run mike set-default --push --remote flygym-docs latest
 
-echo "✅ Documentation deployed successfully to branch '$BRANCH'."
+echo "Done. Documentation deployed successfully (version '$VERSION')."
