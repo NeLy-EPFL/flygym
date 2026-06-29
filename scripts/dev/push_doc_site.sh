@@ -61,10 +61,10 @@ fi
 echo "Deploying '$VERSION' to $DOCS_REMOTE_NAME/gh-pages..."
 if [[ $UPDATE_LATEST == "y" ]]; then
     uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
-        -f properdocs.yml --update-aliases "$VERSION" latest
+        -F properdocs.yml --update-aliases "$VERSION" latest
 else
     uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
-        -f properdocs.yml "$VERSION"
+        -F properdocs.yml "$VERSION"
 fi
 
 # NOTE: after the very first deploy, run once to make neuromechfly.org/ redirect
