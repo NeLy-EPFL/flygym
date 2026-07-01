@@ -7,7 +7,7 @@ import numpy as np
 from jaxtyping import Float
 
 from flygym.anatomy import BodySegment
-from flygym.compose.fly import ActuatorType
+from flygym.compose.fly import BaseFly, ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.rendering import Renderer, TrajectoryRecorder
 from flygym.utils.profiling import print_perf_report
@@ -777,3 +777,13 @@ class Simulation:
         self.eye_renderer = None
         # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
         # reused and retina init requires some IO ops.
+    
+    @property
+    def fly(self) -> BaseFly:
+        """Return the single fly in the world, or raise an error if there are multiple."""
+        return self.world.fly
+    
+    @property
+    def fly_lookup(self) -> dict[str, BaseFly]:
+        """Return the fly lookup dictionary from the world."""
+        return self.world.fly_lookup

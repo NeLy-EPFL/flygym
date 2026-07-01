@@ -81,12 +81,26 @@ class BaseWorld(BaseCompositionElement, ABC):
     def fly_lookup(self) -> dict[str, BaseFly]:
         """Lookup for `Fly` objects in the world, keyed by fly name."""
         return self._fly_lookup
+    
+    @property
+    def fly(self) -> BaseFly:
+        """Get the single fly in the world.
+
+        Raises:
+            ValueError: If there is not exactly one fly in the world.
+        """
+        if len(self.fly_lookup) != 1:
+            raise ValueError(
+                "World contains multiple flies. "
+                "`.fly` is ambiguous; use `.fly_lookup` instead."
+            )
+        return next(iter(self.fly_lookup.values()))
 
     @abstractmethod
     def _attach_fly_mjcf(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
@@ -125,7 +139,7 @@ class BaseWorld(BaseCompositionElement, ABC):
     def add_fly(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args: Any,
         **kwargs: Any,
