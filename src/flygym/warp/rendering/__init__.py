@@ -5,6 +5,7 @@ Split into `live_rendering` (real-time GPU/CPU renderers) and `recorded_trajecto
 compatibility.
 """
 
+from flygym.warp.rendering.base import RendererType
 from flygym.warp.rendering.live_rendering import (
     WarpGPUBatchRenderer,
     WarpCPURenderer,
@@ -16,6 +17,7 @@ from flygym.warp.rendering.recorded_trajectory import (
 )
 
 __all__ = [
+    "RendererType",
     "WarpGPUBatchRenderer",
     "WarpCPURenderer",
     "WarpTrajectoryRecorder",

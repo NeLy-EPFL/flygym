@@ -89,7 +89,7 @@ class Renderer:
             self.scene_option = mj.MjvOption()
         else:
             self.scene_option = scene_option
-        mj.mjv_defaultOption(self.scene_option)  # this sets default scene options
+        mj.mjv_defaultOption(self.scene_option)
 
         self._cameras_names2id = {}
         for spec in cameras if isinstance(cameras, list) else [cameras]:

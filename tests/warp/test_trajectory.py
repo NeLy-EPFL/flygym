@@ -16,6 +16,7 @@ from flygym.rendering import (
     render_trajectories,
 )
 from flygym.warp import (
+    RendererType,
     WarpTrajectoryRecorder,
     render_trajectories_gpu,
     modify_world_for_batch_rendering,
@@ -36,7 +37,7 @@ def recorded_gpu(gpu_sim_factory):
         camera_res=(64, 64),
         output_fps=100,
         worlds=[0, 2],
-        record_trajectory_only=True,
+        renderer_type=RendererType.RECORDED_TRAJECTORY,
     )
     sim.reset()
     for _ in range(200):

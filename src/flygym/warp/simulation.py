@@ -12,6 +12,7 @@ from flygym.compose.world import BaseWorld
 from flygym.simulation import Simulation
 from flygym.utils.profiling import print_perf_report_parallel
 from flygym.warp.rendering import (
+    RendererType,
     WarpGPUBatchRenderer,
     WarpCPURenderer,
     WarpTrajectoryRecorder,
@@ -289,6 +290,7 @@ class GPUSimulation(Simulation):
     def set_renderer(
         self,
         cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
+        renderer_type: RendererType = RendererType.GPU_BATCH,
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -296,30 +298,19 @@ class GPUSimulation(Simulation):
         buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
         worlds: list[int] | None = None,
-        use_gpu_batch_rendering: bool = False,
-        record_trajectory_only: bool = False,
         **kwargs: Any,
     ) -> WarpGPUBatchRenderer | WarpCPURenderer | WarpTrajectoryRecorder:
         """Attach a renderer to this GPU simulation.
 
         Args:
             cameras: Camera(s) to render.
-            camera_res: ``(height, width)`` in pixels.
+            renderer_type: Renderer type. Defaults to `RendererType.GPU_BATCH`.
+            camera_res: `(height, width)` in pixels.
             playback_speed: Video playback speed relative to real time.
             output_fps: Output video frame rate.
             buffer_frames: If True, store rendered frames in memory.
             scene_option: MuJoCo scene options. Uses defaults if None.
             worlds: Indices of worlds to render. Defaults to all worlds.
-            use_gpu_batch_rendering: If True, use `WarpGPUBatchRenderer`;
-                otherwise use `WarpCPURenderer`. Ignored when
-                ``record_trajectory_only`` is True.
-            record_trajectory_only: If True, attach a `WarpTrajectoryRecorder` instead
-                of a renderer: it records ``qpos`` (and mocap poses) for the selected
-                worlds at the render cadence instead of rasterizing frames. Read the
-                result from ``self.renderer.recorded_trajectories`` (one per recorded
-                world) and replay it later with
-                `flygym.warp.rendering.render_trajectories_gpu` or
-                `flygym.rendering.render_trajectories`.
             **kwargs: Passed to the renderer (ignored when recording only).
 
         Returns:
@@ -328,26 +319,11 @@ class GPUSimulation(Simulation):
         if worlds is None:
             worlds = list(range(self.n_worlds))
 
-        if record_trajectory_only:
-            self.renderer = WarpTrajectoryRecorder(
-                self.mj_model,
-                cameras,
-                n_worlds_total=self.n_worlds,
-                worlds=worlds,
-                camera_res=camera_res,
-                playback_speed=playback_speed,
-                output_fps=output_fps,
-                buffer_frames=True,
-                **kwargs,
-            )
-            return self.renderer
-
-        self.use_gpu_batch_rendering = use_gpu_batch_rendering
-
         renderer_kwargs = {
             "mj_model": self.mj_model,
             "n_worlds_total": self.n_worlds,
             "cameras": cameras,
+            "sim_timestep": self.timestep,
             "camera_res": camera_res,
             "playback_speed": playback_speed,
             "output_fps": output_fps,
@@ -356,7 +332,10 @@ class GPUSimulation(Simulation):
             "worlds": worlds,
             **kwargs,
         }
-        if use_gpu_batch_rendering:
+        self.renderer_type = renderer_type
+        if renderer_type == RendererType.CPU:
+            self.renderer = WarpCPURenderer(**renderer_kwargs)
+        elif renderer_type == RendererType.GPU_BATCH:
             is_model_modified = modify_world_for_batch_rendering(self.world)
             if is_model_modified:
                 warnings.warn(
@@ -373,8 +352,10 @@ class GPUSimulation(Simulation):
                 self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
                 renderer_kwargs["mj_model"] = self.mj_model
             self.renderer = WarpGPUBatchRenderer(**renderer_kwargs)
+        elif renderer_type == RendererType.RECORDED_TRAJECTORY:
+            self.renderer = WarpTrajectoryRecorder(**renderer_kwargs)
         else:
-            self.renderer = WarpCPURenderer(**renderer_kwargs)
+            raise ValueError(f"Unsupported renderer type: {renderer_type}")
 
         return self.renderer
 

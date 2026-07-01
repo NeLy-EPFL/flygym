@@ -1,5 +1,6 @@
 from .simulation import GPUSimulation
 from .rendering import (
+    RendererType,
     WarpGPUBatchRenderer,
     WarpCPURenderer,
     WarpTrajectoryRecorder,
@@ -9,6 +10,7 @@ from .rendering import (
 
 __all__ = [
     "GPUSimulation",
+    "RendererType",
     "WarpGPUBatchRenderer",
     "WarpCPURenderer",
     "WarpTrajectoryRecorder",

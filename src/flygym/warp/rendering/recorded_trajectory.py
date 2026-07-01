@@ -45,12 +45,16 @@ class WarpTrajectoryRecorder(_BaseWarpRenderer):
         self.scene_option = None
 
     def _render_impl(self, mjw_data: mjw.Data) -> tuple:
-        # One host transfer per recorded frame: (n_worlds, nq) is tiny next to the
-        # (n_worlds, n_cams, H, W, 3) RGB tensor the batch renderer would buffer.
-        qpos = mjw_data.qpos.numpy()[self.world_ids].copy()
+        # Device-to-device clones only -- no `.numpy()`, so this issues no host
+        # transfer and forces no CUDA sync. That keeps the recorder graph-capturable
+        # (and lets it run in an async/captured step loop without stalling it). World
+        # selection and the single host transfer are deferred to
+        # `recorded_trajectories`. Cloning the full (n_worlds, nq) state is cheap next
+        # to the (n_worlds, n_cams, H, W, 3) RGB tensor the batch renderer would buffer.
+        qpos = wp.clone(mjw_data.qpos)
         if self._nmocap > 0:
-            mocap_pos = mjw_data.mocap_pos.numpy()[self.world_ids].copy()
-            mocap_quat = mjw_data.mocap_quat.numpy()[self.world_ids].copy()
+            mocap_pos = wp.clone(mjw_data.mocap_pos)
+            mocap_quat = wp.clone(mjw_data.mocap_quat)
         else:
             mocap_pos = mocap_quat = None
         return (qpos, mocap_pos, mocap_quat)
@@ -66,25 +70,30 @@ class WarpTrajectoryRecorder(_BaseWarpRenderer):
         if len(self._frames) == 0:
             raise RuntimeError("No frames have been recorded yet.")
 
-        # self._frames is a list (over time) of (qpos, mocap_pos, mocap_quat) tuples,
-        # each batched over the recorded worlds along axis 0.
-        qpos_all = np.stack([f[0] for f in self._frames], axis=0)  # (T, n_worlds, nq)
+        # self._frames is a list (over time) of (qpos, mocap_pos, mocap_quat) tuples
+        # of warp arrays, each batched over *all* worlds along axis 0. The single host
+        # transfer (`.numpy()`) and the per-world selection happen here, not per frame.
+        qpos_all = np.stack(
+            [f[0].numpy() for f in self._frames], axis=0
+        )  # (T, n_worlds_total, nq)
         if self._nmocap > 0:
-            mocap_pos_all = np.stack([f[1] for f in self._frames], axis=0)
-            mocap_quat_all = np.stack([f[2] for f in self._frames], axis=0)
+            mocap_pos_all = np.stack([f[1].numpy() for f in self._frames], axis=0)
+            mocap_quat_all = np.stack([f[2].numpy() for f in self._frames], axis=0)
 
         trajectories = []
-        for w, world_id in enumerate(self.world_ids):
+        for world_id in self.world_ids:
             trajectories.append(
                 RecordedTrajectory(
-                    qpos=qpos_all[:, w, :],
+                    qpos=qpos_all[:, world_id, :],
                     output_fps=self.output_fps,
                     playback_speed=self.playback_speed,
                     camera_names=list(self.enabled_cam_names),
                     camera_res=self.camera_res,
                     world_id=world_id,
-                    mocap_pos=mocap_pos_all[:, w] if self._nmocap > 0 else None,
-                    mocap_quat=mocap_quat_all[:, w] if self._nmocap > 0 else None,
+                    mocap_pos=mocap_pos_all[:, world_id] if self._nmocap > 0 else None,
+                    mocap_quat=(
+                        mocap_quat_all[:, world_id] if self._nmocap > 0 else None
+                    ),
                 )
             )
         return trajectories
