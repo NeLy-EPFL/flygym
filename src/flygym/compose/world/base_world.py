@@ -81,6 +81,20 @@ class BaseWorld(BaseCompositionElement, ABC):
     def fly_lookup(self) -> dict[str, BaseFly]:
         """Lookup for `Fly` objects in the world, keyed by fly name."""
         return self._fly_lookup
+    
+    @property
+    def fly(self) -> BaseFly:
+        """Get the single fly in the world.
+
+        Raises:
+            ValueError: If there is not exactly one fly in the world.
+        """
+        if len(self.fly_lookup) != 1:
+            raise ValueError(
+                "World contains multiple flies. "
+                "`.fly` is ambiguous; use `.fly_lookup` instead."
+            )
+        return next(iter(self.fly_lookup.values()))
 
     @abstractmethod
     def _attach_fly_mjcf(
