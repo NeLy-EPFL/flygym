@@ -9,7 +9,14 @@ from . import anatomy  # noqa: E402
 from . import compose  # noqa: E402
 from . import flybody  # noqa: E402
 from .simulation import Simulation  # noqa: E402
-from .rendering import Renderer, launch_interactive_viewer, preview_model  # noqa: E402
+from .rendering import (  # noqa: E402
+    Renderer,
+    TrajectoryRecorder,
+    RecordedTrajectory,
+    render_trajectories,
+    launch_interactive_viewer,
+    preview_model,
+)
 
 __all__ = [
     "assets_dir",
@@ -18,6 +25,9 @@ __all__ = [
     "flybody",
     "Simulation",
     "Renderer",
+    "TrajectoryRecorder",
+    "RecordedTrajectory",
+    "render_trajectories",
     "launch_interactive_viewer",
     "preview_model",
 ]

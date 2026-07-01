@@ -13,7 +13,7 @@ pytest.importorskip("warp")
 from flygym.anatomy import Skeleton, JointPreset, AxisOrder
 from flygym.compose import NeuroMechFly, FlatGroundWorld, KinematicPosePreset
 from flygym.utils.math import Rotation3D
-from flygym.warp import WarpCPURenderer
+from flygym.warp import WarpCPURenderer, RendererType
 from flygym.warp.rendering import modify_world_for_batch_rendering
 
 
@@ -36,7 +36,7 @@ def render_bundle(gpu_sim_factory):
             playback_speed=0.001,  # tiny interval: 1/(10/0.001) = 0.0001 s ≈ 1 step
             output_fps=10,
             worlds=[0, 1],
-            use_gpu_batch_rendering=False,
+            renderer_type=RendererType.CPU,
             buffer_frames=True,
         )
     yield sim, fly, cam, renderer
@@ -79,7 +79,7 @@ class TestWarpCPURendererConstruction:
                     cam,
                     camera_res=(64, 64),
                     worlds=[],
-                    use_gpu_batch_rendering=False,
+                    renderer_type=RendererType.CPU,
                 )
 
 
@@ -108,12 +108,20 @@ class TestRenderAsNeeded:
         sim, fly, cam, renderer = render_bundle
         sim.reset()
         renderer.reset()
-        _advance_past_render_interval(sim, renderer)
-        renderer.render_as_needed(sim.mjw_data)  # first render
+        # render_as_needed advances its own clock by one sim timestep per call (it no
+        # longer reads sim.time, to stay graph-capturable). The "too soon" guard is
+        # only meaningful when the render interval spans more than one step, so widen
+        # it for this test (the fixture's interval is ≈ one step).
+        saved_interval = renderer._secs_between_renders
+        renderer._secs_between_renders = 100 * sim.mj_model.opt.timestep
+        try:
+            assert renderer.render_as_needed(sim.mjw_data) is True  # first render fires
 
-        # Immediately call again — not enough time has elapsed
-        did_render = renderer.render_as_needed(sim.mjw_data)
-        assert did_render is False
+            # Call again one timestep later — not enough time has elapsed.
+            did_render = renderer.render_as_needed(sim.mjw_data)
+            assert did_render is False
+        finally:
+            renderer._secs_between_renders = saved_interval
 
     def test_frame_buffered_after_render(self, render_bundle):
         sim, fly, cam, renderer = render_bundle
@@ -220,7 +228,7 @@ class TestSubworldRendering:
                 cam,
                 camera_res=(64, 64),
                 worlds=[1],
-                use_gpu_batch_rendering=False,
+                renderer_type=RendererType.CPU,
             )
         assert renderer.world_ids == [1]
 
@@ -233,7 +241,7 @@ class TestSubworldRendering:
                 cam,
                 camera_res=(64, 64),
                 worlds=None,
-                use_gpu_batch_rendering=False,
+                renderer_type=RendererType.CPU,
             )
         assert renderer.world_ids == [0, 1, 2]
 

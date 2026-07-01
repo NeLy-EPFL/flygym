@@ -12,8 +12,10 @@ from flygym.compose.world import BaseWorld
 from flygym.simulation import Simulation
 from flygym.utils.profiling import print_perf_report_parallel
 from flygym.warp.rendering import (
+    RendererType,
     WarpGPUBatchRenderer,
     WarpCPURenderer,
+    WarpTrajectoryRecorder,
     modify_world_for_batch_rendering,
 )
 from flygym.warp.utils import (
@@ -77,19 +79,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_joint_angles(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
         """Get joint angles for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_jointdofs)`` in radians, ordered as in
             ``fly.get_jointdofs_order()``.
         """
         indices = self._wp_intern_qposadrs_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
@@ -99,19 +104,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_joint_velocities(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
         """Get joint velocities for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+            is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_jointdofs)`` in radians per second,
             ordered as in ``fly.get_jointdofs_order()``.
         """
         indices = self._wp_intern_qveladrs_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
@@ -121,19 +129,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_body_positions(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_bodies 3"]:
         """Get global body positions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_bodies, 3)`` in mm, ordered as in
             ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_vec3f,
             dim=(self.n_worlds, indices.size),
@@ -143,19 +154,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_body_rotations(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_bodies 4"]:
         """Get global body orientations as quaternions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_bodies, 4)`` (w, x, y, z), ordered as
             in ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_quatf,
             dim=(self.n_worlds, indices.size),
@@ -165,19 +179,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_site_positions(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_sites 3"]:
         """Get global anatomical-joint site positions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_sites, 3)`` in mm, ordered as in
             ``fly.get_sites_order()``.
         """
         indices = self._wp_internal_siteids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_vec3f,
             dim=(self.n_worlds, indices.size),
@@ -192,22 +209,23 @@ class GPUSimulation(Simulation):
 
     @override
     def get_actuator_forces(
-        self,
-        fly_name: str,
-        actuator_type: ActuatorType,
+        self, fly_name: str, actuator_type: ActuatorType, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_actuators"]:
         """Get actuator forces for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
             actuator_type: Type of actuator to query.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_actuators)``, ordered as in
             ``fly.get_actuated_jointdofs_order(actuator_type)``.
         """
         indices = self._wp_intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
@@ -272,6 +290,7 @@ class GPUSimulation(Simulation):
     def set_renderer(
         self,
         cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
+        renderer_type: RendererType = RendererType.GPU_BATCH,
         *,
         camera_res: tuple[int, int] = (240, 320),
         playback_speed: float = 0.2,
@@ -279,34 +298,32 @@ class GPUSimulation(Simulation):
         buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
         worlds: list[int] | None = None,
-        use_gpu_batch_rendering: bool = False,
         **kwargs: Any,
-    ) -> WarpGPUBatchRenderer | WarpCPURenderer:
+    ) -> WarpGPUBatchRenderer | WarpCPURenderer | WarpTrajectoryRecorder:
         """Attach a renderer to this GPU simulation.
 
         Args:
             cameras: Camera(s) to render.
-            camera_res: ``(height, width)`` in pixels.
+            renderer_type: Renderer type. Defaults to `RendererType.GPU_BATCH`.
+            camera_res: `(height, width)` in pixels.
             playback_speed: Video playback speed relative to real time.
             output_fps: Output video frame rate.
             buffer_frames: If True, store rendered frames in memory.
             scene_option: MuJoCo scene options. Uses defaults if None.
             worlds: Indices of worlds to render. Defaults to all worlds.
-            use_gpu_batch_rendering: If True, use `WarpGPUBatchRenderer`;
-                otherwise use `WarpCPURenderer`.
-            **kwargs: Passed to the renderer.
+            **kwargs: Passed to the renderer (ignored when recording only).
 
         Returns:
-            The created renderer instance.
+            The created renderer (or `WarpTrajectoryRecorder`) instance.
         """
         if worlds is None:
             worlds = list(range(self.n_worlds))
-        self.use_gpu_batch_rendering = use_gpu_batch_rendering
 
         renderer_kwargs = {
             "mj_model": self.mj_model,
             "n_worlds_total": self.n_worlds,
             "cameras": cameras,
+            "sim_timestep": self.timestep,
             "camera_res": camera_res,
             "playback_speed": playback_speed,
             "output_fps": output_fps,
@@ -315,7 +332,10 @@ class GPUSimulation(Simulation):
             "worlds": worlds,
             **kwargs,
         }
-        if use_gpu_batch_rendering:
+        self.renderer_type = renderer_type
+        if renderer_type == RendererType.CPU:
+            self.renderer = WarpCPURenderer(**renderer_kwargs)
+        elif renderer_type == RendererType.GPU_BATCH:
             is_model_modified = modify_world_for_batch_rendering(self.world)
             if is_model_modified:
                 warnings.warn(
@@ -332,8 +352,10 @@ class GPUSimulation(Simulation):
                 self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
                 renderer_kwargs["mj_model"] = self.mj_model
             self.renderer = WarpGPUBatchRenderer(**renderer_kwargs)
+        elif renderer_type == RendererType.RECORDED_TRAJECTORY:
+            self.renderer = WarpTrajectoryRecorder(**renderer_kwargs)
         else:
-            self.renderer = WarpCPURenderer(**renderer_kwargs)
+            raise ValueError(f"Unsupported renderer type: {renderer_type}")
 
         return self.renderer
 

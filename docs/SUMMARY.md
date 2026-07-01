@@ -35,7 +35,9 @@
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
             * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
             * [tethered_world](api_reference/flygym/compose/world/tethered_world.md)
-    * [rendering](api_reference/flygym/rendering.md)
+    * rendering
+        * [live_rendering](api_reference/flygym/rendering/live_rendering.md)
+        * [recorded_trajectory](api_reference/flygym/rendering/recorded_trajectory.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils
         * [api1to2](api_reference/flygym/utils/api1to2.md)
@@ -47,7 +49,9 @@
         * [profiling](api_reference/flygym/utils/profiling.md)
         * [video](api_reference/flygym/utils/video.md)
     * warp
-        * [rendering](api_reference/flygym/warp/rendering.md)
+        * rendering
+            * [live_rendering](api_reference/flygym/warp/rendering/live_rendering.md)
+            * [recorded_trajectory](api_reference/flygym/warp/rendering/recorded_trajectory.md)
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)
 * [NeuroMechFly Game & Outreach](outreach.md)

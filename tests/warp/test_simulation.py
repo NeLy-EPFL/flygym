@@ -17,7 +17,7 @@ from flygym.compose import (
     KinematicPosePreset,
 )
 from flygym.utils.math import Rotation3D
-from flygym.warp import GPUSimulation
+from flygym.warp import GPUSimulation, RendererType
 from flygym.warp.rendering import WarpCPURenderer
 
 
@@ -340,7 +340,7 @@ class TestSetRenderer:
                 cam,
                 camera_res=(64, 64),
                 worlds=[0, 1],
-                use_gpu_batch_rendering=False,
+                renderer_type=RendererType.CPU,
             )
         assert isinstance(renderer, WarpCPURenderer)
 
@@ -352,7 +352,7 @@ class TestSetRenderer:
                 cam,
                 camera_res=(64, 64),
                 worlds=[0, 2],
-                use_gpu_batch_rendering=False,
+                renderer_type=RendererType.CPU,
             )
         assert renderer.world_ids == [0, 2]
 
@@ -369,7 +369,7 @@ class TestSetRenderer:
                 cam,
                 camera_res=(64, 64),
                 worlds=[0],
-                use_gpu_batch_rendering=False,
+                renderer_type=RendererType.CPU,
             )
         sim.print_performance_report()
         captured = capsys.readouterr()

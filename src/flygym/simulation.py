@@ -7,9 +7,9 @@ import numpy as np
 from jaxtyping import Float
 
 from flygym.anatomy import BodySegment
-from flygym.compose.fly import ActuatorType
+from flygym.compose.fly import BaseFly, ActuatorType
 from flygym.compose.world import BaseWorld
-from flygym.rendering import Renderer
+from flygym.rendering import Renderer, TrajectoryRecorder
 from flygym.utils.profiling import print_perf_report
 
 
@@ -105,6 +105,7 @@ class Simulation:
         output_fps: int = 25,
         buffer_frames: bool = True,
         scene_option: mj.MjvOption | None = None,
+        record_trajectory_only: bool = False,
         **kwargs: Any,
     ) -> Renderer:
         """Attach a renderer to this simulation.
@@ -117,21 +118,37 @@ class Simulation:
             output_fps: Output video frame rate.
             buffer_frames: If True, store rendered frames in memory.
             scene_option: MuJoCo scene options. Uses defaults if None.
-            **kwargs: Passed to ``mujoco.Renderer``.
+            record_trajectory_only: If True, attach a `TrajectoryRecorder` instead of
+                a `Renderer`: it records ``qpos`` (and mocap poses) at the render
+                cadence instead of rasterizing frames. Read the result from
+                ``self.renderer.recorded_trajectory`` and replay it later with
+                `render_trajectories`. ``buffer_frames`` is ignored in this mode.
+            **kwargs: Passed to ``mujoco.Renderer`` (ignored when recording only).
 
         Returns:
-            The created `Renderer` instance.
+            The created `Renderer` (or `TrajectoryRecorder`) instance.
         """
-        self.renderer = Renderer(
-            self.mj_model,
-            cameras,
-            camera_res=camera_res,
-            playback_speed=playback_speed,
-            output_fps=output_fps,
-            buffer_frames=buffer_frames,
-            scene_option=scene_option,
-            **kwargs,
-        )
+        if record_trajectory_only:
+            self.renderer = TrajectoryRecorder(
+                self.mj_model,
+                cameras,
+                camera_res=camera_res,
+                playback_speed=playback_speed,
+                output_fps=output_fps,
+                scene_option=scene_option,
+                **kwargs,
+            )
+        else:
+            self.renderer = Renderer(
+                self.mj_model,
+                cameras,
+                camera_res=camera_res,
+                playback_speed=playback_speed,
+                output_fps=output_fps,
+                buffer_frames=buffer_frames,
+                scene_option=scene_option,
+                **kwargs,
+            )
         return self.renderer
 
     def render_as_needed(self) -> bool:
@@ -760,3 +777,13 @@ class Simulation:
         self.eye_renderer = None
         # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
         # reused and retina init requires some IO ops.
+    
+    @property
+    def fly(self) -> BaseFly:
+        """Return the single fly in the world, or raise an error if there are multiple."""
+        return self.world.fly
+    
+    @property
+    def fly_lookup(self) -> dict[str, BaseFly]:
+        """Return the fly lookup dictionary from the world."""
+        return self.world.fly_lookup
