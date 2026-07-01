@@ -100,7 +100,7 @@ class BaseWorld(BaseCompositionElement, ABC):
     def _attach_fly_mjcf(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
@@ -139,7 +139,7 @@ class BaseWorld(BaseCompositionElement, ABC):
     def add_fly(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args: Any,
         **kwargs: Any,
@@ -260,7 +260,7 @@ class _GroundContactMixin:
     def _attach_fly_mjcf(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *,
         bodysegs_with_ground_contact: (
