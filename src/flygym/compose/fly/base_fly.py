@@ -269,9 +269,19 @@ class BaseFly(BaseCompositionElement):
         """
         return list(self.bodyseg_to_mjcfbody.keys())
 
+    @property
+    def n_bodysegs(self) -> int:
+        """Number of body segments in this fly."""
+        return len(self.bodyseg_to_mjcfbody)
+
     def get_jointdofs_order(self) -> list[JointDOF]:
         """Same as `get_bodysegs_order()`, but for joint DoFs instead of body segments."""
         return list(self.jointdof_to_mjcfjoint.keys())
+
+    @property
+    def n_jointdofs(self) -> int:
+        """Number of joint DoFs in this fly."""
+        return len(self.jointdof_to_mjcfjoint)
 
     def get_actuated_jointdofs_order(
         self, actuator_type: "ActuatorType | str"
@@ -281,6 +291,19 @@ class BaseFly(BaseCompositionElement):
         provide control input in this order."""
         actuator_type = ActuatorType(actuator_type)
         return list(self.jointdof_to_mjcfactuator_by_type[actuator_type].keys())
+
+    @property
+    def n_actuated_jointdofs(self) -> int:
+        raise RuntimeError(
+            "`n_actuated_jointdofs` is ambiguous because there might be different "
+            "actuator types. Use `get_n_actuated_jointdofs(actuator_type)` instead, "
+            "similar to `fly.get_actuated_jointdofs_order(actuator_type)`."
+        )
+
+    def get_n_actuated_jointdofs(self, actuator_type: "ActuatorType | str") -> int:
+        """Number of joint DoFs actuated by the specified actuator type."""
+        actuator_type = ActuatorType(actuator_type)
+        return len(self.jointdof_to_mjcfactuator_by_type[actuator_type])
 
     def get_legs_order(self) -> list[str]:
         """Get the ordered list of leg position identifiers (same as `anatomy.LEGS`)."""
