@@ -68,7 +68,17 @@ class Simulation:
         self._total_render_time_ns = 0
 
     def reset(self) -> None:
-        """Reset simulation and renderer to the neutral keyframe."""
+        """Reset simulation and renderer to the neutral keyframe.
+
+        !!! warning
+
+            `reset()` does not update derived kinematic quantities (`xpos`,
+            `xquat`, `site_xpos`, ...) -- it only restores state fields
+            (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
+            derived quantities right after `reset()`, before calling `step()`,
+            does not reflect the reset state. This is consistent with the behavior of
+            MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe` functions.
+        """
         # Reset physics
         mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
 
