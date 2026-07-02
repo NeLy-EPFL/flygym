@@ -21,6 +21,7 @@ from flygym.warp.utils import (
     wp_gather_indexed_cols_2d,
     wp_gather_indexed_rows_vec3f,
     wp_gather_indexed_rows_quatf,
+    reset_data_keyframe,
 )
 
 
@@ -68,12 +69,21 @@ class GPUSimulation(Simulation):
 
     @override
     def reset(self) -> None:
-        """Reset all parallel worlds to the neutral keyframe."""
+        """Reset all parallel worlds to the neutral keyframe.
+
+        !!! warning
+
+            `reset()` does not update derived kinematic quantities (`xpos`,
+            `xquat`, `site_xpos`, ...); it only restores state fields
+            (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
+            derived quantities right after `reset()`, before calling `step()`,
+            returns stale values from before the reset. This is consistent with the
+            behavior of MuJoCo Warp's native `reset_data()` function.
+        """
         super().reset()
-        # The superclass call resets CPU-side MuJoCo structs to the neutral keyframe,
-        # so we need to recreate GPU-side structs to reflect that reset.
-        self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
-        # ... don't call mjw.reset_data() here! That loses the keyframe reset.
+        reset_data_keyframe(
+            self.mj_model, self.mjw_model, self.mjw_data, self._neutral_keyframe_id
+        )
 
     @override
     def get_joint_angles(
