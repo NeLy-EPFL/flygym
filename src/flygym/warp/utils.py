@@ -7,9 +7,9 @@ import mujoco_warp as mjw
 
 @wp.kernel
 def wp_gather_indexed_rows_3d(
-    src: wp.array3d(dtype=wp.float32),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array3d[float],
+    dst: wp.array3d[float],
+    rows: wp.array[int],
 ):
     """Gather specific rows (dim 1) from a 3D Warp array into a narrower destination.
 
@@ -30,9 +30,9 @@ def wp_gather_indexed_rows_3d(
 
 @wp.kernel
 def wp_gather_indexed_rows_vec3f(
-    src: wp.array2d(dtype=wp.vec3f),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[wp.vec3],
+    dst: wp.array3d[float],
+    rows: wp.array[int],
 ):
     """Gather specific rows from a 2D ``vec3f`` array into a ``(n_worlds, n_rows_narrow, 3)``
     ``float32`` destination.
@@ -57,9 +57,9 @@ def wp_gather_indexed_rows_vec3f(
 
 @wp.kernel
 def wp_gather_indexed_rows_quatf(
-    src: wp.array2d(dtype=wp.quatf),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[wp.quat],
+    dst: wp.array3d[float],
+    rows: wp.array[int],
 ):
     """Gather specific rows from a 2D ``quatf`` array into a ``(n_worlds, n_rows_narrow, 4)``
     ``float32`` destination.
@@ -85,9 +85,9 @@ def wp_gather_indexed_rows_quatf(
 
 @wp.kernel
 def wp_scatter_indexed_cols_2d(
-    src: wp.array2d(dtype=wp.float32),  # type: ignore
-    dst: wp.array2d(dtype=wp.float32),  # type: ignore
-    cols: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[float],
+    dst: wp.array2d[float],
+    cols: wp.array[int],
 ):
     """Scatter a 2D Warp array into specific columns of a wider destination array.
 
@@ -108,9 +108,9 @@ def wp_scatter_indexed_cols_2d(
 
 @wp.kernel
 def wp_gather_indexed_cols_2d(
-    src: wp.array2d(dtype=wp.float32),  # type: ignore
-    dst: wp.array2d(dtype=wp.float32),  # type: ignore
-    cols: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[float],
+    dst: wp.array2d[float],
+    cols: wp.array[int],
 ):
     """Gather specific columns from a 2D Warp array into a narrower destination array.
 
@@ -132,12 +132,12 @@ def wp_gather_indexed_cols_2d(
 @wp.kernel
 def unpack_rgb_kernel_selected_worlds_and_cameras(
     # In:
-    packed: wp.array2d(dtype=wp.uint32),  # type: ignore
-    rgb_adr: wp.array(dtype=int),  # type: ignore
-    worldids_to_render: wp.array(dtype=int),  # type: ignore
-    camids_to_render: wp.array(dtype=int),  # type: ignore
+    packed: wp.array2d[wp.uint32],
+    rgb_adr: wp.array[int],
+    worldids_to_render: wp.array[int],
+    camids_to_render: wp.array[int],
     # Out:
-    rgb_out: wp.array4d(dtype=wp.vec3),  # type: ignore
+    rgb_out: wp.array4d[wp.vec3],
 ):
     """Unpack ABGR uint32 packed pixel data into separate R, G, and B channels."""
     idx_within_worldids, idx_within_camids, pixelid = wp.tid()
@@ -156,9 +156,9 @@ def unpack_rgb_kernel_selected_worlds_and_cameras(
 
 def get_rgb_selected_worlds_and_cameras(
     rc: mjw.RenderContext,
-    worldids: wp.array(dtype=int),  # type: ignore
-    camids: wp.array(dtype=int),  # type: ignore
-    rgb_out: wp.array4d(dtype=wp.vec3),  # type: ignore
+    worldids: wp.array[int],
+    camids: wp.array[int],
+    rgb_out: wp.array4d[wp.vec3],
 ):
     """Get the RGB data output from the render context buffers for the selected worlds
     and cameras.

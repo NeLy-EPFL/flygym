@@ -79,10 +79,10 @@ from flygym_demo.benchmark import (
 
 @wp.kernel
 def record_joint_angles_kernel(
-    qpos: wp.array2d(dtype=wp.float32),  # type: ignore  # (n_worlds, nq)
-    qpos_adrs: wp.array(dtype=wp.int32),  # type: ignore  # (n_jointdofs,)
-    step_counter: wp.array(dtype=wp.int32),  # type: ignore
-    recorded: wp.array3d(dtype=wp.float32),  # type: ignore  # (n_steps, n_worlds, n_dofs)
+    qpos: wp.array2d[float],  # (n_worlds, nq)
+    qpos_adrs: wp.array[int],  # (n_jointdofs,)
+    step_counter: wp.array[int],
+    recorded: wp.array3d[float],  # (n_steps, n_worlds, n_dofs)
 ):
     """Gather this step's joint angles into a pre-allocated, GPU-resident buffer.
 

@@ -88,9 +88,9 @@ class ReplayTargetData:
 
 @wp.kernel
 def update_target_angles_kernel(
-    dof_angles_all_worlds_gpu: wp.array3d(dtype=wp.float32),  # type: ignore
-    step_counter_gpu: wp.array(dtype=wp.int32),  # type: ignore
-    curr_target_angles_gpu: wp.array2d(dtype=wp.float32),  # type: ignore
+    dof_angles_all_worlds_gpu: wp.array3d[float],
+    step_counter_gpu: wp.array[int],
+    curr_target_angles_gpu: wp.array2d[float],
 ):
     world_id, actuator_id = wp.tid()
     step = step_counter_gpu[0]
@@ -100,7 +100,7 @@ def update_target_angles_kernel(
 
 @wp.kernel
 def increment_counter_kernel(
-    step_counter_gpu: wp.array(dtype=wp.int32),  # type: ignore
+    step_counter_gpu: wp.array[int],
 ):
     step_counter_gpu[0] = step_counter_gpu[0] + 1
 
