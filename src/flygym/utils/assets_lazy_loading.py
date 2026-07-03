@@ -1,39 +1,29 @@
 """Lazy download of large asset files from a public S3 bucket.
 
-Most asset files (configs, poses, and the simplified default NeuroMechFly meshes)
-are small enough to ship inside the ``flygym`` package. The high-resolution
-``fullsize`` meshes -- especially the FlyBody ``.obj`` meshes, which are an order
-of magnitude larger than everything else combined -- would bloat the package and
-the git repository, so they are hosted on an institution-managed S3 bucket and
-pulled in *the first time they are needed*, similar to how PyTorch downloads
-pretrained weights.
+The high-resolution `fullsize` meshes are too large to ship inside the
+`flygym` package, so they are hosted on a public S3 bucket and downloaded the
+first time they are needed, then cached on disk (see :func:`get_cache_root`).
+The bucket is served over plain HTTP(S), so `urllib` is enough -- no boto3.
 
-Downloaded files are cached on disk (see :func:`get_cache_root`) so the download
-happens only once per machine. The bucket is public and served over a standard
-S3-compatible HTTP endpoint, so plain ``urllib`` is enough -- no extra
-dependencies (boto3 etc.) are required.
-
-The bucket stores each remotely hosted asset directory as a flat, *versioned*
-sub-prefix of :data:`S3_ROOT_PREFIX`, so future revisions can be uploaded under a
-new name without disturbing existing releases. Bump the version constants below to
-point a release at a new version. Example:
-
-    bucket:  flygym_assets/neuromechfly_fullsize_meshes_20260623a/<file>
-    cache:   ~/.cache/flygym_assets/neuromechfly_fullsize_meshes_20260623a/<file>
+Each asset directory lives on the bucket as a `<name>.tar` archive plus a
+`<name>.checksum` sidecar holding the tar's sha256 hex digest, both generated
+by `scripts/dev/make_tar_for_lazy_loaded_assets.sh`. Names are versioned
+(e.g. `neuromechfly_fullsize_meshes_20260623a`) so new revisions can be
+uploaded without disturbing existing releases; bump the version constants in
+the fly model modules to point a release at a new asset set.
 """
 
 import hashlib
 import os
-import shutil
+import tarfile
 import tempfile
 from pathlib import Path
 from urllib.parse import quote
 from urllib.request import urlopen
-from xml.etree import ElementTree
 
 from loguru import logger
 
-__all__ = ["get_cache_root", "lazy_load_asset_dir", "prefetch_meshes"]
+__all__ = ["get_cache_root", "lazy_load_asset_dir", "download_all_assets"]
 
 #: Base HTTP(S) endpoint of the S3-compatible object store.
 S3_ENDPOINT = "https://datasets.epfl.ch"
@@ -42,29 +32,26 @@ S3_BUCKET = "nely-public-share"
 #: Top-level key prefix within the bucket under which all assets live.
 S3_ROOT_PREFIX = "flygym_assets"
 
-
-# S3 ListObjectsV2 responses are namespaced; this is the namespace MinIO/S3 use.
-_S3_XML_NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
+#: Read/write files in chunks of this size while streaming a download.
+_CHUNK_SIZE = 1024 * 1024
+#: How many times to (re)try a download before giving up. A dropped connection
+#: yields a truncated tar that fails the checksum; the endpoint is flaky enough
+#: that a single such failure shouldn't abort the whole run.
+_MAX_ATTEMPTS = 3
+#: Per-request timeout (seconds). Bounds how long a stalled connection can hang
+#: before it errors out and the attempt is retried, rather than blocking forever.
+_TIMEOUT = 30
 
 
 def get_cache_root() -> Path:
-    """Return the directory under which downloaded assets are cached.
-
-    Resolution order:
-
-    1. ``$FLYGYM_ASSET_CACHE_DIR`` if set (useful for CI caching or shared,
-       read-only installs);
-    2. ``$XDG_CACHE_HOME/flygym_assets`` if ``XDG_CACHE_HOME`` is set;
-    3. ``~/.cache/flygym_assets`` otherwise.
-
-    The directory is named ``flygym_assets`` to match the bucket's top-level
-    prefix (:data:`S3_ROOT_PREFIX`).
+    """Return the directory under which downloaded assets are cached:
+    `$FLYGYM_ASSET_CACHE_DIR` if set (useful for CI caching), else
+    `$XDG_CACHE_HOME/flygym_assets`, else `~/.cache/flygym_assets`.
     """
     env = os.environ.get("FLYGYM_ASSET_CACHE_DIR")
     if env:
         return Path(env).expanduser()
-    # Per the XDG Base Directory spec, a relative XDG_CACHE_HOME is invalid and
-    # must be ignored (as is an unset/empty value).
+    # Per the XDG spec, a relative XDG_CACHE_HOME is invalid and must be ignored.
     xdg = os.environ.get("XDG_CACHE_HOME")
     if xdg and os.path.isabs(xdg):
         return Path(xdg) / S3_ROOT_PREFIX
@@ -76,106 +63,39 @@ def _object_url(key: str) -> str:
     return f"{S3_ENDPOINT}/{S3_BUCKET}/{quote(key)}"
 
 
-def _list_s3_prefix(prefix: str) -> list[dict]:
-    """List every object under ``prefix`` via the public ListObjectsV2 API.
-
-    Returns a list of ``{"key", "size", "etag"}`` dicts. Handles pagination via
-    continuation tokens. The bucket is public, so the request is unsigned.
+def _download_tar(name: str, dest: Path) -> None:
+    """Download `<name>.tar` to `dest` and verify it against `<name>.checksum`,
+    retrying on transient network errors and truncated (checksum-mismatched)
+    downloads.
     """
-    if not prefix.endswith("/"):
-        prefix += "/"
-    objects: list[dict] = []
-    continuation_token: str | None = None
-    while True:
-        url = f"{S3_ENDPOINT}/{S3_BUCKET}?list-type=2&prefix={quote(prefix, safe='')}"
-        if continuation_token is not None:
-            url += f"&continuation-token={quote(continuation_token, safe='')}"
-        with urlopen(url) as response:
-            tree = ElementTree.fromstring(response.read())
-        for contents in tree.findall("s3:Contents", _S3_XML_NS):
-            key = contents.findtext("s3:Key", namespaces=_S3_XML_NS)
-            if key is None or key.endswith("/"):
-                continue  # skip "directory" placeholder keys
-            size = int(contents.findtext("s3:Size", default="0", namespaces=_S3_XML_NS))
-            etag = contents.findtext("s3:ETag", default="", namespaces=_S3_XML_NS)
-            objects.append({"key": key, "size": size, "etag": etag.strip('"')})
-        is_truncated = (
-            tree.findtext("s3:IsTruncated", default="false", namespaces=_S3_XML_NS)
-            == "true"
-        )
-        if not is_truncated:
-            break
-        continuation_token = tree.findtext(
-            "s3:NextContinuationToken", namespaces=_S3_XML_NS
-        )
-        if not continuation_token:
-            break
-    return objects
+    checksum_url = _object_url(f"{S3_ROOT_PREFIX}/{name}.checksum")
+    with urlopen(checksum_url, timeout=_TIMEOUT) as response:
+        expected = response.read().decode().split()[0]
 
-
-def _is_up_to_date(path: Path, size: int, etag: str) -> bool:
-    """Return True if ``path`` already holds the object described by (size, etag).
-
-    For non-multipart uploads the S3 ETag is the MD5 hex digest of the content,
-    which we verify. Multipart ETags contain a ``-`` and are not plain MD5, so we
-    fall back to a size check for those.
-    """
-    if not path.is_file():
-        return False
-    if path.stat().st_size != size:
-        return False
-    if etag and "-" not in etag:
-        digest = hashlib.md5(path.read_bytes()).hexdigest()
-        return digest == etag
-    return True
-
-
-def _download_object(key: str, dest: Path, size: int, etag: str) -> None:
-    """Download a single object to ``dest`` atomically."""
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(dir=dest.parent, suffix=".part")
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "wb") as out, urlopen(_object_url(key)) as response:
-            shutil.copyfileobj(response, out)
-        if not _is_up_to_date(tmp_path, size, etag):
-            raise OSError(
-                f"Downloaded asset failed integrity check: {key} "
-                f"(expected {size} bytes, etag {etag!r})"
+    tar_url = _object_url(f"{S3_ROOT_PREFIX}/{name}.tar")
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        digest = hashlib.sha256()
+        try:
+            with (
+                urlopen(tar_url, timeout=_TIMEOUT) as response,
+                open(dest, "wb") as out,
+            ):
+                while chunk := response.read(_CHUNK_SIZE):
+                    digest.update(chunk)
+                    out.write(chunk)
+        except OSError as e:
+            reason = f"download failed ({e})"
+        else:
+            if digest.hexdigest() == expected:
+                return
+            reason = (
+                f"integrity check failed "
+                f"(expected sha256 {expected}, got {digest.hexdigest()})"
             )
-        tmp_path.replace(dest)
-    finally:
-        tmp_path.unlink(missing_ok=True)
-
-
-def _download_prefix(s3_prefix: str, dest_dir: Path) -> Path:
-    """Download every object under ``s3_prefix`` into ``dest_dir`` (skipping files
-    that are already present and up to date). Returns ``dest_dir``.
-    """
-    objects = _list_s3_prefix(s3_prefix)
-    if not objects:
-        raise FileNotFoundError(
-            f"No assets found on S3 under prefix '{s3_prefix}'. The bucket may be "
-            "unreachable or the asset may have been moved."
-        )
-    prefix = s3_prefix if s3_prefix.endswith("/") else s3_prefix + "/"
-    pending = []
-    for obj in objects:
-        rel_key = obj["key"][len(prefix) :]
-        dest = dest_dir / rel_key
-        if not _is_up_to_date(dest, obj["size"], obj["etag"]):
-            pending.append((obj, dest))
-
-    if pending:
-        total_mb = sum(obj["size"] for obj, _ in pending) / 1e6
-        logger.info(
-            f"Downloading {len(pending)} FlyGym asset file(s) "
-            f"({total_mb:.1f} MB) from S3 to {dest_dir} (one-time download)..."
-        )
-        for obj, dest in pending:
-            _download_object(obj["key"], dest, obj["size"], obj["etag"])
-        logger.info("Finished downloading FlyGym assets.")
-    return dest_dir
+        dest.unlink(missing_ok=True)
+        if attempt == _MAX_ATTEMPTS:
+            raise OSError(f"Could not download {name}.tar: {reason}")
+        logger.warning(f"Retrying {name}.tar ({attempt}/{_MAX_ATTEMPTS}): {reason}")
 
 
 def lazy_load_asset_dir(rel_path: os.PathLike | str) -> Path:
@@ -183,43 +103,45 @@ def lazy_load_asset_dir(rel_path: os.PathLike | str) -> Path:
     from S3 on first use.
 
     Args:
-        rel_path: Path of the directory within the bucket, relative to
-            :data:`S3_ROOT_PREFIX` (e.g. ``"neuromechfly_fullsize_meshes_20260623a"``,
-            as defined by each fly model's ``*_FULLSIZE_MESH_DIR`` constant).
+        rel_path: Name of the asset set on the bucket, i.e. the shared stem of
+            `<rel_path>.tar` and `<rel_path>.checksum` under
+            :data:`S3_ROOT_PREFIX` (as defined by each fly model's
+            `*_MESH_DIR` constant).
 
-    The directory is cached under :func:`get_cache_root` keyed by ``rel_path``. If
-    the cached copy already exists it is returned as-is (no network access);
-    otherwise the whole directory is downloaded into a temporary location and moved
-    into place atomically, so an interrupted or concurrent download never leaves a
-    partial cache.
-
-    Raises:
-        FileNotFoundError: If ``rel_path`` does not exist in the bucket.
+    If the cached copy already exists it is returned as-is (no network access).
+    Otherwise the tar is downloaded, verified, and extracted inside a temporary
+    directory that is moved into place atomically, so an interrupted or
+    concurrent download never leaves a partial cache.
     """
-    rel_path = Path(rel_path)
-    cache_dir = get_cache_root() / rel_path
+    name = Path(rel_path).as_posix()
+    cache_dir = get_cache_root() / name
     if cache_dir.is_dir():
         return cache_dir
 
+    logger.info(f"Downloading FlyGym asset '{name}' from S3 (one-time download)...")
     cache_dir.parent.mkdir(parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(dir=cache_dir.parent, suffix=".partial"))
-    try:
-        _download_prefix(f"{S3_ROOT_PREFIX}/{rel_path.as_posix()}", staging)
+    with tempfile.TemporaryDirectory(
+        dir=cache_dir.parent, suffix=".partial"
+    ) as staging:
+        staging = Path(staging)
+        _download_tar(name, staging / "asset.tar")
+        extracted = staging / "extracted"
+        with tarfile.open(staging / "asset.tar") as tar:
+            tar.extractall(extracted, filter="data")
         try:
-            staging.replace(cache_dir)
+            extracted.replace(cache_dir)
         except OSError:
             # Another process finished downloading the same asset while we were
-            # working: os.replace cannot move onto the now-populated directory.
-            # Their copy is equivalent to ours, so use it instead of failing.
+            # working, so cache_dir is now populated and cannot be replaced.
+            # Their copy is equivalent to ours: use it instead of failing.
             if not cache_dir.is_dir():
                 raise
-    finally:
-        shutil.rmtree(staging, ignore_errors=True)
+    logger.info(f"Finished downloading FlyGym asset '{name}'.")
     return cache_dir
 
 
-def prefetch_meshes() -> list[Path]:
-    """Eagerly download all remotely hosted meshes into the cache.
+def download_all_assets() -> list[Path]:
+    """Eagerly download all remotely hosted assets into the cache.
 
     Useful for warming a CI cache or preparing an offline environment. Returns the
     list of local directories that now hold the assets.
