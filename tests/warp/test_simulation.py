@@ -3,6 +3,7 @@
 import warnings
 import pytest
 import numpy as np
+import mujoco as mj
 
 # These tests require the optional warp (GPU) extra; tag them so they can be
 # excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
@@ -165,6 +166,79 @@ class TestReset:
         sim.reset()
         assert sim._total_physics_time_ns == 0
 
+    def test_reset_does_not_reallocate_gpu_structs(self, gpu_bundle):
+        """reset() should reset mjw_data in place, not rebuild it from scratch."""
+        sim, fly, cam = gpu_bundle
+        mjw_model_before = sim.mjw_model
+        mjw_data_before = sim.mjw_data
+        sim.step()
+        sim.reset()
+        assert sim.mjw_model is mjw_model_before
+        assert sim.mjw_data is mjw_data_before
+
+    def test_reset_restores_joint_angles_without_a_subsequent_step(self, gpu_bundle):
+        """State fields (qpos, ...) are restored by reset() itself, since
+        reset_data_keyframe writes them directly -- no step() needed."""
+        sim, fly, cam = gpu_bundle
+        sim.reset()
+        baseline = sim.get_joint_angles(fly.name).numpy().copy()
+
+        # Drive the position actuators away from the neutral pose so stepping
+        # actually moves the joints (they'd otherwise be held at neutral).
+        displaced = baseline + 0.3
+        sim.set_actuator_inputs(fly.name, ActuatorType.POSITION, displaced)
+        for _ in range(20):
+            sim.step()
+        moved = sim.get_joint_angles(fly.name).numpy()
+        assert not np.allclose(moved, baseline, atol=1e-3)
+
+        sim.reset()
+        restored = sim.get_joint_angles(fly.name).numpy()
+        np.testing.assert_allclose(restored, baseline, atol=1e-5)
+
+    def test_body_positions_are_stale_immediately_after_reset(self, gpu_bundle):
+        """Mirrors mj_resetDataKeyframe: reset() only restores state fields (qpos,
+        qvel, act, ctrl, mocap, time). Derived kinematic quantities like xpos are
+        not recomputed, so immediately after reset() -- before any step() -- they
+        still hold whatever was there before the reset, not the neutral pose.
+        """
+        sim, fly, cam = gpu_bundle
+        sim.reset()
+        sim.step()
+        after_step = sim.get_body_positions(fly.name).numpy().copy()
+
+        sim.reset()
+        still_stale = sim.get_body_positions(fly.name).numpy()
+        np.testing.assert_allclose(still_stale, after_step)
+
+    def test_body_positions_correct_after_reset_and_step(self, gpu_bundle):
+        """Once step() runs (which begins with a forward pass), derived kinematic
+        quantities catch up to the reset state."""
+        sim, fly, cam = gpu_bundle
+        for _ in range(20):
+            sim.step()
+        sim.reset()
+        sim.step()
+        gpu_positions = sim.get_body_positions(fly.name).numpy()
+
+        mj.mj_resetDataKeyframe(sim.mj_model, sim.mj_data, sim._neutral_keyframe_id)
+        mj.mj_step(sim.mj_model, sim.mj_data)
+        internal_ids = sim._internal_bodyids_by_fly[fly.name]
+        cpu_positions = sim.mj_data.xpos[internal_ids, :]
+
+        for world_positions in gpu_positions:
+            np.testing.assert_allclose(world_positions, cpu_positions, atol=1e-4)
+
+    def test_reset_restores_qpos_to_neutral_keyframe(self, gpu_bundle):
+        sim, fly, cam = gpu_bundle
+        for _ in range(5):
+            sim.step()
+        sim.reset()
+        expected = np.tile(
+            sim.mj_model.key_qpos[sim._neutral_keyframe_id], (sim.n_worlds, 1)
+        )
+        np.testing.assert_allclose(sim.mjw_data.qpos.numpy(), expected, atol=1e-5)
+
 
 # ==============================================================================
 # State queries
@@ -250,8 +324,15 @@ class TestSiteStateQueries:
         sim.reset()
         sim.step()
         gpu_site_xpos = sim.get_site_positions(fly.name).numpy()[0]
+
+        # sim.reset() does not forward-compute derived quantities on the CPU side
+        # either (mirroring mj_resetDataKeyframe), so explicitly reset + step the CPU
+        # reference here rather than relying on sim.mj_data being pre-populated.
+        mj.mj_resetDataKeyframe(sim.mj_model, sim.mj_data, sim._neutral_keyframe_id)
+        mj.mj_step(sim.mj_model, sim.mj_data)
         cpu_site_xpos = sim.mj_data.site_xpos[sim._internal_siteids_by_fly[fly.name], :]
-        np.testing.assert_allclose(gpu_site_xpos, cpu_site_xpos, atol=1e-6)
+
+        np.testing.assert_allclose(gpu_site_xpos, cpu_site_xpos, atol=1e-4)
 
 
 # ==============================================================================

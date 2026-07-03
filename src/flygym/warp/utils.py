@@ -1,13 +1,13 @@
-import warp as wp
+from typing import Optional
 
-from mujoco_warp._src.types import RenderContext
+import warp as wp
+import mujoco as mj
+import mujoco_warp as mjw
 
 
 @wp.kernel
 def wp_gather_indexed_rows_3d(
-    src: wp.array3d(dtype=wp.float32),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array3d[float], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows (dim 1) from a 3D Warp array into a narrower destination.
 
@@ -28,9 +28,7 @@ def wp_gather_indexed_rows_3d(
 
 @wp.kernel
 def wp_gather_indexed_rows_vec3f(
-    src: wp.array2d(dtype=wp.vec3f),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[wp.vec3], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows from a 2D ``vec3f`` array into a ``(n_worlds, n_rows_narrow, 3)``
     ``float32`` destination.
@@ -55,9 +53,7 @@ def wp_gather_indexed_rows_vec3f(
 
 @wp.kernel
 def wp_gather_indexed_rows_quatf(
-    src: wp.array2d(dtype=wp.quatf),  # type: ignore
-    dst: wp.array3d(dtype=wp.float32),  # type: ignore
-    rows: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[wp.quat], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows from a 2D ``quatf`` array into a ``(n_worlds, n_rows_narrow, 4)``
     ``float32`` destination.
@@ -83,9 +79,7 @@ def wp_gather_indexed_rows_quatf(
 
 @wp.kernel
 def wp_scatter_indexed_cols_2d(
-    src: wp.array2d(dtype=wp.float32),  # type: ignore
-    dst: wp.array2d(dtype=wp.float32),  # type: ignore
-    cols: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[float], dst: wp.array2d[float], cols: wp.array[int]
 ):
     """Scatter a 2D Warp array into specific columns of a wider destination array.
 
@@ -106,9 +100,7 @@ def wp_scatter_indexed_cols_2d(
 
 @wp.kernel
 def wp_gather_indexed_cols_2d(
-    src: wp.array2d(dtype=wp.float32),  # type: ignore
-    dst: wp.array2d(dtype=wp.float32),  # type: ignore
-    cols: wp.array(dtype=wp.int32),  # type: ignore
+    src: wp.array2d[float], dst: wp.array2d[float], cols: wp.array[int]
 ):
     """Gather specific columns from a 2D Warp array into a narrower destination array.
 
@@ -130,12 +122,12 @@ def wp_gather_indexed_cols_2d(
 @wp.kernel
 def unpack_rgb_kernel_selected_worlds_and_cameras(
     # In:
-    packed: wp.array2d(dtype=wp.uint32),  # type: ignore
-    rgb_adr: wp.array(dtype=int),  # type: ignore
-    worldids_to_render: wp.array(dtype=int),  # type: ignore
-    camids_to_render: wp.array(dtype=int),  # type: ignore
+    packed: wp.array2d[wp.uint32],
+    rgb_adr: wp.array[int],
+    worldids_to_render: wp.array[int],
+    camids_to_render: wp.array[int],
     # Out:
-    rgb_out: wp.array4d(dtype=wp.vec3),  # type: ignore
+    rgb_out: wp.array4d[wp.vec3],
 ):
     """Unpack ABGR uint32 packed pixel data into separate R, G, and B channels."""
     idx_within_worldids, idx_within_camids, pixelid = wp.tid()
@@ -153,10 +145,10 @@ def unpack_rgb_kernel_selected_worlds_and_cameras(
 
 
 def get_rgb_selected_worlds_and_cameras(
-    rc: RenderContext,
-    worldids: wp.array(dtype=int),  # type: ignore
-    camids: wp.array(dtype=int),  # type: ignore
-    rgb_out: wp.array4d(dtype=wp.vec3),  # type: ignore
+    rc: mjw.RenderContext,
+    worldids: wp.array[int],
+    camids: wp.array[int],
+    rgb_out: wp.array4d[wp.vec3],
 ):
     """Get the RGB data output from the render context buffers for the selected worlds
     and cameras.
@@ -203,3 +195,194 @@ def check_gpu():
             "You can specify which GPU to use by setting the 'CUDA_VISIBLE_DEVICES' "
             "environment variable."
         )
+
+
+def reset_data_keyframe(
+    mj_model: mj.MjModel,
+    mjw_model: mjw.Model,
+    mjw_data: mjw.Data,
+    key: int,
+    reset: Optional[wp.array] = None,
+):
+    """In-place equivalent of ``mj_resetDataKeyframe`` for a batched MJWarp ``Data``.
+
+    This functionality is not provided natively by MuJoCo Warp, so this is a custom
+    implementation. Note: this function differs from other Warp utils in that it
+    requires both the `mujoco.MjModel` object and the `mujoco_warp.types.Model` object.
+    This is because `key_{qpos,qvel,act,mpos,mquat,ctrl}` are not tracked by the
+    GPU-side model.
+
+    Args:
+        mj_model: CPU-side MuJoCo model holding the keyframe to reset to.
+        mjw_model: GPU-side MuJoCo-Warp model instance.
+        mjw_data: GPU-side MuJoCo-Warp data instance.
+        key: Index of the keyframe (in `mj_model`) to reset to.
+        reset: Optional per-world boolean mask, shape `(mjw_data.nworld,)`.
+    """
+    mjw.reset_data(mjw_model, mjw_data, reset)
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_time(
+        # From MjModel:
+        target_time: float,
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        time_out: wp.array[float],
+    ):
+        worldid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        time_out[worldid] = target_time
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_qpos(
+        # From MjModel:
+        target_qpos: wp.array[float],
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        qpos_out: wp.array2d[float],
+    ):
+        worldid, qid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        qpos_out[worldid, qid] = target_qpos[qid]
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_qvel(
+        # From MjModel:
+        target_qvel: wp.array[float],
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        qvel_out: wp.array2d[float],
+    ):
+        worldid, vid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        qvel_out[worldid, vid] = target_qvel[vid]
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_activation(
+        # From MjModel:
+        target_act: wp.array[float],
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        act_out: wp.array2d[float],
+    ):
+        worldid, aid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        act_out[worldid, aid] = target_act[aid]
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_mocap(
+        # From MjModel:
+        target_mpos: wp.array[wp.vec3],
+        target_mquat: wp.array[wp.quat],
+        # From mjwarp Model:
+        body_mocapid: wp.array[int],
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        mocap_pos_out: wp.array2d[wp.vec3],
+        mocap_quat_out: wp.array2d[wp.quat],
+    ):
+        worldid, bodyid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        mocapid = body_mocapid[bodyid]
+
+        if mocapid >= 0:
+            mocap_pos_out[worldid, mocapid] = target_mpos[mocapid]
+            mocap_quat_out[worldid, mocapid] = target_mquat[mocapid]
+
+    @wp.kernel(module="unique", enable_backward=False)
+    def reset_control(
+        # From MjModel:
+        target_ctrl: wp.array[float],
+        # In:
+        reset_in: wp.array[bool],
+        # Data out:
+        ctrl_out: wp.array2d[float],
+    ):
+        worldid, cid = wp.tid()
+
+        if wp.static(reset is not None):
+            if not reset_in[worldid]:
+                return
+
+        ctrl_out[worldid, cid] = target_ctrl[cid]
+
+    reset_input = reset or wp.ones(mjw_data.nworld, dtype=bool)
+
+    target_time = mj_model.key_time[key]
+    wp.launch(
+        reset_time,
+        dim=mjw_data.nworld,
+        inputs=[target_time, reset_input],
+        outputs=[mjw_data.time],
+    )
+
+    target_qpos = wp.array(mj_model.key_qpos[key], dtype=float)
+    wp.launch(
+        reset_qpos,
+        dim=(mjw_data.nworld, mjw_model.nq),
+        inputs=[target_qpos, reset_input],
+        outputs=[mjw_data.qpos],
+    )
+
+    target_qvel = wp.array(mj_model.key_qvel[key], dtype=float)
+    wp.launch(
+        reset_qvel,
+        dim=(mjw_data.nworld, mjw_model.nv),
+        inputs=[target_qvel, reset_input],
+        outputs=[mjw_data.qvel],
+    )
+
+    target_act = wp.array(mj_model.key_act[key], dtype=float)
+    wp.launch(
+        reset_activation,
+        dim=(mjw_data.nworld, mjw_model.na),
+        inputs=[target_act, reset_input],
+        outputs=[mjw_data.act],
+    )
+
+    target_mpos = wp.array(mj_model.key_mpos[key], dtype=wp.vec3)
+    target_mquat = wp.array(mj_model.key_mquat[key], dtype=wp.quat)
+    wp.launch(
+        reset_mocap,
+        dim=(mjw_data.nworld, mjw_model.nbody),
+        inputs=[
+            target_mpos,
+            target_mquat,
+            mjw_model.body_mocapid,
+            reset_input,
+        ],
+        outputs=[mjw_data.mocap_pos, mjw_data.mocap_quat],
+    )
+
+    target_ctrl = wp.array(mj_model.key_ctrl[key], dtype=float)
+    wp.launch(
+        reset_control,
+        dim=(mjw_data.nworld, mjw_model.nu),
+        inputs=[target_ctrl, reset_input],
+        outputs=[mjw_data.ctrl],
+    )

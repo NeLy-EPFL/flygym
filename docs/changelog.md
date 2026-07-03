@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.1.1 (under development)
+
+TODO
+
 ## Version 2.1.0
 
 !!! danger "API-breaking changes"

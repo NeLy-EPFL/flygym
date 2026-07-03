@@ -7,6 +7,8 @@ import numpy as np
 # excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
 pytestmark = pytest.mark.warp
 wp = pytest.importorskip("warp")
+mjw = pytest.importorskip("mujoco_warp")
+mj = pytest.importorskip("mujoco")
 
 
 # ==============================================================================
@@ -389,3 +391,135 @@ class TestGetRgbSelectedWorldsAndCamerasValidation:
 
         with pytest.raises(ValueError, match="camids"):
             get_rgb_selected_worlds_and_cameras(rc, worldids, camids, rgb_out)
+
+
+# ==============================================================================
+# reset_data_keyframe
+# ==============================================================================
+
+# A free joint (nq=7, nv=6) plus a hinge joint (nq=1, nv=1) gives a model
+# where nq != nv, which is the case that exposed the qpos/qvel kernel bug.
+# One actuator (with activation state) exercises act/ctrl, and one mocap
+# body exercises mocap_pos/mocap_quat.
+_RESET_KEYFRAME_XML = """
+<mujoco>
+  <worldbody>
+    <body name="free_body" pos="0 0 1">
+      <freejoint name="fj"/>
+      <geom type="sphere" size="0.1"/>
+      <body name="child" pos="0.2 0 0">
+        <joint name="hinge1" type="hinge" axis="0 0 1"/>
+        <geom type="sphere" size="0.05"/>
+      </body>
+    </body>
+    <body name="mocap_body" mocap="true" pos="1 2 3" quat="1 0 0 0">
+      <geom type="sphere" size="0.05"/>
+    </body>
+  </worldbody>
+  <actuator>
+    <general joint="hinge1" dyntype="filter" dynprm="0.5" gaintype="fixed" gainprm="1"/>
+  </actuator>
+  <keyframe>
+    <key name="k0" time="0.5"
+         qpos="0.1 0.2 0.3 1 0 0 0 0.5"
+         qvel="0.01 0.02 0.03 0.04 0.05 0.06 0.7"
+         act="0.33"
+         ctrl="0.44"
+         mpos="9 8 7" mquat="0 1 0 0"/>
+  </keyframe>
+</mujoco>
+"""
+
+
+@pytest.fixture
+def mj_and_mjw():
+    mj_model = mj.MjModel.from_xml_string(_RESET_KEYFRAME_XML)
+    mj_data = mj.MjData(mj_model)
+    # sanity-check the model actually has nq != nv, which is what this test
+    # suite cares about exercising.
+    assert mj_model.nq != mj_model.nv
+    mjw_model = mjw.put_model(mj_model)
+    mjw_data = mjw.put_data(mj_model, mj_data, nworld=3)
+    return mj_model, mjw_model, mjw_data
+
+
+class TestResetDataKeyframe:
+    def test_resets_all_worlds_to_keyframe_values(self, mj_and_mjw):
+        from flygym.warp.utils import reset_data_keyframe
+
+        mj_model, mjw_model, mjw_data = mj_and_mjw
+
+        # Perturb data away from both the keyframe and the model defaults so
+        # a no-op kernel launch would be caught by the assertions below.
+        mjw_data.qpos.fill_(-1.0)
+        mjw_data.qvel.fill_(-1.0)
+        mjw_data.time.fill_(-1.0)
+
+        reset_data_keyframe(mj_model, mjw_model, mjw_data, key=0)
+
+        n = mjw_data.nworld
+        np.testing.assert_allclose(
+            mjw_data.qpos.numpy(), np.tile(mj_model.key_qpos[0], (n, 1))
+        )
+        np.testing.assert_allclose(
+            mjw_data.qvel.numpy(), np.tile(mj_model.key_qvel[0], (n, 1))
+        )
+        np.testing.assert_allclose(
+            mjw_data.act.numpy(), np.tile(mj_model.key_act[0], (n, 1))
+        )
+        np.testing.assert_allclose(
+            mjw_data.ctrl.numpy(), np.tile(mj_model.key_ctrl[0], (n, 1))
+        )
+        np.testing.assert_allclose(
+            mjw_data.mocap_pos.numpy()[:, 0, :],
+            np.tile(mj_model.key_mpos[0], (n, 1)),
+        )
+        np.testing.assert_allclose(
+            mjw_data.mocap_quat.numpy()[:, 0, :],
+            np.tile(mj_model.key_mquat[0], (n, 1)),
+        )
+        np.testing.assert_allclose(mjw_data.time.numpy(), [0.5] * n)
+
+    def test_qvel_write_does_not_overrun_into_neighboring_world(self, mj_and_mjw):
+        """Regression test: qpos has nq=8 columns but qvel only has nv=7.
+
+        A kernel that loops over nq columns and writes both qpos_out and
+        qvel_out at the same column index writes one element past the end
+        of each world's qvel row. Because qvel is stored as a flat
+        (nworld, nv) buffer, that out-of-bounds column aliases column 0 of
+        the next world's row. qpos and qvel are reset by separate kernels,
+        each launched with its own dimension (nq vs. nv).
+        """
+        from flygym.warp.utils import reset_data_keyframe
+
+        mj_model, mjw_model, mjw_data = mj_and_mjw
+
+        mjw_data.qvel.fill_(-1.0)
+        reset_input = wp.array([True, False, True], dtype=bool)
+        reset_data_keyframe(mj_model, mjw_model, mjw_data, key=0, reset=reset_input)
+
+        qvel = mjw_data.qvel.numpy()
+        np.testing.assert_allclose(qvel[0], mj_model.key_qvel[0])
+        np.testing.assert_allclose(qvel[2], mj_model.key_qvel[0])
+        # World 1 was excluded from the reset and must be untouched.
+        np.testing.assert_allclose(qvel[1], np.full(mj_model.nv, -1.0))
+
+    def test_partial_reset_leaves_unselected_worlds_untouched(self, mj_and_mjw):
+        from flygym.warp.utils import reset_data_keyframe
+
+        mj_model, mjw_model, mjw_data = mj_and_mjw
+
+        mjw_data.qpos.fill_(0.0)
+        mjw_data.time.fill_(99.0)
+        reset_input = wp.array([True, False, True], dtype=bool)
+
+        reset_data_keyframe(mj_model, mjw_model, mjw_data, key=0, reset=reset_input)
+
+        qpos = mjw_data.qpos.numpy()
+        time = mjw_data.time.numpy()
+        np.testing.assert_allclose(qpos[0], mj_model.key_qpos[0])
+        np.testing.assert_allclose(qpos[2], mj_model.key_qpos[0])
+        np.testing.assert_allclose(qpos[1], np.zeros(mj_model.nq))
+        assert time[1] == pytest.approx(99.0)
+        assert time[0] == pytest.approx(0.5)
+        assert time[2] == pytest.approx(0.5)

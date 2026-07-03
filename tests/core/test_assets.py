@@ -7,6 +7,7 @@ is skipped automatically if the endpoint is unreachable.
 
 import hashlib
 import io
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -56,99 +57,64 @@ class TestPureHelpers:
         )
 
 
-class TestIsUpToDate:
-    def test_missing_file(self, tmp_path):
-        assert not assets_lazy_loading._is_up_to_date(tmp_path / "nope", 1, "x")
-
-    def test_size_mismatch(self, tmp_path):
-        p = tmp_path / "f"
-        p.write_bytes(b"abc")
-        assert not assets_lazy_loading._is_up_to_date(p, 99, "")
-
-    def test_md5_match_and_mismatch(self, tmp_path):
-        p = tmp_path / "f"
-        data = b"hello world"
-        p.write_bytes(data)
-        good = hashlib.md5(data).hexdigest()
-        assert assets_lazy_loading._is_up_to_date(p, len(data), good)
-        assert not assets_lazy_loading._is_up_to_date(p, len(data), "0" * 32)
-
-    def test_multipart_etag_falls_back_to_size(self, tmp_path):
-        p = tmp_path / "f"
-        data = b"hello world"
-        p.write_bytes(data)
-        # Multipart ETags contain a dash and are not a plain MD5; size match wins.
-        assert assets_lazy_loading._is_up_to_date(p, len(data), "deadbeef-2")
-
-
 # ---------------------------------------------------------------------------
 # Download path, exercised offline via a fake "remote"
 # ---------------------------------------------------------------------------
 
 
-# Flat, versioned S3 sub-prefix -- mirrors the real bucket layout.
+# Flat, versioned S3 key stem -- mirrors the real bucket layout.
 _DEMO_VERSION = "demo_fullsize_meshes_vtest"
-_DEMO_PREFIX = f"flygym_assets/{_DEMO_VERSION}/"
+
+
+def _make_tar_bytes(files: dict) -> bytes:
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        for name, data in files.items():
+            info = tarfile.TarInfo(name=name)
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+    return buf.getvalue()
 
 
 @pytest.fixture
 def fake_remote(monkeypatch):
     """Serve a small in-memory object store through the assets module's network
-    seam, so the full download/verify/cache flow runs without touching S3.
+    seam, so the full download/verify/extract/cache flow runs without touching S3.
     """
+    tar_bytes = _make_tar_bytes({"a.stl": b"aaaa", "b.stl": b"bbbbbb"})
+    checksum = hashlib.sha256(tar_bytes).hexdigest()
     store = {
-        f"{_DEMO_PREFIX}a.stl": b"aaaa",
-        f"{_DEMO_PREFIX}b.stl": b"bbbbbb",
+        f"flygym_assets/{_DEMO_VERSION}.tar": tar_bytes,
+        f"flygym_assets/{_DEMO_VERSION}.checksum": checksum.encode("ascii"),
     }
-    objects = [
-        {"key": k, "size": len(v), "etag": hashlib.md5(v).hexdigest()}
-        for k, v in store.items()
-    ]
 
-    def fake_list(prefix):
-        if not prefix.endswith("/"):
-            prefix += "/"
-        return [o for o in objects if o["key"].startswith(prefix)]
-
-    def fake_urlopen(url):
+    def fake_urlopen(url, **kwargs):
         # url is the object URL; recover the key after the bucket name.
         marker = f"/{assets_lazy_loading.S3_BUCKET}/"
         key = url.split(marker, 1)[1]
         return io.BytesIO(store[key])
 
-    monkeypatch.setattr(assets_lazy_loading, "_list_s3_prefix", fake_list)
     monkeypatch.setattr(assets_lazy_loading, "urlopen", fake_urlopen)
     return store
 
 
-def test_download_prefix_writes_and_is_idempotent(fake_remote, tmp_path):
-    dest = tmp_path / "out"
-    assets_lazy_loading._download_prefix(_DEMO_PREFIX, dest)
-    assert (dest / "a.stl").read_bytes() == b"aaaa"
-    assert (dest / "b.stl").read_bytes() == b"bbbbbb"
-
-    # Re-running must not re-download (no .part temp files left behind, content
-    # unchanged) since everything is already up to date.
-    assets_lazy_loading._download_prefix(_DEMO_PREFIX, dest)
-    assert sorted(p.name for p in dest.iterdir()) == ["a.stl", "b.stl"]
-
-
-def test_download_object_integrity_check(fake_remote, tmp_path, monkeypatch):
-    dest = tmp_path / "corrupt.stl"
-    # Lie about the expected size so the post-download check fails.
+def test_download_tar_integrity_check(fake_remote, tmp_path, monkeypatch):
+    # Corrupt the checksum so the post-download check fails.
+    fake_remote[f"flygym_assets/{_DEMO_VERSION}.checksum"] = b"0" * 64
+    dest = tmp_path / "out.tar"
     with pytest.raises(OSError, match="integrity check"):
-        assets_lazy_loading._download_object(
-            f"{_DEMO_PREFIX}a.stl", dest, size=999, etag=""
-        )
+        assets_lazy_loading._download_tar(_DEMO_VERSION, dest)
     assert not dest.exists()  # nothing left behind on failure
 
 
 def test_lazy_load_asset_dir_downloads_and_caches(fake_remote, tmp_path, monkeypatch):
     monkeypatch.setenv("FLYGYM_ASSET_CACHE_DIR", str(tmp_path / "cache"))
-    # First call downloads from S3 and caches under the versioned dir name.
+    # First call downloads from S3, verifies, extracts, and caches under the
+    # versioned dir name.
     out = assets_lazy_loading.lazy_load_asset_dir(_DEMO_VERSION)
     assert out == tmp_path / "cache" / _DEMO_VERSION
     assert (out / "a.stl").read_bytes() == b"aaaa"
+    assert (out / "b.stl").read_bytes() == b"bbbbbb"
     assert not list(out.parent.glob("*.partial")), "staging dir not cleaned up"
 
 
@@ -162,7 +128,7 @@ def test_lazy_load_asset_dir_returns_cache_without_network(tmp_path, monkeypatch
     def boom(*args, **kwargs):
         raise AssertionError("must not hit the network when already cached")
 
-    monkeypatch.setattr(assets_lazy_loading, "_download_prefix", boom)
+    monkeypatch.setattr(assets_lazy_loading, "_download_tar", boom)
     assert assets_lazy_loading.lazy_load_asset_dir(_DEMO_VERSION) == cached
 
 
@@ -175,7 +141,7 @@ def test_lazy_load_asset_dir_interrupted_download_leaves_no_cache(
     def boom(*args, **kwargs):
         raise RuntimeError("network died mid-download")
 
-    monkeypatch.setattr(assets_lazy_loading, "_download_prefix", boom)
+    monkeypatch.setattr(assets_lazy_loading, "_download_tar", boom)
     with pytest.raises(RuntimeError):
         assets_lazy_loading.lazy_load_asset_dir(_DEMO_VERSION)
     assert not (tmp_path / "cache" / _DEMO_VERSION).exists()
@@ -222,7 +188,7 @@ def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
         "lazy_load_asset_dir",
         lambda rel: requested.append(str(rel)) or Path("/cache") / rel,
     )
-    assets_lazy_loading.prefetch_meshes()
+    assets_lazy_loading.download_all_assets()
     assert set(requested) == set(_remote_mesh_dirs().values())
 
 
@@ -230,21 +196,12 @@ def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
 @pytest.mark.parametrize(
     "mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys()
 )
-def test_real_s3_roundtrip(mesh_dir):
-    """Opt-in: list and download a single small object from the live bucket, for
-    each model's remote mesh set."""
-    prefix = f"{assets_lazy_loading.S3_ROOT_PREFIX}/{mesh_dir}/"
+def test_real_s3_roundtrip(mesh_dir, tmp_path):
+    """Opt-in: download and checksum-verify the real tar for each model's remote
+    mesh set from the live bucket."""
     try:
-        objects = assets_lazy_loading._list_s3_prefix(prefix)
+        dest = tmp_path / f"{mesh_dir}.tar"
+        assets_lazy_loading._download_tar(mesh_dir, dest)
     except Exception as e:  # network unavailable in this environment
         pytest.skip(f"S3 endpoint unreachable: {e}")
-    assert objects, f"expected objects under prefix {prefix!r}"
-    smallest = min(objects, key=lambda o: o["size"])
-    import tempfile
-
-    with tempfile.TemporaryDirectory() as d:
-        dest = Path(d) / "obj.stl"
-        assets_lazy_loading._download_object(
-            smallest["key"], dest, smallest["size"], smallest["etag"]
-        )
-        assert dest.stat().st_size == smallest["size"]
+    assert dest.stat().st_size > 0

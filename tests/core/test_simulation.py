@@ -153,6 +153,14 @@ class TestGetBodyPositions:
         pos = simulation.get_body_positions(fly_with_adhesion.name)
         assert pos.shape[0] == len(ALL_SEGMENT_NAMES)
 
+    def test_positions_correct_after_reset_and_step(
+        self, simulation, fly_with_adhesion
+    ):
+        simulation.reset()
+        simulation.step()
+        pos = simulation.get_body_positions(fly_with_adhesion.name)
+        assert not np.allclose(pos, 0.0)
+
 
 # ==============================================================================
 # get_body_rotations

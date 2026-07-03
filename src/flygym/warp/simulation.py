@@ -21,6 +21,7 @@ from flygym.warp.utils import (
     wp_gather_indexed_cols_2d,
     wp_gather_indexed_rows_vec3f,
     wp_gather_indexed_rows_quatf,
+    reset_data_keyframe,
 )
 
 
@@ -68,28 +69,40 @@ class GPUSimulation(Simulation):
 
     @override
     def reset(self) -> None:
-        """Reset all parallel worlds to the neutral keyframe."""
+        """Reset all parallel worlds to the neutral keyframe.
+
+        !!! warning
+
+            `reset()` does not update derived kinematic quantities (`xpos`,
+            `xquat`, `site_xpos`, ...); it only restores state fields
+            (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
+            derived quantities right after `reset()`, before calling `step()`,
+            returns stale values from before the reset. This is consistent with the
+            behavior of MuJoCo Warp's native `reset_data()` function.
+        """
         super().reset()
-        # The superclass call resets CPU-side MuJoCo structs to the neutral keyframe,
-        # so we need to recreate GPU-side structs to reflect that reset.
-        self.mjw_model, self.mjw_data = self._mj_structs_to_mjw_structs()
-        # ... don't call mjw.reset_data() here! That loses the keyframe reset.
+        reset_data_keyframe(
+            self.mj_model, self.mjw_model, self.mjw_data, self._neutral_keyframe_id
+        )
 
     @override
     def get_joint_angles(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
         """Get joint angles for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_jointdofs)`` in radians, ordered as in
             ``fly.get_jointdofs_order()``.
         """
         indices = self._wp_intern_qposadrs_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
@@ -99,19 +112,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_joint_velocities(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_jointdofs"]:
         """Get joint velocities for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+            is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_jointdofs)`` in radians per second,
             ordered as in ``fly.get_jointdofs_order()``.
         """
         indices = self._wp_intern_qveladrs_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
@@ -121,19 +137,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_body_positions(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_bodies 3"]:
         """Get global body positions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_bodies, 3)`` in mm, ordered as in
             ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_vec3f,
             dim=(self.n_worlds, indices.size),
@@ -143,19 +162,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_body_rotations(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_bodies 4"]:
         """Get global body orientations as quaternions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_bodies, 4)`` (w, x, y, z), ordered as
             in ``fly.get_bodysegs_order()``.
         """
         indices = self._wp_internal_bodyids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_quatf,
             dim=(self.n_worlds, indices.size),
@@ -165,19 +187,22 @@ class GPUSimulation(Simulation):
 
     @override
     def get_site_positions(
-        self, fly_name: str
+        self, fly_name: str, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_sites 3"]:
         """Get global anatomical-joint site positions for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_sites, 3)`` in mm, ordered as in
             ``fly.get_sites_order()``.
         """
         indices = self._wp_internal_siteids_by_fly[fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_rows_vec3f,
             dim=(self.n_worlds, indices.size),
@@ -192,22 +217,23 @@ class GPUSimulation(Simulation):
 
     @override
     def get_actuator_forces(
-        self,
-        fly_name: str,
-        actuator_type: ActuatorType,
+        self, fly_name: str, actuator_type: ActuatorType, dst: wp.array | None = None
     ) -> Float[wp.array, "n_worlds n_actuators"]:
         """Get actuator forces for all parallel worlds.
 
         Args:
             fly_name: Name of the fly.
             actuator_type: Type of actuator to query.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
 
         Returns:
             Warp array of shape ``(n_worlds, n_actuators)``, ordered as in
             ``fly.get_actuated_jointdofs_order(actuator_type)``.
         """
         indices = self._wp_intern_actuatorids_by_type_by_fly[actuator_type][fly_name]
-        dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, indices.size), dtype=wp.float32)
         wp.launch(
             wp_gather_indexed_cols_2d,
             dim=(self.n_worlds, indices.size),
