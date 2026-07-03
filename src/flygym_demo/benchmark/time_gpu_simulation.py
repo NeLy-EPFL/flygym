@@ -99,9 +99,7 @@ def update_target_angles_kernel(
 
 
 @wp.kernel
-def increment_counter_kernel(
-    step_counter_gpu: wp.array[int],
-):
+def increment_counter_kernel(step_counter_gpu: wp.array[int]):
     step_counter_gpu[0] = step_counter_gpu[0] + 1
 
 

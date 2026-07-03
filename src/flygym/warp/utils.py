@@ -7,9 +7,7 @@ import mujoco_warp as mjw
 
 @wp.kernel
 def wp_gather_indexed_rows_3d(
-    src: wp.array3d[float],
-    dst: wp.array3d[float],
-    rows: wp.array[int],
+    src: wp.array3d[float], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows (dim 1) from a 3D Warp array into a narrower destination.
 
@@ -30,9 +28,7 @@ def wp_gather_indexed_rows_3d(
 
 @wp.kernel
 def wp_gather_indexed_rows_vec3f(
-    src: wp.array2d[wp.vec3],
-    dst: wp.array3d[float],
-    rows: wp.array[int],
+    src: wp.array2d[wp.vec3], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows from a 2D ``vec3f`` array into a ``(n_worlds, n_rows_narrow, 3)``
     ``float32`` destination.
@@ -57,9 +53,7 @@ def wp_gather_indexed_rows_vec3f(
 
 @wp.kernel
 def wp_gather_indexed_rows_quatf(
-    src: wp.array2d[wp.quat],
-    dst: wp.array3d[float],
-    rows: wp.array[int],
+    src: wp.array2d[wp.quat], dst: wp.array3d[float], rows: wp.array[int]
 ):
     """Gather specific rows from a 2D ``quatf`` array into a ``(n_worlds, n_rows_narrow, 4)``
     ``float32`` destination.
@@ -85,9 +79,7 @@ def wp_gather_indexed_rows_quatf(
 
 @wp.kernel
 def wp_scatter_indexed_cols_2d(
-    src: wp.array2d[float],
-    dst: wp.array2d[float],
-    cols: wp.array[int],
+    src: wp.array2d[float], dst: wp.array2d[float], cols: wp.array[int]
 ):
     """Scatter a 2D Warp array into specific columns of a wider destination array.
 
@@ -108,9 +100,7 @@ def wp_scatter_indexed_cols_2d(
 
 @wp.kernel
 def wp_gather_indexed_cols_2d(
-    src: wp.array2d[float],
-    dst: wp.array2d[float],
-    cols: wp.array[int],
+    src: wp.array2d[float], dst: wp.array2d[float], cols: wp.array[int]
 ):
     """Gather specific columns from a 2D Warp array into a narrower destination array.
 
