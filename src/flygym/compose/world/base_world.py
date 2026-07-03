@@ -81,7 +81,7 @@ class BaseWorld(BaseCompositionElement, ABC):
     def fly_lookup(self) -> dict[str, BaseFly]:
         """Lookup for `Fly` objects in the world, keyed by fly name."""
         return self._fly_lookup
-    
+
     @property
     def fly(self) -> BaseFly:
         """Get the single fly in the world.

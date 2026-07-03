@@ -11,6 +11,7 @@ from flygym.compose.fly import BaseFly, ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.rendering import Renderer
 from flygym.utils.profiling import print_perf_report
+from flygym.utils.typing import n_jointdofs, n_actuators, n_tendon_actuators
 
 
 class Simulation:
@@ -162,7 +163,7 @@ class Simulation:
             self._frames_rendered += 1
         return render_done
 
-    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
+    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
         """Get current joint angles ordered by the fly's skeleton.
 
         Args:
@@ -175,7 +176,7 @@ class Simulation:
         internal_ids = self._intern_qposadrs_by_fly[fly_name]
         return self.mj_data.qpos[internal_ids]
 
-    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
+    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
         """Get current joint angular velocities ordered by the fly's skeleton.
 
         Args:
@@ -216,7 +217,7 @@ class Simulation:
 
     def get_actuator_forces(
         self, fly_name: str, actuator_type: ActuatorType
-    ) -> Float[np.ndarray, "n_actuators"]:  # noqa: F821
+    ) -> Float[np.ndarray, "n_actuators"]:
         """Get actuator forces for the given actuator type.
 
         Args:
@@ -354,7 +355,7 @@ class Simulation:
         self,
         fly_name: str,
         actuator_type: ActuatorType,
-        inputs: Float[np.ndarray, "n_actuators"],  # noqa: F821
+        inputs: Float[np.ndarray, "n_actuators"],
     ) -> None:
         """Set control inputs for the given actuator type.
 
@@ -393,7 +394,7 @@ class Simulation:
     def set_tendon_actuator_inputs(
         self,
         fly_name: str,
-        inputs: Float[np.ndarray, "n_tendon_actuators"],  # noqa: F821
+        inputs: Float[np.ndarray, "n_tendon_actuators"],
     ) -> None:
         """Set control inputs for tendon actuators.
 
@@ -770,12 +771,12 @@ class Simulation:
         self.eye_renderer = None
         # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
         # reused and retina init requires some IO ops.
-    
+
     @property
     def fly(self) -> BaseFly:
         """Return the single fly in the world, or raise an error if there are multiple."""
         return self.world.fly
-    
+
     @property
     def fly_lookup(self) -> dict[str, BaseFly]:
         """Return the fly lookup dictionary from the world."""
