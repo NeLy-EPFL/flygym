@@ -403,6 +403,15 @@ class TestWriteVideoFromFrames:
         assert out.exists()
         assert out.stat().st_size > 0
 
+    def test_accepts_str_path(self, tmp_path):
+        """A plain str path (not just Path) must work, per the type hint."""
+        from flygym.utils.video import write_video_from_frames
+
+        frames = [np.zeros((64, 64, 3), dtype=np.uint8) for _ in range(3)]
+        out = str(tmp_path / "str_output.mp4")
+        write_video_from_frames(out, frames, fps=30)
+        assert (tmp_path / "str_output.mp4").exists()
+
     def test_creates_parent_dirs(self, tmp_path):
         from flygym.utils.video import write_video_from_frames
 

@@ -18,6 +18,7 @@ def write_video_from_frames(
         frames: List of ``(H, W, 3)`` uint8 numpy arrays.
         **kwargs: Passed to ``imageio.v3.imwrite``.
     """
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Scale image size up to multiples of 16 to enhance compatibility with most codecs

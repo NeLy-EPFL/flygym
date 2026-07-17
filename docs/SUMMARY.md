@@ -35,6 +35,12 @@
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
             * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
             * [tethered_world](api_reference/flygym/compose/world/tethered_world.md)
+    * ik
+        * [keypoints](api_reference/flygym/ik/keypoints.md)
+        * [seqikpy_defaults](api_reference/flygym/ik/seqikpy_defaults.md)
+        * [solve](api_reference/flygym/ik/solve.md)
+        * [visualize](api_reference/flygym/ik/visualize.md)
+        * [warp_solve](api_reference/flygym/ik/warp_solve.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils
