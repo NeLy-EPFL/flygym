@@ -77,6 +77,8 @@ markdown_extensions:
       permalink: true
 
 extra:
+  version:
+    provider: mike
   analytics:
     provider: google
     property: G-DF8S7T56G7
