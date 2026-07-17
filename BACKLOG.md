@@ -2,52 +2,39 @@
 
 ## `flygym.ik`: fully GPU-resident Gauss-Newton step (Warp tile API)
 
-**Status:** prototyped and validated for correctness; not integrated.
+**Status:** done. `flygym.ik.warp_solve._TileSolvePasses` builds the padded
+Jacobian/residual tiles directly on the GPU (via `_build_padded_jac_kernel`/
+`_build_padded_residual_kernel`, reading straight from the already
+GPU-resident `_BatchedGpuPasses.jacp`/`.points` buffers) and solves the
+damped normal equations per frame with Warp's tile API (`wp.tile_matmul`,
+`wp.tile_cholesky`, `wp.tile_cholesky_solve`), one thread block per frame.
+Used automatically whenever the resolved Warp device is CUDA (no
+user-facing toggle -- the tile solve is strictly better than the old
+host-round-trip solve whenever it's available, so there's nothing to
+configure); falls back to the host `np.matmul`/`np.linalg.solve` solve on a
+non-CUDA device. Only the small `(n_frames, nv)` solved `delta` is
+transferred back to the host each iteration, instead of the full
+`O(n_frames * n_keypoints * nv)` Jacobian.
 
-The Warp-batched IK solver (`flygym.ik.warp_solve`) currently assembles the
-batched normal equations (`J^T J`, `J^T r`) and solves them on the CPU via
-`np.matmul` + `np.linalg.solve`, after fixing an earlier `np.einsum` bottleneck
-(`np.matmul` dispatches to a batched BLAS GEMM and is ~5-6x faster than the
-equivalent `einsum`). Even after that fix, profiling shows this host-side
-step is still **~85-88% of total per-iteration time** at realistic batch
-sizes (e.g. 26.5 ms of a ~30 ms iteration at 1,000 frames) -- the GPU forward
-kinematics/Jacobian passes are comparatively cheap.
+Measured throughput (RTX 3080 Ti, this repo's bundled model: 42 DOFs, 24-30
+keypoints; see `scripts/dev/benchmark_ik.py`): plateaus around **~7,000
+frames/s** for batches of 1,000 frames and up, vs. ~800-830 frames/s at the
+old host-round-trip solve's peak batch size (500-1,000 frames) -- roughly an
+order of magnitude, in line with the ~12-15x figure this backlog item
+originally estimated once GPU-side padding replaced the host round-trip.
 
-Warp 1.14 exposes a tile API (`wp.tile_load`, `wp.tile_matmul`,
-`wp.tile_transpose`, `wp.tile_cholesky`, `wp.tile_cholesky_solve`,
-`wp.launch_tiled`) that can run this same batched small-SPD-solve entirely on
-the GPU, one thread-block per frame (a naive per-thread approach doesn't work
-here -- a 42x42 matrix in per-thread registers would blow the register
-budget; the tile API uses shared memory across a block instead).
+Validated during development against a pure-numpy reference (standalone,
+not checked in) and against all of the existing warp IK tests (known-qpos
+recovery, matching the CPU backend, joint limits, 2D projection, batch
+chunking, CUDA graph capture), all of which pass unchanged with the tile
+solve as the new default code path.
 
-Prototyped and validated (`/tmp/tile_full_kernel_test2.py` at the time of
-writing, not checked in):
-- Correctness: matches the `numpy` reference to ~1e-15 (`float64` tiles).
-- With data already GPU-resident, the tile-based assemble+solve is **~12-15x
-  faster** than the CPU `matmul`+`solve` (2.16 ms vs. 25.6 ms at 1,000
-  frames; 20.4 ms vs. 309 ms at 10,000 frames).
-- But building the padded tile layout via a host round-trip each iteration
-  (`numpy` pad -> upload -> kernel -> download, matching how data currently
-  reaches the solver) gives only **~1.7-1.8x realistic speedup** -- the
-  padding/transfer overhead eats most of the theoretical win.
-
-**To realize the full ~12-15x, the padded Jacobian/residual tiles need to be
-built directly on the GPU** from the already-resident `_BatchedGpuPasses`
-buffers (`points`, `jacp`), via new kernels, rather than round-tripping
-through `numpy`. This also opens the door to capturing the *entire* iteration
-(kinematics -> Jacobian -> assemble -> solve -> accept/reject -> qpos update)
-as a single CUDA graph, replayed via `wp.capture_launch` with effectively
-zero Python-side overhead per iteration -- a further, currently unquantified
-win on top of the ~12-15x.
-
-**Estimated scope:** a few new kernels (pad Jacobian into `(n_frames,
-TILE_RES, TILE_NV)` tile layout with weighting and zero-padding; likewise for
-residual; handle the `projection_axes` 2D case), plus moving the
-accept/reject/damping-update/qpos-clip logic onto the GPU if going for full
-iteration-level graph capture. One-time kernel compile cost observed during
-prototyping: ~2-5.6 s (cached to disk afterward via Warp's kernel cache, so
-this is a first-run cost only).
-
-**Worth doing if:** the tens-of-thousands-of-frames use case becomes a
-regular workload and this specific bottleneck (rather than e.g. I/O or
-downstream processing) is the limiting factor.
+**Not done** (optional stretch goal, not required to realize the ~12-15x):
+capturing the *entire* iteration (kinematics -> Jacobian -> tile
+assemble/solve -> accept/reject -> qpos update) as a single CUDA graph. The
+accept/reject/damping-update/qpos-clip logic still round-trips to the host
+each iteration, but transfers only `O(n_frames * (nv + n_keypoints * 3))`
+data (points for cost checking, damping, delta) rather than the Jacobian, so
+it was not the bottleneck this item was scoped to fix. Worth revisiting only
+if profiling shows this remaining host round-trip becomes significant at
+some future batch size/iteration-count combination.

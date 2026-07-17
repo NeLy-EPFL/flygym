@@ -97,3 +97,36 @@ if __name__ == "__main__":
         print(
             f"{n_frames:>10} {'warp':>8} {warp_time:>10.3f} {n_frames / warp_time:>10.1f}"
         )
+
+    # The GPU-resident tile solve (default since it's ~an order of magnitude
+    # faster than the host round-trip solve; see flygym.ik.warp_solve's
+    # module docstring) plateaus at a much larger batch size than the CPU
+    # backend can reasonably be benchmarked at, so these are warp-only.
+    large_frame_counts = [1000, 3000, 8000]
+    for n_frames in large_frame_counts:
+        n_reps = -(-n_frames // len(snippet.rawpred_egoxyz))
+        targets = np.tile(snippet.rawpred_egoxyz.astype(np.float32), (n_reps, 1, 1))[
+            :n_frames
+        ]
+
+        fit_qpos_trajectory_to_keypoints(
+            mj_model,
+            keypoints,
+            targets[:1],
+            initial_qpos=initial_qpos,
+            backend="warp",
+            max_iters=30,
+        )
+        t0 = time.perf_counter()
+        fit_qpos_trajectory_to_keypoints(
+            mj_model,
+            keypoints,
+            targets,
+            initial_qpos=initial_qpos,
+            backend="warp",
+            max_iters=30,
+        )
+        warp_time = time.perf_counter() - t0
+        print(
+            f"{n_frames:>10} {'warp':>8} {warp_time:>10.3f} {n_frames / warp_time:>10.1f}"
+        )

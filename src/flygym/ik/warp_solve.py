@@ -15,14 +15,34 @@ diverges outright for some frames (the keypoint chain has near-singular
 directions, e.g. redundant DOFs weakly constrained by sparse keypoints), too
 much stalls convergence well short of the optimum.
 
-Performance notes (measured on an RTX 3080 Ti, 12 GB, this model's 42 DOFs /
-30 keypoints; see `scripts/dev/benchmark_ik.py`):
+GPU-resident tile solve: assembling the batched normal equations `J^T J` /
+`J^T r` on the host (transferring the Jacobian and residual each iteration
+for `np.matmul` + `np.linalg.solve`) was measured to be ~85-88% of total
+per-iteration time at realistic batch sizes -- the comparatively small
+forward-kinematics/Jacobian GPU passes are not the bottleneck.
+`_TileSolvePasses` instead pads the already GPU-resident Jacobian and
+residual into `wp.tile_*`-friendly buffers *on the GPU* (no host round-trip
+for the `O(n_frames * n_keypoints * nv)`-sized Jacobian) and solves the
+damped normal equations per frame with Warp's tile API (`wp.tile_matmul`,
+`wp.tile_cholesky`, `wp.tile_cholesky_solve`), one thread block per frame --
+only the small `(n_frames, nv)` solved `delta` is transferred back to the
+host. Used automatically whenever the resolved Warp device is CUDA; there is
+no user-facing toggle for this, since it strictly dominates the host solve
+whenever it's available. Falls back to the host solve on non-CUDA devices
+(e.g. no GPU present).
 
-- The dominant cost at scale is assembling the batched normal equations
-  `J^T J` / `J^T r`. `np.matmul` (which dispatches to a batched BLAS GEMM) is
-  ~5-6x faster here than the equivalent `np.einsum` call, which does not take
-  the same fast path -- this was by far the largest win found, well above
-  either optimization below.
+Performance notes (measured on an RTX 3080 Ti, 12 GB, this model's 42 DOFs /
+24-30 keypoints; see `scripts/dev/benchmark_ik.py`):
+
+- Tile solve: throughput plateaus around **~7,000 frames/s** (30 iterations,
+  all keypoints) for batches of 1,000 frames and up.
+- Host solve (non-CUDA fallback only): `np.matmul` dispatches to a batched
+  BLAS GEMM and is ~5-6x faster here than the equivalent `np.einsum`, but the
+  transfer+solve is still ~85-88% of total per-iteration time, and
+  throughput peaks around 500-1,000 frames per batch (~800-830 frames/s) and
+  degrades gradually as batch size grows further (~600 frames/s at 8,000;
+  ~460 frames/s at 100,000) -- roughly an order of magnitude below the tile
+  solve at the same batch size.
 - All per-keypoint GPU work (forward kinematics, the point-gathering kernel,
   `mjw.jac`) is consolidated into single pre-allocated buffers and
   transferred to the host in one `.numpy()` call each, rather than once per
@@ -30,27 +50,19 @@ Performance notes (measured on an RTX 3080 Ti, 12 GB, this model's 42 DOFs /
   cheaper "light" pass without it is used for the trial-step accept/reject
   cost check).
 - CUDA graph capture (`use_graph_capture=True`, the default) additionally
-  shaves a further ~5-15% by replaying each GPU pass as a single captured
-  graph instead of re-dispatching every kernel/`mjw` call from Python each
-  iteration -- a real but secondary win once the two optimizations above are
-  in place, and one that shrinks further as batch size grows (host-side
-  linear algebra dominates at large batch sizes regardless).
-- Throughput peaks around **500-1000 frames per batch** (~800-830 frames/s
-  fitting all 30 keypoints for 30 iterations) and degrades gradually as batch
-  size grows further (~600 frames/s at 8,000; ~460 frames/s at 100,000) --
-  `batch_size` defaults to 1000 accordingly. Larger batches aren't wasted
-  work, just somewhat less efficient per frame; chunking via `batch_size` is
-  about bounding memory, not chasing peak throughput, so the default favors
-  throughput and chunks automatically for anything larger.
-- The GPU ran out of memory somewhere between 200,000 (succeeded) and
-  250,000 frames (failed - the Jacobian buffer alone needs
-  `n_keypoints * n_frames * 3 * nv * 4` bytes, e.g. ~4.5 GB at 300,000
-  frames) in a single batch on a 12 GB GPU. `batch_size` keeps any single
-  batch far below this regardless of total input size.
+  shaves off some further overhead by replaying each GPU pass (including the
+  tile-solve kernels) as a single captured graph instead of re-dispatching
+  every kernel/`mjw` call from Python each iteration.
+- `batch_size` defaults to 1000, bounding GPU memory rather than chasing peak
+  throughput (which plateaus at that size regardless): the Jacobian buffer
+  alone needs `n_keypoints * n_frames * 3 * nv * 4` bytes, e.g. ~4.5 GB at
+  300,000 frames in a single batch on a 12 GB GPU (the GPU ran out of memory
+  somewhere between 200,000, which succeeded, and 250,000 frames).
 
 Requires the `warp` extra (`pip install flygym[warp]`) and an NVIDIA GPU.
 """
 
+import functools
 import warnings
 
 import mujoco as mj
@@ -63,6 +75,196 @@ from flygym.ik.keypoints import KeypointSet
 from flygym.ik.solve import _joint_bounds
 
 __all__ = ["fit_qpos_trajectory_to_keypoints_warp"]
+
+# Tile kernels don't need gradients; disabling autodiff roughly halves the
+# shared-memory footprint of the compiled kernels (a "backward" variant is
+# otherwise generated alongside the forward one), which matters since tile
+# ops are already shared-memory-hungry (a device can fail to launch a kernel
+# whose tiles don't fit in its available shared memory per block).
+wp.set_module_options({"enable_backward": False})
+
+# Thread block size for the tiled Gauss-Newton solve kernel. Empirically
+# reasonable for tile shapes in the tens (e.g. nv=42, n_keypoints=24-30 ->
+# tile_nv=48, tile_res=72-96, the sizes exercised by this repo's bundled
+# model/keypoints); not re-tuned per model.
+_TILE_BLOCK_DIM = 64
+
+
+def _round_up_to_multiple(x: int, multiple: int) -> int:
+    return -(-x // multiple) * multiple
+
+
+@wp.kernel
+def _build_padded_jac_kernel(
+    jacp: wp.array4d(dtype=wp.float32),
+    sqrt_weights: wp.array(dtype=wp.float32),
+    axis_map: wp.array(dtype=wp.int32),
+    dim: wp.int32,
+    jac_padded: wp.array3d(dtype=wp.float64),
+):
+    """Write the weighted, axis-selected Jacobian into a zero-padded,
+    `wp.tile_load`-friendly `(n_frames, tile_res, tile_nv)` layout.
+
+    Grid is `(n_frames, n_keypoints * dim, nv)`; `jac_padded` is
+    pre-allocated at `(n_frames, tile_res, tile_nv)` with `tile_res >=
+    n_keypoints * dim` and `tile_nv >= nv`, so any padding region this launch
+    doesn't cover is left at its initial zero value.
+    """
+    frame, row, col = wp.tid()
+    keypoint = row // dim
+    axis = axis_map[row % dim]
+    jac_padded[frame, row, col] = wp.float64(sqrt_weights[keypoint]) * wp.float64(
+        jacp[keypoint, frame, axis, col]
+    )
+
+
+@wp.kernel
+def _build_padded_residual_kernel(
+    points: wp.array2d(dtype=wp.vec3),
+    targets: wp.array3d(dtype=wp.float32),
+    sqrt_weights: wp.array(dtype=wp.float32),
+    axis_map: wp.array(dtype=wp.int32),
+    dim: wp.int32,
+    residual_padded: wp.array3d(dtype=wp.float64),
+):
+    """Write the weighted residual into a zero-padded `(n_frames, tile_res,
+    1)` layout, analogous to `_build_padded_jac_kernel`."""
+    frame, row = wp.tid()
+    keypoint = row // dim
+    axis_local = row % dim
+    axis = axis_map[axis_local]
+    point_val = points[keypoint, frame][axis]
+    target_val = wp.float64(targets[frame, keypoint, axis_local])
+    residual_padded[frame, row, 0] = wp.float64(sqrt_weights[keypoint]) * (
+        wp.float64(point_val) - target_val
+    )
+
+
+@functools.lru_cache(maxsize=None)
+def _get_tile_solve_kernel(tile_res: int, tile_nv: int):
+    """Build (and cache) a damped Gauss-Newton tile-solve kernel specialized
+    to a fixed `(tile_res, tile_nv)` tile shape -- required since Warp's tile
+    shapes must be compile-time constants. Solves, per frame (one thread
+    block per frame): `delta = -(J^T J + damping * I)^-1 J^T r` via Cholesky.
+    """
+
+    @wp.kernel
+    def _tile_gauss_newton_solve(
+        jac: wp.array3d(dtype=wp.float64),
+        residual: wp.array3d(dtype=wp.float64),
+        damping: wp.array(dtype=wp.float64),
+        delta_out: wp.array2d(dtype=wp.float64),
+    ):
+        frame = wp.tid()
+        j = wp.tile_load(jac[frame], shape=(tile_res, tile_nv))
+        jt = wp.tile_transpose(j)
+        jtj = wp.tile_zeros(shape=(tile_nv, tile_nv), dtype=wp.float64)
+        wp.tile_matmul(jt, j, jtj)
+
+        d = damping[frame]
+        for i in range(tile_nv):
+            jtj[i, i] = jtj[i, i] + d
+
+        r = wp.tile_load(residual[frame], shape=(tile_res, 1))
+        jtr = wp.tile_zeros(shape=(tile_nv, 1), dtype=wp.float64)
+        wp.tile_matmul(jt, r, jtr)
+
+        chol = wp.tile_cholesky(jtj)
+        delta2d = wp.tile_cholesky_solve(chol, jtr)
+        neg_delta = delta2d * wp.float64(-1.0)
+        wp.tile_store(delta_out[frame], wp.tile_reshape(neg_delta, shape=(tile_nv,)))
+
+    return _tile_gauss_newton_solve
+
+
+class _TileSolvePasses:
+    """GPU-resident counterpart to the host `np.matmul`/`np.linalg.solve`
+    normal-equations assemble+solve in `_fit_one_batch`.
+
+    Reads directly from the already GPU-resident `jacp`/`points` buffers of a
+    `_BatchedGpuPasses` instance (no host round-trip for the Jacobian) and
+    writes the solved `delta` to a small `(n_frames, tile_nv)` GPU buffer;
+    only that (and not the Jacobian or residual) needs to reach the host.
+    """
+
+    def __init__(
+        self,
+        jacp,
+        points,
+        sqrt_weights_wp,
+        targets_wp,
+        n_frames,
+        n_keypoints,
+        nv,
+        dim,
+        axis_map,
+        use_graph_capture,
+    ):
+        self.jacp = jacp
+        self.points = points
+        self.sqrt_weights_wp = sqrt_weights_wp
+        self.targets_wp = targets_wp
+        self.n_frames = n_frames
+        self.n_res_real = n_keypoints * dim
+        self.nv = nv
+        self.dim = dim
+        self.tile_res = _round_up_to_multiple(self.n_res_real, 8)
+        self.tile_nv = _round_up_to_multiple(nv, 8)
+
+        self.axis_map_wp = wp.array(
+            np.asarray(axis_map, dtype=np.int32), dtype=wp.int32
+        )
+        self.jac_padded = wp.zeros(
+            (n_frames, self.tile_res, self.tile_nv), dtype=wp.float64
+        )
+        self.residual_padded = wp.zeros((n_frames, self.tile_res, 1), dtype=wp.float64)
+        self.delta = wp.zeros((n_frames, self.tile_nv), dtype=wp.float64)
+        self.damping_wp = wp.zeros(n_frames, dtype=wp.float64)
+
+        self._solve_kernel = _get_tile_solve_kernel(self.tile_res, self.tile_nv)
+
+        self._graph = None
+        if use_graph_capture and wp.get_device().is_cuda:
+            with wp.ScopedCapture() as capture:
+                self._launch_uncaptured()
+            self._graph = capture.graph
+
+    def _launch_uncaptured(self):
+        wp.launch(
+            _build_padded_jac_kernel,
+            dim=(self.n_frames, self.n_res_real, self.nv),
+            inputs=[
+                self.jacp,
+                self.sqrt_weights_wp,
+                self.axis_map_wp,
+                self.dim,
+                self.jac_padded,
+            ],
+        )
+        wp.launch(
+            _build_padded_residual_kernel,
+            dim=(self.n_frames, self.n_res_real),
+            inputs=[
+                self.points,
+                self.targets_wp,
+                self.sqrt_weights_wp,
+                self.axis_map_wp,
+                self.dim,
+                self.residual_padded,
+            ],
+        )
+        wp.launch_tiled(
+            self._solve_kernel,
+            dim=(self.n_frames,),
+            inputs=[self.jac_padded, self.residual_padded, self.damping_wp, self.delta],
+            block_dim=_TILE_BLOCK_DIM,
+        )
+
+    def solve(self):
+        if self._graph is not None:
+            wp.capture_launch(self._graph)
+        else:
+            self._launch_uncaptured()
 
 
 @wp.kernel
@@ -368,12 +570,37 @@ def _fit_one_batch(
     def points_2d(points_np):
         return points_np if projection_axes is None else points_np[..., projection_axes]
 
-    eye_nv = np.eye(nv, dtype=np.float64)
+    # The tile solve is strictly better than the host round-trip solve
+    # whenever it's available -- there's no reason to ever prefer the host
+    # solve on a CUDA device, so this isn't user-configurable, just resolved
+    # from the device (see the module docstring for both paths' perf).
+    tile_solver = None
+    if wp.get_device().is_cuda:
+        dim = 3 if projection_axes is None else 2
+        axis_map = list(range(3)) if projection_axes is None else list(projection_axes)
+        sqrt_weights_wp = wp.array(sqrt_weights.astype(np.float32), dtype=wp.float32)
+        targets_wp = wp.array3d(target_positions, dtype=wp.float32)
+        tile_solver = _TileSolvePasses(
+            passes.jacp,
+            passes.points,
+            sqrt_weights_wp,
+            targets_wp,
+            n_frames,
+            n_keypoints,
+            nv,
+            dim,
+            axis_map,
+            use_graph_capture,
+        )
+    else:
+        eye_nv = np.eye(nv, dtype=np.float64)
+
     damping = np.full(n_frames, initial_damping, dtype=np.float64)
 
     logger.info(
         f"Fitting {n_frames} frames in parallel on the GPU "
-        f"({n_keypoints} keypoints, {max_iters} iterations)..."
+        f"({n_keypoints} keypoints, {max_iters} iterations, "
+        f"{'tile' if tile_solver is not None else 'host'} solve)..."
     )
 
     passes.full()
@@ -381,19 +608,24 @@ def _fit_one_batch(
     residual, cost = _residual_and_cost(points_np, target_positions, sqrt_weights)
 
     for _ in range(max_iters):
-        jacp_np = passes.jacp.numpy()
-        if projection_axes is not None:
-            jacp_np = jacp_np[:, :, projection_axes, :]
-        jac_blocks = [sqrt_weights[k] * jacp_np[k] for k in range(n_keypoints)]
-        jac = np.concatenate(jac_blocks, axis=1).astype(np.float64)
+        if tile_solver is not None:
+            tile_solver.damping_wp.assign(damping)
+            tile_solver.solve()
+            delta = tile_solver.delta.numpy()[:, :nv].astype(np.float64)
+        else:
+            jacp_np = passes.jacp.numpy()
+            if projection_axes is not None:
+                jacp_np = jacp_np[:, :, projection_axes, :]
+            jac_blocks = [sqrt_weights[k] * jacp_np[k] for k in range(n_keypoints)]
+            jac = np.concatenate(jac_blocks, axis=1).astype(np.float64)
 
-        # np.matmul (unlike the equivalent np.einsum) dispatches to a batched
-        # BLAS GEMM here and is ~5-6x faster -- this is the dominant cost at
-        # scale, so this is not a stylistic choice.
-        jac_t = jac.transpose(0, 2, 1)
-        jtj = jac_t @ jac + damping[:, None, None] * eye_nv
-        jtr = jac_t @ residual[..., None]
-        delta = np.linalg.solve(jtj, -jtr)[..., 0]
+            # np.matmul (unlike the equivalent np.einsum) dispatches to a
+            # batched BLAS GEMM here and is ~5-6x faster -- this is the
+            # dominant cost at scale, so this is not a stylistic choice.
+            jac_t = jac.transpose(0, 2, 1)
+            jtj = jac_t @ jac + damping[:, None, None] * eye_nv
+            jtr = jac_t @ residual[..., None]
+            delta = np.linalg.solve(jtj, -jtr)[..., 0]
         qpos_trial = np.clip(qpos + delta, lower, upper).astype(np.float32)
 
         mjw_data.qpos.assign(qpos_trial)
