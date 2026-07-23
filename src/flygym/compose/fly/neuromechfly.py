@@ -52,7 +52,13 @@ class NeuroMechFly(BaseFly):
         purely a geometry/mass subdivision of one body: no degree of freedom is
         added and the kinematic chain (including the downstream tibia) is unchanged.
         It requires split ``{leg}_trochanter.stl`` / ``{leg}_femur.stl`` meshes
-        (femur authored with its origin at the trochanter-femur joint).
+        (femur authored with its origin at the trochanter-femur joint). These split
+        meshes currently only exist for ``MeshType.SIMPLIFIED_MAX2000FACES`` (the
+        default); ``MeshType.FULLSIZE`` lacks them and will raise
+        ``FileNotFoundError`` until a new fullsize asset bundle with split meshes is
+        published to S3 (see ``scripts/dev/split_trochanterfemur_mesh.py``, which
+        generates and validates the split fullsize meshes -- the remaining step is
+        publishing them and bumping ``NEUROMECHFLY_FULLSIZE_MESH_DIR``).
     """
 
     def __init__(
