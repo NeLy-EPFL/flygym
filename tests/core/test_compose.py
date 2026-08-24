@@ -114,6 +114,34 @@ class TestFlyConstruction:
         assert mj_data is not None
 
 
+class TestTrochanterFemurSplit:
+    """The trochanterfemur segment is rigged as two geoms (trochanter + femur) on
+    one MJCF body, not two separate bodies -- see `rigging.yaml`'s `geoms:` block
+    and `NeuroMechFly._add_one_body_and_geoms`. This keeps the kinematic chain
+    (and DOF count) identical to the single-geom segment while letting the two
+    parts get distinct segmentation ids."""
+
+    def test_two_geoms_on_one_body_segment(self):
+        fly = NeuroMechFly()
+        from flygym.anatomy import BodySegment
+
+        segment = BodySegment("lf_trochanterfemur")
+        geoms = fly.bodyseg_to_mjcfgeom[segment]
+        assert {g.name for g in geoms} == {"lf_trochanter", "lf_femur"}
+        # Both geoms belong to the single body registered for this segment (not
+        # two separate bodies), so no DOF was introduced by the split.
+        body = fly.bodyseg_to_mjcfbody[segment]
+        assert all(g.parent == body for g in geoms)
+
+    def test_other_segments_still_have_one_geom(self):
+        fly = NeuroMechFly()
+        from flygym.anatomy import BodySegment
+
+        segment = BodySegment("lf_tibia")
+        geoms = fly.bodyseg_to_mjcfgeom[segment]
+        assert [g.name for g in geoms] == ["lf_tibia"]
+
+
 class TestFlyAddJoints:
     def test_skeleton_set_after_add_joints(self, fly_with_joints):
         assert fly_with_joints.skeleton is not None
@@ -877,6 +905,17 @@ class TestFlatGroundWorldContactOptions:
 
 
 class TestFlyConstructionOptions:
+    @pytest.mark.xfail(
+        reason=(
+            "The fullsize S3 asset bundle still only has the fused "
+            "{leg}_trochanterfemur.stl mesh, not the split trochanter/femur pair "
+            "the rigging now requires. scripts/dev/split_trochanterfemur_mesh.py "
+            "generates and validates the split fullsize meshes; publishing them "
+            "to a new S3 asset bundle (and bumping "
+            "NEUROMECHFLY_FULLSIZE_MESH_DIR) is the remaining step."
+        ),
+        raises=FileNotFoundError,
+    )
     def test_fullsize_mesh_type(self):
         from flygym.compose.fly import MeshType
 

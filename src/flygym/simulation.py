@@ -292,8 +292,13 @@ class Simulation:
             for seg in body_segments
         ]
         geom_ids_by_segment = self._internal_geomid_by_bodyseg_by_fly[fly_name]
+        # A body segment may own more than one collision geom (e.g. the
+        # trochanterfemur is split into a trochanter and a femur geom); map each of
+        # its geoms to the same output row so their contact forces are summed.
         requested_geom_to_output = {
-            geom_ids_by_segment[seg]: i for i, seg in enumerate(requested_segments)
+            gid: i
+            for i, seg in enumerate(requested_segments)
+            for gid in geom_ids_by_segment[seg]
         }
         forces = np.zeros((len(requested_segments), 3), dtype=float)
 
@@ -530,15 +535,17 @@ class Simulation:
         for fly_name, fly in self.world.fly_lookup.items():
             internal_geomids_by_bodyseg_by_fly[fly_name] = {}
             for bodyseg, mjcf_geom_elements in fly.bodyseg_to_mjcfgeom.items():
-                for mjcf_geom_element in mjcf_geom_elements:
-                    internal_geom_id = mj.mj_name2id(
+                # Each body segment maps to the list of all its collision geom ids
+                # (a segment may own more than one geom, e.g. the trochanter and
+                # femur geoms of the trochanterfemur).
+                internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = [
+                    mj.mj_name2id(
                         self.mj_model,
                         mj.mjtObj.mjOBJ_GEOM,
                         mjcf_geom_element.name,
                     )
-                    internal_geomids_by_bodyseg_by_fly[fly_name][bodyseg] = (
-                        internal_geom_id
-                    )
+                    for mjcf_geom_element in mjcf_geom_elements
+                ]
 
         self._internal_geomid_by_bodyseg_by_fly = internal_geomids_by_bodyseg_by_fly
 
