@@ -120,6 +120,29 @@ def wp_gather_indexed_cols_2d(
 
 
 @wp.kernel
+def wp_masked_copy_rows_2d(
+    src: wp.array2d[float], dst: wp.array2d[float], world_mask: wp.array[bool]
+):
+    """Copy whole rows (dim 0, indexed by world) where a per-world mask is set.
+
+    This kernel is to be launched with a 2D launch configuration of
+    `(n_worlds, n_cols)`. Unlike a keyframe reset, `src` may hold a different row per
+    world, so this is the building block for per-world reference-state initialization.
+
+    Args:
+        src (wp.array of shape (n_worlds, n_cols), type float32):
+            Source array; rows for un-masked worlds are ignored.
+        dst (wp.array of shape (n_worlds, n_cols), type float32):
+            Destination array, written in place for masked worlds only.
+        world_mask (wp.array of shape (n_worlds,), type bool):
+            Per-world mask; a row is copied only where its entry is True.
+    """
+    i, k = wp.tid()
+    if world_mask[i]:
+        dst[i, k] = src[i, k]
+
+
+@wp.kernel
 def unpack_rgb_kernel_selected_worlds_and_cameras(
     # In:
     packed: wp.array2d[wp.uint32],

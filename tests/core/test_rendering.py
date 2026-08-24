@@ -2,6 +2,8 @@
 
 import os
 
+import mujoco as mj
+import numpy as np
 import pytest
 
 # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create a
@@ -292,3 +294,39 @@ class TestSaveVideo:
         with pytest.raises(RuntimeError, match="No frames"):
             r.save_video(tmp_path / "out.mp4")
         r.close()
+
+
+# ==============================================================================
+# Segmentation rendering: trochanter/femur split
+# ==============================================================================
+
+
+class TestSegmentationDistinguishesTrochanterFemur:
+    """The trochanterfemur segment is rendered as two separate geoms, trochanter
+    and femur (see `NeuroMechFly._add_one_body_and_geoms`), specifically so each
+    gets its own id in the segmentation map."""
+
+    def test_trochanter_and_femur_have_distinct_segmentation_ids(
+        self, compiled_model_with_camera, cam_name
+    ):
+        mj_model, mj_data, fly = compiled_model_with_camera
+        mj.mj_forward(mj_model, mj_data)
+        with Renderer(
+            mj_model,
+            cam_name,
+            camera_res=(240, 320),
+            render_rgb=False,
+            render_segmentation=True,
+        ) as renderer:
+            renderer.render_as_needed(mj_data)
+        seg = renderer.segmentation_frames[cam_name][0]
+
+        troch_gid = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_GEOM, f"{fly.name}/rf_trochanter"
+        )
+        femur_gid = mj.mj_name2id(
+            mj_model, mj.mjtObj.mjOBJ_GEOM, f"{fly.name}/rf_femur"
+        )
+        assert troch_gid != femur_gid
+        assert np.sum(seg == troch_gid) > 0, "trochanter not visible in this view"
+        assert np.sum(seg == femur_gid) > 0, "femur not visible in this view"

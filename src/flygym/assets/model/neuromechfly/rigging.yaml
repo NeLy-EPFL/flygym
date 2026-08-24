@@ -89,7 +89,15 @@ lf_coxa:
 lf_trochanterfemur:
   pos: [-0.00181, -0.00172, -0.365]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 6.29e-06
+  geoms:
+    lf_trochanter:
+      mesh: lf_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 7.35180e-07
+    lf_femur:
+      mesh: lf_femur
+      pos: [0.0, 0.042, -0.129]
+      mass: 5.55480e-06
 lf_tibia:
   pos: [-0.00465, -0.00149, -0.705]
   quat: [1.0, 0.0, 0.0, 0.0]
@@ -121,7 +129,15 @@ lm_coxa:
 lm_trochanterfemur:
   pos: [-0.000216, 0.000149, -0.181]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 6.48e-06
+  geoms:
+    lm_trochanter:
+      mesh: lm_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 8.13140e-07
+    lm_femur:
+      mesh: lm_femur
+      pos: [0.036, -0.028, -0.109]
+      mass: 5.66690e-06
 lm_tibia:
   pos: [-0.000971, 5.52e-05, -0.784]
   quat: [1.0, 0.0, 0.0, 0.0]
@@ -153,7 +169,15 @@ lh_coxa:
 lh_trochanterfemur:
   pos: [-0.000177, -0.000227, -0.199]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 8.75e-06
+  geoms:
+    lh_trochanter:
+      mesh: lh_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 6.03930e-07
+    lh_femur:
+      mesh: lh_femur
+      pos: [0.025, 0.026, -0.125]
+      mass: 8.14610e-06
 lh_tibia:
   pos: [0.000108, 0.000294, -0.836]
   quat: [1.0, 0.0, 0.0, 0.0]
@@ -185,7 +209,15 @@ rf_coxa:
 rf_trochanterfemur:
   pos: [-0.00181, 0.00172, -0.365]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 6.29e-06
+  geoms:
+    rf_trochanter:
+      mesh: rf_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 7.35180e-07
+    rf_femur:
+      mesh: rf_femur
+      pos: [0.0, -0.042, -0.129]
+      mass: 5.55480e-06
 rf_tibia:
   pos: [-0.00465, 0.00149, -0.705]
   quat: [1.0, 0.0, 0.0, 0.0]
@@ -217,7 +249,15 @@ rm_coxa:
 rm_trochanterfemur:
   pos: [-0.000216, -0.000149, -0.181]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 6.48e-06
+  geoms:
+    rm_trochanter:
+      mesh: rm_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 8.13140e-07
+    rm_femur:
+      mesh: rm_femur
+      pos: [0.036, 0.028, -0.109]
+      mass: 5.66690e-06
 rm_tibia:
   pos: [-0.000971, -5.52e-05, -0.784]
   quat: [1.0, 0.0, 0.0, 0.0]
@@ -249,7 +289,15 @@ rh_coxa:
 rh_trochanterfemur:
   pos: [-0.000177, 0.000227, -0.199]
   quat: [1.0, 0.0, 0.0, 0.0]
-  mass: 8.75e-06
+  geoms:
+    rh_trochanter:
+      mesh: rh_trochanter
+      pos: [0.0, 0.0, 0.0]
+      mass: 6.03930e-07
+    rh_femur:
+      mesh: rh_femur
+      pos: [0.025, -0.026, -0.125]
+      mass: 8.14610e-06
 rh_tibia:
   pos: [0.000108, -0.000294, -0.836]
   quat: [1.0, 0.0, 0.0, 0.0]
