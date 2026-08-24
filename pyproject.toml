@@ -21,7 +21,7 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "mujoco>=3.9,<3.10",
+    "mujoco>=3.12,<3.13",
     "numpy>=2.0,<3.0",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
@@ -38,8 +38,8 @@ dependencies = [
 
 [project.optional-dependencies]
 warp = [
-    "warp-lang>=1.14,<1.15",
-    "mujoco_warp>=3.9,<3.10",
+    "warp-lang>=1.15",
+    "mujoco_warp>=3.12,<3.13",
 ]
 dev = [
     # Testing
