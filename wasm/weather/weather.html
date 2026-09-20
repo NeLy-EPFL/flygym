@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlyGym Weather</title>
+<link rel="preconnect" href="https://api.open-meteo.com">
+<link rel="preconnect" href="https://geocoding-api.open-meteo.com">
+<style>
+  :root { --ink: #f4f7fb; --muted: #9eacc0; --line: rgba(255,255,255,.12);
+    --panel: rgba(17, 28, 49, .82); --panel-strong: #172743; --accent: #7dd3fc;
+    --accent-strong: #38bdf8; --warm: #fbbf74; --danger: #fca5a5; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; font-family: Inter, ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--ink);
+    background: #091326; }
+  body { min-height: 100vh; overflow-x: hidden; }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  .shell { min-height: 100vh; position: relative; isolation: isolate; overflow: hidden;
+    background: radial-gradient(circle at 86% -10%, #315b8d 0, transparent 34%),
+      radial-gradient(circle at 8% 15%, #17365e 0, transparent 32%), #091326; }
+  .shell::before { content: ""; position: fixed; inset: 0; z-index: -1; opacity: .18;
+    background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 42px 42px; mask-image: linear-gradient(to bottom, #000, transparent 72%); }
+  .topbar, .content { width: min(1180px, calc(100% - 40px)); margin: auto; }
+  .topbar { display: flex; justify-content: space-between; gap: 20px; align-items: center;
+    padding: 30px 0 24px; }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px;
+    background: linear-gradient(135deg, #67e8f9, #38bdf8); box-shadow: 0 8px 26px #38bdf833; font-size: 20px; }
+  h1, h2, p { margin: 0; }
+  h1 { font-size: 17px; letter-spacing: -.02em; }
+  .eyebrow { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .13em; }
+  .search { display: flex; width: min(420px, 100%); gap: 8px; }
+  .search input { min-width: 0; flex: 1; color: var(--ink); background: rgba(255,255,255,.08);
+    border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; outline: none; }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #38bdf81f; }
+  .icon-btn, .primary-btn { border: 1px solid var(--line); color: var(--ink); border-radius: 11px;
+    padding: 10px 13px; background: rgba(255,255,255,.08); }
+  .icon-btn:hover, .primary-btn:hover { border-color: #7dd3fc88; background: #7dd3fc18; }
+  .primary-btn { background: var(--accent-strong); color: #062137; border-color: transparent; font-weight: 700; }
+  .content { padding-bottom: 50px; }
+  .notice { display: none; border: 1px solid #fca5a566; color: var(--danger); background: #7f1d1d33;
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; }
+  .notice.visible { display: block; }
+  .dashboard { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 20px; background: var(--panel);
+    box-shadow: 0 22px 70px rgba(0,0,0,.18); backdrop-filter: blur(18px); }
+  .current { min-height: 296px; padding: 25px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #18375fdd, #11223ddd 68%, #23456a99); }
+  .current::after { content: "☼"; position: absolute; right: 32px; top: 18px; color: #fce6a7;
+    font-size: 132px; line-height: 1; opacity: .16; }
+  .location { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .location strong { color: var(--ink); font-size: 17px; }
+  .current-row { display: flex; align-items: end; gap: 20px; margin-top: 32px; position: relative; z-index: 1; }
+  .temp { font-size: clamp(70px, 11vw, 104px); line-height: .8; letter-spacing: -.08em; font-weight: 700; }
+  .temp small { font-size: .4em; letter-spacing: -.04em; vertical-align: top; }
+  .condition { padding-bottom: 4px; }
+  .condition .icon { font-size: 32px; }
+  .condition p { font-size: 20px; margin-top: 4px; }
+  .range { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 28px; }
+  .metric { border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px 12px; }
+  .metric span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+  .metric b { font-size: 14px; }
+  .sun-card { padding: 23px; display: flex; flex-direction: column; justify-content: space-between; }
+  .card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .card-title h2 { font-size: 14px; letter-spacing: .01em; }
+  .card-title span { color: var(--muted); font-size: 11px; }
+  .sun-path { height: 112px; margin: 16px 0 10px; position: relative; }
+  .sun-path svg { width: 100%; height: 100%; overflow: visible; }
+  .sun-details { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+  .sun-details b { display: block; color: var(--ink); margin-top: 4px; font-size: 14px; }
+  .section { margin-top: 16px; padding: 22px; }
+  .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-heading h2 { font-size: 15px; }
+  .section-heading p { color: var(--muted); font-size: 12px; }
+  .hours { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(76px, 1fr); overflow-x: auto;
+    gap: 7px; padding-bottom: 2px; }
+  .hour { background: rgba(255,255,255,.05); border: 1px solid transparent; border-radius: 13px;
+    padding: 11px 8px; text-align: center; min-width: 76px; }
+  .hour:first-child { border-color: #7dd3fc66; background: #7dd3fc14; }
+  .hour time { color: var(--muted); font-size: 11px; }
+  .hour .weather-icon { font-size: 23px; margin: 9px 0; }
+  .hour strong { font-size: 14px; display: block; }
+  .hour small { color: var(--accent); display: block; margin-top: 5px; font-size: 10px; }
+  .days { display: grid; grid-template-columns: repeat(7, minmax(92px, 1fr)); gap: 8px; overflow-x: auto; }
+  .day { padding: 13px 10px; border-radius: 13px; background: rgba(255,255,255,.04); }
+  .day time { color: var(--muted); font-size: 11px; }
+  .day .weather-icon { font-size: 25px; margin: 12px 0 9px; }
+  .day .temps { display: flex; gap: 7px; font-size: 13px; }
+  .day .temps span { color: var(--muted); }
+  .day small { display: block; color: var(--accent); margin-top: 10px; font-size: 10px; }
+  .map-card { overflow: hidden; padding: 0; }
+  .map-head { padding: 20px 22px 15px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  .map-head h2 { font-size: 15px; }
+  .map-head p { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .map-controls { display: flex; gap: 6px; }
+  .map-controls button { width: 30px; height: 30px; padding: 0; border-radius: 8px; color: var(--ink);
+    background: rgba(255,255,255,.07); border: 1px solid var(--line); }
+  #map { height: 340px; position: relative; overflow: hidden; cursor: grab; background: #17304b; }
+  #map.dragging { cursor: grabbing; }
+  #tile-layer { position: absolute; inset: 0; transform-origin: 0 0; }
+  .tile { position: absolute; width: 256px; height: 256px; user-select: none; pointer-events: none; }
+  #radar-layer { position: absolute; inset: 0; transform-origin: 0 0; pointer-events: none; opacity: .58; }
+  .radar-tile { position: absolute; width: 256px; height: 256px; }
+  .map-marker { position: absolute; width: 18px; height: 18px; border: 4px solid #fff; border-radius: 50%;
+    background: var(--accent-strong); box-shadow: 0 0 0 5px #38bdf855, 0 3px 12px #0008;
+    transform: translate(-50%, -50%); pointer-events: none; }
+  .map-status { position: absolute; left: 12px; bottom: 12px; padding: 7px 10px; border-radius: 8px;
+    background: #091326cc; color: var(--muted); font-size: 10px; backdrop-filter: blur(7px); }
+  .loading { min-height: 240px; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+  .loading::before { content: ""; width: 24px; height: 24px; border: 3px solid #ffffff2d;
+    border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 760px) {
+    .topbar { align-items: flex-start; flex-direction: column; }
+    .search { width: 100%; }
+    .dashboard { grid-template-columns: 1fr; }
+    .content, .topbar { width: min(100% - 24px, 620px); }
+    .current { min-height: 280px; }
+    .days { grid-template-columns: repeat(7, 104px); }
+  }
+  @media (max-width: 420px) {
+    .metrics { grid-template-columns: 1fr; }
+    .current-row { gap: 12px; }
+    .condition p { font-size: 16px; }
+    .section, .current, .sun-card { padding: 17px; }
+  }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">☁</div><div><div class="eyebrow">FlyGym forecast</div><h1>Weather, at a glance</h1></div></div>
+    <form class="search" id="search-form" role="search">
+      <input id="search-input" aria-label="Search for a city" autocomplete="off" placeholder="Search a city…" value="Lausanne">
+      <button class="primary-btn" type="submit">Search</button>
+      <button class="icon-btn" id="locate" type="button" title="Use my location" aria-label="Use my location">⌖</button>
+    </form>
+  </header>
+  <div class="content">
+    <div id="notice" class="notice" role="alert"></div>
+    <div id="weather" class="loading" aria-live="polite">Loading the forecast…</div>
+    <div id="dashboard" hidden>
+      <section class="dashboard">
+        <article class="card current">
+          <div class="location"><span>●</span><strong id="place-name">—</strong><span id="place-region"></span></div>
+          <div class="current-row"><div class="temp" id="current-temp">—<small>°</small></div><div class="condition"><div class="icon" id="current-icon">☁</div><p id="current-label">—</p><div class="range" id="current-range">—</div></div></div>
+          <div class="metrics"><div class="metric"><span>Feels like</span><b id="feels">—</b></div><div class="metric"><span>Wind</span><b id="wind">—</b></div><div class="metric"><span>Humidity</span><b id="humidity">—</b></div></div>
+        </article>
+        <article class="card sun-card">
+          <div class="card-title"><h2>Daylight</h2><span id="timezone">—</span></div>
+          <div class="sun-path"><svg viewBox="0 0 400 120" aria-hidden="true"><path d="M20 103 C100 10, 300 10, 380 103" fill="none" stroke="#ffffff22" stroke-width="2" stroke-dasharray="5 7"/><path d="M20 103 C100 10, 300 10, 380 103" fill="none" stroke="#fbbf74" stroke-width="4" stroke-linecap="round" pathLength="100" id="sun-progress"/><circle cx="20" cy="103" r="7" fill="#fbbf74" id="sun-dot"/></svg></div>
+          <div class="sun-details"><div>Sunrise<b id="sunrise">—</b></div><div style="text-align:right">Sunset<b id="sunset">—</b></div></div>
+        </article>
+      </section>
+      <section class="card section"><div class="section-heading"><h2>Next 24 hours</h2><p id="hourly-summary">Precipitation chance</p></div><div class="hours" id="hours"></div></section>
+      <section class="card section"><div class="section-heading"><h2>7-day outlook</h2><p>Highs &amp; lows</p></div><div class="days" id="days"></div></section>
+      <section class="card map-card"><div class="map-head"><div><h2>Radar &amp; map</h2><p id="map-caption">Live precipitation radar when available</p></div><div class="map-controls"><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button></div></div><div id="map"><div id="tile-layer"></div><div id="radar-layer"></div><div class="map-marker" id="map-marker"></div><div class="map-status" id="map-status">Map loading…</div></div></section>
+    </div>
+  </div>
+</main>
+<script src="./weather.js"></script>
+</body>
+</html>

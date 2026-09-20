@@ -10,6 +10,8 @@ wasm/
   shared/
     scene.js           MuJoCo load + FS write + mesh build + per-frame geom sync
     vendor/            (gitignored) MuJoCo-WASM (mujoco.js/.wasm) + Three.js
+  weather/             live forecast dashboard (Open-Meteo + OSM/RainViewer)
+    weather.html, weather.js
   viewer/              interactive posing viewer (counterpart of the native viewer)
     viewer.html, viewer.js
     assets/            (gitignored, generated) flat-ground fly MJCF + meshes + meta
@@ -24,6 +26,11 @@ wasm/
 - **Game** — see [`game/README.md`](game/README.md). Pilot the fly through a
   slalom track to a finish line at three levels of neural abstraction (CPG /
   tripod gait / individual legs).
+- **Weather** — open [`weather/weather.html`](weather/weather.html) for a
+  responsive forecast dashboard. It uses the public Open-Meteo API for
+  geocoding and forecast data, OpenStreetMap tiles for the map, and overlays
+  RainViewer radar when that service is available. If radar cannot be loaded,
+  the map remains usable and clearly reports the fallback state.
 
 ## How it's wired into the docs
 
