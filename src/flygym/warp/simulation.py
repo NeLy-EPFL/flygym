@@ -33,6 +33,8 @@ class GPUSimulation(Simulation):
     inputs accept arrays of the same batch shape.
 
     Requires an NVIDIA GPU with the ``[warp]`` extra installed.
+    Anatomical compound-eye sensors require the CPU ``Simulation``; construction
+    raises ``NotImplementedError`` if a fly has one attached.
 
     Args:
         world: A fully configured world with at least one fly attached.
@@ -58,6 +60,14 @@ class GPUSimulation(Simulation):
         max_constraints: int = 500,
         max_contacts: int = 500,
     ) -> None:
+        if any(
+            getattr(fly, "compound_eye", None) is not None
+            for fly in world.fly_lookup.values()
+        ):
+            raise NotImplementedError(
+                "Anatomical compound-eye vision requires the CPU Simulation; "
+                "GPU world states are not supported by this sensor."
+            )
         self._strip_unsupported_options_for_mjwarp(world)
         # Set the timestep on the CPU model before the GPU structs are built below,
         # so the override propagates into the GPU-side model.

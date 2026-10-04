@@ -30,3 +30,4 @@
 - [Victor Alfred Stimpfling](https://www.linkedin.com/in/vistimpfling/)
 - [Samuel Seng](https://github.com/djsamseng)
 - [Declan Kutscher](https://d3tk.github.io/)
+- [Ethan Trepka](https://github.com/et22)

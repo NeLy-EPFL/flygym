@@ -20,6 +20,7 @@ from flygym.compose import (
 from flygym.utils.math import Rotation3D
 from flygym.warp import GPUSimulation
 from flygym.warp.rendering import WarpCPURenderer
+from flygym.vision.compound_eye import CompoundEye
 
 
 # ==============================================================================
@@ -51,6 +52,19 @@ def gpu_bundle_with_joint_sites(gpu_sim_factory):
 
 
 class TestGPUSimulationConstruction:
+    def test_anatomical_vision_requires_cpu(self):
+        fly = NeuroMechFly()
+        fly.add_vision(compound_eye=CompoundEye())
+        world = FlatGroundWorld()
+        world.add_fly(
+            fly,
+            [0, 0, 0],
+            Rotation3D("quat", [1, 0, 0, 0]),
+            add_ground_contact_sensors=False,
+        )
+        with pytest.raises(NotImplementedError, match="CPU Simulation"):
+            GPUSimulation(world, n_worlds=2)
+
     def test_n_worlds_attribute(self, gpu_bundle):
         sim, fly, cam = gpu_bundle
         assert sim.n_worlds == 4

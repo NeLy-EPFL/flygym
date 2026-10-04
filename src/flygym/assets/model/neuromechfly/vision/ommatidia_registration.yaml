@@ -1,0 +1,27 @@
+# Zhao et al. (2025), eyemap_T4 20240701 specimen -> NeuroMechFly c_head frame.
+# Source: https://doi.org/10.1038/s41586-025-09276-5
+# eyemap_T4 commit 99d2a43123db636cedb55af9ff31a59657e7d17e:
+# data/microCT/20240701.RData (lens and matched ucl_rot_sm; GPL-3.0).
+# Units: data/microCT/20240701_position/lens.csv, Unit column (micrometres).
+# NeuroMechFly STL vertices are in metres; BaseFly.SCALE=1000 gives mm.
+# Source frame: +X anterior, +Y left, +Z dorsal; positions in micrometres.
+# Directions are outward unit axes from photoreceptor centers to lens centers.
+# Preserve the supplied JSON's source row order and both measured eyes.
+# Reproduce with scripts/dev/register_compound_eye.py. Units are mm/degrees.
+# Fit pitch and x/z translation to both eyes with anatomical dimensions fixed.
+# Y translation, yaw and roll are zero to preserve bilateral symmetry.
+# Least-squares point-to-surface fit; RMS lens/mesh distance is 13.83 micrometres.
+source_to_mm: 0.001
+pitch_deg: 2.368458
+translation: [0.24452068, 0.0, 0.03090220]
+# Camera fit is separate from the rigid anatomical registration above.
+# Reflect right-eye axes onto the left, then minimize the bounding rectangle's
+# area in the pinhole image plane. Its angular bounds are 178.88 x 167.63 degrees.
+# Use a square 168.04-degree field of view, matching the previous horizontal FOV.
+# Pitch both cameras down 5.417735 degrees: the smallest shift that retains
+# every lower optical axis, rounded to six decimal places. The 12 left and
+# 22 right out-of-view axes keep their readout indices and return NaN.
+camera:
+  fovy: 168.04
+  forward: [0.388933456498205, 0.9204417654454304, 0.038957962473136445]
+  up: [-0.27745256231057547, 0.0767040550514973, 0.9576724719892252]

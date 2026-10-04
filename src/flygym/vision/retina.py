@@ -6,63 +6,60 @@ import yaml
 
 
 class Retina:
-    """
-    This class handles the simulation of the fly's visual input.
-    Calculation in this class is vectorized and parallelized using Numba.
+    """This class handles the simulation of the fly's visual input with a
+    simplified symmetric hexagonal retina model (default vision sensor).
 
-    Attributes
-    ----------
-    ommatidia_id_map : np.ndarray
-        Integer NumPy array of shape (nrows, ncols) where the value
-        indicates the ID of the ommatidium (starting from 1). 0 indicates
-        background (outside the hex lattice).
-    num_pixels_per_ommatidia : np.ndarray
-        Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates the number of raw pixels covered
-        within each ommatidium.
-    pale_type_mask : np.ndarray
-        Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidium is pale-type
-        (1) or yellow-type (0).
-    distortion_coefficient : float
-        A coefficient determining the extent of fisheye effect applied to
-        the raw MuJoCo camera images.
-    zoom : float
-        A coefficient determining the zoom level when the fisheye effect is
-        applied.
-    nrows : int
-        The number of rows in the raw image rendered by the MuJoCo camera.
-    ncols : int
-        The number of columns in the raw image rendered by the MuJoCo
-        camera.
+    Attributes:
+        ommatidia_id_map (np.ndarray):
+            Integer NumPy array of shape (nrows, ncols) where the value
+            indicates the ID of the ommatidium (starting from 1). 0 indicates
+            background (outside the hex lattice).
+        num_pixels_per_ommatidia (np.ndarray):
+            Integer NumPy array of shape (max(ommatidia_id_map),) where the
+            value of each element indicates the number of raw pixels covered
+            within each ommatidium.
+        pale_type_mask (np.ndarray):
+            Integer NumPy array of shape (max(ommatidia_id_map),) where the
+            value of each element indicates whether the ommatidium is pale-type
+            (1) or yellow-type (0).
+        distortion_coefficient (float):
+            A coefficient determining the extent of fisheye effect applied to
+            the raw MuJoCo camera images.
+        zoom (float):
+            A coefficient determining the zoom level when the fisheye effect is
+            applied.
+        nrows (int):
+            The number of rows in the raw image rendered by the MuJoCo camera.
+        ncols (int):
+            The number of columns in the raw image rendered by the MuJoCo
+            camera.
 
-    Parameters
-    ----------
-    ommatidia_id_map : np.ndarray
-        Integer NumPy array of shape (nrows, ncols) where the value
-        indicates the ID of the ommatidium (starting from 1). 0 indicates
-        background (outside the hex lattice). By default, the map indicated
-        in the configuration file is loaded.
-    pale_type_mask : np.ndarray
-        Integer NumPy array of shape (max(ommatidia_id_map),) where the
-        value of each element indicates whether the ommatidium is pale-type
-        (1) or yellow-type (0). By default, the mask indicated in the
-        configuration file is used.
-    distortion_coefficient : float
-        A coefficient determining the extent of fisheye effect applied to
-        the raw MuJoCo camera images. By default, the value indicated in
-        the configuration file is used.
-    zoom : float
-        A coefficient determining the zoom level when the fisheye effect is
-        applied. By default, the value indicated in the configuration file
-        is used.
-    nrows : int
-        The number of rows in the raw image rendered by the MuJoCo camera.
-        By default, the value indicated in the configuration file is used.
-    ncols : int
-        The number of columns in the raw image rendered by the MuJoCo
-        camera. By default, the value used in the configuration file is
-        used.
+    Args:
+        ommatidia_id_map (np.ndarray):
+            Integer NumPy array of shape (nrows, ncols) where the value
+            indicates the ID of the ommatidium (starting from 1). 0 indicates
+            background (outside the hex lattice). By default, the map indicated
+            in the configuration file is loaded.
+        pale_type_mask (np.ndarray):
+            Integer NumPy array of shape (max(ommatidia_id_map),) where the
+            value of each element indicates whether the ommatidium is pale-type
+            (1) or yellow-type (0). By default, the mask indicated in the
+            configuration file is used.
+        distortion_coefficient (float):
+            A coefficient determining the extent of fisheye effect applied to
+            the raw MuJoCo camera images. By default, the value indicated in
+            the configuration file is used.
+        zoom (float):
+            A coefficient determining the zoom level when the fisheye effect is
+            applied. By default, the value indicated in the configuration file
+            is used.
+        nrows (int):
+            The number of rows in the raw image rendered by the MuJoCo camera.
+            By default, the value indicated in the configuration file is used.
+        ncols (int):
+            The number of columns in the raw image rendered by the MuJoCo
+            camera. By default, the value used in the configuration file is
+            used.
     """
 
     def __init__(
@@ -112,17 +109,15 @@ class Retina:
         """Given a raw image from an eye (one camera), simulate what the
         fly would see.
 
-        Parameters
-        ----------
-        raw_img : np.ndarray
-            RGB image with the shape (H, W, 3) returned by the camera.
+        Args:
+            raw_img (np.ndarray):
+                RGB image with the shape (H, W, 3) returned by the camera.
 
-        Returns
-        -------
-        np.ndarray
-            Our simulation of what the fly might see through its compound
-            eyes. It is a (N, 2) array where the first dimension is for the
-            N ommatidia, and the second dimension is for the two channels.
+        Returns:
+            (np.ndarray):
+                Our simulation of what the fly might see through its compound
+                eyes. It is a (N, 2) array where the first dimension is for the
+                N ommatidia, and the second dimension is for the two channels.
         """
         return self._raw_image_to_hex_pxls(
             raw_img,
@@ -138,26 +133,24 @@ class Retina:
         convert them to an (nrows, ncols) image with hexagonal blocks that
         can be visualized as a human-readable image.
 
-        Parameters
-        ----------
-        ommatidia_reading : np.ndarray
-            Our simulation of what the fly might see through its compound
-            eyes. It is a (N,) or (N, ...) array where the first dimension
-            is for the number of ommatidia.
-        color_8bit : bool
-            If True, the returned image will be in 8-bit color. This speeds
-            up rendering. Otherwise, the image will be in the same data
-            type as the input ``ommatidia_reading``.
-        default_value : int or float
-            The value to use for pixels that are not covered by any ommatidium.
-            By default, this is 0 (black).
+        Args:
+            ommatidia_reading (np.ndarray):
+                Our simulation of what the fly might see through its compound
+                eyes. It is a (N,) or (N, ...) array where the first dimension
+                is for the number of ommatidia.
+            color_8bit (bool):
+                If True, the returned image will be in 8-bit color. This speeds
+                up rendering. Otherwise, the image will be in the same data
+                type as the input ``ommatidia_reading``.
+            default_value (int or float):
+                The value to use for pixels that are not covered by any ommatidium.
+                By default, this is 0 (black).
 
-        Returns
-        -------
-        np.ndarray
-            An (nrows, ncols, ...) image with hexagonal blocks that can be
-            visualized as a human-readable image. The shape after the 0th
-            dimension matches that of the input ``ommatidia_reading``.
+        Returns:
+            (np.ndarray):
+                An (nrows, ncols, ...) image with hexagonal blocks that can be
+                visualized as a human-readable image. The shape after the 0th
+                dimension matches that of the input ``ommatidia_reading``.
         """
         # Flatten dimensions after ommatidia
         input_shape = ommatidia_reading.shape
@@ -188,31 +181,26 @@ class Retina:
         )
 
     def correct_fisheye(self, img: np.ndarray) -> np.ndarray:
-        """
-        The raw image rendered by the MuJoCo camera is rectilinear. This
+        """The raw image rendered by the MuJoCo camera is rectilinear. This
         distorts the image and overrepresents the periphery of the field of
         view (the same angle near the periphery is reflected by a greater
         angle in the rendered image). This method applies a fisheye effect
         to make the same angle represented roughly equally anywhere within
         the field of view.
 
-        Notes
-        -----
-        This implementation is based on https://github.com/Gil-Mor/iFish,
-        MIT License.
+        Notes:
+            This implementation is based on https://github.com/Gil-Mor/iFish,
+            MIT License.
 
-        Parameters
-        ----------
-        img: np.ndarray
-            The raw MuJoCo camera rendering as a NumPy array of shape
-            (nrows, ncols, 3).
+        Args:
+            img (np.ndarray):
+                The raw MuJoCo camera rendering as a NumPy array of shape
+                (nrows, ncols, 3).
 
-        Returns
-        -------
-        np.ndarray
-            The corrected camera rendering as a NumPy array of shape
-            (nrows, ncols, 3).
-
+        Returns:
+            (np.ndarray):
+                The corrected camera rendering as a NumPy array of shape
+                (nrows, ncols, 3).
         """
         return self._correct_fisheye(
             img, self.nrows, self.ncols, self.zoom, self.distortion_coefficient

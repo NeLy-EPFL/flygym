@@ -140,6 +140,9 @@ class TestFlygymAssets:
             "flygym/assets/model/neuromechfly/vision.yaml",
             # Vision: ommatidia layout loaded by the retina.
             "flygym/assets/model/neuromechfly/compound_eye.npz",
+            "flygym/assets/model/neuromechfly/vision/ommatidia_microct.json",
+            "flygym/assets/model/neuromechfly/vision/ommatidia_registration.yaml",
+            "flygym/assets/model/neuromechfly/vision/ommatidia_lattice.json",
             # The flybody model definition.
             "flygym/assets/model/flybody/fruitfly.xml",
             # The musculoskeletal MJCF (DEFAULT_MUSCULOSKELETAL_XML) -- regression

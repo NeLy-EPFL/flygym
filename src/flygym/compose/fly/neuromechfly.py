@@ -1,12 +1,17 @@
 import warnings
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, override
+
+import numpy as np
+from scipy.spatial.transform import Rotation
 
 from flygym import assets_dir
 from flygym.anatomy import BodySegment, ALL_SEGMENT_NAMES
 from flygym.compose.fly.base_fly import BaseFly, MeshType, GeomFittingOption
 from flygym.utils.assets_lazy_loading import lazy_load_asset_dir
+from flygym.utils.mjcf import CAMERA_MODES, GEOM_TYPES
+from flygym.vision.compound_eye import CompoundEye
 
 __all__ = ["NeuroMechFly", "Fly"]
 
@@ -58,6 +63,8 @@ class NeuroMechFly(BaseFly):
         geom_fitting_option: GeomFittingOption = GeomFittingOption.UNMODIFIED,
         vision_config_path: PathLike = DEFAULT_VISION_CONFIG_PATH,
     ) -> None:
+        self.compound_eye: CompoundEye | None = None
+        self.vision_excludes_self = False
         super().__init__(
             name=name,
             rigging_config_path=rigging_config_path,
@@ -69,6 +76,77 @@ class NeuroMechFly(BaseFly):
             geom_fitting_option=geom_fitting_option,
             vision_config_path=vision_config_path,
         )
+
+    @override
+    def add_vision(
+        self,
+        draw_sensor_markers: bool = False,
+        *,
+        compound_eye: CompoundEye | None = None,
+        exclude_self: bool | None = None,
+    ) -> None:
+        """Attach fisheye cameras or an anatomical compound-eye sensor.
+
+        Call before adding the fly to a world. Anatomical sensor frames follow
+        the eye bodies; custom meshes or rigging require checking registration.
+
+        Args:
+            draw_sensor_markers: Show markers in ordinary renders. Anatomical
+                eyes show every 16th optical axis, with a length of 0.08 mm.
+            compound_eye: Anatomical sensor, or None for the existing Retina model.
+            exclude_self: Hide the fly from its own visual input, retaining cast
+                shadows and other flies. Defaults to True for anatomical vision
+                and False for fisheye vision. Ordinary renders are unaffected.
+        """
+        if self.compound_eye is not None or self.eyecameraname_to_mjcfcamera:
+            raise ValueError("Vision has already been added to this fly.")
+        if exclude_self is not None and not isinstance(exclude_self, bool):
+            raise TypeError("exclude_self must be a boolean or None.")
+        if compound_eye is not None and not isinstance(compound_eye, CompoundEye):
+            raise TypeError("compound_eye must be a CompoundEye instance.")
+        self.vision_excludes_self = (
+            compound_eye is not None if exclude_self is None else exclude_self
+        )
+        if compound_eye is None:
+            return super().add_vision(draw_sensor_markers)
+        centers = compound_eye.optical_centers
+        for side_id, (side, indices) in enumerate(
+            zip(("left", "right"), compound_eye.eye_indices)
+        ):
+            body = self.mjcf_root.body("l_eye" if side == "left" else "r_eye")
+            inverse = Rotation.from_quat(body.quat, scalar_first=True).inv()
+            origin = inverse.apply(centers[side_id] - body.pos)
+            forward = compound_eye.camera_directions[side_id]
+            up = compound_eye.camera_up_vectors[side_id]
+            name = f"compound_eye_{side}"
+            camera = body.add_camera(
+                name=name,
+                pos=origin,
+                xyaxes=np.concatenate(
+                    [inverse.apply(np.cross(forward, up)), inverse.apply(up)]
+                ),
+                fovy=compound_eye.fovy,
+                mode=CAMERA_MODES["fixed"],
+                # Keep the eye frame through static-body fusion. MuJoCo
+                # 3.10 otherwise drops fixed-camera transforms when fusing.
+                targetbody=body.name,
+            )
+            self.eyecameraname_to_mjcfcamera[name] = camera
+            if draw_sensor_markers:
+                for index in indices[::16]:
+                    start = inverse.apply(compound_eye.positions[index] - body.pos)
+                    end = start + inverse.apply(compound_eye.directions[index]) * 0.08
+                    body.add_site(
+                        name=f"compound_eye_axis_{index}",
+                        type=GEOM_TYPES["capsule"],
+                        fromto=np.concatenate([start, end]),
+                        size=[0.002, 0, 0],
+                        rgba=[0.1, 0.8, 0.3, 1]
+                        if side == "left"
+                        else [0.9, 0.3, 0.1, 1],
+                        group=1,
+                    )
+        self.compound_eye = compound_eye
 
     def _add_mesh_assets(
         self, mesh_basedir: PathLike, mirror_left2right: bool, mesh_type: MeshType

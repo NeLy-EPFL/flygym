@@ -46,6 +46,9 @@
         * [pose_conversion](api_reference/flygym/utils/pose_conversion.md)
         * [profiling](api_reference/flygym/utils/profiling.md)
         * [video](api_reference/flygym/utils/video.md)
+    * vision
+        * [retina](api_reference/flygym/vision/retina.md)
+        * [compound_eye](api_reference/flygym/vision/compound_eye.md)
     * warp
         * [rendering](api_reference/flygym/warp/rendering.md)
         * [simulation](api_reference/flygym/warp/simulation.md)
