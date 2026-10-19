@@ -143,11 +143,15 @@ def run_simulation(
         sim.step()
         wp.launch(increment_counter_kernel, dim=1, outputs=[step_counter])
 
+    # Finish pending setup work before starting the timer.
+    wp.synchronize()
     start_time = perf_counter_ns()
     for step in range(n_steps):
         wp.capture_launch(advance_sim_capture.graph)
         if enable_rendering:
             sim.render_as_needed()
+    # CUDA graph launches are asynchronous; include their execution time.
+    wp.synchronize()
     end_time = perf_counter_ns()
     walltime_s = (end_time - start_time) / 1e9
 
