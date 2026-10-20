@@ -42,7 +42,7 @@ import mujoco as mj
 import numpy as np
 import yaml
 from flygym import assets_dir
-from flygym.anatomy import ALL_SEGMENT_NAMES, ContactBodiesPreset
+from flygym.anatomy import ContactBodiesPreset
 from flygym.compose import ContactParams, FlatGroundWorld
 from flygym.utils.math import Rotation3D
 from flygym.utils.mjcf import GEOM_TYPES
@@ -69,15 +69,17 @@ GROUND_FRICTION = (1.0, 0.005, 0.0001)
 
 # --- fly actuator / joint tuning --------------------------------------------
 # Matched to tutorial 2 (kinematic replay): default joint stiffness/damping with
-# no special passive-tarsus treatment, a high position gain, the default force
-# range, and the default (weak) adhesion gain.
+# no special passive-tarsus treatment, a high position gain, and the default force
+# range. Adhesion is raised from tutorial 2's 1.0 to 10.0 for traction: in CPG
+# rollouts this ~1.5x the turn rate and cuts heading drift with no flips, while
+# higher values (>=15) make stance feet stick and slow backward walking.
 JOINT_STIFFNESS = 10.0
 JOINT_DAMPING = 0.5
 PASSIVE_TARSUS_STIFFNESS = 10.0
 PASSIVE_TARSUS_DAMPING = 0.5
 ACTUATOR_GAIN = 150.0
 ACTUATOR_FORCERANGE = (-30.0, 30.0)
-ADHESION_GAIN = 1.0
+ADHESION_GAIN = 10.0
 
 # --- CPG / controller config (from neuromechfly-live TurningController) ------
 INTRINSIC_FREQ = 36.0
@@ -370,8 +372,9 @@ def bake_preprogrammed_steps() -> dict:
 
 
 # --- per-geom colors (mirrors build_wasm_viewer_assets.py) ------------------
-def segment_colors() -> dict[str, list[float]]:
-    """Map each body segment to a representative RGBA from flygym's visuals.yaml."""
+def segment_colors(names: set[str]) -> dict[str, list[float]]:
+    """Map each of `names` (geom/body names) to a representative RGBA from
+    flygym's visuals.yaml."""
     with open(assets_dir / "model/neuromechfly/visuals.yaml") as fh:
         vis = yaml.safe_load(fh)
     colors: dict[str, list[float]] = {}
@@ -390,7 +393,7 @@ def segment_colors() -> dict[str, list[float]]:
             rgb = rgba[:3]
         patterns = params["apply_to"]
         for pattern in [patterns] if isinstance(patterns, str) else patterns:
-            for seg in fnmatch.filter(ALL_SEGMENT_NAMES, pattern):
+            for seg in fnmatch.filter(names, pattern):
                 colors[seg] = [round(float(c), 4) for c in (*rgb, alpha)]
     return colors
 
@@ -398,7 +401,12 @@ def segment_colors() -> dict[str, list[float]]:
 def build_geom_colors(model: mj.MjModel) -> list[list[float]]:
     """A representative RGBA per geom: fly segments from visuals.yaml, everything
     else (the slalom poles, ground) straight from the geom's own ``rgba``."""
-    seg_color = segment_colors()
+    # Match against the model's own geom + body names, not ALL_SEGMENT_NAMES:
+    # some segments render as several geoms (e.g. the trochanterfemur body as
+    # `*_trochanter` + `*_femur`), and visuals.yaml styles those geoms by name.
+    names = {model.geom(g).name.split("/")[-1] for g in range(model.ngeom)}
+    names |= {model.body(b).name.split("/")[-1] for b in range(model.nbody)}
+    seg_color = segment_colors(names)
     geom_rgba = []
     for g in range(model.ngeom):
         seg = model.geom(g).name.split("/")[-1]

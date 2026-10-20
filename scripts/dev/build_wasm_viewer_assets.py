@@ -44,16 +44,21 @@ from pathlib import Path
 
 import mujoco as mj
 import yaml
+
 from flygym import assets_dir
 from flygym.anatomy import (
-    ALL_SEGMENT_NAMES,
     ActuatedDOFPreset,
     AxisOrder,
     ContactBodiesPreset,
     JointPreset,
     Skeleton,
 )
-from flygym.compose import ActuatorType, FlatGroundWorld, Fly, KinematicPosePreset
+from flygym.compose import (
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+    NeuroMechFly,
+)
 from flygym.utils.math import Rotation3D
 
 # --- repo paths -------------------------------------------------------------
@@ -99,7 +104,7 @@ def build_model() -> mj.MjModel:
     script does, export it to a self-contained MJCF under ``MODEL_DIR``, and
     return the model reloaded standalone (what the browser's ``mj_loadXML``
     sees)."""
-    fly = Fly()
+    fly = NeuroMechFly()
     skeleton = Skeleton(joint_preset=JOINT_PRESET, axis_order=AXIS_ORDER)
     fly.add_joints(skeleton, NEUTRAL_POSE)
 
@@ -233,14 +238,14 @@ def _dof_label(joint_short: str) -> str:
 
 
 # --- per-geom colors (mirrors the deeperfly keypoint-viewer build) ----------
-def segment_colors() -> dict[str, list[float]]:
+def segment_colors(names: set[str]) -> dict[str, list[float]]:
     """Map each body segment to a representative RGBA from flygym's visuals.yaml.
 
     Textured materials have no flat color, so take the texture's base color
     (``rgb1``, or the mean of ``rgb1``/``rgb2`` for gradients); plain materials
     use their ``rgba``. The alpha is always the material ``rgba``'s alpha (so the
     wings keep their 0.3 transparency). Wildcards in ``apply_to`` match segment
-    names as in flygym.colorize().
+    names (geom or body) as in flygym.colorize().
     """
     with open(assets_dir / "model/neuromechfly/visuals.yaml") as fh:
         vis = yaml.safe_load(fh)
@@ -260,14 +265,19 @@ def segment_colors() -> dict[str, list[float]]:
             rgb = rgba[:3]
         patterns = params["apply_to"]
         for pattern in [patterns] if isinstance(patterns, str) else patterns:
-            for seg in fnmatch.filter(ALL_SEGMENT_NAMES, pattern):
+            for seg in fnmatch.filter(names, pattern):
                 colors[seg] = [round(float(c), 4) for c in (*rgb, alpha)]
     return colors
 
 
 def build_geom_colors(model: mj.MjModel) -> list[list[float]]:
     """A representative RGBA per geom (matched by geom/segment name)."""
-    seg_color = segment_colors()
+    # Match against the model's own geom + body names, not ALL_SEGMENT_NAMES:
+    # some segments render as several geoms (e.g. the trochanterfemur body as
+    # `*_trochanter` + `*_femur`), and visuals.yaml styles those geoms by name.
+    names = {model.geom(g).name.split("/")[-1] for g in range(model.ngeom)}
+    names |= {model.body(b).name.split("/")[-1] for b in range(model.nbody)}
+    seg_color = segment_colors(names)
     geom_rgba = []
     for g in range(model.ngeom):
         seg = model.geom(g).name.split("/")[-1]
