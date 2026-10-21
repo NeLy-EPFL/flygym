@@ -20,7 +20,8 @@ from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
     wp_gather_indexed_rows_vec3f,
-    wp_gather_indexed_rows_quatf,
+    wp_gather_offset_body_positions,
+    wp_gather_offset_body_rotations,
     wp_masked_copy_rows_2d,
     reset_data_keyframe,
 )
@@ -270,9 +271,15 @@ class GPUSimulation(Simulation):
         if dst is None:
             dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_vec3f,
+            wp_gather_offset_body_positions,
             dim=(self.n_worlds, indices.size),
-            inputs=[self.mjw_data.xpos, dst, indices],
+            inputs=[
+                self.mjw_data.xpos,
+                self.mjw_data.xmat,
+                dst,
+                indices,
+                self._wp_body_relpos_by_fly[fly_name],
+            ],
         )
         return dst
 
@@ -295,9 +302,14 @@ class GPUSimulation(Simulation):
         if dst is None:
             dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_quatf,
+            wp_gather_offset_body_rotations,
             dim=(self.n_worlds, indices.size),
-            inputs=[self.mjw_data.xquat, dst, indices],
+            inputs=[
+                self.mjw_data.xquat,
+                dst,
+                indices,
+                self._wp_body_relquat_by_fly[fly_name],
+            ],
         )
         return dst
 
@@ -529,6 +541,12 @@ class GPUSimulation(Simulation):
         self._wp_internal_bodyids_by_fly = {
             k: wp.array(v, dtype=wp.int32)
             for k, v in self._internal_bodyids_by_fly.items()
+        }
+        self._wp_body_relpos_by_fly = {
+            k: wp.array(v, dtype=wp.vec3) for k, v in self._body_relpos_by_fly.items()
+        }
+        self._wp_body_relquat_by_fly = {
+            k: wp.array(v, dtype=wp.quat) for k, v in self._body_relquat_by_fly.items()
         }
 
     @override
