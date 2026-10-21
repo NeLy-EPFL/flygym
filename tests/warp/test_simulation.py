@@ -18,6 +18,7 @@ from flygym.compose import (
     KinematicPosePreset,
 )
 from flygym.utils.math import Rotation3D
+from flygym.simulation import Simulation
 from flygym.warp import GPUSimulation
 from flygym.warp.rendering import WarpCPURenderer
 
@@ -211,23 +212,27 @@ class TestReset:
         still_stale = sim.get_body_positions(fly.name).numpy()
         np.testing.assert_allclose(still_stale, after_step)
 
-    def test_body_positions_correct_after_reset_and_step(self, gpu_bundle):
+    def test_body_poses_correct_after_reset_and_step(self, gpu_bundle):
         """Once step() runs (which begins with a forward pass), derived kinematic
-        quantities catch up to the reset state."""
+        quantities catch up to the reset state. This includes segments fused into
+        their parent by `fusestatic`."""
         sim, fly, cam = gpu_bundle
         for _ in range(20):
             sim.step()
         sim.reset()
         sim.step()
         gpu_positions = sim.get_body_positions(fly.name).numpy()
+        gpu_rotations = sim.get_body_rotations(fly.name).numpy()
 
         mj.mj_resetDataKeyframe(sim.mj_model, sim.mj_data, sim._neutral_keyframe_id)
         mj.mj_step(sim.mj_model, sim.mj_data)
-        internal_ids = sim._internal_bodyids_by_fly[fly.name]
-        cpu_positions = sim.mj_data.xpos[internal_ids, :]
+        # Use the CPU implementation of the getters on the CPU-side `mj_data`
+        cpu_positions = Simulation.get_body_positions(sim, fly.name)
+        cpu_rotations = Simulation.get_body_rotations(sim, fly.name)
 
-        for world_positions in gpu_positions:
+        for world_positions, world_rotations in zip(gpu_positions, gpu_rotations):
             np.testing.assert_allclose(world_positions, cpu_positions, atol=1e-4)
+            np.testing.assert_allclose(world_rotations, cpu_rotations, atol=1e-4)
 
     def test_reset_restores_qpos_to_neutral_keyframe(self, gpu_bundle):
         sim, fly, cam = gpu_bundle

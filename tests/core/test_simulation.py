@@ -191,6 +191,56 @@ class TestGetBodyRotations:
 
 
 # ==============================================================================
+# Body segments fused by `fusestatic`
+# ==============================================================================
+
+
+class TestFusedBodySegments:
+    """Under the LEGS_ONLY preset, jointless segments (head, antennae, abdomen, ...)
+    are fused into their parent by `fusestatic` and no longer exist in the compiled
+    model. Their poses must still match those of a model compiled without fusion."""
+
+    def test_some_segments_are_fused(self, simulation, fly_with_adhesion):
+        import mujoco as mj
+
+        fused = [
+            body.name
+            for body in fly_with_adhesion.bodyseg_to_mjcfbody.values()
+            if mj.mj_name2id(simulation.mj_model, mj.mjtObj.mjOBJ_BODY, body.name) < 0
+        ]
+        assert "sim_fly/c_head" in fused
+
+    def test_poses_match_unfused_model(self, simulation, fly_with_adhesion):
+        import mujoco as mj
+
+        simulation.reset()
+        for _ in range(10):
+            simulation.step()
+        mj.mj_kinematics(simulation.mj_model, simulation.mj_data)
+
+        spec = simulation.world.mjcf_root.copy()
+        spec.compiler.fusestatic = False
+        ref_model = spec.compile()
+        ref_data = mj.MjData(ref_model)
+        ref_data.qpos[:] = simulation.mj_data.qpos
+        ref_data.mocap_pos[:] = simulation.mj_data.mocap_pos
+        ref_data.mocap_quat[:] = simulation.mj_data.mocap_quat
+        mj.mj_kinematics(ref_model, ref_data)
+        ref_ids = [
+            mj.mj_name2id(ref_model, mj.mjtObj.mjOBJ_BODY, body.name)
+            for body in fly_with_adhesion.bodyseg_to_mjcfbody.values()
+        ]
+
+        name = fly_with_adhesion.name
+        np.testing.assert_allclose(
+            simulation.get_body_positions(name), ref_data.xpos[ref_ids], atol=1e-10
+        )
+        np.testing.assert_allclose(
+            simulation.get_body_rotations(name), ref_data.xquat[ref_ids], atol=1e-10
+        )
+
+
+# ==============================================================================
 # get_site_positions
 # ==============================================================================
 
