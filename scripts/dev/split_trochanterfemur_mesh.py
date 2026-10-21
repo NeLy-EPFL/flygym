@@ -1,12 +1,12 @@
 """Generate fullsize trochanter/femur split meshes from the fused fullsize mesh.
 
-This is a maintenance/dev script, not part of the runtime package. The
-trochanterfemur segment is rigged (see ``rigging.yaml``) as two geoms, a
-trochanter and a femur, each needing its own mesh file. Split meshes for the
-bundled ``simplified_max2000faces`` set are already committed to the repo, but
-the ``fullsize`` set (hosted on S3, not in git) still only has the old fused
-``{leg}_trochanterfemur.stl`` -- so ``NeuroMechFly(mesh_type=MeshType.FULLSIZE)``
-currently raises ``FileNotFoundError``.
+This is a maintenance/dev script, not part of the runtime package.
+`NeuroMechFlyWithSeparateTrochanterFemur` has separate trochanter and femur
+segments (see ``rigging_separate_trochanterfemur.yaml``), each needing its own mesh
+file. Split meshes for the bundled ``simplified_max2000faces`` set are already
+committed to the repo, but the ``fullsize`` set (hosted on S3, not in git) only has
+the fused ``{leg}_trochanterfemur.stl``, so this model currently raises
+``FileNotFoundError`` with ``MeshType.FULLSIZE``.
 
 Rather than re-authoring the cut by hand, this script recovers the exact cut
 plane already used for the simplified split (by finding the shared seam
@@ -19,15 +19,15 @@ trochanter/femur pieces to within <0.1% of their volume.
 This only needs to run for the left legs (lf, lm, lh): NeuroMechFly mirrors the
 right legs from the left mesh files at load time.
 
-Output is written locally for review, NOT uploaded anywhere. To publish it:
+To publish the outputs:
 
 1. Inspect the output directory below (e.g. open the STLs in MeshLab/Blender).
 2. Upload the new fullsize meshes to the S3 bucket under a fresh versioned
-   directory, alongside the existing (still-fused) ones, e.g.
-   ``flygym_assets/neuromechfly_fullsize_meshes_<YYYYMMDD><x>/`` (the bucket
-   uses immutable, dated directories so existing releases keep working).
-3. Bump ``NEUROMECHFLY_FULLSIZE_MESH_DIR`` in
-   ``flygym/compose/fly/neuromechfly.py`` to the new directory name.
+   directory, alongside the existing fused ones (still used by `NeuroMechFly`).
+   The current version is ``flygym_assets/neuromechfly_fullsize_meshes_20261021a/``.
+   Do not remove existing versions since they're still used by older versions.
+3. Bump ``NEUROMECHFLY_FULLSIZE_MESH_DIR`` in ``flygym/compose/fly/neuromechfly.py``
+   to the new directory name.
 4. Re-run ``scripts/dev/simplify_meshes.py`` so the bundled simplified set is
    regenerated directly from the true fullsize split (replacing the
    currently-committed simplified trochanter/femur pieces, which predate this
@@ -50,7 +50,9 @@ SCALE = 1000  # STL files are authored in meters; body-frame positions are in mm
 LEGS = ("lf", "lm", "lh")  # rf/rm/rh mirror these at load time, no split needed.
 
 SIMPLIFIED_MESH_DIR = assets_dir / "model/neuromechfly/meshes/simplified_max2000faces"
-RIGGING_CONFIG_PATH = assets_dir / "model/neuromechfly/rigging.yaml"
+RIGGING_CONFIG_PATH = (
+    assets_dir / "model/neuromechfly/rigging_separate_trochanterfemur.yaml"
+)
 OUTPUT_DIR = assets_dir.parent.parent.parent / "outputs/fullsize_trochanterfemur_split"
 
 
@@ -68,7 +70,7 @@ def find_seam_plane(
         troch: Trochanter piece, in the body/fused-mesh frame (pos == [0, 0, 0]).
         femur: Femur piece, in its own local frame (translated by ``femur_pos``
             relative to the body/fused-mesh frame).
-        femur_pos: The femur geom's ``pos`` offset from ``rigging.yaml``, in mm.
+        femur_pos: The femur body's ``pos`` relative to the trochanter, in mm.
 
     Returns:
         ``(origin, normal)`` of the cut plane, in mm, with ``normal`` pointing
@@ -112,8 +114,7 @@ if __name__ == "__main__":
     OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
     for leg in LEGS:
-        geoms_config = rigging_config[f"{leg}_trochanterfemur"]["geoms"]
-        femur_pos = np.array(geoms_config[f"{leg}_femur"]["pos"])
+        femur_pos = np.array(rigging_config[f"{leg}_femur"]["pos"])
 
         simplified_troch = trimesh.load(SIMPLIFIED_MESH_DIR / f"{leg}_trochanter.stl")
         simplified_femur = trimesh.load(SIMPLIFIED_MESH_DIR / f"{leg}_femur.stl")
@@ -122,7 +123,7 @@ if __name__ == "__main__":
         fullsize_fused = trimesh.load(fullsize_dir / f"{leg}_trochanterfemur.stl")
         troch_piece, femur_piece = split_at_plane(fullsize_fused, origin, normal)
         # Femur is authored with its own origin at the trochanter-femur joint,
-        # matching the simplified set's convention (see rigging.yaml's `pos`).
+        # matching the simplified set's convention.
         femur_piece.vertices -= femur_pos / SCALE
 
         troch_path = OUTPUT_DIR / f"{leg}_trochanter.stl"
