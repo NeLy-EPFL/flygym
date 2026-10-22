@@ -448,9 +448,9 @@ class Simulation:
         """Render the fly's eye cameras and return fisheye-corrected frames.
 
         Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
-        configured in `flygym/assets/model/neuromechfly/vision.yaml`. These geoms are assigned to
-        geom group 2, which _is_ rendered by the MuJoCo renderer by default, but the eye
-        renderer within FlyGym is configured to ignore this geom group.
+        configured in `flygym/assets/model/neuromechfly/vision.yaml`. These geoms are
+        assigned to geom group 2, which _is_ rendered by the MuJoCo renderer by default,
+        but the eye renderer within FlyGym is configured to ignore this geom group.
 
         Args:
             fly_name: Name of the fly to query.
@@ -460,6 +460,14 @@ class Simulation:
             fly's two eyes. The first dimension corresponds to the left and right eye,
             in that order.
         """
+        uncorrected_frames = self._render_eye_frames(fly_name)
+        corrected_frames = [
+            self.retina.correct_fisheye(frame) for frame in uncorrected_frames
+        ]
+        return np.array(corrected_frames)
+
+    def _render_eye_frames(self, fly_name: str) -> list[np.ndarray]:
+        """Render the fly's eye cameras without fisheye correction."""
         try:
             internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
         except KeyError:
@@ -488,16 +496,13 @@ class Simulation:
             self.eye_renderer_scene_option.geomgroup[1] = 0
             self.eye_renderer_scene_option.geomgroup[2] = 0
 
-        # Render each eye camera and apply fisheye correction
         frames = []
         for cam_id in internal_eye_camera_ids:
             self.eye_renderer.update_scene(
                 self.mj_data, cam_id, scene_option=self.eye_renderer_scene_option
             )
-            raw_frame = self.eye_renderer.render()
-            fish_img = self.retina.correct_fisheye(raw_frame)
-            frames.append(fish_img)
-        return np.array(frames)
+            frames.append(self.eye_renderer.render())
+        return frames
 
     def get_ommatidia_readouts(
         self, fly_name: str
@@ -516,12 +521,12 @@ class Simulation:
             For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium
             is of pale type, and the user should look at `readouts[0, 5, 1]` instead.
         """
-        raw_vision = self.get_raw_vision(fly_name)
-        ommatidia_readouts = np.array(
-            [self.retina.raw_image_to_hex_pxls(image) for image in raw_vision],
-            dtype=np.float32,
-        )
-        return ommatidia_readouts
+        # Fisheye correction and ommatidia pooling are fused into a single pass
+        uncorrected_frames = self._render_eye_frames(fly_name)
+        ommatidia_readouts = [
+            self.retina.fisheye_image_to_hex_pxls(frame) for frame in uncorrected_frames
+        ]
+        return np.array(ommatidia_readouts, dtype=np.float32)
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
