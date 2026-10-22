@@ -9,6 +9,7 @@ from jaxtyping import Float
 from flygym.anatomy import BodySegment
 from flygym.compose.fly import BaseFly, ActuatorType
 from flygym.compose.world import BaseWorld
+from flygym.recording import TrajectoryRecorder
 from flygym.rendering import Renderer
 from flygym.utils.profiling import print_perf_report
 from flygym.utils.typing import n_jointdofs, n_actuators, n_tendon_actuators
@@ -28,6 +29,7 @@ class Simulation:
     Attributes:
         world: The world used to construct this simulation.
         renderer: The attached `Renderer`, or None if not set.
+        recorder: The attached `TrajectoryRecorder`, or None if not set.
         mj_model: Compiled MuJoCo model.
         mj_data: Associated MuJoCo data.
     """
@@ -36,6 +38,7 @@ class Simulation:
         if len(world.fly_lookup) == 0:
             raise ValueError("The world must contain at least one fly.")
         self.renderer = None
+        self.recorder = None
         self.world = world
         self.mj_model, self.mj_data = world.compile()
         if timestep is not None:
@@ -69,7 +72,7 @@ class Simulation:
         self._total_render_time_ns = 0
 
     def reset(self) -> None:
-        """Reset simulation and renderer to the neutral keyframe.
+        """Reset simulation, renderer, and recorder to the neutral keyframe.
 
         !!! warning
 
@@ -87,6 +90,8 @@ class Simulation:
         # Reset renderers
         if self.renderer is not None:
             self.renderer.reset()
+        if self.recorder is not None:
+            self.recorder.reset()
         # The eye renderer doesn't have to be reset as it's stateless (it's the plain
         # MuJoCo renderer, not our flygym.rendering.Renderer)
 
@@ -173,6 +178,36 @@ class Simulation:
         if render_done:
             self._frames_rendered += 1
         return render_done
+
+    def set_trajectory_recorder(
+        self, *, playback_speed: float = 0.2, output_fps: int = 25
+    ) -> TrajectoryRecorder:
+        """Attach a recorder that stores the kinematic state at the video frame rate.
+
+        The recorded trajectory can be rendered to video later with
+        `flygym.recording.render_trajectories`. See `flygym.recording` for details. The
+        recorder is independent of the renderer: either or both can be attached.
+
+        Args:
+            playback_speed: Video playback speed relative to real time.
+            output_fps: Output video frame rate.
+
+        Returns:
+            The created `TrajectoryRecorder` instance.
+        """
+        self.recorder = TrajectoryRecorder(
+            self.mj_model, playback_speed=playback_speed, output_fps=output_fps
+        )
+        return self.recorder
+
+    def record_as_needed(self) -> bool:
+        """Record the kinematic state if enough simulation time has elapsed since the
+        last recorded frame.
+
+        Returns:
+            True if a frame was recorded, False otherwise.
+        """
+        return self.recorder.record_as_needed(self.mj_data)
 
     def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
         """Get current joint angles ordered by the fly's skeleton.

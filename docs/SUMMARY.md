@@ -35,6 +35,7 @@
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
             * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
             * [tethered_world](api_reference/flygym/compose/world/tethered_world.md)
+    * [recording](api_reference/flygym/recording.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils
@@ -47,6 +48,7 @@
         * [profiling](api_reference/flygym/utils/profiling.md)
         * [video](api_reference/flygym/utils/video.md)
     * warp
+        * [recording](api_reference/flygym/warp/recording.md)
         * [rendering](api_reference/flygym/warp/rendering.md)
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)

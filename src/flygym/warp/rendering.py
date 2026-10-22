@@ -73,12 +73,6 @@ class _BaseWarpRenderer(Renderer, ABC):
         if len(self.enabled_cam_names) == 0:
             raise ValueError("At least one valid camera must be specified.")
 
-        # Set up parameters for automatically determining when to render frames
-        self.playback_speed = playback_speed
-        self.output_fps = output_fps
-        self._secs_between_renders = 1 / (output_fps / playback_speed)
-        self._last_render_time_sec = -np.inf
-
         # Buffer to store rendered images
         n_worlds_to_render = len(self.world_ids)
         n_cams_to_render = len(self.enabled_cam_names)
@@ -93,18 +87,16 @@ class _BaseWarpRenderer(Renderer, ABC):
     @override
     def render_as_needed(self, mjw_data: mjw.Data) -> bool:
         curr_time = mjw_data.time.numpy()[0]  # assume all worlds have the same time
-        if curr_time >= self._last_render_time_sec + self._secs_between_renders:
-            self._last_render_time_sec = curr_time
-            rendered_images = self._render_impl(mjw_data)
-            if self.buffer_frames:
-                self._frames.append(rendered_images)
-            return True
-        else:
+        if not self._clock.tick(curr_time):
             return False
+        rendered_images = self._render_impl(mjw_data)
+        if self.buffer_frames:
+            self._frames.append(rendered_images)
+        return True
 
     @override
     def reset(self):
-        self._last_render_time_sec = -np.inf
+        self._clock.reset()
         if self.buffer_frames:
             self._frames = []
 

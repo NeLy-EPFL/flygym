@@ -11,7 +11,42 @@ import imageio.v3 as iio
 import numpy as np
 
 
-__all__ = ["Renderer", "launch_interactive_viewer", "preview_model"]
+__all__ = ["FrameClock", "Renderer", "launch_interactive_viewer", "preview_model"]
+
+
+class FrameClock:
+    """Decides when the next video frame is due, given the simulation time.
+
+    Shared by renderers and trajectory recorders so that both sample the simulation at
+    exactly the same timepoints.
+
+    Args:
+        playback_speed: Video playback speed relative to real time.
+        output_fps: Output video frame rate.
+        timestep: Simulation timestep in seconds. Half of it is used as a tolerance
+            when comparing times, to absorb floating-point drift.
+
+    Attributes:
+        interval: Simulation time between consecutive frames, in seconds.
+    """
+
+    def __init__(self, playback_speed: float, output_fps: int, timestep: float):
+        self.playback_speed = playback_speed
+        self.output_fps = output_fps
+        self.interval = playback_speed / output_fps
+        self._tolerance = timestep * 0.5
+        self.reset()
+
+    def reset(self) -> None:
+        """Make the next call to `tick` fire regardless of the time."""
+        self._last_frame_time = -np.inf
+
+    def tick(self, time: float) -> bool:
+        """Return True (and register a frame at `time`) if a frame is due."""
+        if time < self._last_frame_time + self.interval - self._tolerance:
+            return False
+        self._last_frame_time = float(time)
+        return True
 
 
 class Renderer:
@@ -99,9 +134,8 @@ class Renderer:
 
         self.playback_speed = playback_speed
         self.output_fps = output_fps
-        self._secs_between_renders = 1 / (output_fps / playback_speed)
+        self._clock = FrameClock(playback_speed, output_fps, mj_model.opt.timestep)
 
-        self._last_render_time_sec = -np.inf
         buffer = self.buffer_frames
         self.frames = self._new_frame_buffer() if buffer and render_rgb else None
         self.depth_frames = (
@@ -110,9 +144,6 @@ class Renderer:
         self.segmentation_frames = (
             self._new_frame_buffer() if buffer and render_segmentation else None
         )
-
-        # Avoid floating point issues when comparing times
-        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
 
     def _new_frame_buffer(self) -> dict[str, list]:
         return {cam_name: [] for cam_name in self._cameras_names2id}
@@ -159,15 +190,9 @@ class Renderer:
         Returns:
             True if frames were rendered, False otherwise.
         """
-        min_next_render_time = (
-            self._last_render_time_sec
-            + self._secs_between_renders
-            - self.rendering_rounding_tolerance
-        )
-        if mj_data.time < min_next_render_time:
+        if not self._clock.tick(mj_data.time):
             return False
 
-        self._last_render_time_sec = float(mj_data.time)
         for cam_name, internal_cam_id in self._cameras_names2id.items():
             self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
             # One render() pass per enabled output. mujoco renders a single output
@@ -198,7 +223,7 @@ class Renderer:
 
     def reset(self) -> None:
         """Clear buffered frames and reset the render timer."""
-        self._last_render_time_sec = -np.inf
+        self._clock.reset()
         if not self.buffer_frames:
             return
         if self.render_rgb:
