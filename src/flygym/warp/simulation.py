@@ -78,9 +78,9 @@ class GPUSimulation(Simulation):
             `reset()` does not update derived kinematic quantities (`xpos`,
             `xquat`, `site_xpos`, ...); it only restores state fields
             (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
-            derived quantities right after `reset()`, before calling `step()`,
-            returns stale values from before the reset. This is consistent with the
-            behavior of MuJoCo Warp's native `reset_data()` function.
+            derived quantities right after `reset()`, before calling `forward()` or
+            `step()`, returns stale values from before the reset. This is consistent
+            with the behavior of MuJoCo Warp's native `reset_data()` function.
         """
         super().reset()
         reset_data_keyframe(
@@ -422,13 +422,11 @@ class GPUSimulation(Simulation):
         """Advance all parallel worlds by one timestep on the GPU."""
         mjw.step(self.mjw_model, self.mjw_data)
 
+    @override
     def forward(self) -> None:
-        """Recompute derived quantities from the current state, without integrating.
-
-        The batched analogue of MuJoCo's ``mj_forward``: refreshes ``xpos``, ``xquat``,
-        velocities, and other derived fields from ``qpos``/``qvel`` without advancing
-        time. Call this after writing state directly (e.g. via ``set_state`` or
-        ``reset``) so subsequent getters return up-to-date values.
+        """Recompute derived quantities for all parallel worlds on the GPU, without
+        integrating. Call this after writing state directly (e.g. via `set_state` or
+        `reset`) so that subsequent getters return up-to-date values.
         """
         mjw.forward(self.mjw_model, self.mjw_data)
 

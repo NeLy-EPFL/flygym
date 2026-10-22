@@ -74,11 +74,12 @@ class Simulation:
         !!! warning
 
             `reset()` does not update derived kinematic quantities (`xpos`,
-            `xquat`, `site_xpos`, ...) -- it only restores state fields
+            `xquat`, `site_xpos`, ...); it only restores state fields
             (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
-            derived quantities right after `reset()`, before calling `step()`,
-            does not reflect the reset state. This is consistent with the behavior of
-            MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe` functions.
+            derived quantities right after `reset()`, before calling `forward()` or
+            `step()`, does not reflect the reset state. This is consistent with the
+            behavior of MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe`
+            functions.
         """
         # Reset physics
         mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
@@ -98,6 +99,16 @@ class Simulation:
     def step(self) -> None:
         """Advance physics by one timestep."""
         mj.mj_step(self.mj_model, self.mj_data)
+
+    def forward(self) -> None:
+        """Recompute derived quantities from the current state, without integrating.
+
+        Wraps MuJoCo's `mj_forward`: refreshes `xpos`, `xquat`, velocities, and other
+        derived fields from `qpos`/`qvel` without advancing time. Call this after
+        writing state directly (e.g. after `reset`) so that subsequent getters return
+        up-to-date values.
+        """
+        mj.mj_forward(self.mj_model, self.mj_data)
 
     def step_with_profile(self) -> None:
         """Advance physics by one timestep, accumulating timing data for profiling."""
