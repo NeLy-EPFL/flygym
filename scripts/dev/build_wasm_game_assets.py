@@ -42,7 +42,7 @@ import mujoco as mj
 import numpy as np
 import yaml
 from flygym import assets_dir
-from flygym.anatomy import ContactBodiesPreset
+from flygym.anatomy import ALL_SEGMENT_NAMES, ContactBodiesPreset
 from flygym.compose import ContactParams, FlatGroundWorld
 from flygym.utils.math import Rotation3D
 from flygym.utils.mjcf import GEOM_TYPES
@@ -372,9 +372,8 @@ def bake_preprogrammed_steps() -> dict:
 
 
 # --- per-geom colors (mirrors build_wasm_viewer_assets.py) ------------------
-def segment_colors(names: set[str]) -> dict[str, list[float]]:
-    """Map each of `names` (geom/body names) to a representative RGBA from
-    flygym's visuals.yaml."""
+def segment_colors() -> dict[str, list[float]]:
+    """Map each body segment to a representative RGBA from flygym's visuals.yaml."""
     with open(assets_dir / "model/neuromechfly/visuals.yaml") as fh:
         vis = yaml.safe_load(fh)
     colors: dict[str, list[float]] = {}
@@ -393,7 +392,7 @@ def segment_colors(names: set[str]) -> dict[str, list[float]]:
             rgb = rgba[:3]
         patterns = params["apply_to"]
         for pattern in [patterns] if isinstance(patterns, str) else patterns:
-            for seg in fnmatch.filter(names, pattern):
+            for seg in fnmatch.filter(ALL_SEGMENT_NAMES, pattern):
                 colors[seg] = [round(float(c), 4) for c in (*rgb, alpha)]
     return colors
 
@@ -401,12 +400,7 @@ def segment_colors(names: set[str]) -> dict[str, list[float]]:
 def build_geom_colors(model: mj.MjModel) -> list[list[float]]:
     """A representative RGBA per geom: fly segments from visuals.yaml, everything
     else (the slalom poles, ground) straight from the geom's own ``rgba``."""
-    # Match against the model's own geom + body names, not ALL_SEGMENT_NAMES:
-    # some segments render as several geoms (e.g. the trochanterfemur body as
-    # `*_trochanter` + `*_femur`), and visuals.yaml styles those geoms by name.
-    names = {model.geom(g).name.split("/")[-1] for g in range(model.ngeom)}
-    names |= {model.body(b).name.split("/")[-1] for b in range(model.nbody)}
-    seg_color = segment_colors(names)
+    seg_color = segment_colors()
     geom_rgba = []
     for g in range(model.ngeom):
         seg = model.geom(g).name.split("/")[-1]
