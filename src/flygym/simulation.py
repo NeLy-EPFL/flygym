@@ -460,12 +460,10 @@ class Simulation:
             fly's two eyes. The first dimension corresponds to the left and right eye,
             in that order.
         """
-        return np.array(
-            [
-                self.retina.correct_fisheye(frame)
-                for frame in self._render_eye_frames(fly_name)
-            ]
-        )
+        corrected_frames = []
+        for raw_frame in self._render_eye_frames(fly_name):
+            corrected_frames.append(self.retina.correct_fisheye(raw_frame))
+        return np.array(corrected_frames)
 
     def _render_eye_frames(self, fly_name: str) -> list[np.ndarray]:
         """Render the fly's eye cameras without fisheye correction."""
@@ -523,14 +521,10 @@ class Simulation:
             is of pale type, and the user should look at `readouts[0, 5, 1]` instead.
         """
         # Fisheye correction and ommatidia pooling are fused into a single pass
-        ommatidia_readouts = np.array(
-            [
-                self.retina.fisheye_image_to_hex_pxls(frame)
-                for frame in self._render_eye_frames(fly_name)
-            ],
-            dtype=np.float32,
-        )
-        return ommatidia_readouts
+        ommatidia_readouts = []
+        for raw_frame in self._render_eye_frames(fly_name):
+            ommatidia_readouts.append(self.retina.fisheye_image_to_hex_pxls(raw_frame))
+        return np.array(ommatidia_readouts, dtype=np.float32)
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
