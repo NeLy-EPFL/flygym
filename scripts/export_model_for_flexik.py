@@ -22,7 +22,12 @@ LEGS = ["lf", "lm", "lh", "rf", "rm", "rh"]
 LINK_NAMES = ["coxa", "trochanterfemur", "tibia", "tarsus1"]
 # Each link's own joint, keyed by its (parent, child) link names; combined
 # with a leg prefix (e.g. "lf_thorax_coxa") to form each node's global name.
-JOINT_KEYS = ["thorax_coxa", "coxa_trochanterfemur", "trochanterfemur_tibia", "tibia_tarsus"]
+JOINT_KEYS = [
+    "thorax_coxa",
+    "coxa_trochanterfemur",
+    "trochanterfemur_tibia",
+    "tibia_tarsus",
+]
 # DoFs: thorax-coxa(3), coxa-troch(2), troch-tibia(1), tibia-tarsus(1)
 EXPECTED_DOFS_PER_LINK = [3, 2, 1, 1]
 # tarsus1's distal children, in order, collapsed into the leg's claw node.
@@ -53,7 +58,9 @@ def find_body_id(model: mj.MjModel, name_suffix: str) -> int:
     Bodies are namespaced (e.g. "nmf/lf_coxa") by flygym's MJCF attach
     mechanism, so we match by suffix rather than assuming a fixed prefix.
     """
-    matches = [i for i in range(model.nbody) if model.body(i).name.endswith(name_suffix)]
+    matches = [
+        i for i in range(model.nbody) if model.body(i).name.endswith(name_suffix)
+    ]
     if len(matches) != 1:
         names = [model.body(i).name for i in matches]
         raise ValueError(
@@ -88,7 +95,11 @@ def extract_link(model: mj.MjModel, body_id: int, expected_n_dofs: int) -> dict:
         name = model.joint(jid).name
         qposadr = model.jnt_qposadr[jid]
         neutral_angle = float(model.qpos_spring[qposadr])
-        limits = [float(model.jnt_range[jid][0]), float(model.jnt_range[jid][1])] if model.jnt_limited[jid] else None
+        limits = (
+            [float(model.jnt_range[jid][0]), float(model.jnt_range[jid][1])]
+            if model.jnt_limited[jid]
+            else None
+        )
         if limits is not None and not (limits[0] <= neutral_angle <= limits[1]):
             raise ValueError(
                 f"Joint '{name}': neutral angle {neutral_angle} outside its own model-declared "
@@ -128,11 +139,15 @@ def estimate_terminal_offset(model: mj.MjModel, body_id: int) -> np.ndarray:
     mesh_id = model.geom_dataid[geom_id]
     vert_start = model.mesh_vertadr[mesh_id]
     vert_count = model.mesh_vertnum[mesh_id]
-    verts_geom_frame = model.mesh_vert[vert_start : vert_start + vert_count].astype(float)
+    verts_geom_frame = model.mesh_vert[vert_start : vert_start + vert_count].astype(
+        float
+    )
 
     geom_rotmat = np.empty(9)
     mj.mju_quat2Mat(geom_rotmat, model.geom_quat[geom_id])
-    verts_body_frame = verts_geom_frame @ geom_rotmat.reshape(3, 3).T + model.geom_pos[geom_id]
+    verts_body_frame = (
+        verts_geom_frame @ geom_rotmat.reshape(3, 3).T + model.geom_pos[geom_id]
+    )
     return verts_body_frame[np.argmax(np.linalg.norm(verts_body_frame, axis=1))]
 
 
@@ -182,7 +197,9 @@ def build_joint_tree(model: mj.MjModel) -> list[dict]:
     ]
     for leg in LEGS:
         parent_name = "thorax"
-        for link_name, joint_key, expected_n_dofs in zip(LINK_NAMES, JOINT_KEYS, EXPECTED_DOFS_PER_LINK):
+        for link_name, joint_key, expected_n_dofs in zip(
+            LINK_NAMES, JOINT_KEYS, EXPECTED_DOFS_PER_LINK
+        ):
             body_id = find_body_id(model, f"{leg}_{link_name}")
             node_name = f"{leg}_{joint_key}"
             joints.append(

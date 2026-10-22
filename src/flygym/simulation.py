@@ -213,7 +213,7 @@ class Simulation:
         internal_ids = self._internal_bodyids_by_fly[fly_name]
         if fly_name not in self._flies_with_fused_bodies:
             return self.mj_data.xpos[internal_ids, :]
-        
+
         # Add the offset of body segments that were fused into an ancestor (zero
         # otherwise), rotated into the world frame
         xmat = self.mj_data.xmat[internal_ids, :].reshape(-1, 3, 3)
@@ -234,7 +234,7 @@ class Simulation:
         internal_ids = self._internal_bodyids_by_fly[fly_name]
         if fly_name not in self._flies_with_fused_bodies:
             return self.mj_data.xquat[internal_ids, :]
-        
+
         # Compose with the rotation of body segments that were fused into an ancestor
         # (identity otherwise)
         return np.einsum(
@@ -553,7 +553,7 @@ class Simulation:
                 body = mjcf_body_element
                 relpos = np.zeros(3)
                 relquat = np.array([1.0, 0.0, 0.0, 0.0])
-                
+
                 while True:
                     # Walk up the kinematic chain until we find a body that still exists
                     internal_body_id = mj.mj_name2id(
@@ -567,7 +567,7 @@ class Simulation:
                             "worldbody by `fusestatic`. Give it a joint or make it a "
                             "mocap body."
                         )
-                    
+
                     self._flies_with_fused_bodies.add(fly_name)
 
                     # Prepend this body's pose relative to its parent:
