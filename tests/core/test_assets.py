@@ -1,8 +1,7 @@
 """Tests for flygym.utils.assets -- lazy download of S3-hosted asset files.
 
 Most tests run fully offline by monkeypatching the network layer. A single
-opt-in integration test (``test_real_s3_assets_exist``, run with ``--network``)
-talks to the live bucket.
+integration test (`test_real_s3_assets_exist`) talks to the live bucket.
 """
 
 import hashlib
@@ -194,7 +193,6 @@ def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
     assert set(requested) == set(_remote_mesh_dirs().values())
 
 
-@pytest.mark.network
 @pytest.mark.parametrize(
     "mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys()
 )

@@ -26,17 +26,8 @@ from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
 
 
-def pytest_addoption(parser):
-    parser.addoption(
-        "--network",
-        action="store_true",
-        help="run tests marked `network`, which talk to the live S3 asset bucket",
-    )
-
-
-def pytest_collection_modifyitems(config, items):
-    """Skip `network` tests unless `--network` is given, and silence the
-    standalone-fly-compile warning across the whole test suite.
+def pytest_collection_modifyitems(items):
+    """Silence the standalone-fly-compile warning across the whole test suite.
 
     Compiling a fly on its own (not attached to a world) -- whether directly, or
     internally via world/Simulation construction and tracking-camera placement --
@@ -51,11 +42,8 @@ def pytest_collection_modifyitems(config, items):
     mark = pytest.mark.filterwarnings(
         "ignore:Compiling a fly model that is not attached to a world"
     )
-    skip_network = pytest.mark.skip(reason="needs --network to run")
     for item in items:
         item.add_marker(mark)
-        if "network" in item.keywords and not config.getoption("--network"):
-            item.add_marker(skip_network)
 
 
 # ---------------------------------------------------------------------------

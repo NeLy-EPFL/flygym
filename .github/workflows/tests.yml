@@ -72,4 +72,4 @@ jobs:
         # Collect the whole tree but use marker selection (not directory
         # selection) to drop the groups CI can't run: warp needs a CUDA GPU.
         # Rendering tests are gated separately via SKIP_RENDERING_TESTS above.
-        run: uv run pytest tests/ -m "not warp" -v --tb=short
+        run: uv run pytest tests/ -m "not warp" -n auto -v --tb=short
