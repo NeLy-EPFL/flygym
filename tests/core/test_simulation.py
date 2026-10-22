@@ -75,6 +75,20 @@ class TestSimulationStep:
             simulation.step()
         assert simulation.time == pytest.approx(n * dt, rel=1e-6)
 
+    def test_nstep_matches_repeated_steps(self, simulation):
+        simulation.reset()
+        for _ in range(10):
+            simulation.step()
+        qpos_expected = simulation.mj_data.qpos.copy()
+        qvel_expected = simulation.mj_data.qvel.copy()
+        time_expected = simulation.time
+
+        simulation.reset()
+        simulation.step(nstep=10)
+        np.testing.assert_array_equal(simulation.mj_data.qpos, qpos_expected)
+        np.testing.assert_array_equal(simulation.mj_data.qvel, qvel_expected)
+        assert simulation.time == time_expected
+
     def test_reset_resets_time(self, simulation):
         simulation.reset()
         for _ in range(5):

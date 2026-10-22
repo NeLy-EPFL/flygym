@@ -17,7 +17,6 @@
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
     * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
     * [7. Performance profiling](tutorials/7_performance_profiling.md)
-    * [8. CPU execution](tutorials/8_cpu_execution.md)
 * [Video Tutorials](video_tutorials/index.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
@@ -46,7 +45,6 @@
         * [plot](api_reference/flygym/utils/plot.md)
         * [pose_conversion](api_reference/flygym/utils/pose_conversion.md)
         * [profiling](api_reference/flygym/utils/profiling.md)
-        * [physics](api_reference/flygym/utils/physics.md)
         * [video](api_reference/flygym/utils/video.md)
     * warp
         * [rendering](api_reference/flygym/warp/rendering.md)

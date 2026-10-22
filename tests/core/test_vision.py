@@ -215,6 +215,48 @@ class TestRetinaCorrectFisheye:
         np.testing.assert_array_equal(out[cy, cx], [123, 123, 123])
 
 
+class TestRetinaFisheyeImageToHexPxls:
+    @staticmethod
+    def _assert_matches_two_stage(r, img):
+        expected = r.raw_image_to_hex_pxls(r.correct_fisheye(img))
+        np.testing.assert_array_equal(r.fisheye_image_to_hex_pxls(img), expected)
+
+    def test_matches_two_stage_default_retina(self):
+        r = Retina()
+        rng = np.random.default_rng(0)
+        img = rng.integers(0, 256, (r.nrows, r.ncols, 3), dtype=np.uint8)
+        self._assert_matches_two_stage(r, img)
+
+    @pytest.mark.parametrize("zoom,distortion", [(1.0, 0.0), (0.7, 0.9), (2.0, -0.5)])
+    def test_matches_two_stage_custom_retina(self, zoom, distortion):
+        ommatidia_id_map = np.zeros((13, 17), dtype=np.int16)
+        ommatidia_id_map[1:6, 2:9] = 1
+        ommatidia_id_map[6:12, 9:16] = 2
+        r = Retina(ommatidia_id_map, np.array([0, 1]), distortion, zoom, 13, 17)
+        rng = np.random.default_rng(0)
+        img = rng.integers(0, 256, (13, 17, 3), dtype=np.uint8)
+        self._assert_matches_two_stage(r, img)
+        # Non-contiguous input
+        self._assert_matches_two_stage(r, img[:, ::-1])
+
+    def test_fisheye_params_change_takes_effect(self):
+        r = Retina()
+        rng = np.random.default_rng(0)
+        img = rng.integers(0, 256, (r.nrows, r.ncols, 3), dtype=np.uint8)
+        self._assert_matches_two_stage(r, img)
+        r.zoom *= 0.8
+        r.distortion_coefficient *= 0.5
+        self._assert_matches_two_stage(r, img)
+
+    @pytest.mark.parametrize(
+        "img",
+        [np.zeros((2, 3, 3), dtype=np.uint8), np.zeros((512, 450, 3), dtype=float)],
+    )
+    def test_invalid_image_raises(self, img):
+        with pytest.raises(ValueError, match="Expected a uint8 image"):
+            Retina().fisheye_image_to_hex_pxls(img)
+
+
 # ==============================================================================
 # NeuroMechFly.add_vision (pure MJCF assembly; no rendering)
 # ==============================================================================
