@@ -2,9 +2,32 @@
 
 ## Version 2.1.1 (under development)
 
+### Additions
+- Added `NeuroMechFlyWithSeparateTrochanterFemur`, a NeuroMechFly variant in which each leg's trochanter and femur are separate bodies (with separate meshes) rather than a single fused trochanterfemur body. This enables valid segmentation maps for these segments. We tentatively plan to make this the only supported NeuroMechFly body in FlyGym v3 ([#313](https://github.com/NeLy-EPFL/flygym/pull/313)).
+- Added `GPUSimulation.set_state()`, `get_base_linear_velocity()`, and `get_base_angular_velocity()` ([#305](https://github.com/NeLy-EPFL/flygym/pull/305)).
+- Added `forward()` to both `Simulation` and `GPUSimulation` to recompute derived quantities (e.g. body positions) without stepping physics.
+- Lazy getters in `GPUSimulation` now accept an optional `dst` array to write into an existing buffer instead of allocating a new one ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
+- Added `World.fly` and `Simulation.fly` shorthands for single-fly setups, `Simulation.fly_lookup`, and `BaseFly.n_bodysegs`, `n_jointdofs`, `n_actuated_jointdofs`, and `get_n_actuated_jointdofs()` ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
+- Added `Retina.fisheye_image_to_hex_pxls()`, which fuses fisheye correction and ommatidia pooling into a single pass. CPU vision now uses it, making this step about 2× faster ([#308](https://github.com/NeLy-EPFL/flygym/pull/308), [#315](https://github.com/NeLy-EPFL/flygym/pull/315); thanks @Cr0me1ve).
+- Added `scripts/export_model_for_flexik.py` to export the fly body plan for FlexIK.
+
+### Changes
+- `GPUSimulation.reset()` now resets `mjw_data` in place using MuJoCo Warp's `reset_data_keyframe()`, instead of reallocating the GPU-side model and data on every reset ([#302](https://github.com/NeLy-EPFL/flygym/pull/302)). Note that, as with `Simulation.reset()`, derived kinematic quantities (`xpos`, `xquat`, …) are not recomputed on reset; call `forward()` if you need them.
+- Remote assets are now stored as tarballs with SHA-256 checksums. FlyGym verifies the checksum after download and moves the extracted files into the cache atomically, which also makes concurrent downloads safe ([#303](https://github.com/NeLy-EPFL/flygym/pull/303)).
+- The WASM NeuroMechFly Live game is easier to play: stronger leg adhesion, faster turning, gamepad leg buttons matching the physical left/right layout, and correct colors for split trochanter/femur geoms ([#314](https://github.com/NeLy-EPFL/flygym/pull/314)).
+
+### Bug fixes
+- Fixed body-segment position/orientation getters returning wrong values when MuJoCo's `fusestatic` compiler option merges bodies and invalidates body IDs ([#312](https://github.com/NeLy-EPFL/flygym/pull/312)).
+- Fixed GPU benchmark and tutorial timings, which stopped the timer before queued GPU work finished and therefore overstated throughput by up to ~50% ([#311](https://github.com/NeLy-EPFL/flygym/pull/311); thanks @AdeliyaLeleytner).
+
 ### Housekeeping
 - Bumped MuJoCo and MuJoCo Warp versions to 3.16.
 - FlyGym now supports Python 3.12 – 3.15. The `rl` extra is not yet installable on Python 3.15 because PyTorch does not ship wheels for it.
+- Updated Warp kernel type hints to the PEP 484-compliant `wp.array[dtype]` syntax and replaced string array dimensions with `TypeVar`s defined in `flygym.utils.typing` ([#304](https://github.com/NeLy-EPFL/flygym/pull/304)).
+- Unit tests can now run in parallel via `pytest-xdist` (`pytest -n auto`).
+
+### Contributors
+@sibocw, @stimpfli, @AdeliyaLeleytner, @Cr0me1ve
 
 ## Version 2.1.0
 
