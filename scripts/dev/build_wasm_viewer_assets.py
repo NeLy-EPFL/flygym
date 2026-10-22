@@ -44,6 +44,7 @@ from pathlib import Path
 
 import mujoco as mj
 import yaml
+
 from flygym import assets_dir
 from flygym.anatomy import (
     ALL_SEGMENT_NAMES,
@@ -53,7 +54,12 @@ from flygym.anatomy import (
     JointPreset,
     Skeleton,
 )
-from flygym.compose import ActuatorType, FlatGroundWorld, Fly, KinematicPosePreset
+from flygym.compose import (
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+    NeuroMechFly,
+)
 from flygym.utils.math import Rotation3D
 
 # --- repo paths -------------------------------------------------------------
@@ -99,7 +105,7 @@ def build_model() -> mj.MjModel:
     script does, export it to a self-contained MJCF under ``MODEL_DIR``, and
     return the model reloaded standalone (what the browser's ``mj_loadXML``
     sees)."""
-    fly = Fly()
+    fly = NeuroMechFly()
     skeleton = Skeleton(joint_preset=JOINT_PRESET, axis_order=AXIS_ORDER)
     fly.add_joints(skeleton, NEUTRAL_POSE)
 

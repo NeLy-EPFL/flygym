@@ -29,11 +29,13 @@ A connected gamepad is auto-detected (via the browser Gamepad API) and uses the
 
 - **Level 1 — CPG**: the analog stick drives the descending signal. Stick
   magnitude (`‖axis‖/√2 · 1.2`) sets the forward/back gain, stick Y its sign
-  (forward = negative), and stick X turns by subtracting `|axisX|·0.6` from the
-  inside leg's gain.
-- **Levels 2–3**: the six leg buttons (forward order `[10,11,12,4,5,6]`,
-  backward order `[15,14,13,9,8,7]`, for LF · LM · LH · RF · RM · RH) step each
+  (forward = negative), and stick X turns by subtracting `|axisX|·1.2` from the
+  inside leg's gain (the desktop game uses 0.6; doubled for sharper turns).
+- **Levels 2–3**: the six leg buttons (forward order `[4,5,6,10,11,12]`,
+  backward order `[9,8,7,15,14,13]`, for LF · LM · LH · RF · RM · RH) step each
   leg; in Tripod mode the left-hind/right-hind buttons drive the two tripods.
+  The desktop game maps the sides the other way round (left legs on the
+  right-hand buttons); they are swapped here to match the physical layout.
 
 Button indices match the joystick the desktop game targets — retune the `PAD`
 constants in `game.js` for other controllers. Joystick and keyboard work

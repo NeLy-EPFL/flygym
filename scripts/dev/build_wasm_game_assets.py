@@ -69,15 +69,17 @@ GROUND_FRICTION = (1.0, 0.005, 0.0001)
 
 # --- fly actuator / joint tuning --------------------------------------------
 # Matched to tutorial 2 (kinematic replay): default joint stiffness/damping with
-# no special passive-tarsus treatment, a high position gain, the default force
-# range, and the default (weak) adhesion gain.
+# no special passive-tarsus treatment, a high position gain, and the default force
+# range. Adhesion is raised from tutorial 2's 1.0 to 10.0 for traction: in CPG
+# rollouts this ~1.5x the turn rate and cuts heading drift with no flips, while
+# higher values (>=15) make stance feet stick and slow backward walking.
 JOINT_STIFFNESS = 10.0
 JOINT_DAMPING = 0.5
 PASSIVE_TARSUS_STIFFNESS = 10.0
 PASSIVE_TARSUS_DAMPING = 0.5
 ACTUATOR_GAIN = 150.0
 ACTUATOR_FORCERANGE = (-30.0, 30.0)
-ADHESION_GAIN = 1.0
+ADHESION_GAIN = 10.0
 
 # --- CPG / controller config (from neuromechfly-live TurningController) ------
 INTRINSIC_FREQ = 36.0

@@ -219,13 +219,15 @@ class Input {
     addEventListener('blur', () => { this.held.clear(); });
   }
 
+  // Forward turns stop the inner side (gain 0) and pivot on it. The desktop used
+  // 0.4 here, which turns ~3x slower and made steering feel unresponsive.
   _cpgKey(k) {
     const back = this.gainL < 0 || this.gainR < 0;
     if (k === 'w') { this.gainL = 1; this.gainR = 1; }
     else if (k === 's') { this.gainL = -1; this.gainR = -1; }
     else if (k === 'q') { this.gainL = 0; this.gainR = 0; }
-    else if (k === 'a') { if (back) { this.gainR = -0.6; this.gainL = -1.2; } else { this.gainL = 0.4; this.gainR = 1.2; } }
-    else if (k === 'd') { if (back) { this.gainL = -0.6; this.gainR = -1.2; } else { this.gainR = 0.4; this.gainL = 1.2; } }
+    else if (k === 'a') { if (back) { this.gainR = -0.6; this.gainL = -1.2; } else { this.gainL = 0; this.gainR = 1.2; } }
+    else if (k === 'd') { if (back) { this.gainL = -0.6; this.gainR = -1.2; } else { this.gainR = 0; this.gainL = 1.2; } }
   }
 
   resetGains() { this.gainL = 0; this.gainR = 0; }
@@ -253,13 +255,17 @@ class Input {
 // behaves identically in the browser. Button indices are device-specific (they
 // match the joystick the desktop game targets); tweak PAD if you use another.
 const PAD = {
-  // leg order LF, LM, LH, RF, RM, RH (== meta.control.leg_order). controls.py:
-  //   joystick_buttons_order          = [10, 11, 12, 4, 5, 6]  -> step forward
-  //   backward_joystick_buttons_order = [15, 14, 13, 9, 8, 7]  -> step backward
-  fwdButtons:  [10, 11, 12, 4, 5, 6],
-  backButtons: [15, 14, 13, 9, 8, 7],
+  // leg order LF, LM, LH, RF, RM, RH (== meta.control.leg_order). controls.py
+  // lists [10, 11, 12, 4, 5, 6] forward / [15, 14, 13, 9, 8, 7] backward, but
+  // that puts the left legs on the right-hand buttons, so the sides are swapped
+  // here to match the physical button layout.
+  fwdButtons:  [4, 5, 6, 10, 11, 12],
+  backButtons: [9, 8, 7, 15, 14, 13],
   axisX: 0, axisY: 1,     // analog stick: X = turn, Y = forward/back (fwd = -1)
   deadzone: 0.15,         // ignore stick drift (desktop polled raw axes)
+  // Turn strength: the desktop used 0.6; 1.2 lets a full diagonal stop the inner
+  // legs (gain 0), matching the keyboard turn below, for much sharper turns.
+  turnOffset: 1.2,
 };
 
 class Gamepad {
@@ -318,12 +324,13 @@ class Gamepad {
     if (level === 'CPG') {
       // controls.py CPG branch: ||axis||/sqrt(2)*1.2 sets the forward/back
       // magnitude, axisY sign its direction (stick forward reads negative), and
-      // |axisX|*0.6 subtracts from one side to turn (right: -=right, left: -=left).
+      // |axisX|*PAD.turnOffset subtracts from one side to turn (right: -=right,
+      // left: -=left).
       const ax = this._axis(pad, PAD.axisX), ay = this._axis(pad, PAD.axisY);
       const norm = Math.hypot(ax, ay) / Math.SQRT2 * 1.2;
       const sy = ay > 0 ? 1 : ay < 0 ? -1 : 0;
       gainL = gainR = norm * -1 * sy;
-      const off = Math.abs(ax) * 0.6;
+      const off = Math.abs(ax) * PAD.turnOffset;
       if (ax > 0) gainR -= off; else if (ax < 0) gainL -= off;
       active = ax !== 0 || ay !== 0;
     } else {
