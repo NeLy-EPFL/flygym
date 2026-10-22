@@ -1,4 +1,4 @@
-"""Export NeuroMechFly's kinematic tree as JSON for the flyik crate.
+"""Export NeuroMechFly's kinematic tree as JSON for FlexIK.
 
 Each node names its own parent (root "thorax" has `parent: null`). Covers
 all 6 legs, tarsus2-5 collapsed per claw. Writes to `{BODYPLAN_NAME}.json`
@@ -139,11 +139,11 @@ def estimate_terminal_offset(model: mj.MjModel, body_id: int) -> np.ndarray:
 def leg_claw_offset(model: mj.MjModel, leg: str) -> list[float]:
     """Fixed vector from `{leg}_tarsus1`'s origin to `{leg}_tarsus5`'s tip.
 
-    flyik does not give tarsus2-5 DOFs of their own (see module docstring):
+    FlexIK does not give tarsus2-5 DOFs of their own (see module docstring):
     this collapses that whole sub-chain into one constant offset, evaluated
     at tarsus2-5's neutral (rest) angles. The result is independent of
     tarsus1's own joint angle -- it is expressed in tarsus1's local frame, so
-    at solve time flyik just rotates it along with the rest of tarsus1.
+    at solve time FlexIK just rotates it along with the rest of tarsus1.
     """
     data = mj.MjData(model)
     for link_name in INTER_TARSAL_LINKS:
@@ -166,9 +166,9 @@ def leg_claw_offset(model: mj.MjModel, leg: str) -> list[float]:
 
 
 def build_joint_tree(model: mj.MjModel) -> list[dict]:
-    """Flatten the model into flyik's tree schema: one node per JSON object,
+    """Flatten the model into FlexIK's tree schema: one node per JSON object,
     each naming its own parent. "thorax" is the sole root (`parent: null`);
-    every leg hangs off it directly, since flyik's thorax is a free-floating
+    every leg hangs off it directly, since FlexIK's thorax is a free-floating
     frame with no fixed offset of its own.
     """
     joints = [
