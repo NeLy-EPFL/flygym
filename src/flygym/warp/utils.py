@@ -78,6 +78,75 @@ def wp_gather_indexed_rows_quatf(
 
 
 @wp.kernel
+def wp_gather_offset_body_positions(
+    xpos: wp.array2d[wp.vec3],
+    xmat: wp.array2d[wp.mat33],
+    dst: wp.array3d[float],
+    bodies: wp.array[int],
+    relpos: wp.array[wp.vec3],
+):
+    """Gather the global positions of frames rigidly attached to given bodies into a
+    ``(n_worlds, n_frames, 3)`` ``float32`` destination.
+
+    This is used to get the positions of body segments that `fusestatic` has fused into
+    an ancestor body. This kernel is to be launched with a 2D launch configuration of
+    `(n_worlds, n_frames)`.
+
+    Args:
+        xpos (wp.array of shape (n_worlds, n_bodies), type vec3f):
+            Global body positions, i.e. ``mjw_data.xpos``.
+        xmat (wp.array of shape (n_worlds, n_bodies), type mat33f):
+            Global body orientations, i.e. ``mjw_data.xmat``.
+        dst (wp.array of shape (n_worlds, n_frames, 3), type float32):
+            Destination array.
+        bodies (wp.array of shape (n_frames,), type int32):
+            Index of the body that each frame is attached to.
+        relpos (wp.array of shape (n_frames,), type vec3f):
+            Position of each frame in the frame of its body.
+    """
+    i, k = wp.tid()
+    b = bodies[k]
+    p = xpos[i, b] + xmat[i, b] @ relpos[k]
+    dst[i, k, 0] = p[0]
+    dst[i, k, 1] = p[1]
+    dst[i, k, 2] = p[2]
+
+
+@wp.kernel
+def wp_gather_offset_body_rotations(
+    xquat: wp.array2d[wp.quat],
+    dst: wp.array3d[float],
+    bodies: wp.array[int],
+    relquat: wp.array[wp.quat],
+):
+    """Gather the global orientations of frames rigidly attached to given bodies into a
+    ``(n_worlds, n_frames, 4)`` ``float32`` destination.
+
+    Counterpart of `wp_gather_offset_body_positions` for orientations. All quaternions
+    are stored in MuJoCo's (w, x, y, z) order. This kernel is to be launched with a 2D
+    launch configuration of `(n_worlds, n_frames)`.
+
+    Args:
+        xquat (wp.array of shape (n_worlds, n_bodies), type quatf):
+            Global body orientations, i.e. ``mjw_data.xquat``.
+        dst (wp.array of shape (n_worlds, n_frames, 4), type float32):
+            Destination array.
+        bodies (wp.array of shape (n_frames,), type int32):
+            Index of the body that each frame is attached to.
+        relquat (wp.array of shape (n_frames,), type quatf):
+            Orientation of each frame relative to its body.
+    """
+    i, k = wp.tid()
+    a = xquat[i, bodies[k]]
+    b = relquat[k]
+    # Hamilton product in (w, x, y, z) order (not Warp's native (x, y, z, w) order)
+    dst[i, k, 0] = a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3]
+    dst[i, k, 1] = a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2]
+    dst[i, k, 2] = a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1]
+    dst[i, k, 3] = a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]
+
+
+@wp.kernel
 def wp_scatter_indexed_cols_2d(
     src: wp.array2d[float], dst: wp.array2d[float], cols: wp.array[int]
 ):
@@ -117,6 +186,29 @@ def wp_gather_indexed_cols_2d(
     """
     i, k = wp.tid()
     dst[i, k] = src[i, cols[k]]
+
+
+@wp.kernel
+def wp_masked_copy_rows_2d(
+    src: wp.array2d[float], dst: wp.array2d[float], world_mask: wp.array[bool]
+):
+    """Copy whole rows (dim 0, indexed by world) where a per-world mask is set.
+
+    This kernel is to be launched with a 2D launch configuration of
+    `(n_worlds, n_cols)`. Unlike a keyframe reset, `src` may hold a different row per
+    world, so this is the building block for per-world reference-state initialization.
+
+    Args:
+        src (wp.array of shape (n_worlds, n_cols), type float32):
+            Source array; rows for un-masked worlds are ignored.
+        dst (wp.array of shape (n_worlds, n_cols), type float32):
+            Destination array, written in place for masked worlds only.
+        world_mask (wp.array of shape (n_worlds,), type bool):
+            Per-world mask; a row is copied only where its entry is True.
+    """
+    i, k = wp.tid()
+    if world_mask[i]:
+        dst[i, k] = src[i, k]
 
 
 @wp.kernel

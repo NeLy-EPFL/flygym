@@ -1,11 +1,16 @@
 from flygym.anatomy import (
-    Skeleton,
-    JointPreset,
-    AxisOrder,
     ActuatedDOFPreset,
+    AxisOrder,
     ContactBodiesPreset,
+    JointPreset,
+    Skeleton,
 )
-from flygym.compose import Fly, ActuatorType, FlatGroundWorld, KinematicPosePreset
+from flygym.compose import (
+    ActuatorType,
+    FlatGroundWorld,
+    KinematicPosePreset,
+    NeuroMechFly,
+)
 from flygym.rendering import launch_interactive_viewer
 from flygym.utils.math import Rotation3D
 
@@ -22,7 +27,7 @@ run_async = False  # might need to change to True if running launching from a no
 
 
 def main():
-    fly = Fly()
+    fly = NeuroMechFly()
 
     skeleton = Skeleton(joint_preset=joint_preset, axis_order=axis_order)
     fly.add_joints(skeleton, neutral_pose)

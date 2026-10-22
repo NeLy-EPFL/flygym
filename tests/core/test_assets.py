@@ -1,14 +1,15 @@
 """Tests for flygym.utils.assets -- lazy download of S3-hosted asset files.
 
 Most tests run fully offline by monkeypatching the network layer. A single
-opt-in integration test (``test_real_s3_roundtrip``) talks to the live bucket and
-is skipped automatically if the endpoint is unreachable.
+integration test (`test_real_s3_assets_exist`) talks to the live bucket.
 """
 
 import hashlib
 import io
+import re
 import tarfile
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 import pytest
 
@@ -192,16 +193,30 @@ def test_prefetch_meshes_covers_all_remote_sets(monkeypatch):
     assert set(requested) == set(_remote_mesh_dirs().values())
 
 
-@pytest.mark.network
 @pytest.mark.parametrize(
     "mesh_dir", _remote_mesh_dirs().values(), ids=_remote_mesh_dirs().keys()
 )
-def test_real_s3_roundtrip(mesh_dir, tmp_path):
-    """Opt-in: download and checksum-verify the real tar for each model's remote
-    mesh set from the live bucket."""
-    try:
-        dest = tmp_path / f"{mesh_dir}.tar"
-        assets_lazy_loading._download_tar(mesh_dir, dest)
-    except Exception as e:  # network unavailable in this environment
-        pytest.skip(f"S3 endpoint unreachable: {e}")
-    assert dest.stat().st_size > 0
+def test_real_s3_assets_exist(mesh_dir):
+    """Check that each model's remote mesh set exists on the live bucket.
+
+    Only the checksum file and the first tar header block are fetched: the full tars
+    can be >100 MB and the endpoint is slow. The download/verify/extract logic itself
+    is covered offline by the `fake_remote` tests above.
+    """
+    key = f"{assets_lazy_loading.S3_ROOT_PREFIX}/{mesh_dir}"
+    timeout = assets_lazy_loading._TIMEOUT
+
+    checksum_url = assets_lazy_loading._object_url(f"{key}.checksum")
+    with urlopen(checksum_url, timeout=timeout) as response:
+        checksum = response.read().decode().split()[0]
+    assert re.fullmatch("[0-9a-f]{64}", checksum)
+
+    tar_request = Request(
+        assets_lazy_loading._object_url(f"{key}.tar"),
+        headers={"Range": f"bytes=0-{tarfile.BLOCKSIZE - 1}"},
+    )
+    with urlopen(tar_request, timeout=timeout) as response:
+        # Read at most one block even if the server ignores the Range header
+        header = response.read(tarfile.BLOCKSIZE)
+    # Raises if the block is not a valid tar header (e.g. an HTML error page)
+    tarfile.TarInfo.frombuf(header, tarfile.ENCODING, "surrogateescape")

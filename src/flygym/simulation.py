@@ -76,11 +76,12 @@ class Simulation:
         !!! warning
 
             `reset()` does not update derived kinematic quantities (`xpos`,
-            `xquat`, `site_xpos`, ...) -- it only restores state fields
+            `xquat`, `site_xpos`, ...); it only restores state fields
             (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
-            derived quantities right after `reset()`, before calling `step()`,
-            does not reflect the reset state. This is consistent with the behavior of
-            MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe` functions.
+            derived quantities right after `reset()`, before calling `forward()` or
+            `step()`, does not reflect the reset state. This is consistent with the
+            behavior of MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe`
+            functions.
         """
         # Reset physics
         mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
@@ -110,6 +111,16 @@ class Simulation:
         if nstep < 1:
             raise ValueError("nstep must be positive")
         mj.mj_step(self.mj_model, self.mj_data, nstep=nstep)
+
+    def forward(self) -> None:
+        """Recompute derived quantities from the current state, without integrating.
+
+        Wraps MuJoCo's `mj_forward`: refreshes `xpos`, `xquat`, velocities, and other
+        derived fields from `qpos`/`qvel` without advancing time. Call this after
+        writing state directly (e.g. after `reset`) so that subsequent getters return
+        up-to-date values.
+        """
+        mj.mj_forward(self.mj_model, self.mj_data)
 
     def step_with_profile(self, nstep: int = 1) -> None:
         """Advance physics, accumulating elapsed time and physical step count."""
@@ -212,7 +223,15 @@ class Simulation:
             ``fly.get_bodysegs_order()``.
         """
         internal_ids = self._internal_bodyids_by_fly[fly_name]
-        return self.mj_data.xpos[internal_ids, :]
+        if fly_name not in self._flies_with_fused_bodies:
+            return self.mj_data.xpos[internal_ids, :]
+        
+        # Add the offset of body segments that were fused into an ancestor (zero
+        # otherwise), rotated into the world frame
+        xmat = self.mj_data.xmat[internal_ids, :].reshape(-1, 3, 3)
+        relpos = self._body_relpos_by_fly[fly_name]
+        offset_from_ancestor = np.einsum("nij,nj->ni", xmat, relpos)
+        return self.mj_data.xpos[internal_ids, :] + offset_from_ancestor
 
     def get_body_rotations(self, fly_name: str) -> Float[np.ndarray, "n_bodies 4"]:
         """Get global orientations of all body segments as quaternions (w, x, y, z).
@@ -225,7 +244,16 @@ class Simulation:
             ``fly.get_bodysegs_order()``.
         """
         internal_ids = self._internal_bodyids_by_fly[fly_name]
-        return self.mj_data.xquat[internal_ids, :]
+        if fly_name not in self._flies_with_fused_bodies:
+            return self.mj_data.xquat[internal_ids, :]
+        
+        # Compose with the rotation of body segments that were fused into an ancestor
+        # (identity otherwise)
+        return np.einsum(
+            "nij,nj->ni",
+            self._body_relquat_matrix_by_fly[fly_name],
+            self.mj_data.xquat[internal_ids, :],
+        )
 
     def get_actuator_forces(
         self, fly_name: str, actuator_type: ActuatorType
@@ -593,19 +621,66 @@ class Simulation:
             self.step()
 
     def _map_internal_bodyids(self) -> None:
+        # With `compiler/fusestatic`, MuJoCo merges bodies without joints into their
+        # parent, so they no longer exist in the compiled model. Each body segment is
+        # therefore mapped to its nearest ancestor that survived compilation (itself if
+        # it was not fused), together with its pose relative to that ancestor. This
+        # relative pose is constant because there is no joint in between.
         internal_bodyids_by_fly = defaultdict(list)
+        body_relpos_by_fly = defaultdict(list)
+        body_relquat_by_fly = defaultdict(list)
+        # Flies without fused bodies can skip the offset computation in the getters
+        self._flies_with_fused_bodies = set()
 
         for fly_name, fly in self.world.fly_lookup.items():
-            for bodyseg, mjcf_body_element in fly.bodyseg_to_mjcfbody.items():
-                internal_body_id = mj.mj_name2id(
-                    self.mj_model,
-                    mj.mjtObj.mjOBJ_BODY,
-                    mjcf_body_element.name,
-                )
+            for mjcf_body_element in fly.bodyseg_to_mjcfbody.values():
+                body = mjcf_body_element
+                relpos = np.zeros(3)
+                relquat = np.array([1.0, 0.0, 0.0, 0.0])
+                
+                while True:
+                    # Walk up the kinematic chain until we find a body that still exists
+                    internal_body_id = mj.mj_name2id(
+                        self.mj_model, mj.mjtObj.mjOBJ_BODY, body.name
+                    )
+                    if internal_body_id >= 0:
+                        break
+                    if body.parent.name == "world":  # "world" is the name for worldbody
+                        raise ValueError(
+                            f"The root body of fly '{fly_name}' was fused into the "
+                            "worldbody by `fusestatic`. Give it a joint or make it a "
+                            "mocap body."
+                        )
+                    
+                    self._flies_with_fused_bodies.add(fly_name)
+
+                    # Prepend this body's pose relative to its parent:
+                    # T_parent->seg = T_parent->body * T_body->seg
+                    body_pos, body_quat = _get_local_body_pose(body)
+                    rotated_relpos = np.zeros(3)
+                    mj.mju_rotVecQuat(rotated_relpos, relpos, body_quat)
+                    relpos = body_pos + rotated_relpos
+                    mj.mju_mulQuat(relquat, body_quat, relquat.copy())
+                    body = body.parent
+
                 internal_bodyids_by_fly[fly_name].append(internal_body_id)
+                body_relpos_by_fly[fly_name].append(relpos)
+                body_relquat_by_fly[fly_name].append(relquat)
 
         self._internal_bodyids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
+        }
+        self._body_relpos_by_fly = {
+            k: np.array(v) for k, v in body_relpos_by_fly.items()
+        }
+        self._body_relquat_by_fly = {
+            k: np.array(v) for k, v in body_relquat_by_fly.items()
+        }
+        # Right-multiplying by a constant quaternion is a linear map, so precompute its
+        # matrix once. This lets `get_body_rotations` compose with a single einsum.
+        self._body_relquat_matrix_by_fly = {
+            k: _get_quat_right_mul_matrix(v)
+            for k, v in self._body_relquat_by_fly.items()
         }
 
     def _map_internal_geom_ids(self) -> None:
@@ -865,3 +940,35 @@ class Simulation:
     def fly_lookup(self) -> dict[str, BaseFly]:
         """Return the fly lookup dictionary from the world."""
         return self.world.fly_lookup
+
+
+def _get_local_body_pose(body: mj.MjsBody) -> tuple[np.ndarray, np.ndarray]:
+    """Get the pose (position, unit quaternion) of a spec body relative to its parent.
+
+    Only bodies whose orientation is given as a quaternion and that are not placed in
+    a frame are supported. This is always the case for FlyGym fly bodies.
+    """
+    if body.alt.type != mj.mjtOrientation.mjORIENTATION_QUAT or body.frame is not None:
+        raise NotImplementedError(
+            f"Cannot get the local pose of body '{body.name}': only bodies oriented by "
+            "a quaternion and not placed in a frame are supported."
+        )
+    quat = np.array(body.quat, dtype=float)
+    return np.array(body.pos, dtype=float), quat / np.linalg.norm(quat)
+
+
+def _get_quat_right_mul_matrix(
+    quats: Float[np.ndarray, "n 4"],
+) -> Float[np.ndarray, "n 4 4"]:
+    """Get matrices `M` such that `q * quats[i] == M[i] @ q` (Hamilton product) for
+    any quaternion `q`. All quaternions are in (w, x, y, z) order."""
+    w, x, y, z = quats.T
+    return np.stack(
+        [
+            np.stack([w, -x, -y, -z], axis=-1),
+            np.stack([x, w, z, -y], axis=-1),
+            np.stack([y, -z, w, x], axis=-1),
+            np.stack([z, y, -x, w], axis=-1),
+        ],
+        axis=1,
+    )

@@ -26,7 +26,7 @@ from flygym.utils.math import Rotation3D
 from flygym.simulation import Simulation
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(items):
     """Silence the standalone-fly-compile warning across the whole test suite.
 
     Compiling a fly on its own (not attached to a world) -- whether directly, or

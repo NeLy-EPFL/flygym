@@ -26,10 +26,10 @@ Be sure to follow the **"Using `uv` (for development)"** tab.
 
 ## Running tests
 
-Run the whole suite with:
+Run the whole suite in parallel (via `pytest-xdist`) with:
 
 ```bash
-uv run pytest tests/
+uv run pytest tests/ -n auto
 ```
 
 Which tests run is controlled by **markers**, not by directory. This lets a test
@@ -41,7 +41,6 @@ in. Use pytest's `-m` flag to select or exclude groups:
 | `warp`     | GPU-accelerated (warp) backend tests        | the `warp` extra **and** a CUDA GPU |
 | `tutorial` | executes each tutorial notebook end-to-end  | the `examples` extra; slow        |
 | `rl`       | imitation-learning / RL tests               | the `rl` extra (Gymnasium + SB3)  |
-| `network`  | hits the live S3 asset bucket               | network access (self-skips if unreachable) |
 
 ```bash
 # Skip the GPU tests -- this is what CI runs (no GPU, but notebooks included):

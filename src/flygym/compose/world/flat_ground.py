@@ -12,8 +12,9 @@ class FlatGroundWorld(_GroundContactMixin, BaseWorld):
     When calling `add_fly`, the following extra keyword arguments are accepted:
 
     - ``bodysegs_with_ground_contact``: Body segments that collide with the ground.
-      Accepts a `ContactBodiesPreset`, a preset string, or a collection of
-      `BodySegment` objects. Default: ``ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD``.
+      Accepts a contact-bodies preset of the fly's model (e.g. `ContactBodiesPreset`
+      for `NeuroMechFly`), a preset string, or a collection of `BodySegment` objects.
+      Default: ``"legs_thorax_abdomen_head"``.
     - ``ground_contact_params``: `ContactParams` for friction and contact physics.
       Default: ``ContactParams()``.
     - ``add_ground_contact_sensors``: If True, add contact force sensors for each leg.
