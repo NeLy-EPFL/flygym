@@ -179,7 +179,7 @@ class TestReset:
 
     def test_reset_restores_joint_angles_without_a_subsequent_step(self, gpu_bundle):
         """State fields (qpos, ...) are restored by reset() itself, since
-        reset_data_keyframe writes them directly -- no step() needed."""
+        `mjw.reset_data_keyframe` writes them directly, no step() needed."""
         sim, fly, cam = gpu_bundle
         sim.reset()
         baseline = sim.get_joint_angles(fly.name).numpy().copy()
