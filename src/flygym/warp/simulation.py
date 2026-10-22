@@ -23,7 +23,6 @@ from flygym.warp.utils import (
     wp_gather_offset_body_positions,
     wp_gather_offset_body_rotations,
     wp_masked_copy_rows_2d,
-    reset_data_keyframe,
 )
 
 
@@ -83,8 +82,8 @@ class GPUSimulation(Simulation):
             with the behavior of MuJoCo Warp's native `reset_data()` function.
         """
         super().reset()
-        reset_data_keyframe(
-            self.mj_model, self.mjw_model, self.mjw_data, self._neutral_keyframe_id
+        mjw.reset_data_keyframe(
+            self.mjw_model, self.mjw_data, self._neutral_keyframe_id
         )
 
     def set_state(
