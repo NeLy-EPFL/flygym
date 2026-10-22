@@ -9,6 +9,9 @@ class Retina:
     """
     This class handles the simulation of the fly's visual input.
     Calculation in this class is vectorized and parallelized using Numba.
+    The image dimensions and fisheye parameters (``nrows``, ``ncols``,
+    ``zoom``, ``distortion_coefficient``) must not be modified after
+    construction.
 
     Attributes
     ----------
@@ -108,9 +111,10 @@ class Retina:
         self.nrows = nrows
         self.ncols = ncols
 
-        # Fisheye source-pixel lookup, built lazily by fisheye_image_to_hex_pxls
-        self._fisheye_lookup = None
-        self._fisheye_lookup_key = None
+        # For each fisheye-corrected pixel, the flat index of its source pixel
+        self._fisheye_lookup = self._make_fisheye_lookup(
+            nrows, ncols, zoom, distortion_coefficient
+        )
 
     def raw_image_to_hex_pxls(self, raw_img: np.ndarray) -> np.ndarray:
         """Given a raw image from an eye (one camera), simulate what the
@@ -157,12 +161,6 @@ class Retina:
                 f"Expected a uint8 image of shape ({self.nrows}, {self.ncols}, 3), "
                 f"got {raw_img.dtype} of shape {raw_img.shape}."
             )
-
-        # Rebuild the lookup if the fisheye parameters have changed
-        key = (self.nrows, self.ncols, self.zoom, self.distortion_coefficient)
-        if key != self._fisheye_lookup_key:
-            self._fisheye_lookup = self._make_fisheye_lookup(*key)
-            self._fisheye_lookup_key = key
 
         return self._pool_fisheye_image(
             np.ascontiguousarray(raw_img),

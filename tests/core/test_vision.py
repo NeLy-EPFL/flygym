@@ -239,15 +239,6 @@ class TestRetinaFisheyeImageToHexPxls:
         # Non-contiguous input
         self._assert_matches_two_stage(r, img[:, ::-1])
 
-    def test_fisheye_params_change_takes_effect(self):
-        r = Retina()
-        rng = np.random.default_rng(0)
-        img = rng.integers(0, 256, (r.nrows, r.ncols, 3), dtype=np.uint8)
-        self._assert_matches_two_stage(r, img)
-        r.zoom *= 0.8
-        r.distortion_coefficient *= 0.5
-        self._assert_matches_two_stage(r, img)
-
     @pytest.mark.parametrize(
         "img",
         [np.zeros((2, 3, 3), dtype=np.uint8), np.zeros((512, 450, 3), dtype=float)],
