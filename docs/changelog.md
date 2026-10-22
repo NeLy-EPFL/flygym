@@ -2,7 +2,9 @@
 
 ## Version 2.1.1 (under development)
 
-TODO
+### Housekeeping
+- Bumped MuJoCo and MuJoCo Warp versions to 3.16.
+- FlyGym now supports Python 3.12 – 3.15. The `rl` extra is not yet installable on Python 3.15 because PyTorch does not ship wheels for it.
 
 ## Version 2.1.0
 

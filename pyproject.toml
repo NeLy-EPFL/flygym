@@ -2,7 +2,7 @@
 name = "flygym"
 version = "2.1.1"
 description = "NeuroMechFly, a framework for simulating embodied sensorimotor control in adult Drosophila."
-requires-python = ">=3.12,<3.15"
+requires-python = ">=3.12,<3.16"
 authors = [
     { name = "Sibo Wang-Chen", email = "sibo.wang@epfl.ch" },
     { name = "Victor Alfred Stimpfling", email = "victor.stimpfling@epfl.ch" },
@@ -21,7 +21,7 @@ maintainers = [
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "mujoco>=3.12,<3.13",
+    "mujoco>=3.16,<3.17",
     "numpy>=2.0,<3.0",
     "pyyaml>=6.0,<7.0",
     "mediapy>=1.2,<3.0",
@@ -39,7 +39,7 @@ dependencies = [
 [project.optional-dependencies]
 warp = [
     "warp-lang>=1.15",
-    "mujoco_warp>=3.12,<3.13",
+    "mujoco_warp>=3.16,<3.17",
 ]
 dev = [
     # Testing
@@ -50,6 +50,9 @@ dev = [
     "ruff==0.15.13",
     # PyPI publishing
     "build>=1.0,<2.0",
+    # Build backend; test_packaging.py builds with --no-isolation so it must be
+    # installed in the env itself.
+    "setuptools>=68",
     "twine>=6.0,<7.0",
     # Documentation site — built with ProperDocs, a drop-in continuation of
     # MkDocs 1.x (the upstream MkDocs project is moving to a backwards-
