@@ -134,7 +134,7 @@ coxa:
     height: 50
 
 trochanterfemur:
-  apply_to: "*_trochanterfemur"
+  apply_to: ["*_trochanterfemur", "*_trochanter", "*_femur"]
   material:
     specular: 0.2
     shininess: 0.2

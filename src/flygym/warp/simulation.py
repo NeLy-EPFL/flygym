@@ -20,7 +20,9 @@ from flygym.warp.utils import (
     wp_scatter_indexed_cols_2d,
     wp_gather_indexed_cols_2d,
     wp_gather_indexed_rows_vec3f,
-    wp_gather_indexed_rows_quatf,
+    wp_gather_offset_body_positions,
+    wp_gather_offset_body_rotations,
+    wp_masked_copy_rows_2d,
     reset_data_keyframe,
 )
 
@@ -76,14 +78,61 @@ class GPUSimulation(Simulation):
             `reset()` does not update derived kinematic quantities (`xpos`,
             `xquat`, `site_xpos`, ...); it only restores state fields
             (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
-            derived quantities right after `reset()`, before calling `step()`,
-            returns stale values from before the reset. This is consistent with the
-            behavior of MuJoCo Warp's native `reset_data()` function.
+            derived quantities right after `reset()`, before calling `forward()` or
+            `step()`, returns stale values from before the reset. This is consistent
+            with the behavior of MuJoCo Warp's native `reset_data()` function.
         """
         super().reset()
         reset_data_keyframe(
             self.mj_model, self.mjw_model, self.mjw_data, self._neutral_keyframe_id
         )
+
+    def set_state(
+        self,
+        qpos: Float[np.ndarray | wp.array, "n_worlds nq"] | None = None,
+        qvel: Float[np.ndarray | wp.array, "n_worlds nv"] | None = None,
+        worlds_mask: wp.array | np.ndarray | None = None,
+    ) -> None:
+        """Directly set generalized positions and/or velocities for parallel worlds.
+
+        Unlike `reset`, which restores the single neutral keyframe to every (masked)
+        world, this writes a possibly different `qpos`/`qvel` per world. It is the
+        building block for reference-state initialization, where each world starts an
+        episode from a different reference pose.
+
+        Args:
+            qpos: Optional generalized positions, shape ``(n_worlds, nq)``. Accepts
+                numpy or Warp arrays. If None, positions are left unchanged.
+            qvel: Optional generalized velocities, shape ``(n_worlds, nv)``. Accepts
+                numpy or Warp arrays. If None, velocities are left unchanged.
+            worlds_mask: Optional per-world boolean mask, shape ``(n_worlds,)``. Only
+                masked worlds are written; the rest keep their current state. Defaults
+                to all worlds.
+
+        !!! warning
+
+            Like `reset`, this does not update derived kinematic quantities (`xpos`,
+            `xquat`, `site_xpos`, velocities, ...). Call `forward` (or `step`) before
+            reading them, otherwise getters return stale pre-write values.
+        """
+        if qpos is None and qvel is None:
+            return
+        if worlds_mask is None:
+            mask = wp.ones(self.n_worlds, dtype=wp.bool)
+        elif isinstance(worlds_mask, wp.array):
+            mask = worlds_mask
+        else:
+            mask = wp.array(worlds_mask, dtype=wp.bool)
+        for src, dst in ((qpos, self.mjw_data.qpos), (qvel, self.mjw_data.qvel)):
+            if src is None:
+                continue
+            if not isinstance(src, wp.array):
+                src = wp.array(src, dtype=wp.float32)
+            wp.launch(
+                wp_masked_copy_rows_2d,
+                dim=dst.shape,
+                inputs=[src, dst, mask],
+            )
 
     @override
     def get_joint_angles(
@@ -135,6 +184,74 @@ class GPUSimulation(Simulation):
         )
         return dst
 
+    def get_base_linear_velocity(
+        self, fly_name: str, dst: wp.array | None = None
+    ) -> Float[wp.array, "n_worlds 3"]:
+        """Get the linear velocity of the fly's base (free joint) for all worlds.
+
+        The base velocity is not part of ``get_joint_velocities`` (which covers only the
+        fly's articulated DOFs). It is only defined for a fly attached to the world by a
+        free joint (the usual walking setup); tethered flies have none.
+
+        Args:
+            fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
+
+        Returns:
+            Warp array of shape ``(n_worlds, 3)`` in mm/s, in the **world** frame.
+
+        Raises:
+            KeyError: If the fly has no free (base) joint.
+        """
+        indices = self._require_base_veladrs(fly_name, self._wp_base_linveladrs_by_fly)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, 3), dtype=wp.float32)
+        wp.launch(
+            wp_gather_indexed_cols_2d,
+            dim=(self.n_worlds, 3),
+            inputs=[self.mjw_data.qvel, dst, indices],
+        )
+        return dst
+
+    def get_base_angular_velocity(
+        self, fly_name: str, dst: wp.array | None = None
+    ) -> Float[wp.array, "n_worlds 3"]:
+        """Get the angular velocity of the fly's base (free joint) for all worlds.
+
+        See ``get_base_linear_velocity`` for when the base velocity is defined.
+
+        Args:
+            fly_name: Name of the fly.
+            dst: Optional warp array to store the result. If not specified, a new array
+                is allocated.
+
+        Returns:
+            Warp array of shape ``(n_worlds, 3)`` in rad/s, in the **root-body** frame
+            (MuJoCo's native free-joint angular-velocity convention).
+
+        Raises:
+            KeyError: If the fly has no free (base) joint.
+        """
+        indices = self._require_base_veladrs(fly_name, self._wp_base_angveladrs_by_fly)
+        if dst is None:
+            dst = wp.zeros((self.n_worlds, 3), dtype=wp.float32)
+        wp.launch(
+            wp_gather_indexed_cols_2d,
+            dim=(self.n_worlds, 3),
+            inputs=[self.mjw_data.qvel, dst, indices],
+        )
+        return dst
+
+    @staticmethod
+    def _require_base_veladrs(fly_name: str, adrs_by_fly: dict) -> wp.array:
+        if fly_name not in adrs_by_fly:
+            raise KeyError(
+                f"Fly '{fly_name}' has no free (base) joint, so its base velocity is "
+                "undefined (is it tethered?)."
+            )
+        return adrs_by_fly[fly_name]
+
     @override
     def get_body_positions(
         self, fly_name: str, dst: wp.array | None = None
@@ -154,9 +271,15 @@ class GPUSimulation(Simulation):
         if dst is None:
             dst = wp.zeros((self.n_worlds, indices.size, 3), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_vec3f,
+            wp_gather_offset_body_positions,
             dim=(self.n_worlds, indices.size),
-            inputs=[self.mjw_data.xpos, dst, indices],
+            inputs=[
+                self.mjw_data.xpos,
+                self.mjw_data.xmat,
+                dst,
+                indices,
+                self._wp_body_relpos_by_fly[fly_name],
+            ],
         )
         return dst
 
@@ -179,9 +302,14 @@ class GPUSimulation(Simulation):
         if dst is None:
             dst = wp.zeros((self.n_worlds, indices.size, 4), dtype=wp.float32)
         wp.launch(
-            wp_gather_indexed_rows_quatf,
+            wp_gather_offset_body_rotations,
             dim=(self.n_worlds, indices.size),
-            inputs=[self.mjw_data.xquat, dst, indices],
+            inputs=[
+                self.mjw_data.xquat,
+                dst,
+                indices,
+                self._wp_body_relquat_by_fly[fly_name],
+            ],
         )
         return dst
 
@@ -295,6 +423,14 @@ class GPUSimulation(Simulation):
         mjw.step(self.mjw_model, self.mjw_data)
 
     @override
+    def forward(self) -> None:
+        """Recompute derived quantities for all parallel worlds on the GPU, without
+        integrating. Call this after writing state directly (e.g. via `set_state` or
+        `reset`) so that subsequent getters return up-to-date values.
+        """
+        mjw.forward(self.mjw_model, self.mjw_data)
+
+    @override
     def set_renderer(
         self,
         cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
@@ -404,6 +540,12 @@ class GPUSimulation(Simulation):
             k: wp.array(v, dtype=wp.int32)
             for k, v in self._internal_bodyids_by_fly.items()
         }
+        self._wp_body_relpos_by_fly = {
+            k: wp.array(v, dtype=wp.vec3) for k, v in self._body_relpos_by_fly.items()
+        }
+        self._wp_body_relquat_by_fly = {
+            k: wp.array(v, dtype=wp.quat) for k, v in self._body_relquat_by_fly.items()
+        }
 
     @override
     def _map_internal_qposqveladrs(self) -> None:
@@ -416,6 +558,23 @@ class GPUSimulation(Simulation):
             k: wp.array(v, dtype=wp.int32)
             for k, v in self._intern_qveladrs_by_fly.items()
         }
+        # Base ("free") joint velocity addresses, used by get_base_*_velocity. The world
+        # attaches each walking fly's root body to the world with a free joint named
+        # after the fly; its 6 velocity DOFs are laid out as [linear xyz, angular xyz].
+        # Flies without a free joint (e.g. tethered) are simply left out of these maps.
+        self._wp_base_linveladrs_by_fly = {}
+        self._wp_base_angveladrs_by_fly = {}
+        for fly_name in self._intern_qveladrs_by_fly:
+            jid = mj.mj_name2id(self.mj_model, mj.mjtObj.mjOBJ_JOINT, fly_name)
+            if jid < 0 or self.mj_model.jnt_type[jid] != mj.mjtJoint.mjJNT_FREE:
+                continue
+            vadr = int(self.mj_model.jnt_dofadr[jid])
+            self._wp_base_linveladrs_by_fly[fly_name] = wp.array(
+                [vadr, vadr + 1, vadr + 2], dtype=wp.int32
+            )
+            self._wp_base_angveladrs_by_fly[fly_name] = wp.array(
+                [vadr + 3, vadr + 4, vadr + 5], dtype=wp.int32
+            )
 
     @override
     def _map_internal_actuator_ids(self) -> None:

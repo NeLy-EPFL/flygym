@@ -21,9 +21,11 @@ __all__ = [
     "AxesSetLike",
     "AxisOrder",
     "JointPreset",
+    "SeparateTrochanterFemurJointPreset",
     "BaseActuatedDOFPreset",
     "ActuatedDOFPreset",
     "ContactBodiesPreset",
+    "SeparateTrochanterFemurContactBodiesPreset",
     "BaseContactBodiesPreset",
     "BodySegment",
     "JointDOF",
@@ -41,6 +43,10 @@ __all__ = [
     "PASSIVE_TARSAL_LINKS",
     "ALL_CONNECTED_SEGMENT_PAIRS",
     "ALL_SEGMENT_NAMES",
+    "LEG_LINKS_SEPARATE_TROCHANTERFEMUR",
+    "ALL_CONNECTED_SEGMENT_PAIRS_SEPARATE_TROCHANTERFEMUR",
+    "ALL_SEGMENT_NAMES_SEPARATE_TROCHANTERFEMUR",
+    "separate_trochanterfemur_in_dof_name",
 ]
 
 
@@ -243,12 +249,65 @@ ALL_SEGMENT_NAMES: list[str] = orderedset(
     [seg for joint in ALL_CONNECTED_SEGMENT_PAIRS for seg in joint]
 )
 
+# Variant of the default anatomy where the trochanter and the femur are separate
+# segments (used by `NeuroMechFlyWithSeparateTrochanterFemur`).
+LEG_LINKS_SEPARATE_TROCHANTERFEMUR: list[str] = [
+    "coxa",
+    "trochanter",
+    "femur",
+    "tibia",
+    *(f"tarsus{seg}" for seg in "12345"),
+]
+ALL_CONNECTED_SEGMENT_PAIRS_SEPARATE_TROCHANTERFEMUR: list[tuple[str, str]] = [
+    *(
+        pair
+        for pair in ALL_CONNECTED_SEGMENT_PAIRS
+        if pair[1].split("_")[0] not in LEGS
+    ),
+    *(
+        edge
+        for leg in LEGS
+        for edge in _chain2joints(
+            "c_thorax", *(f"{leg}_{lk}" for lk in LEG_LINKS_SEPARATE_TROCHANTERFEMUR)
+        )
+    ),
+]
+ALL_SEGMENT_NAMES_SEPARATE_TROCHANTERFEMUR: list[str] = orderedset(
+    [
+        seg
+        for joint in ALL_CONNECTED_SEGMENT_PAIRS_SEPARATE_TROCHANTERFEMUR
+        for seg in joint
+    ]
+)
+_VALID_SEGMENT_NAMES = set(ALL_SEGMENT_NAMES) | set(
+    ALL_SEGMENT_NAMES_SEPARATE_TROCHANTERFEMUR
+)
+
+
+def separate_trochanterfemur_in_dof_name(name: str) -> str:
+    """Rename a joint DoF of the fused trochanterfemur to its separated equivalent.
+
+    The joint to the coxa now connects to the trochanter, and the joint to the tibia
+    now connects to the femur. Since there is no DoF between the trochanter and the
+    femur by default, joint angles carry over unchanged. Names that do not involve the
+    trochanterfemur are returned as is.
+
+    Example: `"lf_trochanterfemur-lf_tibia-pitch"` becomes `"lf_femur-lf_tibia-pitch"`.
+    """
+    parent, child, axis = name.split("-")
+    if child.endswith("_trochanterfemur"):
+        child = child.replace("_trochanterfemur", "_trochanter")
+    if parent.endswith("_trochanterfemur"):
+        parent = parent.replace("_trochanterfemur", "_femur")
+    return f"{parent}-{child}-{axis}"
+
 
 @dataclass(frozen=True)
 class BodySegment:
     """Represents a body segment in the fly anatomy.
 
-    See `flygym.anatomy.ALL_SEGMENT_NAMES` for all possible names.
+    See `flygym.anatomy.ALL_SEGMENT_NAMES` and
+    `flygym.anatomy.ALL_SEGMENT_NAMES_SEPARATE_TROCHANTERFEMUR` for all possible names.
 
     Attributes:
         name:
@@ -263,10 +322,10 @@ class BodySegment:
     name: str
 
     def __post_init__(self):
-        if self.name not in ALL_SEGMENT_NAMES:
+        if self.name not in _VALID_SEGMENT_NAMES:
             raise ValueError(
                 f"Invalid body segment name: {self.name}. "
-                f"Must be one of {ALL_SEGMENT_NAMES}."
+                f"Must be one of {sorted(_VALID_SEGMENT_NAMES)}."
             )
 
     @property
@@ -426,8 +485,12 @@ class BaseJointPreset(Enum):
                 match joint.child.link:
                     case "coxa":
                         pass
-                    case "trochanterfemur":
+                    case "trochanterfemur" | "trochanter":
                         joint.axes.remove("yaw")
+                    case "femur":
+                        # Trochanter and femur are often considered to be fused in real
+                        # flies (at list in NMFv1, Lobato-Rios et al. 2022)
+                        joint.axes.clear()
                     case _:
                         joint.axes.remove("roll")
                         joint.axes.remove("yaw")
@@ -457,6 +520,27 @@ class JointPreset(BaseJointPreset):
     @classmethod
     def _get_connected_segment_pairs(cls):
         return ALL_CONNECTED_SEGMENT_PAIRS
+
+    @classmethod
+    def _get_passive_tarsal_links(cls):
+        return PASSIVE_TARSAL_LINKS
+
+
+class SeparateTrochanterFemurJointPreset(BaseJointPreset):
+    """Same as `JointPreset`, but for the anatomy with separate trochanter and femur
+    segments (see `NeuroMechFlyWithSeparateTrochanterFemur`).
+
+    Biological presets add no DoF between the trochanter and the femur.
+    """
+
+    ALL_POSSIBLE = "all_possible"
+    ALL_BIOLOGICAL = "all_biological"
+    LEGS_ONLY = "legs_only"
+    LEGS_ACTIVE_ONLY = "legs_active_only"
+
+    @classmethod
+    def _get_connected_segment_pairs(cls):
+        return ALL_CONNECTED_SEGMENT_PAIRS_SEPARATE_TROCHANTERFEMUR
 
     @classmethod
     def _get_passive_tarsal_links(cls):
@@ -560,14 +644,40 @@ class ContactBodiesPreset(BaseContactBodiesPreset):
         return [BodySegment(segname) for segname in ALL_SEGMENT_NAMES]
 
 
+class SeparateTrochanterFemurContactBodiesPreset(BaseContactBodiesPreset):
+    """Same as `ContactBodiesPreset`, but for the anatomy with separate trochanter and
+    femur segments (see `NeuroMechFlyWithSeparateTrochanterFemur`)."""
+
+    ALL = "all"
+    LEGS_THORAX_ABDOMEN_HEAD = "legs_thorax_abdomen_head"
+    LEGS_ONLY = "legs_only"
+    TIBIA_TARSUS_ONLY = "tibia_tarsus_only"
+
+    @classmethod
+    def _get_all_segments(cls) -> list[BodySegment]:
+        return [
+            BodySegment(segname)
+            for segname in ALL_SEGMENT_NAMES_SEPARATE_TROCHANTERFEMUR
+        ]
+
+
 class Skeleton:
-    """Fly skeleton defining joint structure and degrees of freedom."""
+    """Fly skeleton defining joint structure and degrees of freedom.
+
+    Args:
+        axis_order: Order in which DoFs are chained at multi-DoF joints.
+        joint_preset: Preset defining the anatomical joints. A string is interpreted
+            as a `JointPreset`. For other anatomies, pass a member of the matching
+            preset enum (e.g. `SeparateTrochanterFemurJointPreset.LEGS_ONLY`).
+        anatomical_joints: Explicit list of anatomical joints, as an alternative to
+            `joint_preset`.
+    """
 
     def __init__(
         self,
         *,
         axis_order: AxisOrder | list[RotationAxis | str],
-        joint_preset: "JointPreset | str | None" = None,
+        joint_preset: "BaseJointPreset | str | None" = None,
         anatomical_joints: list[AnatomicalJoint] | None = None,
     ) -> None:
         if not (joint_preset is None) ^ (anatomical_joints is None):
@@ -577,7 +687,9 @@ class Skeleton:
             )
 
         if joint_preset is not None:
-            anatomical_joints = JointPreset(joint_preset).to_joint_list()
+            if not isinstance(joint_preset, BaseJointPreset):
+                joint_preset = JointPreset(joint_preset)
+            anatomical_joints = joint_preset.to_joint_list()
         self.anatomical_joints = anatomical_joints
 
         self.joint_lookup = {(j.parent, j.child): j for j in anatomical_joints}
