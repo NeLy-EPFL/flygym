@@ -96,14 +96,9 @@ class Simulation:
         self._total_physics_time_ns = 0
         self._total_render_time_ns = 0
 
-    def step(self, nstep: int = 1) -> None:
-        """Advance physics by `nstep` timesteps under the current control inputs.
-
-        Stepping is done natively in MuJoCo without returning to Python between
-        substeps, so controls are held constant. Use `nstep=1` if the controller
-        needs to update inputs at every physics step.
-        """
-        mj.mj_step(self.mj_model, self.mj_data, nstep=nstep)
+    def step(self) -> None:
+        """Advance physics by one timestep."""
+        mj.mj_step(self.mj_model, self.mj_data)
 
     def forward(self) -> None:
         """Recompute derived quantities from the current state, without integrating.
@@ -115,13 +110,13 @@ class Simulation:
         """
         mj.mj_forward(self.mj_model, self.mj_data)
 
-    def step_with_profile(self, nstep: int = 1) -> None:
-        """Like `step`, but also accumulates timing data for profiling."""
+    def step_with_profile(self) -> None:
+        """Advance physics by one timestep, accumulating timing data for profiling."""
         physics_start_ns = perf_counter_ns()
-        self.step(nstep)
+        self.step()
         physics_finish_ns = perf_counter_ns()
         self._total_physics_time_ns += physics_finish_ns - physics_start_ns
-        self._curr_step += nstep
+        self._curr_step += 1
 
     def set_renderer(
         self,

@@ -418,11 +418,9 @@ class GPUSimulation(Simulation):
         )
 
     @override
-    def step(self, nstep: int = 1) -> None:
-        """Advance all parallel worlds by `nstep` timesteps on the GPU under the
-        current control inputs."""
-        for _ in range(nstep):
-            mjw.step(self.mjw_model, self.mjw_data)
+    def step(self) -> None:
+        """Advance all parallel worlds by one timestep on the GPU."""
+        mjw.step(self.mjw_model, self.mjw_data)
 
     @override
     def forward(self) -> None:
