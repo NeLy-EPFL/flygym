@@ -1,5 +1,5 @@
 from .base_fly import BaseFly, ActuatorType, MeshType, GeomFittingOption
-from .neuromechfly import NeuroMechFly, Fly
+from .neuromechfly import NeuroMechFly, NeuroMechFlyWithSeparateTrochanterFemur, Fly
 from .flybody import FlyBody
 from .musculoskeletal import (
     MusculoskeletalFly,
@@ -18,6 +18,7 @@ __all__ = [
     "MeshType",
     "GeomFittingOption",
     "NeuroMechFly",
+    "NeuroMechFlyWithSeparateTrochanterFemur",
     "Fly",
     "FlyBody",
     "MusculoskeletalFly",

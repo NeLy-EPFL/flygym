@@ -405,6 +405,14 @@ class BaseFly(BaseCompositionElement):
             Dictionary mapping JointDOF to created MJCF joint elements.
         """
 
+        if missing := [
+            s for s in skeleton.body_segments if s not in self.bodyseg_to_mjcfbody
+        ]:
+            raise ValueError(
+                f"Skeleton contains body segments that {type(self).__name__} does "
+                f"not have: {[s.name for s in missing]}. Was the skeleton built from "
+                "a joint preset for another fly model?"
+            )
         self.skeleton = skeleton
         neutral_angle_lookup = self.get_pose_lookup(neutral_pose)
 

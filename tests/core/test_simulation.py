@@ -13,8 +13,13 @@ from flygym.anatomy import (
     LEGS,
     AnatomicalJoint,
     BodySegment,
+    SeparateTrochanterFemurJointPreset,
 )
-from flygym.compose.fly import NeuroMechFly, ActuatorType
+from flygym.compose.fly import (
+    NeuroMechFly,
+    NeuroMechFlyWithSeparateTrochanterFemur,
+    ActuatorType,
+)
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
@@ -238,6 +243,42 @@ class TestFusedBodySegments:
         np.testing.assert_allclose(
             simulation.get_body_rotations(name), ref_data.xquat[ref_ids], atol=1e-10
         )
+
+
+class TestSeparateTrochanterFemur:
+    def test_kinematics_match_fused_model(self, neutral_pose):
+        sims = []
+        for fly_class, joint_preset in [
+            (NeuroMechFly, JointPreset.LEGS_ONLY),
+            (
+                NeuroMechFlyWithSeparateTrochanterFemur,
+                SeparateTrochanterFemurJointPreset.LEGS_ONLY,
+            ),
+        ]:
+            fly = fly_class(name="fly")
+            skeleton = Skeleton(
+                axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=joint_preset
+            )
+            fly.add_joints(skeleton, neutral_pose=neutral_pose)
+            world = TetheredWorld()
+            world.add_fly(
+                fly,
+                spawn_position=[0, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
+            sim = Simulation(world)
+            sim.reset()
+            segment_names = [seg.name for seg in fly.get_bodysegs_order()]
+            positions = dict(zip(segment_names, sim.get_body_positions("fly")))
+            sims.append((sim, positions))
+        (fused_sim, fused_pos), (separate_sim, separate_pos) = sims
+
+        # The femur has no DoF, so it is fused into the trochanter by `fusestatic`
+        assert separate_sim.mj_model.nbody == fused_sim.mj_model.nbody
+        assert len(separate_pos) == len(fused_pos) + 6
+        for name, pos in fused_pos.items():
+            name = name.replace("_trochanterfemur", "_trochanter")
+            np.testing.assert_allclose(separate_pos[name], pos, atol=1e-10)
 
 
 # ==============================================================================

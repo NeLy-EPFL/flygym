@@ -1,6 +1,7 @@
 from .fly import (
     BaseFly,
     NeuroMechFly,
+    NeuroMechFlyWithSeparateTrochanterFemur,
     FlyBody,
     MusculoskeletalFly,
     DEFAULT_MUSCULOSKELETAL_XML,
@@ -30,6 +31,7 @@ from .physics import ContactParams
 __all__ = [
     "BaseFly",
     "NeuroMechFly",
+    "NeuroMechFlyWithSeparateTrochanterFemur",
     "FlyBody",
     "MusculoskeletalFly",
     "DEFAULT_MUSCULOSKELETAL_XML",

@@ -5,7 +5,7 @@ from typing import Any, override
 import mujoco as mj
 import numpy as np
 
-from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
+from flygym.anatomy import BaseContactBodiesPreset, BodySegment
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import BaseFly
 from flygym.compose.physics import ContactParams
@@ -264,8 +264,8 @@ class _GroundContactMixin:
         spawn_rotation: Rotation3D,
         *,
         bodysegs_with_ground_contact: (
-            list[BodySegment] | ContactBodiesPreset | str
-        ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
+            list[BodySegment] | BaseContactBodiesPreset | str
+        ) = "legs_thorax_abdomen_head",
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
     ) -> set[str]:

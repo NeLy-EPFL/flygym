@@ -15,8 +15,13 @@ pytestmark = pytest.mark.skipif(
     reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 
-from flygym.anatomy import AxisOrder, JointPreset, Skeleton
-from flygym.compose.fly import NeuroMechFly
+from flygym.anatomy import (
+    AxisOrder,
+    JointPreset,
+    SeparateTrochanterFemurJointPreset,
+    Skeleton,
+)
+from flygym.compose.fly import NeuroMechFly, NeuroMechFlyWithSeparateTrochanterFemur
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
 from flygym.utils.math import Rotation3D
@@ -297,36 +302,38 @@ class TestSaveVideo:
 
 
 # ==============================================================================
-# Segmentation rendering: trochanter/femur split
+# Segmentation of separate trochanter and femur
 # ==============================================================================
 
 
-class TestSegmentationDistinguishesTrochanterFemur:
-    """The trochanterfemur segment is rendered as two separate geoms, trochanter
-    and femur (see `NeuroMechFly._add_one_body_and_geoms`), specifically so each
-    gets its own id in the segmentation map."""
+def test_trochanter_and_femur_are_segmented_separately():
+    pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL,
+        joint_preset=SeparateTrochanterFemurJointPreset.LEGS_ONLY,
+    )
+    fly = NeuroMechFlyWithSeparateTrochanterFemur(name="fly")
+    fly.add_joints(skeleton, neutral_pose=pose)
+    fly.add_tracking_camera(name="trackcam")
+    world = TetheredWorld()
+    world.add_fly(
+        fly,
+        spawn_position=[0, 0, 1.5],
+        spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+    )
+    mj_model, mj_data = world.compile()
+    mj.mj_forward(mj_model, mj_data)
+    cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
+    with Renderer(
+        mj_model,
+        cam_name,
+        camera_res=(240, 320),
+        render_rgb=False,
+        render_segmentation=True,
+    ) as renderer:
+        renderer.render_as_needed(mj_data)
+    seg = renderer.segmentation_frames[cam_name][0]
 
-    def test_trochanter_and_femur_have_distinct_segmentation_ids(
-        self, compiled_model_with_camera, cam_name
-    ):
-        mj_model, mj_data, fly = compiled_model_with_camera
-        mj.mj_forward(mj_model, mj_data)
-        with Renderer(
-            mj_model,
-            cam_name,
-            camera_res=(240, 320),
-            render_rgb=False,
-            render_segmentation=True,
-        ) as renderer:
-            renderer.render_as_needed(mj_data)
-        seg = renderer.segmentation_frames[cam_name][0]
-
-        troch_gid = mj.mj_name2id(
-            mj_model, mj.mjtObj.mjOBJ_GEOM, f"{fly.name}/rf_trochanter"
-        )
-        femur_gid = mj.mj_name2id(
-            mj_model, mj.mjtObj.mjOBJ_GEOM, f"{fly.name}/rf_femur"
-        )
-        assert troch_gid != femur_gid
-        assert np.sum(seg == troch_gid) > 0, "trochanter not visible in this view"
-        assert np.sum(seg == femur_gid) > 0, "femur not visible in this view"
+    for geom_name in ["fly/rf_trochanter", "fly/rf_femur"]:
+        geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, geom_name)
+        assert np.any(seg == geom_id), f"{geom_name} not visible"
