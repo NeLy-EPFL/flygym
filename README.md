@@ -2,7 +2,7 @@
 > We introduced a new FlyGym 2.x.x API in March 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
 > 
 > - **~10x speed-up** for CPU-based simulations (~2x real-time throughput)
-> - **~300x speed-up** for GPU-based simulation via Warp/MJWarp (~60x real-time throughput)
+> - **~250x speed-up** for GPU-based simulation via Warp/MJWarp (~50x real-time throughput)
 >
 > Additional improvements include:
 >
