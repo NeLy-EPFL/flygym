@@ -11,10 +11,18 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from flygym.compose import BaseWorld
-from flygym.rendering import Renderer
-from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
+from flygym.rendering import Renderer, update_render_geometry
+from flygym.warp.utils import get_rgb_selected_worlds_and_cameras, wp_gather_worlds_2d
 from flygym.utils.video import write_video_from_frames
 from flygym.utils.plot import find_font_path
+
+
+def update_render_geometry_gpu(mjw_model: mjw.Model, mjw_data: mjw.Data) -> None:
+    """GPU counterpart of `flygym.rendering.update_render_geometry`."""
+    mjw.kinematics(mjw_model, mjw_data)
+    mjw.com_pos(mjw_model, mjw_data)
+    mjw.camlight(mjw_model, mjw_data)
+    mjw.tendon(mjw_model, mjw_data)
 
 
 class _BaseWarpRenderer(Renderer, ABC):
@@ -73,12 +81,6 @@ class _BaseWarpRenderer(Renderer, ABC):
         if len(self.enabled_cam_names) == 0:
             raise ValueError("At least one valid camera must be specified.")
 
-        # Set up parameters for automatically determining when to render frames
-        self.playback_speed = playback_speed
-        self.output_fps = output_fps
-        self._secs_between_renders = 1 / (output_fps / playback_speed)
-        self._last_render_time_sec = -np.inf
-
         # Buffer to store rendered images
         n_worlds_to_render = len(self.world_ids)
         n_cams_to_render = len(self.enabled_cam_names)
@@ -93,18 +95,16 @@ class _BaseWarpRenderer(Renderer, ABC):
     @override
     def render_as_needed(self, mjw_data: mjw.Data) -> bool:
         curr_time = mjw_data.time.numpy()[0]  # assume all worlds have the same time
-        if curr_time >= self._last_render_time_sec + self._secs_between_renders:
-            self._last_render_time_sec = curr_time
-            rendered_images = self._render_impl(mjw_data)
-            if self.buffer_frames:
-                self._frames.append(rendered_images)
-            return True
-        else:
+        if not self._clock.tick(curr_time):
             return False
+        rendered_images = self._render_impl(mjw_data)
+        if self.buffer_frames:
+            self._frames.append(rendered_images)
+        return True
 
     @override
     def reset(self):
-        self._last_render_time_sec = -np.inf
+        self._clock.reset()
         if self.buffer_frames:
             self._frames = []
 
@@ -278,7 +278,12 @@ class _BaseWarpRenderer(Renderer, ABC):
 
 
 class WarpGPUBatchRenderer(_BaseWarpRenderer):
-    """GPU-side renderer using MJWarp's GPU batch rendering functionality."""
+    """GPU-side renderer using MJWarp's GPU batch rendering functionality.
+
+    The selected worlds are copied into a separate `mjw.Data` in which the render
+    geometry is recomputed (see `update_render_geometry_gpu`). Rendering cost and
+    memory therefore scale with the number of rendered worlds, not simulated ones.
+    """
 
     def _render_setup_impl(self, **kwargs: Any) -> None:
         if not self._is_scene_option_default(self.scene_option):
@@ -287,7 +292,14 @@ class WarpGPUBatchRenderer(_BaseWarpRenderer):
                 "because it is not implemented in MJWarp batch rendering."
             )
 
+        n_rendered_worlds = len(self.world_ids)
         self._world_ids_gpu = wp.array(self.world_ids, dtype=wp.int32)
+        self._rendered_world_ids_gpu = wp.array(
+            list(range(n_rendered_worlds)), dtype=wp.int32
+        )
+        self._render_mjw_data = mjw.put_data(
+            self.mj_model, mj.MjData(self.mj_model), nworld=n_rendered_worlds
+        )
         self._enabled_cam_ids_gpu = wp.array(
             [self._cameras_names2id[n] for n in self.enabled_cam_names], dtype=wp.int32
         )
@@ -299,7 +311,7 @@ class WarpGPUBatchRenderer(_BaseWarpRenderer):
         # Create batch rendering context
         self._rendering_context = mjw.create_render_context(
             mjm=self.mj_model,
-            nworld=self._n_worlds_total,
+            nworld=n_rendered_worlds,
             cam_active=cam_mask,
             cam_res=self.camera_res[::-1],  # MJWarp expects (W, H); we use (H, W)
             **kwargs,
@@ -310,12 +322,25 @@ class WarpGPUBatchRenderer(_BaseWarpRenderer):
         self.mj_renderer = None
 
     def _render_impl(self, mjw_data: mjw.Data) -> np.ndarray | wp.array:
-        mjw.refit_bvh(self.mjw_model, mjw_data, self._rendering_context)
-        mjw.render(self.mjw_model, mjw_data, self._rendering_context)
+        render_data = self._render_mjw_data
+        for src, dst in (
+            (mjw_data.qpos, render_data.qpos),
+            (mjw_data.mocap_pos, render_data.mocap_pos),
+            (mjw_data.mocap_quat, render_data.mocap_quat),
+        ):
+            if dst.size > 0:
+                wp.launch(
+                    wp_gather_worlds_2d,
+                    dim=dst.shape,
+                    inputs=[src, dst, self._world_ids_gpu],
+                )
+        update_render_geometry_gpu(self.mjw_model, render_data)
+        mjw.refit_bvh(self.mjw_model, render_data, self._rendering_context)
+        mjw.render(self.mjw_model, render_data, self._rendering_context)
         rgb_out = wp.zeros(self._buf_dim_per_frame, dtype=wp.vec3f)
         get_rgb_selected_worlds_and_cameras(
             self._rendering_context,
-            self._world_ids_gpu,
+            self._rendered_world_ids_gpu,
             self._enabled_cam_ids_gpu,
             rgb_out,
         )
@@ -343,28 +368,33 @@ class WarpGPUBatchRenderer(_BaseWarpRenderer):
 
 
 class WarpCPURenderer(_BaseWarpRenderer):
-    """CPU-side renderer for multi-world MJWarp simulation."""
+    """CPU-side renderer for multi-world MJWarp simulation.
+
+    Like `flygym.rendering.Renderer`, frames are rendered from a private copy of the
+    state of each selected world, with the render geometry recomputed on the CPU.
+    """
 
     def _render_setup_impl(self, **kwargs: Any) -> None:
-        self._mj_data_buffer = mj.MjData(self.mj_model)
-        # Nothing else to do - just use mjRenderer inherited from CPU Renderer
+        pass  # use the mj.Renderer and render data inherited from Renderer
 
     def _render_impl(self, mjw_data: mjw.Data) -> np.ndarray | wp.array:
         rendered_images = np.zeros((*self._buf_dim_per_frame, 3), dtype=np.uint8)
+        qpos = mjw_data.qpos.numpy()
+        mocap_pos = mjw_data.mocap_pos.numpy()
+        mocap_quat = mjw_data.mocap_quat.numpy()
 
-        for world_id in self.world_ids:
-            wid_among_rendered = self.world_ids.index(world_id)
-
-            # Copy data into CPU MjData struct
-            mj.mj_resetData(self.mj_model, self._mj_data_buffer)
-            mjw.get_data_into(self._mj_data_buffer, self.mj_model, mjw_data, world_id)
+        for wid_among_rendered, world_id in enumerate(self.world_ids):
+            self._render_data.qpos[:] = qpos[world_id]
+            self._render_data.mocap_pos[:] = mocap_pos[world_id]
+            self._render_data.mocap_quat[:] = mocap_quat[world_id]
+            update_render_geometry(self.mj_model, self._render_data)
 
             # Render each enabled camera and store frames
             for cam_name, internal_cam_id in self._cameras_names2id.items():
                 cid_among_rendered = self.enabled_cam_names.index(cam_name)
 
                 self.mj_renderer.update_scene(
-                    self._mj_data_buffer, internal_cam_id, self.scene_option
+                    self._render_data, internal_cam_id, self.scene_option
                 )
                 frame = self.mj_renderer.render()
 

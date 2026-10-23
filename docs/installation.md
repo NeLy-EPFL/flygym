@@ -137,11 +137,11 @@
 
     After the setup cell finishes, run the rest of the notebook as usual. FlyGym downloads the fly meshes from S3 on first use, so no large files need to be uploaded.
 
-    !!! tip "GPU-accelerated tutorial"
+    !!! tip "GPU-accelerated tutorials"
 
-        The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) tutorial uses the `flygym.warp` backend, which requires a GPU. Before running it, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Its setup cell installs the `warp` extra automatically.
+        The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) and [recording and rendering trajectories](tutorials/9_recording_and_rendering_trajectories.ipynb) tutorials use the `flygym.warp` backend, which requires a GPU. Before running them, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Their setup cells install the `warp` extra automatically.
 
-        On a GPU runtime, `pip` may warn that Colab's preinstalled `cudf`/`cuml` (RAPIDS) require `numba<0.62` while FlyGym installs a newer `numba`. This warning is harmless: the tutorial uses MuJoCo Warp, not RAPIDS, so the upgraded `numba` does not affect it.
+        On a GPU runtime, `pip` may warn that Colab's preinstalled `cudf`/`cuml` (RAPIDS) require `numba<0.62` while FlyGym installs a newer `numba`. This warning is harmless: the tutorials use MuJoCo Warp, not RAPIDS, so the upgraded `numba` does not affect them.
 
 !!! warning "Special notes for rendering on machines without a display"
 

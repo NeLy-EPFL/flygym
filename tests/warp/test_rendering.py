@@ -90,7 +90,7 @@ class TestWarpCPURendererConstruction:
 
 def _advance_past_render_interval(sim, renderer):
     """Step just past the renderer's render interval (derived from its own settings)."""
-    steps_needed = int(renderer._secs_between_renders / sim.mj_model.opt.timestep) + 2
+    steps_needed = int(renderer._clock.interval / sim.mj_model.opt.timestep) + 2
     for _ in range(steps_needed):
         sim.step()
 
@@ -157,7 +157,7 @@ class TestWarpCPURendererReset:
         sim, fly, cam, renderer = render_bundle
         sim.reset()
         renderer.reset()
-        # At time ≈ 0 the render fires because _last_render_time_sec = -inf
+        # At time ≈ 0 the render fires because the render clock was reset
         did_render = renderer.render_as_needed(sim.mjw_data)
         assert did_render is True
 

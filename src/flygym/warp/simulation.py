@@ -11,6 +11,7 @@ from flygym.compose.fly import ActuatorType
 from flygym.compose.world import BaseWorld
 from flygym.simulation import Simulation
 from flygym.utils.profiling import print_perf_report_parallel
+from flygym.warp.recording import WarpTrajectoryRecorder
 from flygym.warp.rendering import (
     WarpGPUBatchRenderer,
     WarpCPURenderer,
@@ -525,6 +526,48 @@ class GPUSimulation(Simulation):
             True if a render occurred, False otherwise.
         """
         return self.renderer.render_as_needed(self.mjw_data)
+
+    @override
+    def set_trajectory_recorder(
+        self,
+        *,
+        playback_speed: float = 0.2,
+        output_fps: int = 25,
+        worlds: list[int] | None = None,
+    ) -> WarpTrajectoryRecorder:
+        """Attach a recorder that stores the kinematic state at the video frame rate.
+
+        The recorded trajectories can be rendered to video later with
+        `flygym.warp.recording.render_trajectories_gpu` or
+        `flygym.recording.render_trajectories`. See `flygym.recording` for details. The
+        recorder is independent of the renderer: either or both can be attached.
+
+        Args:
+            playback_speed: Video playback speed relative to real time.
+            output_fps: Output video frame rate.
+            worlds: Indices of worlds to record. Defaults to all worlds.
+
+        Returns:
+            The created `WarpTrajectoryRecorder` instance.
+        """
+        self.recorder = WarpTrajectoryRecorder(
+            self.mj_model,
+            self.n_worlds,
+            worlds=worlds,
+            playback_speed=playback_speed,
+            output_fps=output_fps,
+        )
+        return self.recorder
+
+    @override
+    def record_as_needed(self) -> bool:
+        """Record the kinematic state of the selected worlds if enough simulation time
+        has elapsed since the last recorded frame.
+
+        Returns:
+            True if a frame was recorded, False otherwise.
+        """
+        return self.recorder.record_as_needed(self.mjw_data)
 
     @override
     def print_performance_report(

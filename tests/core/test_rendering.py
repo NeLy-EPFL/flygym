@@ -283,7 +283,7 @@ class TestSaveVideo:
         for _ in range(3):
             renderer.render_as_needed(mj_data)
             # Advance the simulated time manually so we get multiple renders
-            renderer._last_render_time_sec -= renderer._secs_between_renders
+            renderer._clock.reset()
 
         out = tmp_path / "output.mp4"
         renderer.save_video(out)
