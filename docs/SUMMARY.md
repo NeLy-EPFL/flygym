@@ -17,7 +17,7 @@
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
     * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
     * [7. Performance profiling](tutorials/7_performance_profiling.md)
-    * [9. Recording and rendering trajectories](tutorials/9_recording_and_rendering_trajectories.ipynb)
+    * [8. Recording and rendering trajectories](tutorials/8_recording_and_rendering_trajectories.ipynb)
 * [Video Tutorials](video_tutorials/index.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)

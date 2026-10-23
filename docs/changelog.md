@@ -1,16 +1,16 @@
 # Changelog
 
-## Version 2.1.1 (under development)
+## Version 2.1.1
 
 ### Additions
 - Added `NeuroMechFlyWithSeparateTrochanterFemur`, a NeuroMechFly variant in which each leg's trochanter and femur are separate bodies (with separate meshes) rather than a single fused trochanterfemur body. This enables valid segmentation maps for these segments. We tentatively plan to make this the only supported NeuroMechFly body in FlyGym v3 ([#313](https://github.com/NeLy-EPFL/flygym/pull/313)).
 - Added `GPUSimulation.set_state()`, `get_base_linear_velocity()`, and `get_base_angular_velocity()` ([#305](https://github.com/NeLy-EPFL/flygym/pull/305)).
 - Added `forward()` to both `Simulation` and `GPUSimulation` to recompute derived quantities (e.g. body positions) without stepping physics.
 - Lazy getters in `GPUSimulation` now accept an optional `dst` array to write into an existing buffer instead of allocating a new one ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
-- Added `World.fly` and `Simulation.fly` shorthands for single-fly setups, `Simulation.fly_lookup`, and `BaseFly.n_bodysegs`, `n_jointdofs`, `n_actuated_jointdofs`, and `get_n_actuated_jointdofs()` ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
+- Added `World.fly` and `Simulation.fly` shorthands for single-fly setups, `Simulation.fly_lookup`, and `BaseFly.n_bodysegs`, `n_jointdofs`, and `get_n_actuated_jointdofs()` ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
 - Added `Retina.fisheye_image_to_hex_pxls()`, which fuses fisheye correction and ommatidia pooling into a single pass. CPU vision now uses it, making this step about 2× faster ([#308](https://github.com/NeLy-EPFL/flygym/pull/308), [#315](https://github.com/NeLy-EPFL/flygym/pull/315); thanks @Cr0me1ve).
 - Added `scripts/export_model_for_flexik.py` to export the fly body plan for FlexIK.
-- Added trajectory recording, which decouples the number of simulated worlds from the number of rendered ones. `Simulation.set_trajectory_recorder()` and `GPUSimulation.set_trajectory_recorder()` attach a recorder that stores only the kinematic state (`qpos` and mocap poses) at the video frame rate. The resulting `RecordedTrajectory` objects can be saved, sub-selected, and rendered to video afterwards with `flygym.recording.render_trajectories()` (CPU) or `flygym.warp.recording.render_trajectories_gpu()` (GPU batch rendering). A recorder can be used together with a renderer, and rendering a recorded trajectory gives exactly the same frames as rendering live. See the new tutorial _9. Recording and rendering trajectories_ ([#296](https://github.com/NeLy-EPFL/flygym/issues/296), [#319](https://github.com/NeLy-EPFL/flygym/pull/319)).
+- Added trajectory recording, which decouples the number of simulated worlds from the number of rendered ones. `Simulation.set_trajectory_recorder()` and `GPUSimulation.set_trajectory_recorder()` attach a recorder that stores only the kinematic state (`qpos` and mocap poses) at the video frame rate. The resulting `RecordedTrajectory` objects can be saved, sub-selected, and rendered to video afterwards with `flygym.recording.render_trajectories()` (CPU) or `flygym.warp.recording.render_trajectories_gpu()` (GPU batch rendering). A recorder can be used together with a renderer, and rendering a recorded trajectory gives exactly the same frames as rendering live. See the new tutorial _8. Recording and rendering trajectories_ ([#296](https://github.com/NeLy-EPFL/flygym/issues/296), [#319](https://github.com/NeLy-EPFL/flygym/pull/319)).
 
 ### Changes
 - Renderers now draw a private copy of the simulation state in which body, camera, light, and tendon positions are recomputed from the current `qpos`. Previously, they drew the positions computed at the start of the last physics step, so frames lagged by one timestep. The simulation state itself is not modified ([#319](https://github.com/NeLy-EPFL/flygym/pull/319)).

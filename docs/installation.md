@@ -113,7 +113,7 @@
     You can run the tutorials in [Google Colab](https://colab.research.google.com/) without installing anything locally. Every tutorial notebook (excluding text-only ones) has an "Open in Colab" badge at
     the top:
 
-    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/v2.1.0/tutorials/1a_basic_model_composition.ipynb)
+    [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NeLy-EPFL/flygym/blob/v2.1.1/tutorials/1a_basic_model_composition.ipynb)
 
     !!! warning "Colab is slow"
 
@@ -128,7 +128,7 @@
     if "google.colab" in sys.modules:
         os.environ["MUJOCO_GL"] = "egl"
         os.environ["PYOPENGL_PLATFORM"] = "egl"
-        %pip install -q tqdm "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@v2.1.0"
+        %pip install -q tqdm "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@v2.1.1"
     ```
 
     !!! note
@@ -139,7 +139,7 @@
 
     !!! tip "GPU-accelerated tutorials"
 
-        The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) and [recording and rendering trajectories](tutorials/9_recording_and_rendering_trajectories.ipynb) tutorials use the `flygym.warp` backend, which requires a GPU. Before running them, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Their setup cells install the `warp` extra automatically.
+        The [GPU-accelerated simulation](tutorials/3_gpu_accelerated_simulation.ipynb) and [recording and rendering trajectories](tutorials/8_recording_and_rendering_trajectories.ipynb) tutorials use the `flygym.warp` backend, which requires a GPU. Before running them, switch Colab to a GPU runtime via *Runtime > Change runtime type > T4 GPU*. Their setup cells install the `warp` extra automatically.
 
         On a GPU runtime, `pip` may warn that Colab's preinstalled `cudf`/`cuml` (RAPIDS) require `numba<0.62` while FlyGym installs a newer `numba`. This warning is harmless: the tutorials use MuJoCo Warp, not RAPIDS, so the upgraded `numba` does not affect them.
 

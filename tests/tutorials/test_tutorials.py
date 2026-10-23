@@ -8,7 +8,7 @@ These tests are slow (each spins up a full simulation), so they carry the
 ``tutorial`` marker and can be skipped in one shot with ``pytest -m "not
 tutorial"``.
 
-Tutorials 3 and 9 additionally exercise the GPU-accelerated (warp) backend, so they
+Tutorials 3 and 8 additionally exercise the GPU-accelerated (warp) backend, so they
 are also tagged ``warp`` and are excluded by ``-m "not warp"`` / when warp is absent.
 """
 
@@ -35,7 +35,7 @@ NOTEBOOKS = [
     "5a_replaying_experimental_flybody_onball.ipynb",
     "5b_using_flybody_model.ipynb",
     pytest.param(
-        "9_recording_and_rendering_trajectories.ipynb", marks=pytest.mark.warp
+        "8_recording_and_rendering_trajectories.ipynb", marks=pytest.mark.warp
     ),
 ]
 
