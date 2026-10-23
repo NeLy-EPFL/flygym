@@ -89,7 +89,9 @@ class BaseWorld(BaseCompositionElement, ABC):
         Raises:
             ValueError: If there is not exactly one fly in the world.
         """
-        if len(self.fly_lookup) != 1:
+        if len(self.fly_lookup) == 0:
+            raise ValueError("World contains no flies.")
+        if len(self.fly_lookup) > 1:
             raise ValueError(
                 "World contains multiple flies. "
                 "`.fly` is ambiguous; use `.fly_lookup` instead."
