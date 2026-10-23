@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DOCS_REMOTE_NAME="flygym-docs"
+DOCS_REMOTE="flygym-docs"
 DOCS_REMOTE_URL="git@github.com:NeLy-EPFL/flygym-docs.git"
 
 read -p "Have you checked that all tutorial notebooks are properly executed and without errors? (y/n) "
@@ -22,17 +22,13 @@ if [[ $REPLY != "y" ]]; then
     exit 1
 fi
 
-# Read version from pyproject.toml and let the user confirm or override (e.g.
-# to deploy a dev preview as "2.1.1 (dev)" before the release).
-VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-read -p "Version label [$VERSION]: " VERSION_INPUT
-VERSION="${VERSION_INPUT:-$VERSION}"
+# Only released versions are published, so deploy from main only.
+if [[ $(git rev-parse --abbrev-ref HEAD) != "main" ]]; then
+    echo "Docs are only deployed from main (released versions). Stopping here."
+    exit 1
+fi
 
-read -p "Update 'latest' alias to '$VERSION'? (y/n) "
-UPDATE_LATEST=$REPLY
-
-read -p "Set '$VERSION' as the default version (root redirect)? (y/n) "
-SET_DEFAULT=$REPLY
+VERSION=$(uv version --short)
 
 # Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
 # needed. Also offer to regenerate the MJCF/STL assets (viewer + game) from the
@@ -52,32 +48,12 @@ if [[ $REGEN_ASSETS == "y" ]]; then
 fi
 uv run python scripts/dev/properdocs_hooks.py --vendor-only
 
-# Ensure the docs remote exists.
-if ! git remote get-url "$DOCS_REMOTE_NAME" &>/dev/null; then
-    echo "Adding remote '$DOCS_REMOTE_NAME' -> $DOCS_REMOTE_URL"
-    git remote add "$DOCS_REMOTE_NAME" "$DOCS_REMOTE_URL"
-fi
-
-# Deploy via mike: builds with properdocs internally (mike calls the 'mkdocs'
-# entry point, which properdocs registers), commits the versioned site into
-# gh-pages on the docs repo, and pushes.
-echo "Deploying '$VERSION' to $DOCS_REMOTE_NAME/gh-pages..."
-if [[ $UPDATE_LATEST == "y" ]]; then
-    uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
-        -F properdocs.yml --update-aliases "$VERSION" latest
-else
-    uv run mike deploy --push --remote "$DOCS_REMOTE_NAME" \
-        -F properdocs.yml "$VERSION"
-fi
-
-if [[ $SET_DEFAULT == "y" ]]; then
-    DEFAULT_TARGET="$VERSION"
-    if [[ $UPDATE_LATEST == "y" ]]; then
-        DEFAULT_TARGET="latest"
-    fi
-    echo "Setting '$DEFAULT_TARGET' as the default version..."
-    uv run mike set-default --push --remote "$DOCS_REMOTE_NAME" \
-        -F properdocs.yml "$DEFAULT_TARGET"
-fi
+# Build with mike and push the site to the gh-pages branch of the separate docs
+# repo, under a subdirectory for this version. mike works on local refs only, so
+# fetch the docs repo first. Then point the site root at the new version.
+git remote add "$DOCS_REMOTE" "$DOCS_REMOTE_URL" 2>/dev/null || true
+git fetch "$DOCS_REMOTE" gh-pages
+uv run mike deploy --push --remote "$DOCS_REMOTE" "$VERSION"
+uv run mike set-default --push --remote "$DOCS_REMOTE" "$VERSION"
 
 echo "Done. Documentation deployed successfully (version '$VERSION')."
