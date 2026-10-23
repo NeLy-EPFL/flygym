@@ -95,3 +95,42 @@ class TestRenderTrajectories:
         out = tmp_path / "video.mp4"
         render_trajectories(sim.mj_model, trajs[0], cam, out, camera_res=(64, 64))
         assert iio.imread(out).shape[0] == trajs[0].n_frames
+
+
+@pytest.mark.parametrize("use_gpu_batch_rendering", [True, False])
+def test_matches_live_rendering(gpu_sim_factory, use_gpu_batch_rendering):
+    sim, _, cam = gpu_sim_factory(
+        n_worlds=4, fly_name=f"live_vs_rec_fly_{use_gpu_batch_rendering}"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        renderer = sim.set_renderer(
+            cam,
+            camera_res=(64, 64),
+            output_fps=OUTPUT_FPS,
+            worlds=RECORDED_WORLDS,
+            use_gpu_batch_rendering=use_gpu_batch_rendering,
+        )
+    recorder = sim.set_trajectory_recorder(
+        output_fps=OUTPUT_FPS, worlds=RECORDED_WORLDS
+    )
+    sim.reset()
+    rng = np.random.default_rng(0)
+    qpos = np.tile(sim.mj_data.qpos, (4, 1))
+    qpos[:, 7:] += rng.normal(scale=0.1, size=(4, qpos.shape[1] - 7))
+    sim.set_state(qpos=qpos)
+    for _ in range(N_STEPS):
+        sim.step()
+        sim.render_as_needed()
+        sim.record_as_needed()
+
+    render_fn = (
+        render_trajectories_gpu if use_gpu_batch_rendering else render_trajectories
+    )
+    frames = render_fn(sim.mj_model, recorder.trajectories, cam, camera_res=(64, 64))
+    cam_id = renderer._cameras_names2id[cam.name]
+    for world_id, traj_frames in zip(RECORDED_WORLDS, frames):
+        live_frames = np.array(renderer._fetch_frames_to_cpu_oneworld(world_id, cam_id))
+        assert np.array_equal(traj_frames[cam.name], live_frames)
+        # Sanity check: the fly moves between the first and last frame
+        assert not np.array_equal(live_frames[0], live_frames[-1])

@@ -15,11 +15,11 @@ from flygym.recording import (
     RecordedTrajectory,
     as_trajectory_list,
     check_trajectories_match_model,
-    get_trajectory_video_paths,
     resolve_camera_ids,
+    save_trajectory_videos,
 )
 from flygym.rendering import FrameClock
-from flygym.utils.video import write_video_from_frames
+from flygym.warp.rendering import update_render_geometry_gpu
 from flygym.warp.utils import get_rgb_selected_worlds_and_cameras
 
 __all__ = ["WarpTrajectoryRecorder", "render_trajectories_gpu"]
@@ -109,12 +109,12 @@ def render_trajectories_gpu(
     mj_model: mj.MjModel,
     trajectories: RecordedTrajectory | list[RecordedTrajectory],
     cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
-    output_path: PathLike,
+    output_path: PathLike | None = None,
     *,
     camera_res: tuple[int, int] = (240, 320),
     worlds_per_batch: int = 32,
-) -> None:
-    """Render recorded trajectories to video using MJWarp's GPU batch rendering.
+) -> list[dict[str, np.ndarray]]:
+    """Render recorded trajectories using MJWarp's GPU batch rendering.
 
     The GPU counterpart of `flygym.recording.render_trajectories`. All frames of all
     trajectories are rendered in batches of `worlds_per_batch` parallel worlds, so the
@@ -130,16 +130,19 @@ def render_trajectories_gpu(
             layout as the model the trajectories were recorded with.
         trajectories: One trajectory or a list of them.
         cameras: Camera(s) to render.
-        output_path: Output video file or directory. See
-            `flygym.recording.render_trajectories`.
+        output_path: If given, also save the frames as videos (see
+            `flygym.recording.save_trajectory_videos`).
         camera_res: `(height, width)` in pixels.
         worlds_per_batch: Number of frames rendered in parallel. Larger values are
             faster but use more GPU memory.
+
+    Returns:
+        A list, parallel to `trajectories`, of `{camera_name: frames}` dicts, where
+        `frames` is a uint8 array of shape `(n_frames, height, width, 3)`.
     """
     trajectories = as_trajectory_list(trajectories)
     check_trajectories_match_model(mj_model, trajectories)
     camera_ids = resolve_camera_ids(mj_model, cameras)
-    out_paths = get_trajectory_video_paths(trajectories, list(camera_ids), output_path)
     has_mocap = mj_model.nmocap > 0
 
     # Flatten all (trajectory, frame) pairs into one list of frames to render
@@ -163,7 +166,7 @@ def render_trajectories_gpu(
     rgb_out = wp.zeros((batch_size, len(camera_ids), *camera_res), dtype=wp.vec3f)
 
     frames = [
-        np.zeros((len(camera_ids), traj.n_frames, *camera_res, 3), dtype=np.uint8)
+        {cam: np.zeros((traj.n_frames, *camera_res, 3), np.uint8) for cam in camera_ids}
         for traj in trajectories
     ]
     for batch_start in range(0, len(frame_refs), batch_size):
@@ -182,8 +185,7 @@ def render_trajectories_gpu(
             mjw_data.mocap_pos.assign(mocap_pos)
             mjw_data.mocap_quat.assign(mocap_quat)
 
-        mjw.kinematics(mjw_model, mjw_data)
-        mjw.camlight(mjw_model, mjw_data)
+        update_render_geometry_gpu(mjw_model, mjw_data)
         mjw.refit_bvh(mjw_model, mjw_data, render_context)
         mjw.render(mjw_model, mjw_data, render_context)
         get_rgb_selected_worlds_and_cameras(
@@ -192,13 +194,9 @@ def render_trajectories_gpu(
         # Shape: (batch_size, n_cams, height, width, 3)
         rgb = (rgb_out.numpy() * 255).astype(np.uint8)
         for i, (traj_idx, frame_idx) in enumerate(batch):
-            frames[traj_idx][:, frame_idx] = rgb[i]
+            for cam_idx, cam_name in enumerate(camera_ids):
+                frames[traj_idx][cam_name][frame_idx] = rgb[i, cam_idx]
 
-    for traj, traj_frames, traj_out_paths in zip(trajectories, frames, out_paths):
-        for cam_frames, cam_name in zip(traj_frames, camera_ids):
-            write_video_from_frames(
-                traj_out_paths[cam_name],
-                list(cam_frames),
-                fps=traj.output_fps,
-                codec="libx264",
-            )
+    if output_path is not None:
+        save_trajectory_videos(trajectories, frames, output_path)
+    return frames

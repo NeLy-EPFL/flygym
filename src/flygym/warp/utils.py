@@ -1,5 +1,27 @@
+from typing import Any
+
 import warp as wp
 import mujoco_warp as mjw
+
+
+@wp.kernel
+def wp_gather_worlds_2d(
+    src: wp.array2d[Any], dst: wp.array2d[Any], world_ids: wp.array[int]
+):
+    """Gather specific worlds (dim 0) from a 2D Warp array of any dtype.
+
+    This kernel is to be launched with a 2D launch configuration of `dst.shape`.
+
+    Args:
+        src (wp.array of shape (n_worlds, n_cols)):
+            Source array, e.g. `mjw_data.qpos`.
+        dst (wp.array of shape (n_selected_worlds, n_cols), same dtype as `src`):
+            Destination array.
+        world_ids (wp.array of shape (n_selected_worlds,), type int32):
+            Indices of the worlds to gather.
+    """
+    i, j = wp.tid()
+    dst[i, j] = src[world_ids[i], j]
 
 
 @wp.kernel

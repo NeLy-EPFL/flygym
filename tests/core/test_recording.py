@@ -126,6 +126,26 @@ class TestRenderTrajectories:
             render_trajectories(sim.mj_model, traj, "nonexistent", tmp_path / "x.mp4")
 
     @needs_gl
+    def test_matches_live_rendering(self, sim_and_cam):
+        sim, cam_name = sim_and_cam
+        renderer = sim.set_renderer(
+            cam_name, camera_res=(64, 64), output_fps=OUTPUT_FPS
+        )
+        recorder = sim.set_trajectory_recorder(output_fps=OUTPUT_FPS)
+        sim.reset()
+        for _ in range(N_STEPS):
+            sim.step()
+            sim.render_as_needed()
+            sim.record_as_needed()
+        live_frames = np.array(renderer.frames[cam_name])
+        frames = render_trajectories(
+            sim.mj_model, recorder.trajectory, cam_name, camera_res=(64, 64)
+        )
+        assert np.array_equal(frames[0][cam_name], live_frames)
+        # Sanity check: the fly moves between the first and last frame
+        assert not np.array_equal(live_frames[0], live_frames[-1])
+
+    @needs_gl
     def test_single_trajectory_to_file(self, recording, sim_and_cam, tmp_path):
         traj, _, _ = recording
         sim, cam_name = sim_and_cam

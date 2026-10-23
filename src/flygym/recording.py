@@ -16,13 +16,6 @@ Persist the model separately if needed (e.g. with
 
 Trajectories recorded on CPU and GPU have the same format, and either can be rendered
 on either backend.
-
-At render time, we set `qpos` and run position-only kinematics (`mj_kinematics` and
-`mj_camlight`), not a full `mj_forward`. This regenerates every transform the renderer
-reads. Note that a frame rendered live during simulation shows the geometry computed at
-the start of the last physics step, whereas a frame rendered from a recorded trajectory
-is consistent with the recorded `qpos`. The two can therefore differ by up to one
-timestep of motion.
 """
 
 from dataclasses import dataclass
@@ -32,7 +25,7 @@ from pathlib import Path
 import mujoco as mj
 import numpy as np
 
-from flygym.rendering import FrameClock
+from flygym.rendering import FrameClock, update_render_geometry
 from flygym.utils.video import write_video_from_frames
 
 __all__ = ["RecordedTrajectory", "TrajectoryRecorder", "render_trajectories"]
@@ -160,12 +153,12 @@ def render_trajectories(
     mj_model: mj.MjModel,
     trajectories: RecordedTrajectory | list[RecordedTrajectory],
     cameras: str | mj.MjsCamera | list[str | mj.MjsCamera],
-    output_path: PathLike,
+    output_path: PathLike | None = None,
     *,
     camera_res: tuple[int, int] = (240, 320),
     scene_option: mj.MjvOption | None = None,
-) -> None:
-    """Render recorded trajectories to video on the CPU.
+) -> list[dict[str, np.ndarray]]:
+    """Render recorded trajectories on the CPU.
 
     For GPU batch rendering, see `flygym.warp.recording.render_trajectories_gpu`.
 
@@ -174,38 +167,77 @@ def render_trajectories(
             trajectories were recorded with.
         trajectories: One trajectory or a list of them.
         cameras: Camera(s) to render.
-        output_path: Output video file if there is a single trajectory and a single
-            camera and the path ends with `.mp4`. Otherwise, an output directory (see
-            `get_trajectory_video_paths` for the layout).
+        output_path: If given, also save the frames as videos (see
+            `save_trajectory_videos`).
         camera_res: `(height, width)` in pixels.
         scene_option: MuJoCo scene options. Uses defaults if None.
+
+    Returns:
+        A list, parallel to `trajectories`, of `{camera_name: frames}` dicts, where
+        `frames` is a uint8 array of shape `(n_frames, height, width, 3)`.
     """
     trajectories = as_trajectory_list(trajectories)
     check_trajectories_match_model(mj_model, trajectories)
     camera_ids = resolve_camera_ids(mj_model, cameras)
-    out_paths = get_trajectory_video_paths(trajectories, list(camera_ids), output_path)
+    if scene_option is None:
+        scene_option = mj.MjvOption()
 
     mj_data = mj.MjData(mj_model)
+    frames = []
     with mj.Renderer(mj_model, *camera_res) as renderer:
-        for traj, traj_out_paths in zip(trajectories, out_paths):
+        for traj in trajectories:
             frames_by_cam = {cam_name: [] for cam_name in camera_ids}
             for i in range(traj.n_frames):
                 mj_data.qpos[:] = traj.qpos[i]
                 if traj.mocap_pos is not None:
                     mj_data.mocap_pos[:] = traj.mocap_pos[i]
                     mj_data.mocap_quat[:] = traj.mocap_quat[i]
-                mj.mj_kinematics(mj_model, mj_data)
-                mj.mj_camlight(mj_model, mj_data)
+                update_render_geometry(mj_model, mj_data)
                 for cam_name, cam_id in camera_ids.items():
                     renderer.update_scene(mj_data, cam_id, scene_option)
                     frames_by_cam[cam_name].append(renderer.render())
-            for cam_name, frames in frames_by_cam.items():
-                write_video_from_frames(
-                    traj_out_paths[cam_name],
-                    frames,
-                    fps=traj.output_fps,
-                    codec="libx264",
-                )
+            frames.append({k: np.stack(v) for k, v in frames_by_cam.items()})
+
+    if output_path is not None:
+        save_trajectory_videos(trajectories, frames, output_path)
+    return frames
+
+
+def save_trajectory_videos(
+    trajectories: list[RecordedTrajectory],
+    frames: list[dict[str, np.ndarray]],
+    output_path: PathLike,
+) -> None:
+    """Save frames rendered from trajectories as videos.
+
+    If there is a single trajectory and a single camera and `output_path` ends with
+    `.mp4`, the video is written to `output_path`. Otherwise, `output_path` is a
+    directory: `{output_path}/{camera}.mp4` for a single trajectory, or
+    `{output_path}/traj{i:04d}_world{world_id}/{camera}.mp4` for multiple ones.
+
+    Args:
+        trajectories: The rendered trajectories, used for the frame rate and the
+            world IDs.
+        frames: Rendered frames, as returned by `render_trajectories` or
+            `flygym.warp.recording.render_trajectories_gpu`.
+        output_path: Output video file or directory (see above).
+    """
+    output_path = Path(output_path)
+    single_file = (
+        len(frames) == 1 and len(frames[0]) == 1 and output_path.suffix == ".mp4"
+    )
+    for i, (traj, frames_by_cam) in enumerate(zip(trajectories, frames)):
+        for cam_name, cam_frames in frames_by_cam.items():
+            if single_file:
+                path = output_path
+            else:
+                traj_dir = output_path
+                if len(trajectories) > 1:
+                    traj_dir = output_path / f"traj{i:04d}_world{traj.world_id}"
+                path = traj_dir / f"{cam_name.replace('/', '_')}.mp4"
+            write_video_from_frames(
+                path, list(cam_frames), fps=traj.output_fps, codec="libx264"
+            )
 
 
 def check_trajectories_match_model(
@@ -238,40 +270,6 @@ def resolve_camera_ids(
     if len(camera_ids) == 0:
         raise ValueError("At least one camera must be specified.")
     return camera_ids
-
-
-def get_trajectory_video_paths(
-    trajectories: list[RecordedTrajectory],
-    camera_names: list[str],
-    output_path: PathLike,
-) -> list[dict[str, Path]]:
-    """Get the output video path for each trajectory and camera.
-
-    If there is a single trajectory and a single camera and `output_path` ends with
-    `.mp4`, the video is written to `output_path`. Otherwise, `output_path` is a
-    directory: `{output_path}/{camera}.mp4` for a single trajectory, or
-    `{output_path}/traj{i:04d}_world{world_id}/{camera}.mp4` for multiple ones.
-
-    Returns:
-        A list, parallel to `trajectories`, of `{camera_name: path}` dicts.
-    """
-    output_path = Path(output_path)
-    if (
-        len(trajectories) == 1
-        and len(camera_names) == 1
-        and output_path.suffix == ".mp4"
-    ):
-        return [{camera_names[0]: output_path}]
-
-    paths = []
-    for i, traj in enumerate(trajectories):
-        traj_dir = output_path
-        if len(trajectories) > 1:
-            traj_dir = output_path / f"traj{i:04d}_world{traj.world_id}"
-        paths.append(
-            {cam: traj_dir / f"{cam.replace('/', '_')}.mp4" for cam in camera_names}
-        )
-    return paths
 
 
 def as_trajectory_list(

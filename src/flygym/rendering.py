@@ -11,7 +11,48 @@ import imageio.v3 as iio
 import numpy as np
 
 
-__all__ = ["FrameClock", "Renderer", "launch_interactive_viewer", "preview_model"]
+__all__ = [
+    "FrameClock",
+    "Renderer",
+    "update_render_geometry",
+    "launch_interactive_viewer",
+    "preview_model",
+]
+
+
+def update_render_geometry(mj_model: mj.MjModel, mj_data: mj.MjData) -> None:
+    """Recompute everything that rendering depends on from `qpos` and mocap poses.
+
+    This runs the stages of `mj_forward` that determine rendered geometry (kinematics,
+    center-of-mass positions, camera and light poses, and tendon paths). It skips
+    collision detection and all velocity- and force-dependent stages, which do not
+    affect rendering with default scene options.
+
+    !!! note "Why renderers call this before rendering"
+
+        MuJoCo's scene update does not read `qpos`. It reads derived positions such as
+        `xpos`/`xmat` (bodies), `geom_xpos`/`geom_xmat` (geoms), and `cam_xpos`
+        (cameras). `mj_step` computes these derived positions first and integrates
+        afterwards, so right after a step, `qpos` is the new state while the derived
+        positions still reflect the state at the start of the step. Rendering
+        `mj_data` directly would therefore show the fly one timestep in the past.
+
+        FlyGym renderers instead copy `qpos` and mocap poses into a private `MjData`
+        and call this function on it, so that frames are consistent with the current
+        `qpos` and time. Trajectory recorders (`flygym.recording`) store only `qpos`
+        and mocap poses, and replay calls this function in the same way. Live and
+        replayed frames are therefore identical.
+
+        Recording the derived positions instead would also reproduce live frames, but
+        it would take far more space (about 20 times more for NeuroMechFly), tie the
+        recording format to the renderer's internals, and lose the ability to restore
+        or analyze the simulation state from the recording. Recomputing the geometry
+        is cheap compared to rendering itself.
+    """
+    mj.mj_kinematics(mj_model, mj_data)
+    mj.mj_comPos(mj_model, mj_data)
+    mj.mj_camlight(mj_model, mj_data)
+    mj.mj_tendon(mj_model, mj_data)
 
 
 class FrameClock:
@@ -51,6 +92,14 @@ class FrameClock:
 
 class Renderer:
     """Renders MuJoCo scenes to video frames.
+
+    Frames are rendered from a private copy of the simulation state, in which the
+    geometry is recomputed from the current `qpos` and mocap poses (see
+    `update_render_geometry`). Rendered frames are therefore consistent with the
+    current `qpos`, rather than with the geometry computed at the start of the last
+    physics step. The simulation data is not modified. Quantities that do not depend
+    on positions alone (e.g., contact forces, if enabled in `scene_option`) are not
+    rendered correctly.
 
     Args:
         mj_model: Compiled MuJoCo model.
@@ -101,6 +150,7 @@ class Renderer:
         self.buffer_frames = buffer_frames
 
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+        self._render_data = mj.MjData(mj_model)
         # RGB / depth / segmentation are independent and may be enabled in any
         # combination. Each is produced by its own render() pass (mujoco renders
         # one output type per call), so we don't enable a mode here -- the mode is
@@ -193,8 +243,14 @@ class Renderer:
         if not self._clock.tick(mj_data.time):
             return False
 
+        self._render_data.qpos[:] = mj_data.qpos
+        self._render_data.mocap_pos[:] = mj_data.mocap_pos
+        self._render_data.mocap_quat[:] = mj_data.mocap_quat
+        update_render_geometry(self.mj_model, self._render_data)
         for cam_name, internal_cam_id in self._cameras_names2id.items():
-            self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
+            self.mj_renderer.update_scene(
+                self._render_data, internal_cam_id, self.scene_option
+            )
             # One render() pass per enabled output. mujoco renders a single output
             # type per call, so toggle the mode for each and always restore the
             # default (RGB) state afterwards.
