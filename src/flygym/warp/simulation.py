@@ -138,11 +138,28 @@ class GPUSimulation(Simulation):
             mask = worlds_mask
         else:
             mask = wp.array(worlds_mask, dtype=wp.bool)
-        for src, dst in ((qpos, self.mjw_data.qpos), (qvel, self.mjw_data.qvel)):
+        if mask.shape != (self.n_worlds,):
+            raise ValueError(
+                f"`worlds_mask` must have shape ({self.n_worlds},), got {mask.shape}."
+            )
+        for name, src, dst in (
+            ("qpos", qpos, self.mjw_data.qpos),
+            ("qvel", qvel, self.mjw_data.qvel),
+        ):
             if src is None:
                 continue
-            if not isinstance(src, wp.array):
+            if isinstance(src, wp.array):
+                if src.dtype != wp.float32:
+                    raise TypeError(
+                        f"`{name}` must be a float32 Warp array, got dtype "
+                        f"{wp.types.type_repr(src.dtype)}."
+                    )
+            else:
                 src = wp.array(src, dtype=wp.float32)
+            if src.shape != dst.shape:
+                raise ValueError(
+                    f"`{name}` must have shape {dst.shape}, got {src.shape}."
+                )
             wp.launch(
                 wp_masked_copy_rows_2d,
                 dim=dst.shape,
