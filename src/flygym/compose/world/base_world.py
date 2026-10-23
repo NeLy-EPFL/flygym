@@ -333,7 +333,9 @@ class _GroundContactMixin:
             self.legpos_to_groundcontactsensors_by_fly = None
             return
 
-        self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
+        # Created on the first fly and extended (not reset) by later ones
+        if self.legpos_to_groundcontactsensors_by_fly is None:
+            self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
         contact_geoms_by_leg = defaultdict(list)
         for bodyseg in bodysegs_with_ground_contact:
             if bodyseg.is_leg():
@@ -350,7 +352,7 @@ class _GroundContactMixin:
             #     dist=8, pos=16, normal=32, tangent=64 -> 1+2+4+16+32+64 = 119) and
             #     reduce "netforce" = 3.
             sensor = self.mjcf_root.add_sensor(
-                name=f"ground_contact_{leg}_leg",
+                name=f"{fly.name}/ground_contact_{leg}_leg",
                 type=mj.mjtSensor.mjSENS_CONTACT,
                 objtype=mj.mjtObj.mjOBJ_XBODY,
                 objname=subtree_rootseg_body.name,
