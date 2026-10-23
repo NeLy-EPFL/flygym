@@ -294,7 +294,7 @@ class BaseFly(BaseCompositionElement):
 
     @property
     def n_actuated_jointdofs(self) -> int:
-        raise RuntimeError(
+        raise AttributeError(
             "`n_actuated_jointdofs` is ambiguous because there might be different "
             "actuator types. Use `get_n_actuated_jointdofs(actuator_type)` instead, "
             "similar to `fly.get_actuated_jointdofs_order(actuator_type)`."
