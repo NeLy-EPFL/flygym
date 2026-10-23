@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
 
-BUILD_DIR="site"
-BRANCH="gh-pages"
-COMMIT_MSG="Deploy $(date '+%Y-%m-%d %H:%M:%S')"
+DOCS_REMOTE="flygym-docs"
+DOCS_REMOTE_URL="git@github.com:NeLy-EPFL/flygym-docs.git"
 
 read -p "Have you checked that all tutorial notebooks are properly executed and without errors? (y/n) "
 if [[ $REPLY != "y" ]]; then
@@ -23,14 +22,13 @@ if [[ $REPLY != "y" ]]; then
     exit 1
 fi
 
-if [ -d "$BUILD_DIR" ]; then
-    read -p "The build directory '$BUILD_DIR' already exists. Do you want to remove it and continue? (y/n) "
-    if [[ $REPLY != "y" ]]; then
-        echo "Stopping here."
-        exit 1
-    fi
-    rm -rf "$BUILD_DIR"
+# Only released versions are published, so deploy from main only.
+if [[ $(git rev-parse --abbrev-ref HEAD) != "main" ]]; then
+    echo "Docs are only deployed from main (released versions). Stopping here."
+    exit 1
 fi
+
+VERSION=$(uv version --short)
 
 # Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
 # needed. Also offer to regenerate the MJCF/STL assets (viewer + game) from the
@@ -50,21 +48,12 @@ if [[ $REGEN_ASSETS == "y" ]]; then
 fi
 uv run python scripts/dev/properdocs_hooks.py --vendor-only
 
-# Build the documentation
-echo "Building documentation..."
-uv run properdocs build
+# Build with mike and push the site to the gh-pages branch of the separate docs
+# repo, under a subdirectory for this version. mike works on local refs only, so
+# fetch the docs repo first. Then point the site root at the new version.
+git remote add "$DOCS_REMOTE" "$DOCS_REMOTE_URL" 2>/dev/null || true
+git fetch "$DOCS_REMOTE" gh-pages
+uv run mike deploy --push --remote "$DOCS_REMOTE" "$VERSION"
+uv run mike set-default --push --remote "$DOCS_REMOTE" "$VERSION"
 
-# Push built site to a separate branch to be served by GitHub Pages
-cd "$BUILD_DIR"
-git init
-git checkout --orphan "$BRANCH"
-git add -A
-git commit -m "$COMMIT_MSG"
-git remote add origin $(git -C .. remote get-url origin)
-git push --force origin "$BRANCH"
-
-# Cleanup
-cd ..
-rm -rf "$BUILD_DIR/.git"
-
-echo "✅ Documentation deployed successfully to branch '$BRANCH'."
+echo "Done. Documentation deployed successfully (version '$VERSION')."
