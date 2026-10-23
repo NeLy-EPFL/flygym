@@ -35,6 +35,11 @@ class GPUSimulation(Simulation):
 
     Requires an NVIDIA GPU with the ``[warp]`` extra installed.
 
+    MuJoCo Warp's warnings for reaching the solver or line search iteration limit
+    are disabled, as in MuJoCo Playground, because they are printed once per world
+    per step and can flood the output. To re-enable them, set
+    `sim.mjw_model.opt.warn_overflow = mjw.OverflowType.ALL` before the first step.
+
     Args:
         world: A fully configured world with at least one fly attached.
         n_worlds: Number of parallel simulation instances.
@@ -42,6 +47,14 @@ class GPUSimulation(Simulation):
             timestep (from ``mujoco_globals.yaml``) is used.
         max_constraints: Maximum number of constraints per world.
         max_contacts: Maximum number of contacts per world.
+        solver_tolerance: Convergence tolerance of the constraint solver
+            (`option/tolerance`). The default, 1e-5, is looser than MuJoCo Warp's
+            1e-6 (default is 1e-8 in MuJoCo but MuJoCo Warp raises it to 1e-6
+            for float32 computation). With 1e-6, a small fraction of worlds can
+            stall at float32 precision until they hit the iteration limit. Since
+            all worlds wait for the slowest one, this can reduce throughput by
+            ~25% with 1000 worlds, without measurably improving accuracy. If None,
+            the tolerance from the world's MJCF model is used.
 
     Attributes:
         n_worlds: Number of parallel worlds.
@@ -58,11 +71,13 @@ class GPUSimulation(Simulation):
         timestep: float | None = None,
         max_constraints: int = 500,
         max_contacts: int = 500,
+        solver_tolerance: float | None = 1e-5,
     ) -> None:
         self._strip_unsupported_options_for_mjwarp(world)
-        # Set the timestep on the CPU model before the GPU structs are built below,
-        # so the override propagates into the GPU-side model.
-        super().__init__(world, timestep=timestep)
+        super().__init__(world)
+        # Apply overrides to the CPU model before the GPU structs are built below, so
+        # they propagate into the GPU-side model.
+        self._apply_option_overrides(timestep=timestep, tolerance=solver_tolerance)
         self.n_worlds = n_worlds
         self.max_constraints = max_constraints
         self.max_contacts = max_contacts
@@ -483,7 +498,11 @@ class GPUSimulation(Simulation):
                     "The world was modified to be compatible with GPU batch rendering. "
                     "Recompiling the model."
                 )
+                # Carry option overrides over to the recompiled model
+                timestep = self.mj_model.opt.timestep
+                tolerance = self.mj_model.opt.tolerance
                 self.mj_model, self.mj_data = self.world.compile()
+                self._apply_option_overrides(timestep=timestep, tolerance=tolerance)
                 self._neutral_keyframe_id = mj.mj_name2id(
                     self.mj_model, mj.mjtObj.mjOBJ_KEY, "neutral"
                 )
@@ -602,8 +621,23 @@ class GPUSimulation(Simulation):
             for k, v in self._internal_siteids_by_fly.items()
         }
 
+    def _apply_option_overrides(
+        self, *, timestep: float | None, tolerance: float | None
+    ) -> None:
+        """Override options in `mj_model.opt`. None leaves an option unchanged."""
+        if timestep is not None:
+            self.mj_model.opt.timestep = timestep
+        if tolerance is not None:
+            self.mj_model.opt.tolerance = tolerance
+
     def _mj_structs_to_mjw_structs(self) -> tuple[mjw.Model, mjw.Data]:
         mjw_model = mjw.put_model(self.mj_model)
+        # Silence per-world solver and line search iteration limit warnings, as in
+        # MuJoCo Playground (https://github.com/google-deepmind/mujoco_playground/commit/fb246cd).
+        # Buffer overflow warnings (contacts, constraints) remain.
+        mjw_model.opt.warn_overflow &= ~(
+            mjw.OverflowType.ITERATIONS | mjw.OverflowType.LS_ITERATIONS
+        )
         mjw_data = mjw.put_data(
             self.mj_model,
             self.mj_data,

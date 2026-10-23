@@ -415,14 +415,6 @@ def modify_world_for_batch_rendering(world: BaseWorld) -> bool:
             material.rgba[:3] = primary_color_rgb
             is_modified = True
 
-    # Adjust scale of checker materials (e.g., ground): texrepeat needs to be scaled
-    # down by 1000x to get the same pattern - unclear why. Only materials that still
-    # reference a texture (e.g. the ground checker) need this.
-    for material in world.mjcf_root.materials:
-        if material.textures[rgb_role]:
-            material.texrepeat = tuple(tr / 1000 for tr in material.texrepeat)
-            is_modified = True
-
     # Add light above each fly explicitly (only until MuJoCo Warp 3.9)
     mujoco_warp_version = tuple(int(x) for x in mjw.__version__.split(".")[:2])
     if mujoco_warp_version < (3, 10):

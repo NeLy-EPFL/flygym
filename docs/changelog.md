@@ -14,10 +14,14 @@
 ### Changes
 - `GPUSimulation.reset()` now resets `mjw_data` in place using MuJoCo Warp's `reset_data_keyframe()`, instead of reallocating the GPU-side model and data on every reset ([#302](https://github.com/NeLy-EPFL/flygym/pull/302)). Note that, as with `Simulation.reset()`, derived kinematic quantities (`xpos`, `xquat`, …) are not recomputed on reset; call `forward()` if you need them.
 - Remote assets are now stored as tarballs with SHA-256 checksums. FlyGym verifies the checksum after download and moves the extracted files into the cache atomically, which also makes concurrent downloads safe ([#303](https://github.com/NeLy-EPFL/flygym/pull/303)).
+- `GPUSimulation` now uses a constraint solver tolerance of 1e-5 by default, configurable via the new `solver_tolerance` argument. Since MuJoCo Warp 3.10, which fixed a [float32 precision issue in its convergence check](https://github.com/google-deepmind/mujoco_warp/pull/1374), MuJoCo Warp's default tolerance (1e-6) causes a small fraction of worlds to stall until they hit the solver iteration limit, printing "solver iterations limit reached" warnings. Because all worlds wait for the slowest one, this slowed down GPU simulation by ~25% with 1000 worlds. With 1e-5, these stalls are essentially gone, while joint-angle tracking is unchanged within GPU run-to-run variability.
+- `GPUSimulation` now disables MuJoCo Warp's solver and line search iteration limit warnings, which are printed once per world per step and could flood the output. This [follows MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground/commit/fb246cd). Warnings about contact and constraint buffer overflows are still shown.
 - The WASM NeuroMechFly Live game is easier to play: stronger leg adhesion, faster turning, gamepad leg buttons matching the physical left/right layout, and correct colors for split trochanter/femur geoms ([#314](https://github.com/NeLy-EPFL/flygym/pull/314)).
 
 ### Bug fixes
 - Fixed body-segment position/orientation getters returning wrong values when MuJoCo's `fusestatic` compiler option merges bodies and invalidates body IDs ([#312](https://github.com/NeLy-EPFL/flygym/pull/312)).
+- Fixed the ground texture not showing in GPU batch rendering after the MuJoCo Warp 3.16 upgrade. MuJoCo Warp now maps textures on finite planes like the CPU renderer does, so FlyGym's workaround of scaling `texrepeat` down by 1000× was removed.
+- Fixed `GPUSimulation` dropping the `timestep` override when GPU batch rendering is enabled, which recompiles the model.
 - Fixed GPU benchmark and tutorial timings, which stopped the timer before queued GPU work finished and therefore overstated throughput by up to ~50% ([#311](https://github.com/NeLy-EPFL/flygym/pull/311); thanks @AdeliyaLeleytner).
 
 ### Housekeeping
