@@ -1,8 +1,8 @@
 name: Release
 
-# On PRs into main, build the wheel and Docker image as a dry run. When a GitHub
-# release is published, build them again from the release tag and push them to
-# PyPI and Docker Hub.
+# On PRs into main, check release readiness and build the wheel and Docker image
+# as a dry run. When a GitHub release is published, run the checks again on the
+# release tag, then build and push to PyPI and Docker Hub.
 #
 # One-time setup:
 # - PyPI: add this workflow as a trusted publisher for the flygym project
@@ -19,8 +19,8 @@ permissions:
   contents: read
 
 jobs:
-  build-dist:
-    name: Build wheel and sdist
+  check-readiness:
+    name: Check release readiness
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,16 +28,28 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Check that the release tag matches the package version
-        if: github.event_name == 'release'
+      # Run ruff via uvx at the version pinned in pyproject.toml to avoid
+      # installing the whole project.
+      - name: Check formatting
+        run: uvx ruff@0.15.13 format --check .
+
+      - name: Lint
+        run: uvx ruff@0.15.13 check .
+
+      - name: Check version, changelog, and tutorial links
         env:
           TAG: ${{ github.event.release.tag_name }}
-        run: |
-          expected="v$(uv version --short)"
-          if [[ "$TAG" != "$expected" ]]; then
-            echo "Release tag $TAG does not match package version $expected" >&2
-            exit 1
-          fi
+        run: python3 scripts/dev/check_release_readiness.py ${TAG:+--tag "$TAG"}
+
+  build-dist:
+    name: Build wheel and sdist
+    needs: check-readiness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Build
         run: uv build
