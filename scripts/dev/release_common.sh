@@ -1,6 +1,5 @@
 # shellcheck shell=bash
-# Shared helpers for prepare_release.sh and start_next_dev.sh. Source this file;
-# don't run it directly.
+# Shared helpers for the release scripts. Source this file; don't run it directly.
 
 REPO="NeLy-EPFL/flygym"
 CHECKLIST_PAGE_URL="https://github.com/NeLy-EPFL/flygym/wiki/Internal-Note:-Release-procedure"

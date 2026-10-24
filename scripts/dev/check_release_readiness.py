@@ -30,7 +30,7 @@ TUTORIAL_REF_PATTERN = re.compile(
 
 def is_on_pypi(version: str) -> bool:
     try:
-        with urllib.request.urlopen(PYPI_URL.format(version=version)):
+        with urllib.request.urlopen(PYPI_URL.format(version=version), timeout=30):
             return True
     except urllib.error.HTTPError as e:
         if e.code == 404:

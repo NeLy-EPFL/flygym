@@ -65,4 +65,4 @@ else
     log "Skipping PR creation"
 fi
 
-log "Done. Remember to delete the merged branches manually."
+log "Done"

@@ -12,6 +12,9 @@ name: Release
 on:
   pull_request:
     branches: [main]
+    # Includes ready_for_review because draft PRs are skipped (see below), and
+    # prepare_release.sh pushes before marking the release PR as ready.
+    types: [opened, synchronize, reopened, ready_for_review]
   release:
     types: [published]
 
@@ -21,6 +24,10 @@ permissions:
 jobs:
   check-readiness:
     name: Check release readiness
+    # Skip draft PRs: the next version's dev PR is opened as a draft right after a
+    # release and is not expected to pass until prepare_release.sh has run. The
+    # jobs below need this one, so they are skipped too.
+    if: github.event_name == 'release' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +37,16 @@ jobs:
 
       # Run ruff via uvx at the version pinned in pyproject.toml to avoid
       # installing the whole project.
+      - name: Read ruff version from pyproject.toml
+        run: |
+          ruff_spec="$(grep -oE 'ruff==[0-9.]+' pyproject.toml)"
+          echo "RUFF_SPEC=$ruff_spec" >> "$GITHUB_ENV"
+
       - name: Check formatting
-        run: uvx ruff@0.15.13 format --check .
+        run: uvx --from "$RUFF_SPEC" ruff format --check .
 
       - name: Lint
-        run: uvx ruff@0.15.13 check .
+        run: uvx --from "$RUFF_SPEC" ruff check .
 
       - name: Check version, changelog, and tutorial links
         env:
@@ -107,20 +119,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Pre-releases get only the version tag; full releases also move `latest`.
+      # The `latest` image tag follows GitHub's "latest release", which is chosen
+      # when publishing the release (never a pre-release).
       - name: Compute image tags
         id: tags
         env:
           TAG: ${{ github.event.release.tag_name }}
-          PRERELEASE: ${{ github.event.release.prerelease }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "${{ github.event_name }}" != "release" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" != "release" ]]; then
             echo "tags=nelyepfl/flygym:dry-run" >> "$GITHUB_OUTPUT"
-          elif [[ "$PRERELEASE" == "true" ]]; then
-            echo "tags=nelyepfl/flygym:$TAG" >> "$GITHUB_OUTPUT"
-          else
-            echo "tags=nelyepfl/flygym:$TAG,nelyepfl/flygym:latest" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          tags="nelyepfl/flygym:$TAG"
+          latest="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          if [[ "$latest" == "$TAG" ]]; then
+            tags="$tags,nelyepfl/flygym:latest"
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
