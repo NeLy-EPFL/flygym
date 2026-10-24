@@ -87,6 +87,15 @@ jobs:
     needs: build-dist
     runs-on: ubuntu-latest
     steps:
+      # The image installs all extras, including PyTorch with its CUDA libraries,
+      # which can exceed the free disk space of a GitHub-hosted runner. Remove
+      # large preinstalled toolchains that the build does not need.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL
+          df -h /
+
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3

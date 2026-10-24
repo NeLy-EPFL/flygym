@@ -22,7 +22,7 @@ ENV PYOPENGL_PLATFORM=egl
 ADD . $HOME/flygym/
 
 # Install using uv
-RUN uv sync --extra warp --extra examples --extra dev
+RUN uv sync --all-extras
 
 # Set entrypoint
 ENTRYPOINT ["/bin/bash"]

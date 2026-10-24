@@ -6,8 +6,23 @@ REPO="NeLy-EPFL/flygym"
 CHECKLIST_PAGE_URL="https://github.com/NeLy-EPFL/flygym/wiki/Internal-Note:-Release-procedure"
 CHECKLIST_RAW_URL="https://raw.githubusercontent.com/wiki/NeLy-EPFL/flygym/Internal-Note:-Release-procedure.md"
 
+# Main log lines are bold green so they stand out from the output of the tools
+# the scripts run. Colors are used only on a terminal and if NO_COLOR is unset.
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    LOG_STYLE=$'\033[1;32m'
+    RESET_STYLE=$'\033[0m'
+else
+    LOG_STYLE=""
+    RESET_STYLE=""
+fi
+
 log() {
-    echo "[$(basename "$0")] $*"
+    echo "${LOG_STYLE}[$(basename "$0")] $*${RESET_STYLE}"
+}
+
+# For details under a main log line, in regular font.
+log_detail() {
+    echo "[$(basename "$0")]   $*"
 }
 
 die() {
@@ -30,7 +45,7 @@ parse_version_arg() {
     fi
     VERSION="${1#v}"
     if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$ ]]; then
-        die "Invalid version '$VERSION'. Expected X.Y.Z, optionally with an a/b/rc suffix."
+        die "Invalid version '$VERSION'. Expected X.Y.Z (without 'v' prefix), optionally with an a/b/rc suffix."
     fi
     # shellcheck disable=SC2034  # Used by the scripts that source this file.
     TAG="v$VERSION"
@@ -82,9 +97,9 @@ require_clean_tree() {
         die "There are uncommitted changes. Commit or stash them first."
 }
 
-# Prints a PR body containing the release checklist from the wiki. Falls back to
-# a link to the wiki page if it cannot be downloaded.
-release_checklist_pr_body() {
+# Prints the release checklist from the wiki. Falls back to a link to the wiki
+# page if it cannot be downloaded.
+release_checklist() {
     local checklist
     echo "Release checklist copied from the [wiki]($CHECKLIST_PAGE_URL)."
     echo
@@ -93,4 +108,16 @@ release_checklist_pr_body() {
     else
         echo "(Could not download the checklist. Copy it from the wiki manually.)"
     fi
+}
+
+# Opens a PR from BRANCH into main with an empty body (to be written by hand) and
+# posts the release checklist as its first comment. Extra arguments (e.g.
+# --draft) are passed to `gh pr create`.
+create_release_pr() {
+    local pr_url
+    pr_url="$(gh pr create -R "$REPO" --base main --head "$BRANCH" \
+        --title "Version $VERSION" --body "" "$@")"
+    log "Created PR $pr_url"
+    log "Posting the release checklist as a comment on the PR"
+    release_checklist | gh pr comment "$pr_url" -R "$REPO" --body-file -
 }

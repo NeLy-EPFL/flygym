@@ -30,6 +30,15 @@ uv sync --all-extras
 log "Pointing Colab badges and pip installs in tutorials/ to $TAG"
 perl -pi -e "s#(NeLy-EPFL/flygym(?:/blob/|\.git\@))[\w.-]+#\${1}$TAG#gi" \
     tutorials/*.ipynb
+# The working tree was clean before, so this lists exactly the notebooks changed.
+changed_notebooks="$(git diff --name-only -- tutorials/)"
+if [[ -z "$changed_notebooks" ]]; then
+    log_detail "No notebooks changed (all already point to $TAG)"
+else
+    while read -r notebook; do
+        log_detail "Updated $notebook"
+    done <<<"$changed_notebooks"
+fi
 
 log "Checking formatting"
 uv run ruff format --check .
@@ -65,6 +74,7 @@ else
     log "No changes to commit"
 fi
 
+confirm "Push $BRANCH to origin?" || die "Stopped before pushing."
 log "Pushing $BRANCH to origin"
 git push -u origin "$BRANCH"
 
@@ -72,10 +82,13 @@ log "Looking for an open PR from $BRANCH into main"
 pr_number="$(gh pr list -R "$REPO" --head "$BRANCH" --base main --state open \
     --json number --jq '.[0].number // empty')"
 if [[ -z "$pr_number" ]]; then
-    log "Creating PR from $BRANCH into main"
-    release_checklist_pr_body |
-        gh pr create -R "$REPO" --base main --head "$BRANCH" \
-            --title "Version $VERSION" --body-file -
+    if confirm "No open PR from $BRANCH into main found. Create one?"; then
+        log "Creating PR from $BRANCH into main"
+        # shellcheck disable=SC2119  # No extra `gh pr create` arguments needed.
+        create_release_pr
+    else
+        log "Skipping PR creation"
+    fi
 elif [[ "$(gh pr view "$pr_number" -R "$REPO" --json isDraft --jq .isDraft)" == "true" ]]; then
     log "Marking draft PR #$pr_number as ready for review"
     gh pr ready "$pr_number" -R "$REPO"
@@ -113,12 +126,16 @@ else
     if [[ "$VERSION" =~ [a-z] ]]; then
         prerelease_flag="--prerelease"
     fi
-    log "Creating draft release $TAG targeting main"
-    gh release create "$TAG" -R "$REPO" --draft --target main \
-        --title "Version $VERSION" --notes-file "$notes_file" $prerelease_flag
+    if confirm "No release $TAG found. Create a draft release?"; then
+        log "Creating draft release $TAG targeting main"
+        gh release create "$TAG" -R "$REPO" --draft --target main \
+            --title "Version $VERSION" --notes-file "$notes_file" $prerelease_flag
+    else
+        log "Skipping draft release creation"
+    fi
 fi
 
 log "Done. Next steps (see the release checklist):"
-log "  1. Publish the docs site: bash scripts/dev/push_doc_site.sh $VERSION"
-log "  2. Wait for CI to pass on the PR, then merge it"
-log "  3. Edit and publish the draft release; this pushes to PyPI and Docker Hub"
+log_detail "1. Publish the docs site: bash scripts/dev/push_doc_site.sh $VERSION"
+log_detail "2. Wait for CI to pass on the PR, then merge it"
+log_detail "3. Edit and publish the draft release; this pushes to PyPI and Docker Hub"

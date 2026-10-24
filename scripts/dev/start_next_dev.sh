@@ -1,7 +1,8 @@
 #!/bin/bash
 # Starts the dev branch for the next release after the current one is published:
 # creates dev-vVERSION from main, bumps the version, adds a changelog section,
-# pushes the branch, and opens a draft PR into main with the release checklist.
+# pushes the branch, and opens a draft PR into main with the release checklist as
+# its first comment.
 #
 # Usage: scripts/dev/start_next_dev.sh VERSION (e.g. 2.1.2)
 set -euo pipefail
@@ -53,12 +54,15 @@ changed_files="$(git status --porcelain --untracked-files=no | awk '{print $2}' 
 log "Committing changes"
 git commit -am "Start new branch for v$VERSION"
 
+confirm "Push $BRANCH to origin?" || die "Stopped before pushing."
 log "Pushing $BRANCH to origin"
 git push -u origin "$BRANCH"
 
-log "Creating draft PR from $BRANCH into main"
-release_checklist_pr_body |
-    gh pr create -R "$REPO" --draft --base main --head "$BRANCH" \
-        --title "Version $VERSION" --body-file -
+if confirm "Create a draft PR from $BRANCH into main?"; then
+    log "Creating draft PR from $BRANCH into main"
+    create_release_pr --draft
+else
+    log "Skipping PR creation"
+fi
 
 log "Done. Remember to delete the merged branches manually."
