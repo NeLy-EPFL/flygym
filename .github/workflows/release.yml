@@ -1,0 +1,146 @@
+name: Release
+
+# On PRs into main, check release readiness and build the wheel and Docker image
+# as a dry run. When a GitHub release is published, run the checks again on the
+# release tag, then build and push to PyPI and Docker Hub.
+#
+# One-time setup:
+# - PyPI: add this workflow as a trusted publisher for the flygym project
+#   (owner NeLy-EPFL, repository flygym, workflow release.yml, environment pypi).
+# - Docker Hub: add the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets.
+
+on:
+  pull_request:
+    branches: [main]
+    # Includes ready_for_review because draft PRs are skipped (see below), and
+    # prepare_release.sh pushes before marking the release PR as ready.
+    types: [opened, synchronize, reopened, ready_for_review]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check-readiness:
+    name: Check release readiness
+    # Skip draft PRs: the next version's dev PR is opened as a draft right after a
+    # release and is not expected to pass until prepare_release.sh has run. The
+    # jobs below need this one, so they are skipped too.
+    if: github.event_name == 'release' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Run ruff via uvx at the version pinned in pyproject.toml to avoid
+      # installing the whole project.
+      - name: Read ruff version from pyproject.toml
+        run: |
+          ruff_spec="$(grep -oE 'ruff==[0-9.]+' pyproject.toml)"
+          echo "RUFF_SPEC=$ruff_spec" >> "$GITHUB_ENV"
+
+      - name: Check formatting
+        run: uvx --from "$RUFF_SPEC" ruff format --check .
+
+      - name: Lint
+        run: uvx --from "$RUFF_SPEC" ruff check .
+
+      - name: Check version, changelog, and tutorial links
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: python3 scripts/dev/check_release_readiness.py ${TAG:+--tag "$TAG"}
+
+  build-dist:
+    name: Build wheel and sdist
+    needs: check-readiness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'release'
+    # Docker tags can be overwritten but PyPI uploads are permanent, so publish
+    # to PyPI last: a failed Docker build then blocks the whole release.
+    needs: [build-dist, build-docker]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # Required for PyPI trusted publishing (OIDC); no API token needed.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Publish
+        run: uv publish --trusted-publishing always
+
+  build-docker:
+    name: Build Docker image (push on release)
+    needs: build-dist
+    runs-on: ubuntu-latest
+    steps:
+      # The image installs all extras, including PyTorch with its CUDA libraries,
+      # which can exceed the free disk space of a GitHub-hosted runner. Remove
+      # large preinstalled toolchains that the build does not need.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'release'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # The `latest` image tag follows GitHub's "latest release", which is chosen
+      # when publishing the release (never a pre-release).
+      - name: Compute image tags
+        id: tags
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" != "release" ]]; then
+            echo "tags=nelyepfl/flygym:dry-run" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tags="nelyepfl/flygym:$TAG"
+          latest="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          if [[ "$latest" == "$TAG" ]]; then
+            tags="$tags,nelyepfl/flygym:latest"
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'release' }}
+          tags: ${{ steps.tags.outputs.tags }}
