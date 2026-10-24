@@ -36,8 +36,8 @@ Note that the per-step "step" ranges bracket only the *host-side* ``wp.capture_l
 submission, not GPU execution: because the loop is replayed asynchronously as a CUDA
 graph, read per-kernel timing from the (node-traced) GPU rows, not from these host
 ranges. ``nsys`` is part of the CUDA toolkit / a standalone install (see
-``docs/installation.md``); the ``nvtx`` Python package (the 'dev' extra) is needed
-for the range annotations.
+``docs/tutorials/7_performance_profiling.md``); the ``nvtx`` Python package (the
+'dev' extra) is needed for the range annotations.
 
 Timing only starts *after* the simulation has been JIT-compiled: building the
 capture graph compiles the physics and control kernels, and a single untimed
@@ -160,7 +160,8 @@ def reexec_under_nsys(output_path: Path) -> None:
     if shutil.which("nsys") is None:
         sys.exit(
             "Error: --profile requires NVIDIA Nsight Systems (`nsys`), which was not "
-            "found on PATH. See docs/installation.md for how to install it."
+            "found on PATH. See docs/tutorials/7_performance_profiling.md for how to "
+            "install it."
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
