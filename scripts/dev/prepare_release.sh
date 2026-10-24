@@ -61,13 +61,17 @@ else
     log "Skipping local tests"
 fi
 
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-    git status --short --untracked-files=no
+# Stage first: `git status` lists executed notebooks as modified, but the
+# nbstripout filter removes their outputs on staging, often leaving no change.
+log "Staging changes to tracked files"
+git add -u
+if git diff --cached --quiet; then
+    log "No changes to commit"
+else
+    git diff --cached --stat
     confirm "Commit the changes above?" || die "Stopped before committing."
     log "Committing changes"
-    git commit -am "Prepare $TAG release"
-else
-    log "No changes to commit"
+    git commit -m "Prepare $TAG release"
 fi
 
 confirm "Push $BRANCH to origin?" || die "Stopped before pushing."
