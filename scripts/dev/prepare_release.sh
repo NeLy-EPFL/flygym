@@ -85,8 +85,8 @@ read -r pr_number pr_is_draft <<<"$(gh pr list -R "$REPO" --head "$BRANCH" \
 if [[ -z "$pr_number" ]]; then
     if confirm "No open PR from $BRANCH into main found. Create one?"; then
         log "Creating PR from $BRANCH into main"
-        # shellcheck disable=SC2119  # No extra `gh pr create` arguments needed.
-        create_release_pr
+        gh pr create -R "$REPO" --base main --head "$BRANCH" \
+            --title "Version $VERSION" --body ""
     else
         log "Skipping PR creation"
     fi

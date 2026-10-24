@@ -2,8 +2,6 @@
 # Shared helpers for the release scripts. Source this file; don't run it directly.
 
 REPO="NeLy-EPFL/flygym"
-CHECKLIST_PAGE_URL="https://github.com/NeLy-EPFL/flygym/wiki/Internal-Note:-Release-procedure"
-CHECKLIST_RAW_URL="https://raw.githubusercontent.com/wiki/NeLy-EPFL/flygym/Internal-Note:-Release-procedure.md"
 
 # Main log lines are bold green so they stand out from the output of the tools
 # the scripts run. Colors are used only on a terminal and if NO_COLOR is unset.
@@ -94,29 +92,4 @@ require_clean_tree() {
     log "Checking that there are no uncommitted changes"
     [[ -z "$(git status --porcelain --untracked-files=no)" ]] ||
         die "There are uncommitted changes. Commit or stash them first."
-}
-
-# Prints the release checklist from the wiki. Falls back to a link to the wiki
-# page if it cannot be downloaded.
-release_checklist() {
-    local checklist
-    echo "Release checklist copied from the [wiki]($CHECKLIST_PAGE_URL)."
-    echo
-    if checklist="$(curl -fsSL "$CHECKLIST_RAW_URL")"; then
-        echo "$checklist" | sed -n '/^## Release checklist/,$p'
-    else
-        echo "(Could not download the checklist. Copy it from the wiki manually.)"
-    fi
-}
-
-# Opens a PR from BRANCH into main with an empty body (to be written by hand) and
-# posts the release checklist as its first comment. Extra arguments (e.g.
-# --draft) are passed to `gh pr create`.
-create_release_pr() {
-    local pr_url
-    pr_url="$(gh pr create -R "$REPO" --base main --head "$BRANCH" \
-        --title "Version $VERSION" --body "" "$@")"
-    log "Created PR $pr_url"
-    log "Posting the release checklist as a comment on the PR"
-    release_checklist | gh pr comment "$pr_url" -R "$REPO" --body-file -
 }

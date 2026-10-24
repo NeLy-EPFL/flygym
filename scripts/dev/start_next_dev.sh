@@ -1,8 +1,7 @@
 #!/bin/bash
 # Starts the dev branch for the next release after the current one is published:
 # creates dev-vVERSION from main, bumps the version, adds a changelog section,
-# pushes the branch, and opens a draft PR into main with the release checklist as
-# its first comment.
+# pushes the branch, and opens a draft PR into main.
 #
 # Usage: scripts/dev/start_next_dev.sh VERSION (e.g. 2.1.2)
 set -euo pipefail
@@ -60,7 +59,8 @@ git push -u origin "$BRANCH"
 
 if confirm "Create a draft PR from $BRANCH into main?"; then
     log "Creating draft PR from $BRANCH into main"
-    create_release_pr --draft
+    gh pr create -R "$REPO" --draft --base main --head "$BRANCH" \
+        --title "Version $VERSION" --body ""
 else
     log "Skipping PR creation"
 fi
