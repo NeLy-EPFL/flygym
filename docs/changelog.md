@@ -1,5 +1,41 @@
 # Changelog
 
+## Version 2.1.1
+
+### Additions
+- Added `NeuroMechFlyWithSeparateTrochanterFemur`, a NeuroMechFly variant in which each leg's trochanter and femur are separate bodies (with separate meshes) rather than a single fused trochanterfemur body. This enables valid segmentation maps for these segments. We tentatively plan to make this the only supported NeuroMechFly body in FlyGym v3 ([#313](https://github.com/NeLy-EPFL/flygym/pull/313)).
+- Added `GPUSimulation.set_state()`, `get_base_linear_velocity()`, and `get_base_angular_velocity()` ([#305](https://github.com/NeLy-EPFL/flygym/pull/305)).
+- Added `forward()` to both `Simulation` and `GPUSimulation` to recompute derived quantities (e.g. body positions) without stepping physics.
+- Lazy getters in `GPUSimulation` now accept an optional `dst` array to write into an existing buffer instead of allocating a new one ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
+- Added `World.fly` and `Simulation.fly` shorthands for single-fly setups, `Simulation.fly_lookup`, and `BaseFly.n_bodysegs`, `n_jointdofs`, and `get_n_actuated_jointdofs()` ([#301](https://github.com/NeLy-EPFL/flygym/pull/301)).
+- Added `Retina.fisheye_image_to_hex_pxls()`, which fuses fisheye correction and ommatidia pooling into a single pass. CPU vision now uses it, making this step about 2× faster ([#308](https://github.com/NeLy-EPFL/flygym/pull/308), [#315](https://github.com/NeLy-EPFL/flygym/pull/315); thanks @Cr0me1ve).
+- Added `scripts/export_model_for_flexik.py` to export the fly body plan for FlexIK.
+- Added trajectory recording, which decouples the number of simulated worlds from the number of rendered ones. `Simulation.set_trajectory_recorder()` and `GPUSimulation.set_trajectory_recorder()` attach a recorder that stores only the kinematic state (`qpos` and mocap poses) at the video frame rate. The resulting `RecordedTrajectory` objects can be saved, sub-selected, and rendered to video afterwards with `flygym.recording.render_trajectories()` (CPU) or `flygym.warp.recording.render_trajectories_gpu()` (GPU batch rendering). A recorder can be used together with a renderer, and rendering a recorded trajectory gives exactly the same frames as rendering live. See the new tutorial _8. Recording and rendering trajectories_ ([#296](https://github.com/NeLy-EPFL/flygym/issues/296), [#319](https://github.com/NeLy-EPFL/flygym/pull/319)).
+
+### Changes
+- Renderers now draw a private copy of the simulation state in which body, camera, light, and tendon positions are recomputed from the current `qpos`. Previously, they drew the positions computed at the start of the last physics step, so frames lagged by one timestep. The simulation state itself is not modified ([#319](https://github.com/NeLy-EPFL/flygym/pull/319)).
+- `WarpGPUBatchRenderer` now renders only the selected `worlds` instead of all simulated worlds, so rendering a few out of many worlds is much faster and uses less GPU memory ([#319](https://github.com/NeLy-EPFL/flygym/pull/319)).
+- `GPUSimulation.reset()` now resets `mjw_data` in place using MuJoCo Warp's `reset_data_keyframe()`, instead of reallocating the GPU-side model and data on every reset ([#302](https://github.com/NeLy-EPFL/flygym/pull/302)). Note that, as with `Simulation.reset()`, derived kinematic quantities (`xpos`, `xquat`, …) are not recomputed on reset; call `forward()` if you need them.
+- Remote assets are now stored as tarballs with SHA-256 checksums. FlyGym verifies the checksum after download and moves the extracted files into the cache atomically, which also makes concurrent downloads safe ([#303](https://github.com/NeLy-EPFL/flygym/pull/303)).
+- `GPUSimulation` now uses a constraint solver tolerance of 1e-5 by default, configurable via the new `solver_tolerance` argument. Since MuJoCo Warp 3.10, which fixed a [float32 precision issue in its convergence check](https://github.com/google-deepmind/mujoco_warp/pull/1374), MuJoCo Warp's default tolerance (1e-6) causes a small fraction of worlds to stall until they hit the solver iteration limit, printing "solver iterations limit reached" warnings. Because all worlds wait for the slowest one, this slowed down GPU simulation by ~25% with 1000 worlds. With 1e-5, these stalls are essentially gone, while joint-angle tracking is unchanged within GPU run-to-run variability.
+- `GPUSimulation` now disables MuJoCo Warp's solver and line search iteration limit warnings, which are printed once per world per step and could flood the output. This [follows MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground/commit/fb246cd). Warnings about contact and constraint buffer overflows are still shown.
+- The WASM NeuroMechFly Live game is easier to play: stronger leg adhesion, faster turning, gamepad leg buttons matching the physical left/right layout, and correct colors for split trochanter/femur geoms ([#314](https://github.com/NeLy-EPFL/flygym/pull/314)).
+
+### Bug fixes
+- Fixed body-segment position/orientation getters returning wrong values when MuJoCo's `fusestatic` compiler option merges bodies and invalidates body IDs ([#312](https://github.com/NeLy-EPFL/flygym/pull/312)).
+- Fixed the ground texture not showing in GPU batch rendering after the MuJoCo Warp 3.16 upgrade. MuJoCo Warp now maps textures on finite planes like the CPU renderer does, so FlyGym's workaround of scaling `texrepeat` down by 1000× was removed.
+- Fixed `GPUSimulation` dropping the `timestep` override when GPU batch rendering is enabled, which recompiles the model.
+- Fixed GPU benchmark and tutorial timings, which stopped the timer before queued GPU work finished and therefore overstated throughput by up to ~50% ([#311](https://github.com/NeLy-EPFL/flygym/pull/311); thanks @AdeliyaLeleytner).
+
+### Housekeeping
+- Bumped MuJoCo and MuJoCo Warp versions to 3.16.
+- FlyGym now supports Python 3.12 – 3.15. The `rl` extra is not yet installable on Python 3.15 because PyTorch does not ship wheels for it.
+- Updated Warp kernel type hints to the PEP 484-compliant `wp.array[dtype]` syntax and replaced string array dimensions with `TypeVar`s defined in `flygym.utils.typing` ([#304](https://github.com/NeLy-EPFL/flygym/pull/304)).
+- Unit tests can now run in parallel via `pytest-xdist` (`pytest -n auto`).
+
+### Contributors
+@sibocw, @stimpfli, @AdeliyaLeleytner, @Cr0me1ve
+
 ## Version 2.1.0
 
 !!! danger "API-breaking changes"

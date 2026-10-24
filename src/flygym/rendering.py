@@ -11,11 +11,95 @@ import imageio.v3 as iio
 import numpy as np
 
 
-__all__ = ["Renderer", "launch_interactive_viewer", "preview_model"]
+__all__ = [
+    "FrameClock",
+    "Renderer",
+    "update_render_geometry",
+    "launch_interactive_viewer",
+    "preview_model",
+]
+
+
+def update_render_geometry(mj_model: mj.MjModel, mj_data: mj.MjData) -> None:
+    """Recompute everything that rendering depends on from `qpos` and mocap poses.
+
+    This runs the stages of `mj_forward` that determine rendered geometry (kinematics,
+    center-of-mass positions, camera and light poses, and tendon paths). It skips
+    collision detection and all velocity- and force-dependent stages, which do not
+    affect rendering with default scene options.
+
+    !!! note "Why renderers call this before rendering"
+
+        MuJoCo's scene update does not read `qpos`. It reads derived positions such as
+        `xpos`/`xmat` (bodies), `geom_xpos`/`geom_xmat` (geoms), and `cam_xpos`
+        (cameras). `mj_step` computes these derived positions first and integrates
+        afterwards, so right after a step, `qpos` is the new state while the derived
+        positions still reflect the state at the start of the step. Rendering
+        `mj_data` directly would therefore show the fly one timestep in the past.
+
+        FlyGym renderers instead copy `qpos` and mocap poses into a private `MjData`
+        and call this function on it, so that frames are consistent with the current
+        `qpos` and time. Trajectory recorders (`flygym.recording`) store only `qpos`
+        and mocap poses, and replay calls this function in the same way. Live and
+        replayed frames are therefore identical.
+
+        Recording the derived positions instead would also reproduce live frames, but
+        it would take far more space (about 20 times more for NeuroMechFly), tie the
+        recording format to the renderer's internals, and lose the ability to restore
+        or analyze the simulation state from the recording. Recomputing the geometry
+        is cheap compared to rendering itself.
+    """
+    mj.mj_kinematics(mj_model, mj_data)
+    mj.mj_comPos(mj_model, mj_data)
+    mj.mj_camlight(mj_model, mj_data)
+    mj.mj_tendon(mj_model, mj_data)
+
+
+class FrameClock:
+    """Decides when the next video frame is due, given the simulation time.
+
+    Shared by renderers and trajectory recorders so that both sample the simulation at
+    exactly the same timepoints.
+
+    Args:
+        playback_speed: Video playback speed relative to real time.
+        output_fps: Output video frame rate.
+        timestep: Simulation timestep in seconds. Half of it is used as a tolerance
+            when comparing times, to absorb floating-point drift.
+
+    Attributes:
+        interval: Simulation time between consecutive frames, in seconds.
+    """
+
+    def __init__(self, playback_speed: float, output_fps: int, timestep: float):
+        self.playback_speed = playback_speed
+        self.output_fps = output_fps
+        self.interval = playback_speed / output_fps
+        self._tolerance = timestep * 0.5
+        self.reset()
+
+    def reset(self) -> None:
+        """Make the next call to `tick` fire regardless of the time."""
+        self._last_frame_time = -np.inf
+
+    def tick(self, time: float) -> bool:
+        """Return True (and register a frame at `time`) if a frame is due."""
+        if time < self._last_frame_time + self.interval - self._tolerance:
+            return False
+        self._last_frame_time = float(time)
+        return True
 
 
 class Renderer:
     """Renders MuJoCo scenes to video frames.
+
+    Frames are rendered from a private copy of the simulation state, in which the
+    geometry is recomputed from the current `qpos` and mocap poses (see
+    `update_render_geometry`). Rendered frames are therefore consistent with the
+    current `qpos`, rather than with the geometry computed at the start of the last
+    physics step. The simulation data is not modified. Quantities that do not depend
+    on positions alone (e.g., contact forces, if enabled in `scene_option`) are not
+    rendered correctly.
 
     Args:
         mj_model: Compiled MuJoCo model.
@@ -66,6 +150,7 @@ class Renderer:
         self.buffer_frames = buffer_frames
 
         self.mj_renderer = mj.Renderer(mj_model, nrows, ncols, **kwargs)
+        self._render_data = mj.MjData(mj_model)
         # RGB / depth / segmentation are independent and may be enabled in any
         # combination. Each is produced by its own render() pass (mujoco renders
         # one output type per call), so we don't enable a mode here -- the mode is
@@ -99,9 +184,8 @@ class Renderer:
 
         self.playback_speed = playback_speed
         self.output_fps = output_fps
-        self._secs_between_renders = 1 / (output_fps / playback_speed)
+        self._clock = FrameClock(playback_speed, output_fps, mj_model.opt.timestep)
 
-        self._last_render_time_sec = -np.inf
         buffer = self.buffer_frames
         self.frames = self._new_frame_buffer() if buffer and render_rgb else None
         self.depth_frames = (
@@ -110,9 +194,6 @@ class Renderer:
         self.segmentation_frames = (
             self._new_frame_buffer() if buffer and render_segmentation else None
         )
-
-        # Avoid floating point issues when comparing times
-        self.rendering_rounding_tolerance = mj_model.opt.timestep * 0.5
 
     def _new_frame_buffer(self) -> dict[str, list]:
         return {cam_name: [] for cam_name in self._cameras_names2id}
@@ -159,17 +240,17 @@ class Renderer:
         Returns:
             True if frames were rendered, False otherwise.
         """
-        min_next_render_time = (
-            self._last_render_time_sec
-            + self._secs_between_renders
-            - self.rendering_rounding_tolerance
-        )
-        if mj_data.time < min_next_render_time:
+        if not self._clock.tick(mj_data.time):
             return False
 
-        self._last_render_time_sec = float(mj_data.time)
+        self._render_data.qpos[:] = mj_data.qpos
+        self._render_data.mocap_pos[:] = mj_data.mocap_pos
+        self._render_data.mocap_quat[:] = mj_data.mocap_quat
+        update_render_geometry(self.mj_model, self._render_data)
         for cam_name, internal_cam_id in self._cameras_names2id.items():
-            self.mj_renderer.update_scene(mj_data, internal_cam_id, self.scene_option)
+            self.mj_renderer.update_scene(
+                self._render_data, internal_cam_id, self.scene_option
+            )
             # One render() pass per enabled output. mujoco renders a single output
             # type per call, so toggle the mode for each and always restore the
             # default (RGB) state afterwards.
@@ -198,7 +279,7 @@ class Renderer:
 
     def reset(self) -> None:
         """Clear buffered frames and reset the render timer."""
-        self._last_render_time_sec = -np.inf
+        self._clock.reset()
         if not self.buffer_frames:
             return
         if self.render_rgb:

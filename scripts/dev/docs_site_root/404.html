@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+  Root 404 page of the docs site. mike does not manage site-root files, so this is
+  committed by hand to the root of the gh-pages branch of NeLy-EPFL/flygym-docs
+  (mike leaves it untouched on later deploys). Re-publish it there if you edit it.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Page not found</title>
+  <script>
+    // Redirect unversioned links (e.g. /installation/) to the newest version.
+    // mike lists versions in versions.json from newest to oldest.
+    fetch("/versions.json")
+      .then((response) => response.json())
+      .then((versions) => {
+        const names = versions.map((v) => v.version);
+        const firstSegment = location.pathname.split("/")[1];
+        if (!names.includes(firstSegment)) {
+          location.replace(
+            "/" + names[0] + location.pathname + location.search + location.hash
+          );
+        }
+      });
+  </script>
+</head>
+<body>
+  Page not found. Go to the <a href="/">documentation home page</a>.
+</body>
+</html>

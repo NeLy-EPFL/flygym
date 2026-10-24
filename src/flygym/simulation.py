@@ -7,10 +7,12 @@ import numpy as np
 from jaxtyping import Float
 
 from flygym.anatomy import BodySegment
-from flygym.compose.fly import ActuatorType
+from flygym.compose.fly import BaseFly, ActuatorType
 from flygym.compose.world import BaseWorld
+from flygym.recording import TrajectoryRecorder
 from flygym.rendering import Renderer
 from flygym.utils.profiling import print_perf_report
+from flygym.utils.typing import n_jointdofs, n_actuators, n_tendon_actuators
 
 
 class Simulation:
@@ -27,6 +29,7 @@ class Simulation:
     Attributes:
         world: The world used to construct this simulation.
         renderer: The attached `Renderer`, or None if not set.
+        recorder: The attached `TrajectoryRecorder`, or None if not set.
         mj_model: Compiled MuJoCo model.
         mj_data: Associated MuJoCo data.
     """
@@ -35,6 +38,7 @@ class Simulation:
         if len(world.fly_lookup) == 0:
             raise ValueError("The world must contain at least one fly.")
         self.renderer = None
+        self.recorder = None
         self.world = world
         self.mj_model, self.mj_data = world.compile()
         if timestep is not None:
@@ -68,13 +72,26 @@ class Simulation:
         self._total_render_time_ns = 0
 
     def reset(self) -> None:
-        """Reset simulation and renderer to the neutral keyframe."""
+        """Reset simulation, renderer, and recorder to the neutral keyframe.
+
+        !!! warning
+
+            `reset()` does not update derived kinematic quantities (`xpos`,
+            `xquat`, `site_xpos`, ...); it only restores state fields
+            (`qpos`, `qvel`, `act`, `ctrl`, `mocap`, `time`). Reading
+            derived quantities right after `reset()`, before calling `forward()` or
+            `step()`, does not reflect the reset state. This is consistent with the
+            behavior of MuJoCo's native `mj_resetData`/`mj_resetDataKeyframe`
+            functions.
+        """
         # Reset physics
         mj.mj_resetDataKeyframe(self.mj_model, self.mj_data, self._neutral_keyframe_id)
 
         # Reset renderers
         if self.renderer is not None:
             self.renderer.reset()
+        if self.recorder is not None:
+            self.recorder.reset()
         # The eye renderer doesn't have to be reset as it's stateless (it's the plain
         # MuJoCo renderer, not our flygym.rendering.Renderer)
 
@@ -87,6 +104,16 @@ class Simulation:
     def step(self) -> None:
         """Advance physics by one timestep."""
         mj.mj_step(self.mj_model, self.mj_data)
+
+    def forward(self) -> None:
+        """Recompute derived quantities from the current state, without integrating.
+
+        Wraps MuJoCo's `mj_forward`: refreshes `xpos`, `xquat`, velocities, and other
+        derived fields from `qpos`/`qvel` without advancing time. Call this after
+        writing state directly (e.g. after `reset`) so that subsequent getters return
+        up-to-date values.
+        """
+        mj.mj_forward(self.mj_model, self.mj_data)
 
     def step_with_profile(self) -> None:
         """Advance physics by one timestep, accumulating timing data for profiling."""
@@ -152,7 +179,37 @@ class Simulation:
             self._frames_rendered += 1
         return render_done
 
-    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
+    def set_trajectory_recorder(
+        self, *, playback_speed: float = 0.2, output_fps: int = 25
+    ) -> TrajectoryRecorder:
+        """Attach a recorder that stores the kinematic state at the video frame rate.
+
+        The recorded trajectory can be rendered to video later with
+        `flygym.recording.render_trajectories`. See `flygym.recording` for details. The
+        recorder is independent of the renderer: either or both can be attached.
+
+        Args:
+            playback_speed: Video playback speed relative to real time.
+            output_fps: Output video frame rate.
+
+        Returns:
+            The created `TrajectoryRecorder` instance.
+        """
+        self.recorder = TrajectoryRecorder(
+            self.mj_model, playback_speed=playback_speed, output_fps=output_fps
+        )
+        return self.recorder
+
+    def record_as_needed(self) -> bool:
+        """Record the kinematic state if enough simulation time has elapsed since the
+        last recorded frame.
+
+        Returns:
+            True if a frame was recorded, False otherwise.
+        """
+        return self.recorder.record_as_needed(self.mj_data)
+
+    def get_joint_angles(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
         """Get current joint angles ordered by the fly's skeleton.
 
         Args:
@@ -165,7 +222,7 @@ class Simulation:
         internal_ids = self._intern_qposadrs_by_fly[fly_name]
         return self.mj_data.qpos[internal_ids]
 
-    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:  # noqa: F821
+    def get_joint_velocities(self, fly_name: str) -> Float[np.ndarray, "n_jointdofs"]:
         """Get current joint angular velocities ordered by the fly's skeleton.
 
         Args:
@@ -189,7 +246,15 @@ class Simulation:
             ``fly.get_bodysegs_order()``.
         """
         internal_ids = self._internal_bodyids_by_fly[fly_name]
-        return self.mj_data.xpos[internal_ids, :]
+        if fly_name not in self._flies_with_fused_bodies:
+            return self.mj_data.xpos[internal_ids, :]
+
+        # Add the offset of body segments that were fused into an ancestor (zero
+        # otherwise), rotated into the world frame
+        xmat = self.mj_data.xmat[internal_ids, :].reshape(-1, 3, 3)
+        relpos = self._body_relpos_by_fly[fly_name]
+        offset_from_ancestor = np.einsum("nij,nj->ni", xmat, relpos)
+        return self.mj_data.xpos[internal_ids, :] + offset_from_ancestor
 
     def get_body_rotations(self, fly_name: str) -> Float[np.ndarray, "n_bodies 4"]:
         """Get global orientations of all body segments as quaternions (w, x, y, z).
@@ -202,11 +267,20 @@ class Simulation:
             ``fly.get_bodysegs_order()``.
         """
         internal_ids = self._internal_bodyids_by_fly[fly_name]
-        return self.mj_data.xquat[internal_ids, :]
+        if fly_name not in self._flies_with_fused_bodies:
+            return self.mj_data.xquat[internal_ids, :]
+
+        # Compose with the rotation of body segments that were fused into an ancestor
+        # (identity otherwise)
+        return np.einsum(
+            "nij,nj->ni",
+            self._body_relquat_matrix_by_fly[fly_name],
+            self.mj_data.xquat[internal_ids, :],
+        )
 
     def get_actuator_forces(
         self, fly_name: str, actuator_type: ActuatorType
-    ) -> Float[np.ndarray, "n_actuators"]:  # noqa: F821
+    ) -> Float[np.ndarray, "n_actuators"]:
         """Get actuator forces for the given actuator type.
 
         Args:
@@ -344,7 +418,7 @@ class Simulation:
         self,
         fly_name: str,
         actuator_type: ActuatorType,
-        inputs: Float[np.ndarray, "n_actuators"],  # noqa: F821
+        inputs: Float[np.ndarray, "n_actuators"],
     ) -> None:
         """Set control inputs for the given actuator type.
 
@@ -383,7 +457,7 @@ class Simulation:
     def set_tendon_actuator_inputs(
         self,
         fly_name: str,
-        inputs: Float[np.ndarray, "n_tendon_actuators"],  # noqa: F821
+        inputs: Float[np.ndarray, "n_tendon_actuators"],
     ) -> None:
         """Set control inputs for tendon actuators.
 
@@ -409,9 +483,9 @@ class Simulation:
         """Render the fly's eye cameras and return fisheye-corrected frames.
 
         Certain body parts are invisible to the eye cameras to avoid self-occlusion, as
-        configured in `flygym/assets/model/neuromechfly/vision.yaml`. These geoms are assigned to
-        geom group 2, which _is_ rendered by the MuJoCo renderer by default, but the eye
-        renderer within FlyGym is configured to ignore this geom group.
+        configured in `flygym/assets/model/neuromechfly/vision.yaml`. These geoms are
+        assigned to geom group 2, which _is_ rendered by the MuJoCo renderer by default,
+        but the eye renderer within FlyGym is configured to ignore this geom group.
 
         Args:
             fly_name: Name of the fly to query.
@@ -421,6 +495,14 @@ class Simulation:
             fly's two eyes. The first dimension corresponds to the left and right eye,
             in that order.
         """
+        uncorrected_frames = self._render_eye_frames(fly_name)
+        corrected_frames = [
+            self.retina.correct_fisheye(frame) for frame in uncorrected_frames
+        ]
+        return np.array(corrected_frames)
+
+    def _render_eye_frames(self, fly_name: str) -> list[np.ndarray]:
+        """Render the fly's eye cameras without fisheye correction."""
         try:
             internal_eye_camera_ids = self._intern_eye_camera_ids_by_fly[fly_name]
         except KeyError:
@@ -449,16 +531,13 @@ class Simulation:
             self.eye_renderer_scene_option.geomgroup[1] = 0
             self.eye_renderer_scene_option.geomgroup[2] = 0
 
-        # Render each eye camera and apply fisheye correction
         frames = []
         for cam_id in internal_eye_camera_ids:
             self.eye_renderer.update_scene(
                 self.mj_data, cam_id, scene_option=self.eye_renderer_scene_option
             )
-            raw_frame = self.eye_renderer.render()
-            fish_img = self.retina.correct_fisheye(raw_frame)
-            frames.append(fish_img)
-        return np.array(frames)
+            frames.append(self.eye_renderer.render())
+        return frames
 
     def get_ommatidia_readouts(
         self, fly_name: str
@@ -477,12 +556,12 @@ class Simulation:
             For example, if `readouts[0, 5, 0]` is 0, it means that the 5th ommatidium
             is of pale type, and the user should look at `readouts[0, 5, 1]` instead.
         """
-        raw_vision = self.get_raw_vision(fly_name)
-        ommatidia_readouts = np.array(
-            [self.retina.raw_image_to_hex_pxls(image) for image in raw_vision],
-            dtype=np.float32,
-        )
-        return ommatidia_readouts
+        # Fisheye correction and ommatidia pooling are fused into a single pass
+        uncorrected_frames = self._render_eye_frames(fly_name)
+        ommatidia_readouts = [
+            self.retina.fisheye_image_to_hex_pxls(frame) for frame in uncorrected_frames
+        ]
+        return np.array(ommatidia_readouts, dtype=np.float32)
 
     def warmup(self, duration_s: float = 0.05) -> None:
         """Step the simulation for a short period to settle initialization transients.
@@ -498,19 +577,66 @@ class Simulation:
             self.step()
 
     def _map_internal_bodyids(self) -> None:
+        # With `compiler/fusestatic`, MuJoCo merges bodies without joints into their
+        # parent, so they no longer exist in the compiled model. Each body segment is
+        # therefore mapped to its nearest ancestor that survived compilation (itself if
+        # it was not fused), together with its pose relative to that ancestor. This
+        # relative pose is constant because there is no joint in between.
         internal_bodyids_by_fly = defaultdict(list)
+        body_relpos_by_fly = defaultdict(list)
+        body_relquat_by_fly = defaultdict(list)
+        # Flies without fused bodies can skip the offset computation in the getters
+        self._flies_with_fused_bodies = set()
 
         for fly_name, fly in self.world.fly_lookup.items():
-            for bodyseg, mjcf_body_element in fly.bodyseg_to_mjcfbody.items():
-                internal_body_id = mj.mj_name2id(
-                    self.mj_model,
-                    mj.mjtObj.mjOBJ_BODY,
-                    mjcf_body_element.name,
-                )
+            for mjcf_body_element in fly.bodyseg_to_mjcfbody.values():
+                body = mjcf_body_element
+                relpos = np.zeros(3)
+                relquat = np.array([1.0, 0.0, 0.0, 0.0])
+
+                while True:
+                    # Walk up the kinematic chain until we find a body that still exists
+                    internal_body_id = mj.mj_name2id(
+                        self.mj_model, mj.mjtObj.mjOBJ_BODY, body.name
+                    )
+                    if internal_body_id >= 0:
+                        break
+                    if body.parent.name == "world":  # "world" is the name for worldbody
+                        raise ValueError(
+                            f"The root body of fly '{fly_name}' was fused into the "
+                            "worldbody by `fusestatic`. Give it a joint or make it a "
+                            "mocap body."
+                        )
+
+                    self._flies_with_fused_bodies.add(fly_name)
+
+                    # Prepend this body's pose relative to its parent:
+                    # T_parent->seg = T_parent->body * T_body->seg
+                    body_pos, body_quat = _get_local_body_pose(body)
+                    rotated_relpos = np.zeros(3)
+                    mj.mju_rotVecQuat(rotated_relpos, relpos, body_quat)
+                    relpos = body_pos + rotated_relpos
+                    mj.mju_mulQuat(relquat, body_quat, relquat.copy())
+                    body = body.parent
+
                 internal_bodyids_by_fly[fly_name].append(internal_body_id)
+                body_relpos_by_fly[fly_name].append(relpos)
+                body_relquat_by_fly[fly_name].append(relquat)
 
         self._internal_bodyids_by_fly = {
             k: np.array(v, dtype=np.int32) for k, v in internal_bodyids_by_fly.items()
+        }
+        self._body_relpos_by_fly = {
+            k: np.array(v) for k, v in body_relpos_by_fly.items()
+        }
+        self._body_relquat_by_fly = {
+            k: np.array(v) for k, v in body_relquat_by_fly.items()
+        }
+        # Right-multiplying by a constant quaternion is a linear map, so precompute its
+        # matrix once. This lets `get_body_rotations` compose with a single einsum.
+        self._body_relquat_matrix_by_fly = {
+            k: _get_quat_right_mul_matrix(v)
+            for k, v in self._body_relquat_by_fly.items()
         }
 
     def _map_internal_geom_ids(self) -> None:
@@ -760,3 +886,45 @@ class Simulation:
         self.eye_renderer = None
         # Don't destruct self.retina and self.eye_renderer_scene_option: they can be
         # reused and retina init requires some IO ops.
+
+    @property
+    def fly(self) -> BaseFly:
+        """Return the single fly in the world, or raise an error if there are multiple."""
+        return self.world.fly
+
+    @property
+    def fly_lookup(self) -> dict[str, BaseFly]:
+        """Return the fly lookup dictionary from the world."""
+        return self.world.fly_lookup
+
+
+def _get_local_body_pose(body: mj.MjsBody) -> tuple[np.ndarray, np.ndarray]:
+    """Get the pose (position, unit quaternion) of a spec body relative to its parent.
+
+    Only bodies whose orientation is given as a quaternion and that are not placed in
+    a frame are supported. This is always the case for FlyGym fly bodies.
+    """
+    if body.alt.type != mj.mjtOrientation.mjORIENTATION_QUAT or body.frame is not None:
+        raise NotImplementedError(
+            f"Cannot get the local pose of body '{body.name}': only bodies oriented by "
+            "a quaternion and not placed in a frame are supported."
+        )
+    quat = np.array(body.quat, dtype=float)
+    return np.array(body.pos, dtype=float), quat / np.linalg.norm(quat)
+
+
+def _get_quat_right_mul_matrix(
+    quats: Float[np.ndarray, "n 4"],
+) -> Float[np.ndarray, "n 4 4"]:
+    """Get matrices `M` such that `q * quats[i] == M[i] @ q` (Hamilton product) for
+    any quaternion `q`. All quaternions are in (w, x, y, z) order."""
+    w, x, y, z = quats.T
+    return np.stack(
+        [
+            np.stack([w, -x, -y, -z], axis=-1),
+            np.stack([x, w, z, -y], axis=-1),
+            np.stack([y, -z, w, x], axis=-1),
+            np.stack([z, y, -x, w], axis=-1),
+        ],
+        axis=1,
+    )

@@ -2,6 +2,8 @@
 
 import os
 
+import mujoco as mj
+import numpy as np
 import pytest
 
 # mujoco hardcodes CGL on macOS and GLFW on Windows; neither can create a
@@ -13,8 +15,13 @@ pytestmark = pytest.mark.skipif(
     reason="SKIP_RENDERING_TESTS=1 (eg. headless GL unavailable on this CI runner)",
 )
 
-from flygym.anatomy import AxisOrder, JointPreset, Skeleton
-from flygym.compose.fly import NeuroMechFly
+from flygym.anatomy import (
+    AxisOrder,
+    JointPreset,
+    SeparateTrochanterFemurJointPreset,
+    Skeleton,
+)
+from flygym.compose.fly import NeuroMechFly, NeuroMechFlyWithSeparateTrochanterFemur
 from flygym.compose.pose import KinematicPosePreset
 from flygym.compose.world import TetheredWorld
 from flygym.utils.math import Rotation3D
@@ -276,7 +283,7 @@ class TestSaveVideo:
         for _ in range(3):
             renderer.render_as_needed(mj_data)
             # Advance the simulated time manually so we get multiple renders
-            renderer._last_render_time_sec -= renderer._secs_between_renders
+            renderer._clock.reset()
 
         out = tmp_path / "output.mp4"
         renderer.save_video(out)
@@ -292,3 +299,41 @@ class TestSaveVideo:
         with pytest.raises(RuntimeError, match="No frames"):
             r.save_video(tmp_path / "out.mp4")
         r.close()
+
+
+# ==============================================================================
+# Segmentation of separate trochanter and femur
+# ==============================================================================
+
+
+def test_trochanter_and_femur_are_segmented_separately():
+    pose = KinematicPosePreset.NEUTRAL.get_pose_by_axis_order(AxisOrder.YAW_PITCH_ROLL)
+    skeleton = Skeleton(
+        axis_order=AxisOrder.YAW_PITCH_ROLL,
+        joint_preset=SeparateTrochanterFemurJointPreset.LEGS_ONLY,
+    )
+    fly = NeuroMechFlyWithSeparateTrochanterFemur(name="fly")
+    fly.add_joints(skeleton, neutral_pose=pose)
+    fly.add_tracking_camera(name="trackcam")
+    world = TetheredWorld()
+    world.add_fly(
+        fly,
+        spawn_position=[0, 0, 1.5],
+        spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+    )
+    mj_model, mj_data = world.compile()
+    mj.mj_forward(mj_model, mj_data)
+    cam_name = fly.cameraname_to_mjcfcamera["trackcam"].name
+    with Renderer(
+        mj_model,
+        cam_name,
+        camera_res=(240, 320),
+        render_rgb=False,
+        render_segmentation=True,
+    ) as renderer:
+        renderer.render_as_needed(mj_data)
+    seg = renderer.segmentation_frames[cam_name][0]
+
+    for geom_name in ["fly/rf_trochanter", "fly/rf_femur"]:
+        geom_id = mj.mj_name2id(mj_model, mj.mjtObj.mjOBJ_GEOM, geom_name)
+        assert np.any(seg == geom_id), f"{geom_name} not visible"

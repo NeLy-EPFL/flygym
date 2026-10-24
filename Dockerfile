@@ -1,4 +1,4 @@
-FROM python:3.12-trixie
+FROM python:3.14-trixie
 
 # Set shell to bash (instead of sh)
 SHELL ["/bin/bash", "-c"]
@@ -22,7 +22,7 @@ ENV PYOPENGL_PLATFORM=egl
 ADD . $HOME/flygym/
 
 # Install using uv
-RUN uv sync --extra warp --extra examples --extra dev
+RUN uv sync --all-extras --locked
 
 # Set entrypoint
 ENTRYPOINT ["/bin/bash"]

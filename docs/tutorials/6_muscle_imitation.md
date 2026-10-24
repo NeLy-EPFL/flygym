@@ -225,17 +225,15 @@ sim.get_joint_angles(fly.name)   # proprioception, body kinematics, ...
 If you use the musculoskeletal model in your research, please cite the
 FlyMimic paper in addition to FlyGym:
 
-> Ozdil, P. G., Ning, C., Phelps, J. S., Wang-Chen, S., Elisha, G., Blanke, A.,
-> Ijspeert, A., & Ramdya, P. (2026). Musculoskeletal simulation of limb
-> movement biomechanics in *Drosophila melanogaster*. *ICLR 2026*.
-> [arXiv:2509.06426](https://arxiv.org/abs/2509.06426)
+> Özdil, P. G., Ning, C., Phelps, J., Wang-Chen, S., Elisha, G., Ijspeert, A., & Ramdya, P. (2026). Musculoskeletal simulation of limb movement biomechanics in Drosophila melanogaster. In International Conference on Learning Representations (Vol. 2026, pp. 20151-20175). [arXiv:2509.06426](https://arxiv.org/abs/2509.06426)
+
 
 ```bibtex
-@inproceedings{Ozdil2026,
-  title={Musculoskeletal simulation of limb movement biomechanics in Drosophila melanogaster},
-  author={Ozdil, Pembe Gizem and Ning, Chuanfang and Phelps, Jasper S and Wang-Chen, Sibo and Elisha, Guy and Blanke, Alexander and Ijspeert, Auke and Ramdya, Pavan},
-  booktitle={The Fourteenth International Conference on Learning Representations},
-  year={2026},
-  url={https://arxiv.org/abs/2509.06426},
+@inproceedings{ozdil2026,
+    title = {Musculoskeletal simulation of limb movement biomechanics in {Drosophila melanogaster}},
+    author = {Pembe Gizem Özdil and Chuanfang Ning and Jasper S. Phelps and Sibo Wang-Chen and Guy Elisha and Auke Ijspeert and Pavan Ramdya},
+    booktitle = {The Fourteenth International Conference on Learning Representations},
+    year = {2026},
+    url = {https://arxiv.org/abs/2509.06426},
 }
 ```

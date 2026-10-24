@@ -17,6 +17,7 @@
         * [5b. Walking controller](tutorials/5b_using_flybody_model.ipynb)
     * [6. Muscle-based imitation learning](tutorials/6_muscle_imitation.md)
     * [7. Performance profiling](tutorials/7_performance_profiling.md)
+    * [8. Recording and rendering trajectories](tutorials/8_recording_and_rendering_trajectories.ipynb)
 * [Video Tutorials](video_tutorials/index.md)
 * API Reference
     * [anatomy](api_reference/flygym/anatomy.md)
@@ -35,6 +36,7 @@
             * [flat_ground](api_reference/flygym/compose/world/flat_ground.md)
             * [musculoskeletal](api_reference/flygym/compose/world/musculoskeletal.md)
             * [tethered_world](api_reference/flygym/compose/world/tethered_world.md)
+    * [recording](api_reference/flygym/recording.md)
     * [rendering](api_reference/flygym/rendering.md)
     * [simulation](api_reference/flygym/simulation.md)
     * utils
@@ -47,6 +49,7 @@
         * [profiling](api_reference/flygym/utils/profiling.md)
         * [video](api_reference/flygym/utils/video.md)
     * warp
+        * [recording](api_reference/flygym/warp/recording.md)
         * [rendering](api_reference/flygym/warp/rendering.md)
         * [simulation](api_reference/flygym/warp/simulation.md)
         * [utils](api_reference/flygym/warp/utils.md)

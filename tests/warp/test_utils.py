@@ -7,6 +7,7 @@ import numpy as np
 # excluded with ``-m "not warp"``, and skip the whole module if warp is absent.
 pytestmark = pytest.mark.warp
 wp = pytest.importorskip("warp")
+mjw = pytest.importorskip("mujoco_warp")
 
 
 # ==============================================================================

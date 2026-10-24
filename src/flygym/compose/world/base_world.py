@@ -5,7 +5,7 @@ from typing import Any, override
 import mujoco as mj
 import numpy as np
 
-from flygym.anatomy import BaseContactBodiesPreset, ContactBodiesPreset, BodySegment
+from flygym.anatomy import BaseContactBodiesPreset, BodySegment
 from flygym.compose.base import BaseCompositionElement
 from flygym.compose.fly import BaseFly
 from flygym.compose.physics import ContactParams
@@ -82,11 +82,27 @@ class BaseWorld(BaseCompositionElement, ABC):
         """Lookup for `Fly` objects in the world, keyed by fly name."""
         return self._fly_lookup
 
+    @property
+    def fly(self) -> BaseFly:
+        """Get the single fly in the world.
+
+        Raises:
+            ValueError: If there is not exactly one fly in the world.
+        """
+        if len(self.fly_lookup) == 0:
+            raise ValueError("World contains no flies.")
+        if len(self.fly_lookup) > 1:
+            raise ValueError(
+                "World contains multiple flies. "
+                "`.fly` is ambiguous; use `.fly_lookup` instead."
+            )
+        return next(iter(self.fly_lookup.values()))
+
     @abstractmethod
     def _attach_fly_mjcf(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args,
         **kwargs,
@@ -125,7 +141,7 @@ class BaseWorld(BaseCompositionElement, ABC):
     def add_fly(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *args: Any,
         **kwargs: Any,
@@ -246,12 +262,12 @@ class _GroundContactMixin:
     def _attach_fly_mjcf(
         self,
         fly: BaseFly,
-        spawn_position: Vec3,
+        spawn_position: Vec3 | tuple[float, float, float],
         spawn_rotation: Rotation3D,
         *,
         bodysegs_with_ground_contact: (
-            list[BodySegment] | ContactBodiesPreset | str
-        ) = ContactBodiesPreset.LEGS_THORAX_ABDOMEN_HEAD,
+            list[BodySegment] | BaseContactBodiesPreset | str
+        ) = "legs_thorax_abdomen_head",
         ground_contact_params: ContactParams = ContactParams(),
         add_ground_contact_sensors: bool = True,
     ) -> set[str]:
@@ -317,7 +333,9 @@ class _GroundContactMixin:
             self.legpos_to_groundcontactsensors_by_fly = None
             return
 
-        self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
+        # Created on the first fly and extended (not reset) by later ones
+        if self.legpos_to_groundcontactsensors_by_fly is None:
+            self.legpos_to_groundcontactsensors_by_fly = defaultdict(dict)
         contact_geoms_by_leg = defaultdict(list)
         for bodyseg in bodysegs_with_ground_contact:
             if bodyseg.is_leg():
@@ -334,7 +352,7 @@ class _GroundContactMixin:
             #     dist=8, pos=16, normal=32, tangent=64 -> 1+2+4+16+32+64 = 119) and
             #     reduce "netforce" = 3.
             sensor = self.mjcf_root.add_sensor(
-                name=f"ground_contact_{leg}_leg",
+                name=f"{fly.name}/ground_contact_{leg}_leg",
                 type=mj.mjtSensor.mjSENS_CONTACT,
                 objtype=mj.mjtObj.mjOBJ_XBODY,
                 objname=subtree_rootseg_body.name,

@@ -317,6 +317,21 @@ class TestFlatGroundWorld:
         sensors = flat_world_with_fly.legpos_to_groundcontactsensors_by_fly[fly_name]
         assert len(sensors) == 6  # one per leg
 
+    def test_contact_sensors_with_multiple_flies(self):
+        world = FlatGroundWorld()
+        for i, fly_name in enumerate(["fly0", "fly1"]):
+            world.add_fly(
+                NeuroMechFly(name=fly_name),
+                spawn_position=[3 * i, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
+        mj_model, _ = world.compile()
+        for fly_name in ["fly0", "fly1"]:
+            sensors = world.legpos_to_groundcontactsensors_by_fly[fly_name]
+            assert len(sensors) == 6
+            for sensor in sensors.values():
+                assert mj_model.sensor(sensor.name).id >= 0
+
     def test_world_dof_neutral_states_set(self, flat_world_with_fly):
         # world_dof_neutral_states is a set of the world-level DoF (joint) names;
         # a free-jointed fly contributes its free joint, named after the fly.

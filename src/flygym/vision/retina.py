@@ -9,6 +9,9 @@ class Retina:
     """
     This class handles the simulation of the fly's visual input.
     Calculation in this class is vectorized and parallelized using Numba.
+    The image dimensions and fisheye parameters (``nrows``, ``ncols``,
+    ``zoom``, ``distortion_coefficient``) must not be modified after
+    construction.
 
     Attributes
     ----------
@@ -108,6 +111,11 @@ class Retina:
         self.nrows = nrows
         self.ncols = ncols
 
+        # For each fisheye-corrected pixel, the flat index of its source pixel
+        self._fisheye_lookup = self._make_fisheye_lookup(
+            nrows, ncols, zoom, distortion_coefficient
+        )
+
     def raw_image_to_hex_pxls(self, raw_img: np.ndarray) -> np.ndarray:
         """Given a raw image from an eye (one camera), simulate what the
         fly would see.
@@ -130,6 +138,83 @@ class Retina:
             self.num_pixels_per_ommatidia,
             self.pale_type_mask,
         )
+
+    def fisheye_image_to_hex_pxls(self, raw_img: np.ndarray) -> np.ndarray:
+        """Apply fisheye correction to a raw camera image and pool it into
+        ommatidia readings in a single pass. This is equivalent to, but
+        faster than, ``raw_image_to_hex_pxls(correct_fisheye(raw_img))``.
+
+        Parameters
+        ----------
+        raw_img : np.ndarray
+            Raw uint8 RGB image of shape (nrows, ncols, 3) returned by the
+            camera.
+
+        Returns
+        -------
+        np.ndarray
+            A (N, 2) array of ommatidia readings, as in
+            ``raw_image_to_hex_pxls``.
+        """
+        if raw_img.shape != (self.nrows, self.ncols, 3) or raw_img.dtype != np.uint8:
+            raise ValueError(
+                f"Expected a uint8 image of shape ({self.nrows}, {self.ncols}, 3), "
+                f"got {raw_img.dtype} of shape {raw_img.shape}."
+            )
+
+        return self._pool_fisheye_image(
+            np.ascontiguousarray(raw_img),
+            self._fisheye_lookup,
+            self.ommatidia_id_map,
+            self.num_pixels_per_ommatidia,
+            self.pale_type_mask,
+        )
+
+    @staticmethod
+    @nb.njit(cache=True)
+    def _make_fisheye_lookup(nrows, ncols, zoom, distortion_coefficient):
+        """For each pixel in the fisheye-corrected image, find the flat index of
+        the source pixel in the raw image (-1 if out of bounds). The arithmetic
+        must match `_correct_fisheye` exactly."""
+        lookup = np.full(nrows * ncols, -1, dtype=np.int64)
+        for dst_row in range(nrows):
+            for dst_col in range(ncols):
+                dst_row_norm = ((2 * dst_row - nrows) / nrows) / zoom
+                dst_col_norm = ((2 * dst_col - ncols) / ncols) / zoom
+                dst_radius_norm_sq = dst_col_norm**2 + dst_row_norm**2
+                denom = 1 - (distortion_coefficient * dst_radius_norm_sq) + 1e-6
+                src_row = int(((dst_row_norm / denom + 1) * nrows) / 2)
+                src_col = int(((dst_col_norm / denom + 1) * ncols) / 2)
+                if 0 <= src_row < nrows and 0 <= src_col < ncols:
+                    lookup[dst_row * ncols + dst_col] = src_row * ncols + src_col
+        return lookup
+
+    @staticmethod
+    @nb.njit(cache=True)
+    def _pool_fisheye_image(
+        raw_img,
+        fisheye_lookup,
+        ommatidia_id_map,
+        num_pixels_per_ommatidia,
+        pale_type_mask,
+    ):
+        """Same as `_raw_image_to_hex_pxls`, but reads each pixel through the
+        fisheye lookup. Out-of-bounds pixels are black in the corrected image and
+        therefore skipped. The accumulation order is kept the same so that results
+        are bit-identical."""
+        vals = np.zeros((len(num_pixels_per_ommatidia), 2))
+        img_arr_flat = raw_img.reshape((-1, 3))
+        hex_id_map_flat = ommatidia_id_map.ravel()
+        for i in range(hex_id_map_flat.size):
+            hex_pxl_id = hex_id_map_flat[i] - 1
+            src_idx = fisheye_lookup[i]
+            if hex_pxl_id != -1 and src_idx != -1:
+                hex_pxl_size = num_pixels_per_ommatidia[hex_pxl_id]  # num raw pxls
+                ch_idx = pale_type_mask[hex_pxl_id]
+                vals[hex_pxl_id, ch_idx] += (
+                    img_arr_flat[src_idx, ch_idx + 1] / hex_pxl_size
+                )
+        return vals / 255
 
     def hex_pxls_to_human_readable(
         self, ommatidia_reading: np.ndarray, color_8bit=False, default_value=0

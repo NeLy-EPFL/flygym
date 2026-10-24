@@ -10,6 +10,11 @@ from . import compose  # noqa: E402
 from . import flybody  # noqa: E402
 from .simulation import Simulation  # noqa: E402
 from .rendering import Renderer, launch_interactive_viewer, preview_model  # noqa: E402
+from .recording import (  # noqa: E402
+    RecordedTrajectory,
+    TrajectoryRecorder,
+    render_trajectories,
+)
 
 __all__ = [
     "assets_dir",
@@ -20,4 +25,7 @@ __all__ = [
     "Renderer",
     "launch_interactive_viewer",
     "preview_model",
+    "RecordedTrajectory",
+    "TrajectoryRecorder",
+    "render_trajectories",
 ]

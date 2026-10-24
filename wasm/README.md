@@ -49,12 +49,7 @@ uv run python scripts/dev/properdocs_hooks.py --vendor-only
 
 ## Deploying
 
-[`scripts/dev/push_doc_site.sh`](../scripts/dev/push_doc_site.sh) is the single
-entry point: it ensures `shared/vendor/` is present, offers to regenerate the
-viewer + game `assets/`, runs `properdocs build` (whose hook bundles `wasm/` into the
-site), and force-pushes `site/` to the orphan `gh-pages` branch. The heavy
-vendor + generated assets therefore live only on `gh-pages`, never bloating
-`main`.
+[`scripts/dev/push_doc_site.sh`](../scripts/dev/push_doc_site.sh) `VERSION` is the single entry point: it ensures `shared/vendor/` is present, offers to regenerate the viewer + game `assets/`, then builds the site with `mike` (the properdocs hook bundles `wasm/` into it) and pushes it to the `VERSION/` directory on the `gh-pages` branch of [`NeLy-EPFL/flygym-docs`](https://github.com/NeLy-EPFL/flygym-docs). The heavy vendor + generated assets therefore never bloat this repo.
 
 ## Attribution
 

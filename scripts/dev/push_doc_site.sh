@@ -1,9 +1,16 @@
 #!/bin/bash
 set -e
 
-BUILD_DIR="site"
-BRANCH="gh-pages"
-COMMIT_MSG="Deploy $(date '+%Y-%m-%d %H:%M:%S')"
+# Usage: scripts/dev/push_doc_site.sh VERSION (e.g. 2.1.1)
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 VERSION (e.g. 2.1.1)"
+    exit 1
+fi
+# mike names version directories without the "v" prefix used in git tags.
+VERSION="${1#v}"
+
+DOCS_REMOTE="flygym-docs"
+DOCS_REMOTE_URL="git@github.com:NeLy-EPFL/flygym-docs.git"
 
 read -p "Have you checked that all tutorial notebooks are properly executed and without errors? (y/n) "
 if [[ $REPLY != "y" ]]; then
@@ -23,13 +30,13 @@ if [[ $REPLY != "y" ]]; then
     exit 1
 fi
 
-if [ -d "$BUILD_DIR" ]; then
-    read -p "The build directory '$BUILD_DIR' already exists. Do you want to remove it and continue? (y/n) "
+PACKAGE_VERSION=$(uv version --short)
+if [[ $VERSION != "$PACKAGE_VERSION" ]]; then
+    read -p "Publishing as $VERSION, but the package version is $PACKAGE_VERSION. Continue? (y/n) "
     if [[ $REPLY != "y" ]]; then
         echo "Stopping here."
         exit 1
     fi
-    rm -rf "$BUILD_DIR"
 fi
 
 # Ensure vendor files (MuJoCo-WASM + Three.js) are present, downloading them if
@@ -50,21 +57,16 @@ if [[ $REGEN_ASSETS == "y" ]]; then
 fi
 uv run python scripts/dev/properdocs_hooks.py --vendor-only
 
-# Build the documentation
-echo "Building documentation..."
-uv run properdocs build
+# Build with mike and push the site to the gh-pages branch of the separate docs
+# repo, under a subdirectory for this version. mike works on local refs only, so
+# fetch the docs repo first.
+git remote add "$DOCS_REMOTE" "$DOCS_REMOTE_URL" 2>/dev/null || true
+git fetch "$DOCS_REMOTE" gh-pages
+uv run mike deploy --push --remote "$DOCS_REMOTE" "$VERSION"
+# Always ask: the default version is the one the site root redirects to.
+read -p "Make $VERSION the default version (the one neuromechfly.org redirects to)? (y/n) "
+if [[ $REPLY == "y" ]]; then
+    uv run mike set-default --push --remote "$DOCS_REMOTE" "$VERSION"
+fi
 
-# Push built site to a separate branch to be served by GitHub Pages
-cd "$BUILD_DIR"
-git init
-git checkout --orphan "$BRANCH"
-git add -A
-git commit -m "$COMMIT_MSG"
-git remote add origin $(git -C .. remote get-url origin)
-git push --force origin "$BRANCH"
-
-# Cleanup
-cd ..
-rm -rf "$BUILD_DIR/.git"
-
-echo "✅ Documentation deployed successfully to branch '$BRANCH'."
+echo "Done. Documentation deployed successfully (version '$VERSION')."

@@ -13,8 +13,13 @@ from flygym.anatomy import (
     LEGS,
     AnatomicalJoint,
     BodySegment,
+    SeparateTrochanterFemurJointPreset,
 )
-from flygym.compose.fly import NeuroMechFly, ActuatorType
+from flygym.compose.fly import (
+    NeuroMechFly,
+    NeuroMechFlyWithSeparateTrochanterFemur,
+    ActuatorType,
+)
 from flygym.compose.world import TetheredWorld, FlatGroundWorld
 from flygym.compose.physics import ContactParams
 from flygym.utils.math import Rotation3D
@@ -153,6 +158,14 @@ class TestGetBodyPositions:
         pos = simulation.get_body_positions(fly_with_adhesion.name)
         assert pos.shape[0] == len(ALL_SEGMENT_NAMES)
 
+    def test_positions_correct_after_reset_and_step(
+        self, simulation, fly_with_adhesion
+    ):
+        simulation.reset()
+        simulation.step()
+        pos = simulation.get_body_positions(fly_with_adhesion.name)
+        assert not np.allclose(pos, 0.0)
+
 
 # ==============================================================================
 # get_body_rotations
@@ -180,6 +193,92 @@ class TestGetBodyRotations:
         rots = simulation.get_body_rotations(fly_with_adhesion.name)
         norms = np.linalg.norm(rots, axis=1)
         np.testing.assert_allclose(norms, 1.0, atol=1e-6)
+
+
+# ==============================================================================
+# Body segments fused by `fusestatic`
+# ==============================================================================
+
+
+class TestFusedBodySegments:
+    """Under the LEGS_ONLY preset, jointless segments (head, antennae, abdomen, ...)
+    are fused into their parent by `fusestatic` and no longer exist in the compiled
+    model. Their poses must still match those of a model compiled without fusion."""
+
+    def test_some_segments_are_fused(self, simulation, fly_with_adhesion):
+        import mujoco as mj
+
+        fused = [
+            body.name
+            for body in fly_with_adhesion.bodyseg_to_mjcfbody.values()
+            if mj.mj_name2id(simulation.mj_model, mj.mjtObj.mjOBJ_BODY, body.name) < 0
+        ]
+        assert "sim_fly/c_head" in fused
+
+    def test_poses_match_unfused_model(self, simulation, fly_with_adhesion):
+        import mujoco as mj
+
+        simulation.reset()
+        for _ in range(10):
+            simulation.step()
+        mj.mj_kinematics(simulation.mj_model, simulation.mj_data)
+
+        spec = simulation.world.mjcf_root.copy()
+        spec.compiler.fusestatic = False
+        ref_model = spec.compile()
+        ref_data = mj.MjData(ref_model)
+        ref_data.qpos[:] = simulation.mj_data.qpos
+        ref_data.mocap_pos[:] = simulation.mj_data.mocap_pos
+        ref_data.mocap_quat[:] = simulation.mj_data.mocap_quat
+        mj.mj_kinematics(ref_model, ref_data)
+        ref_ids = [
+            mj.mj_name2id(ref_model, mj.mjtObj.mjOBJ_BODY, body.name)
+            for body in fly_with_adhesion.bodyseg_to_mjcfbody.values()
+        ]
+
+        name = fly_with_adhesion.name
+        np.testing.assert_allclose(
+            simulation.get_body_positions(name), ref_data.xpos[ref_ids], atol=1e-10
+        )
+        np.testing.assert_allclose(
+            simulation.get_body_rotations(name), ref_data.xquat[ref_ids], atol=1e-10
+        )
+
+
+class TestSeparateTrochanterFemur:
+    def test_kinematics_match_fused_model(self, neutral_pose):
+        sims = []
+        for fly_class, joint_preset in [
+            (NeuroMechFly, JointPreset.LEGS_ONLY),
+            (
+                NeuroMechFlyWithSeparateTrochanterFemur,
+                SeparateTrochanterFemurJointPreset.LEGS_ONLY,
+            ),
+        ]:
+            fly = fly_class(name="fly")
+            skeleton = Skeleton(
+                axis_order=AxisOrder.YAW_PITCH_ROLL, joint_preset=joint_preset
+            )
+            fly.add_joints(skeleton, neutral_pose=neutral_pose)
+            world = TetheredWorld()
+            world.add_fly(
+                fly,
+                spawn_position=[0, 0, 1.5],
+                spawn_rotation=Rotation3D("quat", [1, 0, 0, 0]),
+            )
+            sim = Simulation(world)
+            sim.reset()
+            segment_names = [seg.name for seg in fly.get_bodysegs_order()]
+            positions = dict(zip(segment_names, sim.get_body_positions("fly")))
+            sims.append((sim, positions))
+        (fused_sim, fused_pos), (separate_sim, separate_pos) = sims
+
+        # The femur has no DoF, so it is fused into the trochanter by `fusestatic`
+        assert separate_sim.mj_model.nbody == fused_sim.mj_model.nbody
+        assert len(separate_pos) == len(fused_pos) + 6
+        for name, pos in fused_pos.items():
+            name = name.replace("_trochanterfemur", "_trochanter")
+            np.testing.assert_allclose(separate_pos[name], pos, atol=1e-10)
 
 
 # ==============================================================================

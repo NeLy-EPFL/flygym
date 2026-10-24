@@ -67,7 +67,7 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
     We introduced a new FlyGym 2.x.x API in April 2026, with a complete code rewrite and redesigned interface. This version delivers significantly improved performance:
 
     - **~10x speed-up** for CPU-based simulations (~2x real-time throughput)
-    - **~300x speed-up** for GPU-based simulation via Warp/MJWarp (~60x real-time throughput)
+    - **~250x speed-up** for GPU-based simulation via Warp/MJWarp (~50x real-time throughput)
 
     Additional improvements include:
 
@@ -75,10 +75,10 @@ This package is developed at the [Neuroengineering Laboratory](https://www.epfl.
     - Interactive viewer
     - Simplified dependency stack
 
-    This version is not backward compatible, and not all features from FlyGym 1.x.x are available. Feature requests can be submitted via Issues on the [GitHub repository](https://github.com/NeLy-EPFL/flygym). See more information about the changes [here](https://neuromechfly.org/migration/).
+    This version is not backward compatible, and not all features from FlyGym 1.x.x are available. Feature requests can be submitted via Issues on the [GitHub repository](https://github.com/NeLy-EPFL/flygym). See more information about the changes [here](migration.md).
 
     Prefer the old version? FlyGym 1.x.x has been migrated to [`flygym-gymnasium`](https://github.com/NeLy-EPFL/flygym-gymnasium). Its documentation has been migrated to [gymnasium.neuromechfly.org](https://gymnasium.neuromechfly.org/).
 
-For installation, see [the documentation page](https://neuromechfly.org/installation).
+For installation, see [the documentation page](installation.md).
 
-To get started, follow [tutorials here](https://neuromechfly.org/tutorials).
+To get started, follow [tutorials here](tutorials/index.md).

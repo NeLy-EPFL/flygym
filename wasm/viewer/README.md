@@ -45,9 +45,7 @@ The script mirrors the body configuration in
 
 ## Deploying
 
-Deployment is described in [`../README.md`](../README.md#deploying):
-`scripts/dev/push_doc_site.sh` regenerates the assets above, runs `properdocs build`,
-and force-pushes the site to `gh-pages` (so the heavy assets live only there).
+Deployment is described in [`../README.md`](../README.md#deploying): `scripts/dev/push_doc_site.sh` regenerates the assets above, builds the site, and pushes it to the separate `NeLy-EPFL/flygym-docs` repo (so the heavy assets never live in this repo).
 
 ## Attribution
 

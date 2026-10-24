@@ -23,6 +23,8 @@ from flygym.anatomy import (
     PASSIVE_TARSAL_LINKS,
     ALL_CONNECTED_SEGMENT_PAIRS,
     ALL_SEGMENT_NAMES,
+    SeparateTrochanterFemurJointPreset,
+    separate_trochanterfemur_in_dof_name,
 )
 from flygym.flybody.anatomy_flybody import (
     FlyBodyRotationAxis,
@@ -355,6 +357,25 @@ class TestJointPreset:
 
     def test_from_string(self):
         assert JointPreset("legs_only") is JointPreset.LEGS_ONLY
+
+
+class TestSeparateTrochanterFemurJointPreset:
+    @pytest.mark.parametrize(
+        "preset", ["all_biological", "legs_only", "legs_active_only"]
+    )
+    def test_dofs_match_fused_anatomy_up_to_renaming(self, preset):
+        # Biological presets add no DoF between trochanter and femur, so the DoFs
+        # are exactly those of the fused anatomy, renamed
+        kwargs = {"axis_order": AxisOrder.YAW_PITCH_ROLL}
+        fused = Skeleton(joint_preset=JointPreset(preset), **kwargs)
+        separate = Skeleton(
+            joint_preset=SeparateTrochanterFemurJointPreset(preset), **kwargs
+        )
+        assert [
+            separate_trochanterfemur_in_dof_name(dof.name)
+            for dof in fused.iter_jointdofs()
+        ] == [dof.name for dof in separate.iter_jointdofs()]
+        assert BodySegment("lf_femur") in separate.body_segments
 
 
 # ==============================================================================

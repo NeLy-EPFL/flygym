@@ -24,6 +24,11 @@ jobs:
             python-version: "3.13"
           - os: ubuntu-latest
             python-version: "3.14"
+          # PyTorch (pulled in by the rl extra) has no Python 3.15 wheels yet, so
+          # the rl extra is dropped here; the rl tests importorskip and skip.
+          - os: ubuntu-latest
+            python-version: "3.15"
+            no-rl: true
           - os: macos-latest
             python-version: "3.14"
           - os: windows-latest
@@ -48,7 +53,7 @@ jobs:
         # rl is its own extra (not pulled in by dev) so the muscle-imitation
         # tests can run in CI; the GPU-only `warp` group is still excluded and
         # deselected via `-m "not warp"` below.
-        run: uv sync --extra dev --extra examples --extra rl
+        run: uv sync --extra dev --extra examples ${{ !matrix.no-rl && '--extra rl' || '' }}
 
       # The high-resolution meshes (FlyBody + fullsize NeuroMechFly + the FlyMimic
       # musculoskeletal body) are not shipped with the package;
@@ -72,4 +77,4 @@ jobs:
         # Collect the whole tree but use marker selection (not directory
         # selection) to drop the groups CI can't run: warp needs a CUDA GPU.
         # Rendering tests are gated separately via SKIP_RENDERING_TESTS above.
-        run: uv run pytest tests/ -m "not warp" -v --tb=short
+        run: uv run pytest tests/ -m "not warp" -n auto -v --tb=short
