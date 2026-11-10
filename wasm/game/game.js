@@ -537,6 +537,7 @@ class Game {
     overlayEl.classList.remove('hidden');
     overlayEl.innerHTML =
       `<h1>${LEVELS[this.level].name}</h1>` +
+      `<img style="max-height:100%;max-width:100%" src="./instructions/instructions_level_${Object.keys(LEVELS).indexOf(this.level) + 1}_${this.pad && this.pad.connected ? "joystick" : "keyboard"}.png"></img>` + 
       `<p>${this._levelBlurb()}</p>` +
       `<button id="go">Start ▶</button>` +
       `<p style="font-size:12px">or press any movement key</p>`;
