@@ -802,8 +802,9 @@ def parse_globals(xml_path, yaml_path):
         ]
 
     # The source XML may have no <compiler> element, in which case the loop above
-    # never created this key; setdefault avoids a KeyError.
-    parsed_globals.setdefault("compiler", {})["fusestatic"] = "true"
+    # never created this key; setdefault avoids a KeyError. flybody intentionally
+    # keeps fusestatic disabled.
+    parsed_globals.setdefault("compiler", {})["fusestatic"] = "false"
     parsed_globals["statistic"] = {"extent": "5"}
     parsed_globals["visual"] = {
         "headlight": {

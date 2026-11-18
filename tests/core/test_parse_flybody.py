@@ -447,7 +447,7 @@ class TestParseWriters:
         pf.parse_globals(xml_path, out)
         data = _load_yaml(out)
         assert data["option"]["timestep"] == "0.0001"
-        assert data["compiler"]["fusestatic"] == "true"
+        assert data["compiler"]["fusestatic"] == "false"
         assert data["statistic"] == {"extent": "5"}
         assert "headlight" in data["visual"]
 
